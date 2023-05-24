@@ -7,15 +7,15 @@ find_package(Boost REQUIRED COMPONENTS serialization regex)
 find_package(Boost REQUIRED)
 
 file(GLOB_RECURSE CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.c ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
-file(GLOB_RECURSE headers_dbow2 CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/DBoW2/*.h)
-file(GLOB_RECURSE headers_dutils CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/DUtils/*.h)
+file(GLOB_RECURSE headers_dbow2 CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/DBoW2/*.h ${CMAKE_CURRENT_SOURCE_DIR}/DBoW2/*.hpp)
+file(GLOB_RECURSE headers_dutils CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/DUtils/*.h ${CMAKE_CURRENT_SOURCE_DIR}/DUtils/*.hpp)
 
 
 add_library(${TARGET_NAME} SHARED ${CPP_FILES})
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 target_include_directories(${TARGET_NAME} PUBLIC
                        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> # for headers when building
-                       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Thirdparty> # for client in install mode
+		       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME}> # for client in install mode
                        )
 
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )

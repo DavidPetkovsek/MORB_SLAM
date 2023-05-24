@@ -6,17 +6,17 @@ find_package( OpenCV REQUIRED )
 find_package( Eigen3 REQUIRED )
 
 file(GLOB_RECURSE CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.c ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.cc)
-file(GLOB_RECURSE headers_core CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.h)
-file(GLOB_RECURSE headers_solvers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.h)
-file(GLOB_RECURSE headers_stuff CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.h)
-file(GLOB_RECURSE headers_types CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/*.h)
+file(GLOB headers_core CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/core/*.h ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/core/*.hpp)
+file(GLOB headers_solvers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/solvers/*.h ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/solvers/*.hpp)
+file(GLOB headers_stuff CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/stuff/*.h ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/stuff/*.hpp)
+file(GLOB headers_types CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/types/*.h ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/types/*.hpp)
 
 
 add_library(${TARGET_NAME} SHARED ${CPP_FILES})
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 target_include_directories(${TARGET_NAME} PUBLIC
                        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> # for headers when building
-                       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Thirdparty> # for client in install mode
+		       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty> # for client in install mode
                        )
 
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
@@ -44,7 +44,7 @@ IF(G2O_USE_OPENMP)
   message(STATUS "Compiling with OpenMP support")
 ENDIF(G2O_USE_OPENMP)
 
-set(GENERATED_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
+set(GENERATED_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/config.h)
 configure_file(config.h.in ${GENERATED_CONFIG})
 
 
