@@ -15,7 +15,7 @@ file(GLOB_RECURSE headers_types CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${
 add_library(${TARGET_NAME} SHARED ${CPP_FILES})
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 target_include_directories(${TARGET_NAME} PUBLIC
-                       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}> # for headers when building
+                       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> # for headers when building
                        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Thirdparty> # for client in install mode
                        )
 
