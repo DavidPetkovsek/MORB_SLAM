@@ -1,3 +1,9 @@
+#!/bin/bash
+
+# https://stackoverflow.com/questions/24112727/relative-paths-based-on-file-location-instead-of-current-working-directory
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd "$parent_path" # change directories so working directory is where the script is
+
 if [ $# == "1" ]; then
     if [ "$1" == "-a" ]; then
         echo cleaning all
@@ -15,6 +21,7 @@ else
 fi
 
 rm -r build  2> /dev/null
+rm -r bin 2> /dev/null
 
 # Clean executable examples
 rm Examples/RGB-D/rgbd_tum \
