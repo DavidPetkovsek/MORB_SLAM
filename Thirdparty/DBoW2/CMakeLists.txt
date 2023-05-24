@@ -19,7 +19,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
                        )
 
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
-target_link_libraries( ${TARGET_NAME} PUBLIC Boost::Boost Boost::serialization Boost::regex )
+target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
 
 
 
