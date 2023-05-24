@@ -23,7 +23,7 @@ if [ ! -d "build" ] || [ ! -f 'build/config-finished.bool' ]; then
         mkdir build 2> /dev/null
         cd build
         # https://unix.stackexchange.com/questions/31414/how-can-i-pass-a-command-line-argument-into-a-shell-script
-        cmake .. "$@" # pass arguments on to cmake
+        cmake ..
         if [ $? -ne 0 ]; then
                 rm 'config-finished.bool' 2> /dev/null
                 cd ..

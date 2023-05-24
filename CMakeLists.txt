@@ -142,7 +142,7 @@ if(realsense2_FOUND)
   target_link_libraries( ${TARGET_NAME} PUBLIC Boost::Boost Boost::serialization Boost::regex )
   target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
   target_link_libraries( ${TARGET_NAME} PUBLIC ${Pangolin_LIBRARIES} )
-  target_link_libraries(stereo_inertial_realsense_D435i ${PROJECT_NAME})
+  target_link_libraries(stereo_inertial_realsense_D435i PRIVATE ${PROJECT_NAME})
 endif()
 
 
@@ -182,103 +182,3 @@ install(FILES
 )
 
 include("${PROJECT_SOURCE_DIR}/cmake/Packing.cmake")
-
-
-
-
-
-################################################################################################
-
-file(GLOB_RECURSE INCLUDE_Sophus_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus/sophus/*.hpp)
-file(GLOB_RECURSE INCLUDE_DBoW2_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2/DBoW2/*.h)
-file(GLOB_RECURSE INCLUDE_DUtils_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2/DUtils/*.h)
-
-file(GLOB_RECURSE INCLUDE_g2o_config_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/config.h)
-file(GLOB_RECURSE INCLUDE_g2o_core_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/core/*.h ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/core/*.hpp)
-file(GLOB_RECURSE INCLUDE_g2o_solvers_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/solvers/*.h ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/solvers/*.hpp)
-file(GLOB_RECURSE INCLUDE_g2o_stuff_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/stuff/*.h ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/stuff/*.hpp)
-file(GLOB_RECURSE INCLUDE_g2o_types_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/types/*.h ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o/g2o/types/*.hpp)
-
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/DBoW2>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Sophus>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/g2o>
-
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
-)
-
-
-set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake/${PROJECT_NAME})
-install(TARGETS ${PROJECT_NAME}
-   EXPORT ${PROJECT_NAME}-targets
-   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-install(EXPORT ${PROJECT_NAME}-targets
-  FILE
-      	${PROJECT_NAME}Targets.cmake
-  NAMESPACE
-        ${PROJECT_NAME}::
-  DESTINATION
-        ${INSTALL_CONFIGDIR}
-)
-
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
-
-configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION ${INSTALL_CONFIGDIR}
-)
-
-
-install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION "${CMAKE_INSTALL_LIBDIR}/${CMAKE_BUILD_TYPE}")
-install(FILES ${INCLUDE_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/MORB_SLAM")
-install(FILES ${INCLUDE_CAMERA_MODELS_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/MORB_SLAM/CameraModels")
-
-install(FILES ${INCLUDE_Sophus_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/Sophus/sophus")
-install(FILES ${INCLUDE_DBoW2_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/DBoW2/DBoW2")
-install(FILES ${INCLUDE_DUtils_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/DBoW2/DUtils")
-
-install(FILES ${INCLUDE_g2o_config_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o")
-install(FILES ${INCLUDE_g2o_core_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/core")
-install(FILES ${INCLUDE_g2o_solvers_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/solvers")
-install(FILES ${INCLUDE_g2o_stuff_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/stuff")
-install(FILES ${INCLUDE_g2o_types_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/types")
-
-install(FILES ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so DESTINATION "${CMAKE_INSTALL_LIBDIR}")
-install(FILES ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so DESTINATION "${CMAKE_INSTALL_LIBDIR}")
-
-install(FILES ${INCLUDE_Sophus_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/Sophus/sophus")
-install(FILES ${INCLUDE_DBoW2_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/DBoW2/DBoW2")
-install(FILES ${INCLUDE_DUtils_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/DBoW2/DUtils")
-
-install(FILES ${INCLUDE_g2o_config_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o")
-install(FILES ${INCLUDE_g2o_core_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/core")
-install(FILES ${INCLUDE_g2o_solvers_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/solvers")
-install(FILES ${INCLUDE_g2o_stuff_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/stuff")
-install(FILES ${INCLUDE_g2o_types_FILES} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/g2o/g2o/types")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo-Inertial)
-add_executable(stereo_inertial_realsense_D435i
-                Examples/Stereo-Inertial/stereo_inertial_realsense_D435i.cc)
-target_link_libraries(stereo_inertial_realsense_D435i ${PROJECT_NAME})
-
-message("added executable")
-install(EXPORT ${PROJECT_NAME} NAMESPACE ${PROJECT_NAME}:: DESTINATION "${CMAKE_INSTALL_LIBDIR}/${CMAKE_BUILD_TYPE}")
