@@ -44,7 +44,7 @@ IF(G2O_USE_OPENMP)
   message(STATUS "Compiling with OpenMP support")
 ENDIF(G2O_USE_OPENMP)
 
-set(GENERATED_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/config.h)
+set(GENERATED_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 configure_file(config.h.in ${GENERATED_CONFIG})
 
 
