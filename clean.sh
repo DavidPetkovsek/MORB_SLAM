@@ -4,22 +4,7 @@
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path" # change directories so working directory is where the script is
 
-if [ $# == "1" ]; then
-    if [ "$1" == "-a" ]; then
-        echo cleaning all
-        rm -r Thirdparty/DBoW2/build  2> /dev/null
-        rm -r Thirdparty/DBoW2/lib  2> /dev/null
-        rm -r Thirdparty/g2o/build  2> /dev/null
-        rm -r Thirdparty/g2o/lib  2> /dev/null
-        rm -r Thirdparty/Sophus/build  2> /dev/null
-        rm Vocabulary/ORBvoc.txt  2> /dev/null
-    else
-        echo 'cleaning primary, to clean all use -a'
-    fi
-else
-    echo 'cleaning primary, to clean all use -a'
-fi
-
+rm Vocabulary/ORBvoc.txt  2> /dev/null
 rm -r build  2> /dev/null
 rm -r bin 2> /dev/null
 

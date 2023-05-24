@@ -2,7 +2,7 @@
 
 if [ $# == "1" ]; then
     jobs=$1
-else 
+else
     jobs="-j$(nproc)"
 fi
 echo "Using argument ${jobs}"
@@ -23,7 +23,7 @@ if [ ! -d "build" ] || [ ! -f 'build/config-finished.bool' ]; then
         mkdir build 2> /dev/null
         cd build
         # https://unix.stackexchange.com/questions/31414/how-can-i-pass-a-command-line-argument-into-a-shell-script
-        cmake ..
+        cmake .. -GNinja
         if [ $? -ne 0 ]; then
                 rm 'config-finished.bool' 2> /dev/null
                 cd ..
@@ -35,13 +35,13 @@ else
         echo 'Already configured'
         cd build
 fi
-make $jobs
+ninja $jobs
 if [ $? -ne 0 ]; then
         cd ..
         echo "Build was not successful"
         exit 2
 fi
-sudo make install
+sudo ninja install
 if [ $? -ne 0 ]; then
         cd ..
         echo "Install was not successful"
