@@ -95,6 +95,28 @@ static rs2_option get_sensor_option(const rs2::sensor& sensor)
     return static_cast<rs2_option>(selected_sensor_option);
 }
 
+
+Sophus::SE3f sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
+                            const float& im_timestamp, std::vector<MORB_SLAM::IMU::Point>& vImuMeas, MORB_SLAM::System_ptr SLAM) {
+
+    float imageScale = SLAM->GetImageScale();
+
+    std::cout << "image scale: " << imageScale << std::endl;
+
+    if(imageScale != 1.f) {
+        int width = imLeft.cols * imageScale;
+        int height = imLeft.rows * imageScale;
+        cv::resize(imLeft, imLeft, cv::Size(width, height));
+        cv::resize(imRight, imRight, cv::Size(width, height));
+    }
+    
+    Sophus::SE3f sophusPose = SLAM->TrackStereo(imLeft, imRight, im_timestamp, vImuMeas);
+
+    sophusPose = sophusPose.inverse();
+    return sophusPose;
+}
+
+
 int main(int argc, char **argv) {   
 
     if (argc < 3 || argc > 4) {
@@ -326,17 +348,11 @@ int main(int argc, char **argv) {
 
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    // MORB_SLAM::System_ptr SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2],MORB_SLAM::CameraType::IMU_STEREO, file_name);
-    // MORB_SLAM::Viewer viewer(SLAM, argv[2]);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM, argv[2]);
 
-    std::shared_ptr<SLAIV::SLAPI> slapi = std::make_shared<SLAIV::SLAPI>(argv[1],argv[2],true, 
-        [](float& x, float& y, float& theta) {
-            x = 0;
-            y = 0;
-            theta = 0;
-        });
 
-    float imageScale = slapi->SLAM->GetImageScale();
+    float imageScale = SLAM->GetImageScale();
 
     double timestamp;
     cv::Mat im, imRight;
@@ -351,10 +367,6 @@ int main(int argc, char **argv) {
     double t_resize = 0.f;
     double t_track = 0.f;
 #endif
-
-    std::ofstream file("output_clean.txt");
-    // std::ofstream accel_file("accel.txt");
-    // std::ofstream gyro_file("gyro.txt");
 
     while (true)
     {
@@ -429,7 +441,7 @@ int main(int argc, char **argv) {
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
             t_resize = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Resize - t_Start_Resize).count();
-            slapi->SLAM->InsertResizeTime(t_resize);
+            SLAM->InsertResizeTime(t_resize);
 #endif
         }
 
@@ -437,18 +449,16 @@ int main(int argc, char **argv) {
         std::chrono::steady_clock::time_point t_Start_Track = std::chrono::steady_clock::now();
 #endif
         // Stereo images are already rectified.
-        auto pos = slapi->sendImageAndImuData(im, imRight, timestamp, vImuMeas);
+        auto pos = sendImageAndImuData(im, imRight, timestamp, vImuMeas, SLAM);
         // Remove temporarily to keep log clean
-
-        file << "[" << pos.x<< "," <<  pos.y << "," << pos.theta << "]" << std::endl;
         
 
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point t_End_Track = std::chrono::steady_clock::now();
         t_track = t_resize + std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t_End_Track - t_Start_Track).count();
-        slapi->SLAM->InsertTrackTime(t_track);
+        SLAM->InsertTrackTime(t_track);
 #endif
-        // viewer.update(pos);
+        viewer->update(pos);
 
 
 
