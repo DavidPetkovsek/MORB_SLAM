@@ -199,9 +199,6 @@ class LocalMapping {
 
   bool isDoneVIBA;
   bool notifyIsDoneVIBA;
-
-  // DEBUG
-  ofstream f_lm;
 };
 
 }  // namespace MORB_SLAM

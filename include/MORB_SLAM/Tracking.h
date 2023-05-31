@@ -332,9 +332,6 @@ class Tracking {
 
   int mnNumDataset;
 
-  ofstream f_track_stats;
-
-  ofstream f_track_times;
   double mTime_PreIntIMU;
   double mTime_PosePred;
   double mTime_LocalMapTrack;
