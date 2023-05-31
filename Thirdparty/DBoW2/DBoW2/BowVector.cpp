@@ -102,27 +102,27 @@ std::ostream& operator<< (std::ostream &out, const BowVector &v)
 
 // --------------------------------------------------------------------------
 
-void BowVector::saveM(const std::string &filename, size_t W) const
-{
-  std::fstream f(filename.c_str(), std::ios::out);
+// void BowVector::saveM(const std::string &filename, size_t W) const
+// {
+//   std::fstream f(filename.c_str(), std::ios::out);
   
-  WordId last = 0;
-  BowVector::const_iterator bit;
-  for(bit = this->begin(); bit != this->end(); ++bit)
-  {
-    for(; last < bit->first; ++last)
-    {
-      f << "0 ";
-    }
-    f << bit->second << " ";
+//   WordId last = 0;
+//   BowVector::const_iterator bit;
+//   for(bit = this->begin(); bit != this->end(); ++bit)
+//   {
+//     for(; last < bit->first; ++last)
+//     {
+//       f << "0 ";
+//     }
+//     f << bit->second << " ";
     
-    last = bit->first + 1;
-  }
-  for(; last < (WordId)W; ++last)
-    f << "0 ";
+//     last = bit->first + 1;
+//   }
+//   for(; last < (WordId)W; ++last)
+//     f << "0 ";
   
-  f.close();
-}
+//   f.close();
+// }
 
 // --------------------------------------------------------------------------
 

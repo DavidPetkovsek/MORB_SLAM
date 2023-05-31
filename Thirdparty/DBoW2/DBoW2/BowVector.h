@@ -111,7 +111,7 @@ public:
 	 * @param filename
 	 * @param W number of words in the vocabulary
 	 */
-	void saveM(const std::string &filename, size_t W) const;
+	// void saveM(const std::string &filename, size_t W) const;
 };
 
 } // namespace DBoW2
