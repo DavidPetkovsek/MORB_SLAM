@@ -31,7 +31,7 @@
 #include <cassert>
 #include <iostream>
 #include <algorithm>
-#include <fstream>
+// #include <fstream>
 
 //#define DEBUG_ESTIMATE_PROPAGATOR
 
@@ -177,30 +177,30 @@ namespace g2o {
 
     // writing debug information like cost for reaching each vertex and the parent used to initialize
 #ifdef DEBUG_ESTIMATE_PROPAGATOR
-    cerr << "Writing cost.dat" << endl;
-    ofstream costStream("cost.dat");
-    for (AdjacencyMap::const_iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
-      HyperGraph::Vertex* u = it->second.child();
-      costStream << "vertex " << u->id() << "  cost " << it->second._distance << endl;
-    }
-    cerr << "Writing init.dat" << endl;
-    ofstream initStream("init.dat");
-    vector<AdjacencyMapEntry*> frontierLevels;
-    for (AdjacencyMap::iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
-      if (it->second._frontierLevel > 0)
-        frontierLevels.push_back(&it->second);
-    }
-    sort(frontierLevels.begin(), frontierLevels.end(), FrontierLevelCmp());
-    for (vector<AdjacencyMapEntry*>::const_iterator it = frontierLevels.begin(); it != frontierLevels.end(); ++it) {
-      AdjacencyMapEntry* entry       = *it;
-      OptimizableGraph::Vertex* to   = entry->child();
+    // cerr << "Writing cost.dat" << endl;
+    // ofstream costStream("cost.dat");
+    // for (AdjacencyMap::const_iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
+    //   HyperGraph::Vertex* u = it->second.child();
+    //   costStream << "vertex " << u->id() << "  cost " << it->second._distance << endl;
+    // }
+    // cerr << "Writing init.dat" << endl;
+    // ofstream initStream("init.dat");
+    // vector<AdjacencyMapEntry*> frontierLevels;
+    // for (AdjacencyMap::iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
+    //   if (it->second._frontierLevel > 0)
+    //     frontierLevels.push_back(&it->second);
+    // }
+    // sort(frontierLevels.begin(), frontierLevels.end(), FrontierLevelCmp());
+    // for (vector<AdjacencyMapEntry*>::const_iterator it = frontierLevels.begin(); it != frontierLevels.end(); ++it) {
+    //   AdjacencyMapEntry* entry       = *it;
+    //   OptimizableGraph::Vertex* to   = entry->child();
 
-      initStream << "calling init level = " << entry->_frontierLevel << "\t (";
-      for (OptimizableGraph::VertexSet::iterator pit = entry->parent().begin(); pit != entry->parent().end(); ++pit) {
-        initStream << " " << (*pit)->id();
-      }
-      initStream << " ) -> " << to->id() << endl;
-    }
+    //   initStream << "calling init level = " << entry->_frontierLevel << "\t (";
+    //   for (OptimizableGraph::VertexSet::iterator pit = entry->parent().begin(); pit != entry->parent().end(); ++pit) {
+    //     initStream << " " << (*pit)->id();
+    //   }
+    //   initStream << " ) -> " << to->id() << endl;
+    // }
 #endif
 
   }
