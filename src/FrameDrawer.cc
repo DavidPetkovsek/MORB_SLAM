@@ -50,7 +50,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
   cv::Scalar standardColor(0, 255, 0);
   cv::Scalar odometryColor(255, 0, 0);
 
-  // Copy variables within scoped mutex
+  // Copy variables within scoped std::mutex
   {
     std::unique_lock<std::mutex> lock(mMutex);
     state = mState;
@@ -166,7 +166,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
   std::vector<bool> vbVO, vbMap;           // Tracked MapPoints in current frame
   int state;                          // Tracking state
 
-  // Copy variables within scoped mutex
+  // Copy variables within scoped std::mutex
   {
     std::unique_lock<std::mutex> lock(mMutex);
     state = mState;
@@ -185,7 +185,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
     } else if (mState == Tracker::LOST) {
       vCurrentKeys = mvCurrentKeysRight;
     }
-  }  // destroy scoped mutex -> release mutex
+  }  // destroy scoped std::mutex -> release std::mutex
 
   if (imageScale != 1.f) {
     int imWidth = im.cols / imageScale;

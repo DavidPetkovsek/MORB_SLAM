@@ -93,13 +93,13 @@ namespace g2o {
           int destOffset = baseOfBlock(i);
           int srcOffset = destOffset;
           const SparseMatrixBlock& A = _diagonal[i];
-          // destVec += *A.transpose() * srcVec (according to the sub-vector parts)
+          // destVec += *A.transpose() * srcVec (according to the sub-std::vector parts)
           internal::axpy(A, srcVec, srcOffset, destVec, destOffset);
         }
       }
 
     protected:
-      const std::vector<int>& _blockIndices; ///< vector of the indices of the blocks along the diagonal
+      const std::vector<int>& _blockIndices; ///< std::vector of the indices of the blocks along the diagonal
       DiagonalVector _diagonal;
   };
 

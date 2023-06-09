@@ -120,7 +120,7 @@ class KannalaBrandt8 : public GeometricCamera {
  private:
   const float precision;
 
-  // Parameters vector corresponds to
+  // Parameters std::vector corresponds to
   //[fx, fy, cx, cy, k0, k1, k2, k3]
 
   TwoViewReconstruction* tvr;

@@ -46,8 +46,8 @@ namespace Sophus {
 /// SE3 base type - implements SE3 class but is storage agnostic.
 ///
 /// SE(3) is the group of rotations  and translation in 3d. It is the
-/// semi-direct product of SO(3) and the 3d Euclidean vector space.  The class
-/// is represented using a composition of SO3  for rotation and a one 3-vector
+/// semi-direct product of SO(3) and the 3d Euclidean std::vector space.  The class
+/// is represented using a composition of SO3  for rotation and a one 3-std::vector
 /// for translation.
 ///
 /// SE(3) is neither compact, nor a commutative group.
@@ -269,8 +269,8 @@ class SE3Base {
   ///   | R t |
   ///   | o 1 |
   ///
-  /// where ``R`` is a 3x3 rotation matrix, ``t`` a translation 3-vector and
-  /// ``o`` a 3-column vector of zeros.
+  /// where ``R`` is a 3x3 rotation matrix, ``t`` a translation 3-std::vector and
+  /// ``o`` a 3-column std::vector of zeros.
   ///
   SOPHUS_FUNC Transformation matrix() const {
     Transformation homogenious_matrix;
@@ -394,7 +394,7 @@ class SE3Base {
   /// Returns internal parameters of SE(3).
   ///
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real, t[0], t[1], t[2]),
-  /// with q being the unit quaternion, t the translation 3-vector.
+  /// with q being the unit quaternion, t the translation 3-std::vector.
   ///
   SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
     Sophus::Vector<Scalar, num_parameters> p;
@@ -402,13 +402,13 @@ class SE3Base {
     return p;
   }
 
-  /// Mutator of translation vector.
+  /// Mutator of translation std::vector.
   ///
   SOPHUS_FUNC TranslationType& translation() {
     return static_cast<Derived*>(this)->translation();
   }
 
-  /// Accessor of translation vector
+  /// Accessor of translation std::vector
   ///
   SOPHUS_FUNC TranslationType const& translation() const {
     return static_cast<Derived const*>(this)->translation();
@@ -460,7 +460,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from SO3 and translation vector
+  /// Constructor from SO3 and translation std::vector
   ///
   template <class OtherDerived, class D>
   SOPHUS_FUNC SE3(SO3Base<OtherDerived> const& so3,
@@ -472,7 +472,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from rotation matrix and translation vector
+  /// Constructor from rotation matrix and translation std::vector
   ///
   /// Precondition: Rotation matrix needs to be orthogonal with determinant
   ///               of 1.
@@ -481,7 +481,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   SE3(Matrix3<Scalar> const& rotation_matrix, Point const& translation)
       : so3_(rotation_matrix), translation_(translation) {}
 
-  /// Constructor from quaternion and translation vector.
+  /// Constructor from quaternion and translation std::vector.
   ///
   /// Precondition: ``quaternion`` must not be close to zero.
   ///
@@ -528,11 +528,11 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   ///
   SOPHUS_FUNC SO3Member const& so3() const { return so3_; }
 
-  /// Mutator of translation vector
+  /// Mutator of translation std::vector
   ///
   SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
-  /// Accessor of translation vector
+  /// Accessor of translation std::vector
   ///
   SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
@@ -753,7 +753,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   ///
   /// The first three components of ``a`` represent the translational part
   /// ``upsilon`` in the tangent space of SE(3), while the last three components
-  /// of ``a`` represents the rotation vector ``omega``.
+  /// of ``a`` represents the rotation std::vector ``omega``.
   /// To be more specific, this function computes ``expmat(hat(a))`` with
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
   /// of SE(3), see below.
@@ -838,7 +838,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 6-vector representation (= twist) and returns the
+  /// It takes in the 6-std::vector representation (= twist) and returns the
   /// corresponding matrix representation of Lie algebra element.
   ///
   /// Formally, the hat()-operator of SE(3) is defined as
@@ -942,7 +942,7 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes 4x4-matrix representation ``Omega`` and maps it to the
-  /// corresponding 6-vector representation of Lie algebra.
+  /// corresponding 6-std::vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///
@@ -1015,13 +1015,13 @@ class Map<Sophus::SE3<Scalar_>, Options>
     return so3_;
   }
 
-  /// Mutator of translation vector
+  /// Mutator of translation std::vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar, Options>>& translation() {
     return translation_;
   }
 
-  /// Accessor of translation vector
+  /// Accessor of translation std::vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar, Options>> const& translation() const {
     return translation_;
@@ -1060,7 +1060,7 @@ class Map<Sophus::SE3<Scalar_> const, Options>
     return so3_;
   }
 
-  /// Accessor of translation vector
+  /// Accessor of translation std::vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar> const, Options> const& translation()
       const {

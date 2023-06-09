@@ -388,9 +388,9 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
     Base::normalize();
   }
 
-  /// Constructor from 2-vector.
+  /// Constructor from 2-std::vector.
   ///
-  /// Precondition: The vector must not be close to zero.
+  /// Precondition: The std::vector must not be close to zero.
   ///
   template <class D>
   SOPHUS_FUNC explicit SO2(Eigen::MatrixBase<D> const& complex)

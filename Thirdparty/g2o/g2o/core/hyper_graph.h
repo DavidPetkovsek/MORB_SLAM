@@ -114,7 +114,7 @@ namespace g2o {
 
       /** 
        * Abstract Edge class. Your nice edge classes should inherit from that one.
-       * An hyper-edge has pointers to the vertices it connects and stores them in a vector.
+       * An hyper-edge has pointers to the vertices it connects and stores them in a std::vector.
        */
       class  Edge : public HyperGraphElement {
         public:
@@ -127,11 +127,11 @@ namespace g2o {
            */
           virtual void resize(size_t size);
           /**
-            returns the vector of pointers to the vertices connected by the hyper-edge.
+            returns the std::vector of pointers to the vertices connected by the hyper-edge.
             */
           const VertexContainer& vertices() const { return _vertices;}
           /**
-            returns the vector of pointers to the vertices connected by the hyper-edge.
+            returns the std::vector of pointers to the vertices connected by the hyper-edge.
             */
           VertexContainer& vertices() { return _vertices;}
           /**

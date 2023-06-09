@@ -116,9 +116,9 @@ namespace g2o {
       }
     };
 
-    //! vector container for vertices
+    //! std::vector container for vertices
     typedef std::vector<OptimizableGraph::Vertex*>      VertexContainer;
-    //! vector container for edges
+    //! std::vector container for edges
     typedef std::vector<OptimizableGraph::Edge*>        EdgeContainer;
 
     /**
@@ -160,19 +160,19 @@ namespace g2o {
         virtual void mapHessianMemory(double* d) = 0;
 
         /**
-         * copies the b vector in the array b_
+         * copies the b std::vector in the array b_
          * @return the number of elements copied
          */
         virtual int copyB(double* b_) const = 0;
 
-        //! get the b vector element
+        //! get the b std::vector element
         virtual const double& b(int i) const = 0;
         virtual double& b(int i) = 0;
-        //! return a pointer to the b vector associated with this vertex
+        //! return a pointer to the b std::vector associated with this vertex
         virtual double* bData() = 0;
 
         /**
-         * set the b vector part of this vertex to zero
+         * set the b std::vector part of this vertex to zero
          */
         virtual void clearQuadraticForm() = 0;
 
@@ -294,7 +294,7 @@ namespace g2o {
           updateCache();
         }
 
-        //! temporary index of this node in the parameter vector obtained from linearization
+        //! temporary index of this node in the parameter std::vector obtained from linearization
         int hessianIndex() const { return _hessianIndex;}
         int G2O_ATTRIBUTE_DEPRECATED(tempIndex() const) { return hessianIndex();}
         //! set the temporary index of the vertex in the parameter blocks
@@ -327,12 +327,12 @@ namespace g2o {
         OptimizableGraph* graph() {return _graph;}
 
         /**
-         * lock for the block of the hessian and the b vector associated with this vertex, to avoid
+         * lock for the block of the hessian and the b std::vector associated with this vertex, to avoid
          * race-conditions if multi-threaded.
          */
         void lockQuadraticForm() { _quadraticFormMutex.lock();}
         /**
-         * unlock the block of the hessian and the b vector associated with this vertex
+         * unlock the block of the hessian and the b std::vector associated with this vertex
          */
         void unlockQuadraticForm() { _quadraticFormMutex.unlock();}
 
@@ -352,7 +352,7 @@ namespace g2o {
         bool _marginalized;
         int _dimension;
         int _colInHessian;
-        OpenMPMutex _quadraticFormMutex;
+        OpenMPmutex _quadraticFormMutex;
 
         CacheContainer* _cacheContainer;
 
@@ -418,7 +418,7 @@ namespace g2o {
          */
         void setRobustKernel(RobustKernel* ptr);
 
-        //! returns the error vector cached after calling the computeError;
+        //! returns the error std::vector cached after calling the computeError;
         virtual const double* errorData() const = 0;
         virtual double* errorData() = 0;
 
@@ -432,7 +432,7 @@ namespace g2o {
         /**
          * Linearizes the constraint in the edge.
          * Makes side effect on the vertices of the graph by changing
-         * the parameter vector b and the hessian blocks ii and jj.
+         * the parameter std::vector b and the hessian blocks ii and jj.
          * The off diagoinal block is accesed via _hessian.
          */
         virtual void constructQuadraticForm() = 0;
@@ -616,7 +616,7 @@ namespace g2o {
     virtual void setFixed(HyperGraph::VertexSet& vset, bool fixed);
 
     /**
-     * set the renamed types lookup from a string, format is for example:
+     * set the renamed types lookup from a std::string, format is for example:
      * VERTEX_CAM=VERTEX_SE3:EXPMAP,EDGE_PROJECT_P2MC=EDGE_PROJECT_XYZ:EXPMAP
      * This will change the occurance of VERTEX_CAM in the file to VERTEX_SE3:EXPMAP
      */
@@ -645,7 +645,7 @@ namespace g2o {
     /**
      * verify that all the information of the edges are semi positive definite, i.e.,
      * all Eigenvalues are >= 0.
-     * @param verbose output edges with not PSD information matrix on cerr
+     * @param verbose output edges with not PSD information matrix on std::cerr
      * @return true if all edges have PSD information matrix
      */
     bool verifyInformationMatrices(bool verbose = false) const;

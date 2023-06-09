@@ -47,16 +47,16 @@ public:
   static int distance(const TDescriptor &a, const TDescriptor &b);
 
   /**
-   * Returns a string version of the descriptor
+   * Returns a std::string version of the descriptor
    * @param a descriptor
-   * @return string version
+   * @return std::string version
    */
   static std::string toString(const TDescriptor &a);
 
   /**
-   * Returns a descriptor from a string
+   * Returns a descriptor from a std::string
    * @param a descriptor
-   * @param s string version
+   * @param s std::string version
    */
   static void fromString(TDescriptor &a, const std::string &s);
 

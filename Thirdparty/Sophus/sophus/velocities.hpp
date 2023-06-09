@@ -10,9 +10,9 @@ namespace Sophus {
 namespace experimental {
 // Experimental since the API will certainly change drastically in the future.
 
-// Transforms velocity vector by rotation ``foo_R_bar``.
+// Transforms velocity std::vector by rotation ``foo_R_bar``.
 //
-// Note: vel_bar can be either a linear or a rotational velocity vector.
+// Note: vel_bar can be either a linear or a rotational velocity std::vector.
 //
 template <class Scalar>
 Vector3<Scalar> transformVelocity(SO3<Scalar> const& foo_R_bar,
@@ -27,9 +27,9 @@ Vector3<Scalar> transformVelocity(SO3<Scalar> const& foo_R_bar,
   return foo_R_bar * vel_bar;
 }
 
-// Transforms velocity vector by pose ``foo_T_bar``.
+// Transforms velocity std::vector by pose ``foo_T_bar``.
 //
-// Note: vel_bar can be either a linear or a rotational velocity vector.
+// Note: vel_bar can be either a linear or a rotational velocity std::vector.
 //
 template <class Scalar>
 Vector3<Scalar> transformVelocity(SE3<Scalar> const& foo_T_bar,

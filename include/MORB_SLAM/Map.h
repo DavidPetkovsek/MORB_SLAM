@@ -27,6 +27,10 @@
 #include <memory>
 #include <boost/serialization/base_object.hpp>
 #include <stdexcept>
+#include <map>
+#include <string>
+#include <list>
+#include <vector>
 
 
 namespace MORB_SLAM
@@ -49,7 +53,7 @@ class Map
         ar & mnMaxKFid;
         ar & mnBigChangeIdx;
 
-        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
+        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a std::vector is serializated
         //ar & mspKeyFrames;
         //ar & mspMapPoints;
         ar & mvpBackupKeyFrames;
@@ -130,12 +134,12 @@ public:
     unsigned int GetLowerKFID();
 
     void PreSave(std::set<std::shared_ptr<GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, map<unsigned int, std::shared_ptr<GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
+    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, std::map<unsigned int, std::shared_ptr<GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
 
-    void printReprojectionError(list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, string &name, string &name_folder);
+    void printReprojectionError(std::list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, std::string &name, std::string &name_folder);
 
-    vector<KeyFrame*> mvpKeyFrameOrigins;
-    vector<unsigned long int> mvBackupKeyFrameOriginsId;
+    std::vector<KeyFrame*> mvpKeyFrameOrigins;
+    std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
     KeyFrame* mpFirstRegionKF;
     std::mutex mMutexMapUpdate;
 
@@ -161,7 +165,7 @@ protected:
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
 
-    // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
+    // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a std::vector is serializated
     std::vector<MapPoint*> mvpBackupMapPoints;
     std::vector<KeyFrame*> mvpBackupKeyFrames;
 
@@ -181,7 +185,7 @@ protected:
     long unsigned int mnInitKFid;
     long unsigned int mnMaxKFid;
 
-    // Index related to a big change in the map (loop closure, global BA)
+    // Index related to a big change in the std::map (loop closure, global BA)
     int mnBigChangeIdx;
 
 
@@ -193,7 +197,7 @@ protected:
     bool mbIMU_BA1;
     bool mbIMU_BA2;
 
-    // Mutex
+    // std::mutex
     std::mutex mMutexMap;
 
 };

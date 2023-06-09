@@ -64,7 +64,7 @@ class Camera{
 
     std::string name;
     CameraType::eSensor type;
-    std::mutex camMutex;
+    std::mutex cammutex;
     
     std::condition_variable camCV;
 

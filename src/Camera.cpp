@@ -9,7 +9,7 @@ Camera::Camera(CameraType::eSensor type, const std::string &name): ljobs{}, rjob
 
 Camera::~Camera(){
     {
-        std::scoped_lock<std::mutex> lock(camMutex);
+        std::scoped_lock<std::mutex> lock(cammutex);
         shouldStop = true;
         camCV.notify_all();
     }
@@ -23,7 +23,7 @@ void Camera::threadExec(std::deque<std::pair<ManagedPromise<bool>, std::function
         ManagedPromise<bool> promise;
         std::function<void(void)> func;
         {
-            std::unique_lock<std::mutex> lock(camMutex);
+            std::unique_lock<std::mutex> lock(cammutex);
             if(shouldStop) break;
             while(jobs->empty()){
                 camCV.wait(lock);
@@ -48,7 +48,7 @@ ManagedFuture<bool> Camera::queue(std::function<void(void)> func, bool isLeft){
     ManagedPromise<bool> promise;
     std::deque<std::pair<ManagedPromise<bool>, std::function<void(void)>>> &jobs = isLeft ? ljobs : rjobs;
     {
-        std::scoped_lock<std::mutex> lock(camMutex);
+        std::scoped_lock<std::mutex> lock(cammutex);
 
         if(!jobs.empty()){ // only the newest! // TODO add a policy variable to enable or disable this!
             jobs.front().first.set_value(false);

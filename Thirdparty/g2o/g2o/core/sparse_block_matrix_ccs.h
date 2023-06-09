@@ -121,7 +121,7 @@ namespace g2o {
           for (typename SparseColumn::const_iterator it = _blockCols[i].begin(); it!=_blockCols[i].end(); ++it) {
             const SparseMatrixBlock* a = it->block;
             int srcOffset = rowBaseOfBlock(it->row);
-            // destVec += *a.transpose() * srcVec (according to the sub-vector parts)
+            // destVec += *a.transpose() * srcVec (according to the sub-std::vector parts)
             internal::atxpy(*a, srcVec, srcOffset, destVec, destOffset);
           }
         }
@@ -199,8 +199,8 @@ namespace g2o {
       }
 
     protected:
-      const std::vector<int>& _rowBlockIndices; ///< vector of the indices of the blocks along the rows.
-      const std::vector<int>& _colBlockIndices; ///< vector of the indices of the blocks along the cols
+      const std::vector<int>& _rowBlockIndices; ///< std::vector of the indices of the blocks along the rows.
+      const std::vector<int>& _colBlockIndices; ///< std::vector of the indices of the blocks along the cols
       std::vector<SparseColumn> _blockCols;     ///< the matrices stored in CCS order
   };
 
@@ -272,8 +272,8 @@ namespace g2o {
       }
 
     protected:
-      const std::vector<int>& _rowBlockIndices; ///< vector of the indices of the blocks along the rows.
-      const std::vector<int>& _colBlockIndices; ///< vector of the indices of the blocks along the cols
+      const std::vector<int>& _rowBlockIndices; ///< std::vector of the indices of the blocks along the rows.
+      const std::vector<int>& _colBlockIndices; ///< std::vector of the indices of the blocks along the cols
       std::vector<SparseColumn> _blockCols;     ///< the matrices stored in CCS order
   };
 

@@ -60,7 +60,7 @@ namespace Sophus {
 /// Unit quaternion can be seen as members of the special unitary group SU(2).
 /// SU(2) is a double cover of SO(3). Hence, for every rotation matrix ``R``,
 /// there exist two unit quaternions: ``(r, v)`` and ``(-r, -v)``, with ``r``
-/// the real part and ``v`` being the imaginary 3-vector part of the quaternion.
+/// the real part and ``v`` being the imaginary 3-std::vector part of the quaternion.
 ///
 /// SO(3) is a compact, but non-commutative group. First it is compact since the
 /// set of rotation matrices is a closed and bounded set. Second it is
@@ -234,7 +234,7 @@ class SO3Base {
   ///
   /// Computes the logarithm, the inverse of the group exponential which maps
   /// element of the group (rotation matrices) to elements of the tangent space
-  /// (rotation-vector).
+  /// (rotation-std::vector).
   ///
   /// To be specific, this function computes ``vee(logmat(.))`` with
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
@@ -564,7 +564,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
 
   /// Group exponential
   ///
-  /// This functions takes in an element of tangent space (= rotation vector
+  /// This functions takes in an element of tangent space (= rotation std::vector
   /// ``omega``) and returns the corresponding element of the group SO(3).
   ///
   /// To be more specific, this function computes ``expmat(hat(omega))``
@@ -656,7 +656,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 3-vector representation ``omega`` (= rotation vector) and
+  /// It takes in the 3-std::vector representation ``omega`` (= rotation std::vector) and
   /// returns the corresponding matrix representation of Lie algebra element.
   ///
   /// Formally, the hat()-operator of SO(3) is defined as
@@ -741,7 +741,7 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 3x3-matrix representation ``Omega`` and maps it to the
-  /// corresponding vector representation of Lie algebra.
+  /// corresponding std::vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///

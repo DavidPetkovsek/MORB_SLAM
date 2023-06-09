@@ -74,7 +74,7 @@ namespace g2o {
        * computes the block diagonal elements of the pattern specified in the input
        * and stores them in given SparseBlockMatrix
        */
-      virtual bool computeMarginals(SparseBlockMatrix<MatrixXd>& spinv, const std::vector<std::pair<int, int> >& blockIndices) = 0;
+      virtual bool computeMarginals(SparseBlockMatrix<Eigen::MatrixXd>& spinv, const std::vector<std::pair<int, int> >& blockIndices) = 0;
 
       /**
        * update the system while performing Levenberg, i.e., modifying the diagonal
@@ -91,14 +91,14 @@ namespace g2o {
        */
       virtual void restoreDiagonal() = 0;
 
-      //! return x, the solution vector
+      //! return x, the solution std::vector
       double* x() { return _x;}
       const double* x() const { return _x;}
       //! return b, the right hand side of the system
       double* b() { return _b;}
       const double* b() const { return _b;}
 
-      //! return the size of the solution vector (x) and b
+      //! return the size of the solution std::vector (x) and b
       size_t vectorSize() const { return _xSize;}
 
       //! the optimizer (graph) on which the solver works

@@ -103,7 +103,7 @@ void MarginalCovarianceCholesky::computeCovariance(double** covBlocks, const std
 {
   _map.clear();
   int base = 0;
-  vector<MatrixElem> elemsToCompute;
+  std::vector<MatrixElem> elemsToCompute;
   for (size_t i = 0; i < blockIndices.size(); ++i) {
     int nbase = blockIndices[i];
     int vdim = nbase - base;
@@ -151,15 +151,15 @@ void MarginalCovarianceCholesky::computeCovariance(double** covBlocks, const std
 }
 
 
-void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<MatrixXd>& spinv, const std::vector<int>& rowBlockIndices, const std::vector< std::pair<int, int> >& blockIndices)
+void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<Eigen::MatrixXd>& spinv, const std::vector<int>& rowBlockIndices, const std::vector< std::pair<int, int> >& blockIndices)
 {
   // allocate the sparse
-  spinv = SparseBlockMatrix<MatrixXd>(&rowBlockIndices[0], 
+  spinv = SparseBlockMatrix<Eigen::MatrixXd>(&rowBlockIndices[0], 
               &rowBlockIndices[0], 
               rowBlockIndices.size(),
               rowBlockIndices.size(), true);
   _map.clear();
-  vector<MatrixElem> elemsToCompute;
+  std::vector<MatrixElem> elemsToCompute;
   for (size_t i = 0; i < blockIndices.size(); ++i) {
     int blockRow=blockIndices[i].first;    
     int blockCol=blockIndices[i].second;
@@ -171,7 +171,7 @@ void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<MatrixXd>& 
     int rowBase=spinv.rowBaseOfBlock(blockRow);
     int colBase=spinv.colBaseOfBlock(blockCol);
     
-    MatrixXd *block=spinv.block(blockRow, blockCol, true);
+    Eigen::MatrixXd *block=spinv.block(blockRow, blockCol, true);
     assert(block);
     for (int iRow=0; iRow<block->rows(); ++iRow)
       for (int iCol=0; iCol<block->cols(); ++iCol){
@@ -201,7 +201,7 @@ void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<MatrixXd>& 
     int rowBase=spinv.rowBaseOfBlock(blockRow);
     int colBase=spinv.colBaseOfBlock(blockCol);
     
-    MatrixXd *block=spinv.block(blockRow, blockCol);
+    Eigen::MatrixXd *block=spinv.block(blockRow, blockCol);
     assert(block);
     for (int iRow=0; iRow<block->rows(); ++iRow)
       for (int iCol=0; iCol<block->cols(); ++iCol){

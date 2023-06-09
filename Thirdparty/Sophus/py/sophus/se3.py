@@ -10,7 +10,7 @@ class Se3:
 
     def __init__(self, so3, t):
         """ internally represented by a unit quaternion q and a translation
-            3-vector """
+            3-std::vector """
         assert isinstance(so3, sophus.So3)
         assert isinstance(t, sympy.Matrix)
         assert t.shape == (3, 1), t.shape
@@ -66,7 +66,7 @@ class Se3:
     @staticmethod
     def vee(Omega):
         """ R^4x4 => R^6 """
-        """ returns 6-vector representation of Lie algebra """
+        """ returns 6-std::vector representation of Lie algebra """
         """ This is the inverse of the hat-operator """
         
         head = sophus.Vector3(Omega[0,3], Omega[1,3], Omega[2,3])

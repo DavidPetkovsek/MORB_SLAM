@@ -100,7 +100,7 @@ class Pinhole : public GeometricCamera {
   bool IsEqual(const std::shared_ptr<GeometricCamera> &pCam);
 
  private:
-  // Parameters vector corresponds to
+  // Parameters std::vector corresponds to
   //      [fx, fy, cx, cy]
   TwoViewReconstruction* tvr;
 };

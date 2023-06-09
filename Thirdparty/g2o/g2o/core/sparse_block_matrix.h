@@ -41,7 +41,7 @@
 #include "g2o/config.h"
 
 namespace g2o {
-  using namespace Eigen;
+
 /**
  * \brief Sparse matrix which uses blocks
  *
@@ -58,7 +58,7 @@ namespace g2o {
  * block sizes than you have to use a dynamic-block matrix (default
  * template argument).  
  */
-template <class MatrixType = MatrixXd >
+template <class MatrixType = Eigen::MatrixXd >
 class SparseBlockMatrix {
 
   public:
@@ -211,8 +211,8 @@ class SparseBlockMatrix {
     void takePatternFromHash(SparseBlockMatrixHashMap<MatrixType>& hashMatrix);
 
   protected:
-    std::vector<int> _rowBlockIndices; ///< vector of the indices of the blocks along the rows.
-    std::vector<int> _colBlockIndices; ///< vector of the indices of the blocks along the cols
+    std::vector<int> _rowBlockIndices; ///< std::vector of the indices of the blocks along the rows.
+    std::vector<int> _colBlockIndices; ///< std::vector of the indices of the blocks along the cols
     //! array of maps of blocks. The index of the array represent a block column of the matrix
     //! and the block column is stored as a map row_block -> matrix_block_ptr.
     std::vector <IntBlockMap> _blockCols;
@@ -222,7 +222,7 @@ class SparseBlockMatrix {
 template < class  MatrixType >
 std::ostream& operator << (std::ostream&, const SparseBlockMatrix<MatrixType>& m);
 
-  typedef SparseBlockMatrix<MatrixXd> SparseBlockMatrixXd;   
+  typedef SparseBlockMatrix<Eigen::MatrixXd> SparseBlockMatrixXd;   
 
 } //end namespace
 

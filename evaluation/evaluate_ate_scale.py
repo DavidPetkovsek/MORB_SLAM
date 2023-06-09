@@ -55,7 +55,7 @@ def align(model,data):
     
     Output:
     rot -- rotation matrix (3x3)
-    trans -- translation vector (3x1)
+    trans -- translation std::vector (3x1)
     trans_error -- translational error per point (1xn)
     """
 

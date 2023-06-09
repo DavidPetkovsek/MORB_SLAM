@@ -2,7 +2,7 @@
  * File: BowVector.cpp
  * Date: March 2011
  * Author: Dorian Galvez-Lopez
- * Description: bag of words vector
+ * Description: bag of words std::vector
  * License: see the LICENSE.txt file
  *
  */

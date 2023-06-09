@@ -62,7 +62,7 @@ class MLPnPsolver {
  public:
   
 
-  MLPnPsolver(const Frame& F, const vector<MapPoint*>& vpMapPointMatches);
+  MLPnPsolver(const Frame& F, const std::vector<MapPoint*>& vpMapPointMatches);
 
   ~MLPnPsolver();
 
@@ -72,12 +72,12 @@ class MLPnPsolver {
 
   // Find metod is necessary?
 
-  bool iterate(int nIterations, bool& bNoMore, vector<bool>& vbInliers,
+  bool iterate(int nIterations, bool& bNoMore, std::vector<bool>& vbInliers,
                int& nInliers, Eigen::Matrix4f& Tout);
 
   // Type definitions needed by the original code
 
-  /** A 3-vector of unit length used to describe landmark observations/bearings
+  /** A 3-std::vector of unit length used to describe landmark observations/bearings
    *  in camera frames (always expressed in camera frames)
    */
   typedef Eigen::Vector3d bearingVector_t;
@@ -87,30 +87,30 @@ class MLPnPsolver {
                       Eigen::aligned_allocator<bearingVector_t> >
       bearingVectors_t;
 
-  /** A 2-matrix containing the 2D covariance information of a bearing vector
+  /** A 2-matrix containing the 2D covariance information of a bearing std::vector
    */
   typedef Eigen::Matrix2d cov2_mat_t;
 
-  /** A 3-matrix containing the 3D covariance information of a bearing vector */
+  /** A 3-matrix containing the 3D covariance information of a bearing std::vector */
   typedef Eigen::Matrix3d cov3_mat_t;
 
   /** An array of 3D covariance matrices */
   typedef std::vector<cov3_mat_t, Eigen::aligned_allocator<cov3_mat_t> >
       cov3_mats_t;
 
-  /** A 3-vector describing a point in 3D-space */
+  /** A 3-std::vector describing a point in 3D-space */
   typedef Eigen::Vector3d point_t;
 
   /** An array of 3D-points */
   typedef std::vector<point_t, Eigen::aligned_allocator<point_t> > points_t;
 
-  /** A homogeneous 3-vector describing a point in 3D-space */
+  /** A homogeneous 3-std::vector describing a point in 3D-space */
   typedef Eigen::Vector4d point4_t;
 
   /** An array of homogeneous 3D-points */
   typedef std::vector<point4_t, Eigen::aligned_allocator<point4_t> > points4_t;
 
-  /** A 3-vector containing the rodrigues parameters of a rotation matrix */
+  /** A 3-std::vector containing the rodrigues parameters of a rotation matrix */
   typedef Eigen::Vector3d rodrigues_t;
 
   /** A rotation matrix */
@@ -123,7 +123,7 @@ class MLPnPsolver {
    */
   typedef Eigen::Matrix<double, 3, 4> transformation_t;
 
-  /** A 3-vector describing a translation/camera position */
+  /** A 3-std::vector describing a translation/camera position */
   typedef Eigen::Vector3d translation_t;
 
  private:
@@ -175,45 +175,45 @@ class MLPnPsolver {
   //----------------------------------------------------
   // Fields of the solver
   //----------------------------------------------------
-  vector<MapPoint*> mvpMapPointMatches;
+  std::vector<MapPoint*> mvpMapPointMatches;
 
   // 2D Points
-  vector<cv::Point2f> mvP2D;
+  std::vector<cv::Point2f> mvP2D;
   // Substitued by bearing vectors
   bearingVectors_t mvBearingVecs;
 
-  vector<float> mvSigma2;
+  std::vector<float> mvSigma2;
 
   // 3D Points
-  // vector<cv::Point3f> mvP3Dw;
+  // std::vector<cv::Point3f> mvP3Dw;
   points_t mvP3Dw;
 
   // Index in Frame
-  vector<size_t> mvKeyPointIndices;
+  std::vector<size_t> mvKeyPointIndices;
 
   // Current Estimation
   double mRi[3][3];
   double mti[3];
   Eigen::Matrix4f mTcwi;
-  vector<bool> mvbInliersi;
+  std::vector<bool> mvbInliersi;
   int mnInliersi;
 
   // Current Ransac State
   int mnIterations;
-  vector<bool> mvbBestInliers;
+  std::vector<bool> mvbBestInliers;
   int mnBestInliers;
   Eigen::Matrix4f mBestTcw;
 
   // Refined
   Eigen::Matrix4f mRefinedTcw;
-  vector<bool> mvbRefinedInliers;
+  std::vector<bool> mvbRefinedInliers;
   int mnRefinedInliers;
 
   // Number of Correspondences
   int N;
 
   // Indices for random selection [0 .. N-1]
-  vector<size_t> mvAllIndices;
+  std::vector<size_t> mvAllIndices;
 
   // RANSAC probability
   double mRansacProb;
@@ -235,7 +235,7 @@ class MLPnPsolver {
 
   // Max square error associated with scale level. Max error =
   // th*th*sigma(level)*sigma(level)
-  vector<float> mvMaxError;
+  std::vector<float> mvMaxError;
 
   std::shared_ptr<GeometricCamera> mpCamera;
 };

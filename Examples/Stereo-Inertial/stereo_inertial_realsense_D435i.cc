@@ -33,7 +33,6 @@
 
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-#include <MORB_SLAM/SLAIV.hpp>
 
 using namespace std;
 

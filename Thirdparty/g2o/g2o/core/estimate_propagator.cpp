@@ -68,7 +68,7 @@ namespace g2o {
     for (OptimizableGraph::VertexIDMap::const_iterator it=_graph->vertices().begin(); it!=_graph->vertices().end(); ++it){
       AdjacencyMapEntry entry;
       entry._child = static_cast<OptimizableGraph::Vertex*>(it->second);
-      _adjacencyMap.insert(make_pair(entry.child(), entry));
+      _adjacencyMap.insert(std::make_pair(entry.child(), entry));
     }
   }
 
@@ -117,7 +117,7 @@ namespace g2o {
       AdjacencyMapEntry* entry = frontier.pop();
       OptimizableGraph::Vertex* u = entry->child();
       double uDistance = entry->distance();
-      //cerr << "uDistance " << uDistance << endl;
+      //std::cerr << "uDistance " << uDistance << std::endl;
 
       // initialize the vertex
       if (entry->_frontierLevel > 0) {
@@ -152,14 +152,14 @@ namespace g2o {
           double edgeDistance = cost(edge, initializedVertices, z);
           if (edgeDistance > 0. && edgeDistance != std::numeric_limits<double>::max() && edgeDistance < maxEdgeCost) {
             double zDistance = uDistance + edgeDistance;
-            //cerr << z->id() << " " << zDistance << endl;
+            //std::cerr << z->id() << " " << zDistance << std::endl;
 
             AdjacencyMap::iterator ot = _adjacencyMap.find(z);
             assert(ot!=_adjacencyMap.end());
 
             if (zDistance < ot->second.distance() && zDistance < maxDistance){
               //if (ot->second.inQueue)
-                //cerr << "Updating" << endl;
+                //std::cerr << "Updating" << std::endl;
               ot->second._distance = zDistance;
               ot->second._parent = initializedVertices;
               ot->second._edge = edge;
@@ -177,21 +177,21 @@ namespace g2o {
 
     // writing debug information like cost for reaching each vertex and the parent used to initialize
 #ifdef DEBUG_ESTIMATE_PROPAGATOR
-    cerr << "Writing cost.dat" << endl;
+    std::cerr << "Writing cost.dat" << std::endl;
     ofstream costStream("cost.dat");
     for (AdjacencyMap::const_iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
       HyperGraph::Vertex* u = it->second.child();
-      costStream << "vertex " << u->id() << "  cost " << it->second._distance << endl;
+      costStream << "vertex " << u->id() << "  cost " << it->second._distance << std::endl;
     }
-    cerr << "Writing init.dat" << endl;
+    std::cerr << "Writing init.dat" << std::endl;
     ofstream initStream("init.dat");
-    vector<AdjacencyMapEntry*> frontierLevels;
+    std::vector<AdjacencyMapEntry*> frontierLevels;
     for (AdjacencyMap::iterator it = _adjacencyMap.begin(); it != _adjacencyMap.end(); ++it) {
       if (it->second._frontierLevel > 0)
         frontierLevels.push_back(&it->second);
     }
     sort(frontierLevels.begin(), frontierLevels.end(), FrontierLevelCmp());
-    for (vector<AdjacencyMapEntry*>::const_iterator it = frontierLevels.begin(); it != frontierLevels.end(); ++it) {
+    for (std::vector<AdjacencyMapEntry*>::const_iterator it = frontierLevels.begin(); it != frontierLevels.end(); ++it) {
       AdjacencyMapEntry* entry       = *it;
       OptimizableGraph::Vertex* to   = entry->child();
 
@@ -199,7 +199,7 @@ namespace g2o {
       for (OptimizableGraph::VertexSet::iterator pit = entry->parent().begin(); pit != entry->parent().end(); ++pit) {
         initStream << " " << (*pit)->id();
       }
-      initStream << " ) -> " << to->id() << endl;
+      initStream << " ) -> " << to->id() << std::endl;
     }
 #endif
 
