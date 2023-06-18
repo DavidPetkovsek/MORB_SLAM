@@ -859,7 +859,7 @@ void Frame::UndistortKeyPoints() {
                       mDistCoef, cv::Mat(), mK);
   mat = mat.reshape(1);
 
-  // Fill undistorted keypoint std::vector
+  // Fill undistorted keypoint vector
   mvKeysUn.resize(N);
   for (int i = 0; i < N; i++) {
     cv::KeyPoint kp = mvKeys[i];

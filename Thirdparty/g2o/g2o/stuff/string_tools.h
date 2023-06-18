@@ -44,32 +44,32 @@ namespace g2o {
  */
 
 /**
- * remove whitespaces from the start/end of a std::string
+ * remove whitespaces from the start/end of a string
  */
  std::string trim(const std::string& s);
 
 /**
- * remove whitespaces from the left side of the std::string
+ * remove whitespaces from the left side of the string
  */
  std::string trimLeft(const std::string& s);
 
 /**
- * remove whitespaced from the right side of the std::string
+ * remove whitespaced from the right side of the string
  */
  std::string trimRight(const std::string& s);
 
 /**
- * convert the std::string to lower case
+ * convert the string to lower case
  */
  std::string strToLower(const std::string& s);
 
 /**
- * convert a std::string to upper case
+ * convert a string to upper case
  */
  std::string strToUpper(const std::string& s);
 
 /**
- * read integer values (seperated by spaces) from a std::string and store
+ * read integer values (seperated by spaces) from a string and store
  * them in the given OutputIterator.
  */
 template <typename OutputIterator>
@@ -88,7 +88,7 @@ OutputIterator readInts(const char* str, OutputIterator out)
 }
 
 /**
- * read float values (seperated by spaces) from a std::string and store
+ * read float values (seperated by spaces) from a string and store
  * them in the given OutputIterator.
  */
 template <typename OutputIterator>
@@ -107,18 +107,18 @@ OutputIterator readFloats(const char* str, OutputIterator out)
 }
 
 /**
- * format a std::string and return a std::string.
+ * format a string and return a string.
  * Format is just like printf, see man 3 printf
  */
  std::string formatString(const char* fmt, ...) G2O_ATTRIBUTE_FORMAT12;
 
 /**
- * replacement function for sprintf which fills a std::string instead of a char*
+ * replacement function for sprintf which fills a string instead of a char*
  */
  int strPrintf(std::string& str, const char* fmt, ...) G2O_ATTRIBUTE_FORMAT23;
 
 /**
- * convert a std::string into an other type.
+ * convert a string into an other type.
  */
 template<typename T>
 bool convertString(const std::string& s, T& x, bool failIfLeftoverChars = true)
@@ -131,7 +131,7 @@ bool convertString(const std::string& s, T& x, bool failIfLeftoverChars = true)
 }
 
 /**
- * convert a std::string into an other type.
+ * convert a string into an other type.
  * Return the converted value. Throw error if parsing is wrong.
  */
 template<typename T>
@@ -159,7 +159,7 @@ T stringToType(const std::string& s, bool failIfLeftoverChars = true)
  std::string strExpandFilename(const std::string& filename);
 
 /**
- * split a std::string into token based on the characters given in delim
+ * split a string into token based on the characters given in delim
  */
  std::vector<std::string> strSplit(const std::string& s, const std::string& delim);
 

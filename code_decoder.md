@@ -6,7 +6,7 @@
 
 Math-y stuff
 * T : transformation matrix
-* t : translation std::vector
+* t : translation vector
 * R : rotation matrix  
 
 Transformation between frames

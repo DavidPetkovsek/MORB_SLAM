@@ -57,7 +57,7 @@ class Atlas {
     ar.template register_type<KannalaBrandt8>();
 
     // Save/load a set structure, the set structure is broken in libboost 1.58
-    // for ubuntu 16.04, a std::vector is serializated
+    // for ubuntu 16.04, a vector is serializated
     // ar & mspMaps;
     ar& mvpBackupMaps;
     ar& mvpCameras;
@@ -141,7 +141,7 @@ class Atlas {
  protected:
   std::set<std::shared_ptr<Map>> mspMaps;
   std::set<std::shared_ptr<Map>> mspBadMaps;
-  // Its necessary change the container from set to std::vector because libboost 1.58
+  // Its necessary change the container from set to vector because libboost 1.58
   // and Ubuntu 16.04 have an error with this cointainer
   std::vector<std::shared_ptr<Map>> mvpBackupMaps;
 
@@ -155,8 +155,8 @@ class Atlas {
   KeyFrameDatabase* mpKeyFrameDB;
   ORBVocabulary* mpORBVocabulary;
 
-  // std::mutex
-  std::mutex mmutexAtlas;
+  // mutex
+  std::mutex mMutexAtlas;
 
 };  // class Atlas
 

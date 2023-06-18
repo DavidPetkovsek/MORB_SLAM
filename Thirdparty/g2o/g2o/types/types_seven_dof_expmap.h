@@ -41,7 +41,7 @@ namespace g2o {
 
   /**
  * \brief Sim3 Vertex, (x,y,z,qw,qx,qy,qz)
- * the parameterization for the increments constructed is a 7d std::vector
+ * the parameterization for the increments constructed is a 7d vector
  * (x,y,z,qx,qy,qz) (note that we leave out the w part of the quaternion.
  */
   class VertexSim3Expmap : public BaseVertex<7, Sim3>

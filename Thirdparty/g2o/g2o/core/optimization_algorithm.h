@@ -93,7 +93,7 @@ namespace g2o {
       const PropertyMap& properties() const { return _properties;}
 
       /**
-       * update the properties from a std::string, see PropertyMap::updateMapFromString()
+       * update the properties from a string, see PropertyMap::updateMapFromString()
        */
       bool updatePropertiesFromString(const std::string& propString);
       

@@ -53,7 +53,7 @@ class Map
         ar & mnMaxKFid;
         ar & mnBigChangeIdx;
 
-        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a std::vector is serializated
+        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
         //ar & mspKeyFrames;
         //ar & mspMapPoints;
         ar & mvpBackupKeyFrames;
@@ -165,7 +165,7 @@ protected:
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
 
-    // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a std::vector is serializated
+    // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
     std::vector<MapPoint*> mvpBackupMapPoints;
     std::vector<KeyFrame*> mvpBackupKeyFrames;
 
@@ -185,7 +185,7 @@ protected:
     long unsigned int mnInitKFid;
     long unsigned int mnMaxKFid;
 
-    // Index related to a big change in the std::map (loop closure, global BA)
+    // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
 
 
@@ -197,7 +197,7 @@ protected:
     bool mbIMU_BA1;
     bool mbIMU_BA2;
 
-    // std::mutex
+    // Mutex
     std::mutex mMutexMap;
 
 };

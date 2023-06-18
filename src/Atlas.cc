@@ -39,7 +39,7 @@ Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid) {
 Atlas::~Atlas() {}
 
 void Atlas::CreateNewMap() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   std::cout << "Creation of new std::map with id: " << Map::nNextId << std::endl;
   if (mpCurrentMap) {
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
@@ -57,7 +57,7 @@ void Atlas::CreateNewMap() {
 }
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   std::cout << "Change to std::map with id: " << pMap->GetId() << std::endl;
   if (mpCurrentMap) {
     mpCurrentMap->SetStoredMap();
@@ -68,7 +68,7 @@ void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
 }
 
 unsigned long int Atlas::GetLastInitKFid() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mnLastInitKFidMap;
 }
 
@@ -116,47 +116,47 @@ std::shared_ptr<GeometricCamera> Atlas::AddCamera(const std::shared_ptr<Geometri
 std::vector<std::shared_ptr<GeometricCamera>> Atlas::GetAllCameras() { return mvpCameras; }
 
 void Atlas::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   mpCurrentMap->SetReferenceMapPoints(vpMPs);
 }
 
 void Atlas::InformNewBigChange() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   mpCurrentMap->InformNewBigChange();
 }
 
 int Atlas::GetLastBigChangeIdx() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetLastBigChangeIdx();
 }
 
 long unsigned int Atlas::MapPointsInMap() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->MapPointsInMap();
 }
 
 long unsigned Atlas::KeyFramesInMap() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->KeyFramesInMap();
 }
 
 std::vector<KeyFrame*> Atlas::GetAllKeyFrames() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllKeyFrames();
 }
 
 std::vector<MapPoint*> Atlas::GetAllMapPoints() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllMapPoints();
 }
 
 std::vector<MapPoint*> Atlas::GetReferenceMapPoints() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetReferenceMapPoints();
 }
 
 std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   struct compFunctor {
     inline bool operator()(std::shared_ptr<Map> elem1, std::shared_ptr<Map> elem2) {
       return elem1->GetId() < elem2->GetId();
@@ -168,17 +168,17 @@ std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
 }
 
 int Atlas::CountMaps() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mspMaps.size();
 }
 
 void Atlas::clearMap() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   mpCurrentMap->clear();
 }
 
 void Atlas::clearAtlas() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   /*for(std::set<Map*>::iterator it=mspMaps.begin(), send=mspMaps.end();
   it!=send; it++)
   {
@@ -191,7 +191,7 @@ void Atlas::clearAtlas() {
 }
 
 std::shared_ptr<Map> Atlas::GetCurrentMap(System* sys) {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   if (!mpCurrentMap) CreateNewMap();
   while (mpCurrentMap->IsBad()) {
     if (sys != nullptr) return nullptr;
@@ -217,22 +217,22 @@ void Atlas::RemoveBadMaps() {
 }
 
 bool Atlas::isInertial() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->IsInertial();
 }
 
 void Atlas::SetInertialSensor() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   mpCurrentMap->SetInertialSensor();
 }
 
 void Atlas::SetImuInitialized() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   mpCurrentMap->SetImuInitialized();
 }
 
 bool Atlas::isImuInitialized() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   return mpCurrentMap->isImuInitialized();
 }
 
@@ -256,7 +256,7 @@ void Atlas::PreSave() {
     if (!pMi || pMi->IsBad()) continue;
 
     if (pMi->GetAllKeyFrames().size() == 0) {
-      // Empty std::map, erase before of save it.
+      // Empty map, erase before of save it.
       SetMapBad(pMi);
       continue;
     }
@@ -295,7 +295,7 @@ void Atlas::SetORBVocabulary(ORBVocabulary* pORBVoc) {
 ORBVocabulary* Atlas::GetORBVocabulary() { return mpORBVocabulary; }
 
 long unsigned int Atlas::GetNumLivedKF() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   long unsigned int num = 0;
   for (std::shared_ptr<Map> pMap_i : mspMaps) {
     num += pMap_i->GetAllKeyFrames().size();
@@ -305,7 +305,7 @@ long unsigned int Atlas::GetNumLivedKF() {
 }
 
 long unsigned int Atlas::GetNumLivedMP() {
-  std::unique_lock<std::mutex> lock(mmutexAtlas);
+  std::unique_lock<std::mutex> lock(mMutexAtlas);
   long unsigned int num = 0;
   for (std::shared_ptr<Map> pMap_i : mspMaps) {
     num += pMap_i->GetAllMapPoints().size();

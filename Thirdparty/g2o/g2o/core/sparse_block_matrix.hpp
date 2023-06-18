@@ -248,7 +248,7 @@ namespace g2o {
       for (typename SparseBlockMatrix<MatrixType>::IntBlockMap::const_iterator it=_blockCols[i].begin(); it!=_blockCols[i].end(); ++it){
         const typename SparseBlockMatrix<MatrixType>::SparseMatrixBlock* a=it->second;
         int destOffset = it->first ? _rowBlockIndices[it->first - 1] : 0;
-        // destVec += *a * srcVec (according to the sub-std::vector parts)
+        // destVec += *a * srcVec (according to the sub-vector parts)
         internal::axpy(*a, srcVec, srcOffset, destVec, destOffset);
       }
     }
@@ -273,7 +273,7 @@ namespace g2o {
         int destOffset = rowBaseOfBlock(it->first);
         if (destOffset > srcOffset) // only upper triangle
           break;
-        // destVec += *a * srcVec (according to the sub-std::vector parts)
+        // destVec += *a * srcVec (according to the sub-vector parts)
         internal::axpy(*a, srcVec, srcOffset, destVec, destOffset);
         if (destOffset < srcOffset)
           internal::atxpy(*a, srcVec, destOffset, destVec, srcOffset);
@@ -304,7 +304,7 @@ namespace g2o {
           ++it){
         const typename SparseBlockMatrix<MatrixType>::SparseMatrixBlock* a=it->second;
         int srcOffset = rowBaseOfBlock(it->first);
-        // destVec += *a.transpose() * srcVec (according to the sub-std::vector parts)
+        // destVec += *a.transpose() * srcVec (according to the sub-vector parts)
         internal::atxpy(*a, srcVec, srcOffset, destVec, destOffset);
       }
     }
@@ -631,7 +631,7 @@ namespace g2o {
     typedef std::pair<int, MatrixType*> SparseColumnPair;
     typedef typename SparseBlockMatrixHashMap<MatrixType>::SparseColumn HashSparseColumn;
     for (size_t i = 0; i < hashMatrix.blockCols().size(); ++i) {
-      // prepare a temporary std::vector for sorting
+      // prepare a temporary vector for sorting
       HashSparseColumn& column = hashMatrix.blockCols()[i];
       if (column.size() == 0)
         continue;
@@ -643,7 +643,7 @@ namespace g2o {
       // try to free some memory early
       HashSparseColumn aux;
       swap(aux, column);
-      // now insert sorted std::vector to the std::map structure
+      // now insert sorted vector to the std::map structure
       IntBlockMap& destColumnMap = blockCols()[i];
       destColumnMap.insert(sparseRowSorted[0]);
       for (size_t j = 1; j < sparseRowSorted.size(); ++j) {

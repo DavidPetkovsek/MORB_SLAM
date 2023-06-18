@@ -260,7 +260,7 @@ namespace g2o {
 
     /**
      * update the estimate of the active vertices 
-     * @param update: the double std::vector containing the stacked
+     * @param update: the double vector containing the stacked
      * elements of the increments on the vertices.
      */
     void update(const double* update);

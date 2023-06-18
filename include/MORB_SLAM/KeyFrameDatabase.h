@@ -92,7 +92,7 @@ class KeyFrameDatabase {
   // For save relation without pointer, this is necessary for save/load function
   std::vector<std::list<long unsigned int> > mvBackupInvertedFileId;
 
-  // std::mutex
+  // Mutex
   std::mutex mMutex;
 };
 

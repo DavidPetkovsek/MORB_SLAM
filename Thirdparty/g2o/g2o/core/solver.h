@@ -91,14 +91,14 @@ namespace g2o {
        */
       virtual void restoreDiagonal() = 0;
 
-      //! return x, the solution std::vector
+      //! return x, the solution vector
       double* x() { return _x;}
       const double* x() const { return _x;}
       //! return b, the right hand side of the system
       double* b() { return _b;}
       const double* b() const { return _b;}
 
-      //! return the size of the solution std::vector (x) and b
+      //! return the size of the solution vector (x) and b
       size_t vectorSize() const { return _xSize;}
 
       //! the optimizer (graph) on which the solver works

@@ -245,7 +245,7 @@ protected:
 
      std::shared_ptr<Map> mpMap;
 
-     // std::mutex
+     // Mutex
      std::mutex mMutexPos;
      std::mutex mMutexFeatures;
      std::mutex mMutexMap;

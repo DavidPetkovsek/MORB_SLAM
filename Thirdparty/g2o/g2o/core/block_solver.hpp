@@ -405,7 +405,7 @@ bool BlockSolver<Traits>::solve(){
       assert(_HplCCS->rowBaseOfBlock(i1) < _sizePoses && "Index out of bounds");
       typename PoseVectorType::MapType Bb(&_coefficients[_HplCCS->rowBaseOfBlock(i1)], Bi->rows());
 #    ifdef G2O_OPENMP
-      ScopedOpenMPMutex std::mutexLock(&_coefficientsMutex[i1]);
+      ScopedOpenMPMutex mutexLock(&_coefficientsMutex[i1]);
 #    endif
       Bb.noalias() += (*Bi)*db;
 

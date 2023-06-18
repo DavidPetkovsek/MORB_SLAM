@@ -309,7 +309,7 @@ class KeyFrame {
   bool bImu;
 
   // The following variables are accesed from only 1 thread or never change (no
-  // std::mutex needed).
+  // mutex needed).
  public:
   static long unsigned int nNextId;
   long unsigned int mnId;
@@ -426,7 +426,7 @@ class KeyFrame {
   // bool mbHasHessian;
   // cv::Mat mHessianPose;
 
-  // The following variables need to be accessed trough a std::mutex to be thread
+  // The following variables need to be accessed trough a mutex to be thread
   // safe.
  protected:
   // sophus poses
@@ -498,7 +498,7 @@ class KeyFrame {
   // Calibration
   Eigen::Matrix3f mK_;
 
-  // std::mutex
+  // Mutex
   std::mutex mMutexPose;  // for pose, velocity and biases
   std::mutex mMutexConnections;
   std::mutex mMutexFeatures;

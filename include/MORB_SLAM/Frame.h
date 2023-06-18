@@ -176,7 +176,7 @@ private:
     bool mbHasPose;
 
     //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
-    //tcw_ not necessary as Sophus has a method for extracting the translation std::vector: Tcw_.translation()
+    //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()
     //Twc_ not necessary as Sophus has a method for easily computing the inverse pose: Tcw_.inverse()
 
     Sophus::SE3<float> mTlr, mTrl;
