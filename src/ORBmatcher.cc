@@ -28,7 +28,7 @@
 
 #include "DBoW2/FeatureVector.h"
 
-using namespace std;
+
 
 namespace MORB_SLAM {
 
@@ -409,7 +409,7 @@ int ORBmatcher::SearchByProjection(KeyFrame *pKF, Sophus::Sim3f &Scw,
   Eigen::Vector3f Ow = Tcw.inverse().translation();
 
   // Set of MapPoints already found in the KeyFrame
-  set<MapPoint *> spAlreadyFound(vpMatched.begin(), vpMatched.end());
+  std::set<MapPoint *> spAlreadyFound(vpMatched.begin(), vpMatched.end());
   spAlreadyFound.erase(nullptr);
 
   int nmatches = 0;
@@ -510,7 +510,7 @@ int ORBmatcher::SearchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw,
   Eigen::Vector3f Ow = Tcw.inverse().translation();
 
   // Set of MapPoints already found in the KeyFrame
-  set<MapPoint *> spAlreadyFound(vpMatched.begin(), vpMatched.end());
+  std::set<MapPoint *> spAlreadyFound(vpMatched.begin(), vpMatched.end());
   spAlreadyFound.erase(nullptr);
 
   int nmatches = 0;
@@ -1229,7 +1229,7 @@ int ORBmatcher::Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw,
   Eigen::Vector3f Ow = Tcw.inverse().translation();
 
   // Set of MapPoints already found in the KeyFrame
-  const set<MapPoint *> spAlreadyFound = pKF->GetMapPoints();
+  const std::set<MapPoint *> spAlreadyFound = pKF->GetMapPoints();
 
   int nFused = 0;
 
@@ -1348,7 +1348,7 @@ int ORBmatcher::SearchBySim3(KeyFrame *pKF1, KeyFrame *pKF2,
     MapPoint *pMP = vpMatches12[i];
     if (pMP) {
       vbAlreadyMatched1[i] = true;
-      int idx2 = get<0>(pMP->GetIndexInKeyFrame(pKF2));
+      int idx2 = std::get<0>(pMP->GetIndexInKeyFrame(pKF2));
       if (idx2 >= 0 && idx2 < N2) vbAlreadyMatched2[idx2] = true;
     }
   }
@@ -1733,7 +1733,7 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame,
 }
 
 int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF,
-                                   const set<MapPoint *> &sAlreadyFound,
+                                   const std::set<MapPoint *> &sAlreadyFound,
                                    const float th, const int ORBdist) {
   int nmatches = 0;
 

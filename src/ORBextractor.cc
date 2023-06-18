@@ -64,7 +64,7 @@
 #include <vector>
 
 using namespace cv;
-using namespace std;
+
 
 namespace MORB_SLAM {
 

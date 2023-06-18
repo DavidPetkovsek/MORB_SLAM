@@ -37,7 +37,7 @@
 
 namespace g2o {
 
-  using namespace std;
+  
 
   ParameterContainer::ParameterContainer(bool isMainStorage_) :
     _isMainStorage(isMainStorage_)

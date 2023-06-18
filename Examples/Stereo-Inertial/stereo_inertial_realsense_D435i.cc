@@ -34,12 +34,12 @@
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
 
-using namespace std;
+
 
 bool b_continue_session;
 
 void exit_loop_handler(int s){
-    cout << "Finishing session" << endl;
+    std::cout << "Finishing session" << std::endl;
     b_continue_session = false;
 
 }
@@ -119,16 +119,16 @@ Sophus::SE3f sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
 int main(int argc, char **argv) {   
 
     if (argc < 3 || argc > 4) {
-        cerr << endl
+        std::cerr << std::endl
              << "Usage: ./stereo_inertial_realsense_D435i path_to_vocabulary path_to_settings (trajectory_file_name)"
-             << endl;
+             << std::endl;
         return 1;
     }
 
-    string file_name;
+    std::string file_name;
 
     if (argc == 4) {
-        file_name = string(argv[argc - 1]);
+        file_name = std::string(argv[argc - 1]);
     }
 
     struct sigaction sigIntHandler;
@@ -198,17 +198,17 @@ int main(int argc, char **argv) {
     std::mutex imu_mutex;
     std::condition_variable cond_image_rec;
 
-    vector<double> v_accel_timestamp;
-    vector<rs2_vector> v_accel_data;
-    vector<double> v_gyro_timestamp;
-    vector<rs2_vector> v_gyro_data;
+    std::vector<double> v_accel_timestamp;
+    std::vector<rs2_vector> v_accel_data;
+    std::vector<double> v_gyro_timestamp;
+    std::vector<rs2_vector> v_gyro_data;
 
     double prev_accel_timestamp = 0;
     rs2_vector prev_accel_data;
     double current_accel_timestamp = 0;
     rs2_vector current_accel_data;
-    vector<double> v_accel_timestamp_sync;
-    vector<rs2_vector> v_accel_data_sync;
+    std::vector<double> v_accel_timestamp_sync;
+    std::vector<rs2_vector> v_accel_data_sync;
 
     cv::Mat imCV, imRightCV;
     int width_img, height_img;
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 
             double new_timestamp_image = fs.get_timestamp()*1e-3;
             if(abs(timestamp_image-new_timestamp_image)<0.001){
-                // cout << "Two frames with the same timeStamp!!!\n";
+                // std::cout << "Two frames with the same timeStamp!!!\n";
                 count_im_buffer--;
                 return;
             }
@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
 
     rs2::pipeline_profile pipe_profile = pipe.start(cfg, imu_callback);
 
-    vector<MORB_SLAM::IMU::Point> vImuMeas; //IMU data point contains acceleration, angular velocity, and timestamp of recorded dat
+    std::vector<MORB_SLAM::IMU::Point> vImuMeas; //IMU data point contains acceleration, angular velocity, and timestamp of recorded dat
     rs2::stream_profile cam_left = pipe_profile.get_stream(RS2_STREAM_INFRARED, 1);
     rs2::stream_profile cam_right = pipe_profile.get_stream(RS2_STREAM_INFRARED, 2);
 
@@ -320,7 +320,7 @@ int main(int argc, char **argv) {
     rs2_intrinsics intrinsics_left = cam_left.as<rs2::video_stream_profile>().get_intrinsics();
     width_img = intrinsics_left.width;
     height_img = intrinsics_left.height;
-    cout << "Left camera: \n";
+    std::cout << "Left camera: \n";
     std::cout << " fx = " << intrinsics_left.fx << std::endl;
     std::cout << " fy = " << intrinsics_left.fy << std::endl;
     std::cout << " cx = " << intrinsics_left.ppx << std::endl;
@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
     rs2_intrinsics intrinsics_right = cam_right.as<rs2::video_stream_profile>().get_intrinsics();
     width_img = intrinsics_right.width;
     height_img = intrinsics_right.height;
-    cout << "Right camera: \n";
+    std::cout << "Right camera: \n";
     std::cout << " fx = " << intrinsics_right.fx << std::endl;
     std::cout << " fy = " << intrinsics_right.fy << std::endl;
     std::cout << " cx = " << intrinsics_right.ppx << std::endl;
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
 
 
             if(count_im_buffer>1)
-                cout << count_im_buffer -1 << " dropped frs\n";
+                std::cout << count_im_buffer -1 << " dropped frs\n";
             count_im_buffer = 0;
 
             while(v_gyro_timestamp.size() > v_accel_timestamp_sync.size())
@@ -464,7 +464,7 @@ int main(int argc, char **argv) {
         // Clear the previous IMU measurements to load the new ones
         vImuMeas.clear();
     }
-    cout << "System shutdown!\n";
+    std::cout << "System shutdown!\n";
 }
 
 rs2_vector interpolateMeasure(const double target_time,

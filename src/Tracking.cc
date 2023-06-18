@@ -36,7 +36,7 @@
 #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"
 
-using namespace std;
+
 
 namespace MORB_SLAM {
 
@@ -1038,9 +1038,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
           rightLappingEnd = rightLappingEnd * mImageScale;
         }
 
-        reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[0] =
+        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[0] =
             leftLappingBegin;
-        reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[1] =
+        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[1] =
             leftLappingEnd;
 
         std::vector<float> vCamCalib2{fx, fy, cx, cy, k1, k2, k3, k4};
@@ -1049,9 +1049,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
 
         mTlr = Converter::toSophus(cvTlr);
 
-        reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[0] =
+        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[0] =
             rightLappingBegin;
-        reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[1] =
+        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[1] =
             rightLappingEnd;
 
         std::cout << "- Camera1 Lapping: " << leftLappingBegin << ", "
@@ -1848,8 +1848,8 @@ void Tracking::Track() {
             // Relocalization
             bOK = Relocalization();
             // std::cout << "mCurrentFrame.mTimeStamp:" <<
-            // to_string(mCurrentFrame.mTimeStamp) << std::endl; std::cout <<
-            // "mTimeStampLost:" << to_string(mTimeStampLost) << std::endl;
+            // std::to_string(mCurrentFrame.mTimeStamp) << std::endl; std::cout <<
+            // "mTimeStampLost:" << std::to_string(mTimeStampLost) << std::endl;
             if (mCurrentFrame.mTimeStamp - mTimeStampLost > 3.0f && !bOK) {
               mState = Tracker::LOST;
               Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -2237,7 +2237,7 @@ void Tracking::StereoInitialization() {
     }
 
     Verbose::PrintMess("New Map created with " +
-                           to_string(mpAtlas->MapPointsInMap()) + " points",
+                           std::to_string(mpAtlas->MapPointsInMap()) + " points",
                        Verbose::VERBOSITY_QUIET);
 
     // std::cout << "Active std::map: " << mpAtlas->GetCurrentMap()->GetId() << std::endl;
@@ -2382,7 +2382,7 @@ void Tracking::CreateInitialMapMonocular() {
 
   // Bundle Adjustment
   Verbose::PrintMess("New Map created with " +
-                         to_string(mpAtlas->MapPointsInMap()) + " points",
+                         std::to_string(mpAtlas->MapPointsInMap()) + " points",
                      Verbose::VERBOSITY_QUIET);
   Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(), 20);
 
@@ -2480,7 +2480,7 @@ void Tracking::CreateMapInAtlas() {
   // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the
   // current id, because it is the new starting point for new map
   Verbose::PrintMess(
-      "First frame id in std::map: " + to_string(mnLastInitFrameId + 1),
+      "First frame id in std::map: " + std::to_string(mnLastInitFrameId + 1),
       Verbose::VERBOSITY_NORMAL);
   mbVO = false;  // Init value for know if there are enough MapPoints in the
                  // last KF
@@ -2677,7 +2677,7 @@ bool Tracking::TrackWithMotionModel() {
     nmatches = matcher.SearchByProjection(
         mCurrentFrame, mLastFrame, 2 * th,
         mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR);
-    Verbose::PrintMess("Matches with wider search: " + to_string(nmatches),
+    Verbose::PrintMess("Matches with wider search: " + std::to_string(nmatches),
                        Verbose::VERBOSITY_NORMAL);
   }
 
@@ -2876,8 +2876,8 @@ bool Tracking::NeedNewKeyFrame() {
       }
     }
     // Verbose::PrintMess("[NEEDNEWKF]-> closed points: " +
-    // to_string(nTrackedClose) + "; non tracked closed points: " +
-    // to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);//
+    // std::to_string(nTrackedClose) + "; non tracked closed points: " +
+    // std::to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);//
     // Verbose::VERBOSITY_DEBUG);
   }
 
@@ -3080,7 +3080,7 @@ void Tracking::CreateNewKeyFrame() {
           break;
         }
       }
-      // Verbose::PrintMess("new mps for stereo KF: " + to_string(nPoints),
+      // Verbose::PrintMess("new mps for stereo KF: " + std::to_string(nPoints),
       // Verbose::VERBOSITY_NORMAL);
     }
   }
@@ -3203,9 +3203,9 @@ void Tracking::UpdateLocalKeyFrames() {
       MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP) {
         if (!pMP->isBad()) {
-          const std::map<KeyFrame*, tuple<int, int>> observations =
+          const std::map<KeyFrame*, std::tuple<int, int>> observations =
               pMP->GetObservations();
-          for (std::map<KeyFrame*, tuple<int, int>>::const_iterator
+          for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator
                    it = observations.begin(),
                    itend = observations.end();
                it != itend; it++)
@@ -3222,9 +3222,9 @@ void Tracking::UpdateLocalKeyFrames() {
         MapPoint* pMP = mLastFrame.mvpMapPoints[i];
         if (!pMP) continue;
         if (!pMP->isBad()) {
-          const std::map<KeyFrame*, tuple<int, int>> observations =
+          const std::map<KeyFrame*, std::tuple<int, int>> observations =
               pMP->GetObservations();
-          for (std::map<KeyFrame*, tuple<int, int>>::const_iterator
+          for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator
                    it = observations.begin(),
                    itend = observations.end();
                it != itend; it++)
@@ -3287,8 +3287,8 @@ void Tracking::UpdateLocalKeyFrames() {
       }
     }
 
-    const set<KeyFrame*> spChilds = pKF->GetChilds();
-    for (set<KeyFrame*>::const_iterator sit = spChilds.begin(),
+    const std::set<KeyFrame*> spChilds = pKF->GetChilds();
+    for (std::set<KeyFrame*>::const_iterator sit = spChilds.begin(),
                                         send = spChilds.end();
          sit != send; sit++) {
       KeyFrame* pChildKF = *sit;
@@ -3421,7 +3421,7 @@ bool Tracking::Relocalization() {
         mCurrentFrame.SetPose(Tcw);
         // Tcw.copyTo(mCurrentFrame.mTcw);
 
-        set<MapPoint*> sFound;
+        std::set<MapPoint*> sFound;
 
         const int np = vbInliers.size();
 

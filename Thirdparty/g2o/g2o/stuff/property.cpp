@@ -32,7 +32,7 @@
 #include "macros.h"
 
 #include "string_tools.h"
-using namespace std;
+
 
 namespace g2o {
 

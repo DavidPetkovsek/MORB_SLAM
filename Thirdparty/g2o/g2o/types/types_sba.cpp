@@ -29,7 +29,7 @@
 
 namespace g2o {
 
-  using namespace std;
+  
 
 
   VertexSBAPointXYZ::VertexSBAPointXYZ() : BaseVertex<3, Eigen::Vector3d>()

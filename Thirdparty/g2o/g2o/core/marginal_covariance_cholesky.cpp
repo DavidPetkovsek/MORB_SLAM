@@ -28,7 +28,7 @@
 
 #include <algorithm>
 #include <cassert>
-using namespace std;
+
 
 namespace g2o {
 
@@ -112,7 +112,7 @@ void MarginalCovarianceCholesky::computeCovariance(double** covBlocks, const std
         int r = _perm ? _perm[rr + base] : rr + base; // apply permutation
         int c = _perm ? _perm[cc + base] : cc + base;
         if (r > c) // make sure it's still upper triangular after applying the permutation
-          swap(r, c);
+          std::swap(r, c);
         elemsToCompute.push_back(MatrixElem(r, c));
       }
     base = nbase;
@@ -138,7 +138,7 @@ void MarginalCovarianceCholesky::computeCovariance(double** covBlocks, const std
         int r = _perm ? _perm[rr + base] : rr + base; // apply permutation
         int c = _perm ? _perm[cc + base] : cc + base;
         if (r > c) // upper triangle
-          swap(r, c);
+          std::swap(r, c);
         int idx = computeIndex(r, c);
         LookupMap::const_iterator foundIt = _map.find(idx);
         assert(foundIt != _map.end());
@@ -180,7 +180,7 @@ void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<Eigen::Matr
         int r = _perm ? _perm[rr] : rr; // apply permutation
         int c = _perm ? _perm[cc] : cc;
         if (r > c)
-          swap(r, c);
+          std::swap(r, c);
         elemsToCompute.push_back(MatrixElem(r, c));
       }
   }
@@ -210,7 +210,7 @@ void MarginalCovarianceCholesky::computeCovariance(SparseBlockMatrix<Eigen::Matr
         int r = _perm ? _perm[rr] : rr; // apply permutation
         int c = _perm ? _perm[cc] : cc;
         if (r > c)
-          swap(r, c);
+          std::swap(r, c);
         int idx = computeIndex(r, c);
         LookupMap::const_iterator foundIt = _map.find(idx);
         assert(foundIt != _map.end());

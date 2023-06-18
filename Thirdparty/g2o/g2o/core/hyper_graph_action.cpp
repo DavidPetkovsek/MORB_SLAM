@@ -32,7 +32,7 @@
 #include <iostream>
 
 namespace g2o {
-  using namespace std;
+  
 
   HyperGraphActionLibrary* HyperGraphActionLibrary::actionLibInstance = 0;
 

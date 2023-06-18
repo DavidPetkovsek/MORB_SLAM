@@ -26,7 +26,7 @@
 
 #include "optimization_algorithm.h"
 
-using namespace std;
+
 
 namespace g2o {
 

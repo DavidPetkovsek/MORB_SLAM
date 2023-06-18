@@ -43,7 +43,7 @@
 
 namespace g2o {
 
-using namespace std;
+
 
 std::string trim(const std::string& s)
 {

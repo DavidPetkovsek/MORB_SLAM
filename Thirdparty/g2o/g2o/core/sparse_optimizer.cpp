@@ -44,7 +44,7 @@
 #include "g2o/config.h"
 
 namespace g2o{
-  using namespace std;
+  
 
 
   SparseOptimizer::SparseOptimizer() :
@@ -214,7 +214,7 @@ namespace g2o{
     _activeVertices.clear();
     _activeVertices.reserve(vset.size());
     _activeEdges.clear();
-    set<Edge*> auxEdgeSet; // temporary structure to avoid duplicates
+    std::set<Edge*> auxEdgeSet; // temporary structure to avoid duplicates
     for (HyperGraph::VertexSet::iterator it=vset.begin(); it!=vset.end(); ++it){
       OptimizableGraph::Vertex* v= (OptimizableGraph::Vertex*) *it;
       const OptimizableGraph::EdgeSet& vEdges=v->edges();
@@ -259,7 +259,7 @@ namespace g2o{
     }
 
     _activeEdges.reserve(auxEdgeSet.size());
-    for (set<Edge*>::iterator it = auxEdgeSet.begin(); it != auxEdgeSet.end(); ++it)
+    for (std::set<Edge*>::iterator it = auxEdgeSet.begin(); it != auxEdgeSet.end(); ++it)
       _activeEdges.push_back(*it);
 
     sortVectorContainers();
@@ -273,7 +273,7 @@ namespace g2o{
     _activeVertices.clear();
     _activeEdges.clear();
     _activeEdges.reserve(eset.size());
-    set<Vertex*> auxVertexSet; // temporary structure to avoid duplicates
+    std::set<Vertex*> auxVertexSet; // temporary structure to avoid duplicates
     for (HyperGraph::EdgeSet::iterator it=eset.begin(); it!=eset.end(); ++it){
       OptimizableGraph::Edge* e=(OptimizableGraph::Edge*)(*it);
       for (std::vector<HyperGraph::Vertex*>::const_iterator vit = e->vertices().begin(); vit != e->vertices().end(); ++vit) {
@@ -283,7 +283,7 @@ namespace g2o{
     }
 
     _activeVertices.reserve(auxVertexSet.size());
-    for (set<Vertex*>::iterator it = auxVertexSet.begin(); it != auxVertexSet.end(); ++it)
+    for (std::set<Vertex*>::iterator it = auxVertexSet.begin(); it != auxVertexSet.end(); ++it)
       _activeVertices.push_back(*it);
 
     sortVectorContainers();

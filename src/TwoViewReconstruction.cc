@@ -27,7 +27,7 @@
 #include "DUtils/Random.h"
 #include "MORB_SLAM/GeometricTools.h"
 
-using namespace std;
+
 namespace MORB_SLAM {
 TwoViewReconstruction::TwoViewReconstruction(const Eigen::Matrix3f &k,
                                              float sigma, int iterations) {
@@ -99,10 +99,10 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
   float SH, SF;
   Eigen::Matrix3f H, F;
 
-  thread threadH(&TwoViewReconstruction::FindHomography, this,
-                 ref(vbMatchesInliersH), ref(SH), ref(H));
-  thread threadF(&TwoViewReconstruction::FindFundamental, this,
-                 ref(vbMatchesInliersF), ref(SF), ref(F));
+  std::thread threadH(&TwoViewReconstruction::FindHomography, this,
+                 std::ref(vbMatchesInliersH), std::ref(SH), std::ref(H));
+  std::thread threadF(&TwoViewReconstruction::FindFundamental, this,
+                 std::ref(vbMatchesInliersF), std::ref(SF), std::ref(F));
 
   // Wait until both threads have finished
   threadH.join();
@@ -505,9 +505,9 @@ bool TwoViewReconstruction::ReconstructF(
   int nGood4 = CheckRT(R2, t2, mvKeys1, mvKeys2, mvMatches12, vbMatchesInliers,
                        K, vP3D4, 4.0 * mSigma2, vbTriangulated4, parallax4);
 
-  int maxGood = max(nGood1, max(nGood2, max(nGood3, nGood4)));
+  int maxGood = std::max(nGood1, std::max(nGood2, std::max(nGood3, nGood4)));
 
-  int nMinGood = max(static_cast<int>(0.9 * N), minTriangulated);
+  int nMinGood = std::max(static_cast<int>(0.9 * N), minTriangulated);
 
   int nsimilar = 0;
   if (nGood1 > 0.7 * maxGood) nsimilar++;
@@ -871,8 +871,8 @@ int TwoViewReconstruction::CheckRT(
   if (nGood > 0) {
     sort(vCosParallax.begin(), vCosParallax.end());
 
-    size_t idx = min(50, int(vCosParallax.size() - 1));
-    parallax = acos(vCosParallax[idx]) * 180 / CV_PI;
+    size_t idx = std::min(50, int(vCosParallax.size() - 1));
+    parallax = std::acos(vCosParallax[idx]) * 180 / CV_PI;
   } else
     parallax = 0;
 

@@ -35,7 +35,7 @@
 
 //#define DEBUG_ESTIMATE_PROPAGATOR
 
-using namespace std;
+
 
 namespace g2o {
 
@@ -58,7 +58,7 @@ namespace g2o {
     _child = 0;
     _parent.clear();
     _edge = 0;
-    _distance = numeric_limits<double>::max();
+    _distance = std::numeric_limits<double>::max();
     _frontierLevel = -1;
     inQueue = false;
   }
@@ -135,9 +135,9 @@ namespace g2o {
         for (size_t i = 0; i < edge->vertices().size(); ++i) {
           OptimizableGraph::Vertex* z = static_cast<OptimizableGraph::Vertex*>(edge->vertex(i));
           AdjacencyMap::iterator ot = _adjacencyMap.find(z);
-          if (ot->second._distance != numeric_limits<double>::max()) {
+          if (ot->second._distance != std::numeric_limits<double>::max()) {
             initializedVertices.insert(z);
-            maxFrontier = (max)(maxFrontier, ot->second._frontierLevel);
+            maxFrontier = (std::max)(maxFrontier, ot->second._frontierLevel);
           }
         }
         assert(maxFrontier >= 0);

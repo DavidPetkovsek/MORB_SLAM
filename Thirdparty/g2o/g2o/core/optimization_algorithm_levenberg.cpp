@@ -36,7 +36,7 @@
 #include "sparse_optimizer.h"
 #include "solver.h"
 #include "batch_stats.h"
-using namespace std;
+
 
 namespace g2o {
 

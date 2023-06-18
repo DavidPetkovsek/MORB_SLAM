@@ -30,7 +30,7 @@
 #include <typeinfo>
 #include <cassert>
 
-using namespace std;
+
 
 namespace g2o {
 

@@ -31,7 +31,7 @@
 #include "sparse_optimizer.h"
 
 #include <iostream>
-using namespace std;
+
 
 namespace g2o {
 

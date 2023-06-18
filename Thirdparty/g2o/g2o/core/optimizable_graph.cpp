@@ -48,7 +48,7 @@
 
 namespace g2o {
 
-  using namespace std;
+  
 
   OptimizableGraph::Data::Data(){
     _next = 0;
@@ -353,7 +353,7 @@ void OptimizableGraph::discardTop(HyperGraph::VertexSet& vset)
 }
 
 
-bool OptimizableGraph::load(istream& is, bool createEdges)
+bool OptimizableGraph::load(std::istream& is, bool createEdges)
 {
   // scna for the paramers in the whole file
   if (!_parameters.read(is,&_renamedTypesLookup))
@@ -362,8 +362,8 @@ bool OptimizableGraph::load(istream& is, bool createEdges)
   std::cerr << "Loaded " << _parameters.size() << " parameters" << std::endl;
 #endif
   is.clear();
-  is.seekg(ios_base::beg);
-  set<std::string> warnedUnknownTypes;
+  is.seekg(std::ios_base::beg);
+  std::set<std::string> warnedUnknownTypes;
   std::stringstream currentLine;
   std::string token;
 
@@ -570,7 +570,7 @@ bool OptimizableGraph::load(istream& is, bool createEdges)
 
 bool OptimizableGraph::load(const char* filename, bool createEdges)
 {
-  ifstream ifs(filename);
+  std::ifstream ifs(filename);
   if (!ifs) {
     std::cerr << __PRETTY_FUNCTION__ << " unable to open file " << filename << std::endl;
     return false;
@@ -580,17 +580,17 @@ bool OptimizableGraph::load(const char* filename, bool createEdges)
 
 bool OptimizableGraph::save(const char* filename, int level) const
 {
-  ofstream ofs(filename);
+  std::ofstream ofs(filename);
   if (!ofs)
     return false;
   return save(ofs, level);
 }
 
-bool OptimizableGraph::save(ostream& os, int level) const
+bool OptimizableGraph::save(std::ostream& os, int level) const
 {
   if (! _parameters.write(os))
     return false;
-  set<Vertex*, VertexIDCompare> verticesToSave;
+  std::set<Vertex*, VertexIDCompare> verticesToSave;
   for (HyperGraph::EdgeSet::const_iterator it = edges().begin(); it != edges().end(); ++it) {
     OptimizableGraph::Edge* e = static_cast<OptimizableGraph::Edge*>(*it);
     if (e->level() == level) {
@@ -600,7 +600,7 @@ bool OptimizableGraph::save(ostream& os, int level) const
     }
   }
 
-  for (set<Vertex*, VertexIDCompare>::const_iterator it = verticesToSave.begin(); it != verticesToSave.end(); ++it){
+  for (std::set<Vertex*, VertexIDCompare>::const_iterator it = verticesToSave.begin(); it != verticesToSave.end(); ++it){
     OptimizableGraph::Vertex* v = *it;
     saveVertex(os, v);
   }
@@ -622,7 +622,7 @@ bool OptimizableGraph::save(ostream& os, int level) const
 }
 
 
-bool OptimizableGraph::saveSubset(ostream& os, HyperGraph::VertexSet& vset, int level)
+bool OptimizableGraph::saveSubset(std::ostream& os, HyperGraph::VertexSet& vset, int level)
 {
   if (! _parameters.write(os))
     return false;
@@ -652,7 +652,7 @@ bool OptimizableGraph::saveSubset(ostream& os, HyperGraph::VertexSet& vset, int 
   return os.good();
 }
 
-bool OptimizableGraph::saveSubset(ostream& os, HyperGraph::EdgeSet& eset)
+bool OptimizableGraph::saveSubset(std::ostream& os, HyperGraph::EdgeSet& eset)
 {
   if (!_parameters.write(os))
     return false;
@@ -743,7 +743,7 @@ bool OptimizableGraph::isSolverSuitable(const OptimizationAlgorithmProperty& sol
   if (vertDims_.size() == 0) {
     auxDims = dimensions();
   }
-  const set<int>& vertDims = vertDims_.size() == 0 ? auxDims : vertDims_;
+  const std::set<int>& vertDims = vertDims_.size() == 0 ? auxDims : vertDims_;
   bool suitableSolver = true;
   if (vertDims.size() == 2) {
     if (solverProperty.requiresMarginalize) {

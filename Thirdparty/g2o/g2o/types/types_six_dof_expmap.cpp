@@ -31,7 +31,7 @@
 
 namespace g2o {
 
-using namespace std;
+
 
 
 Eigen::Vector2d project2d(const Eigen::Vector3d& v)  {

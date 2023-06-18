@@ -31,7 +31,7 @@
 #include <iostream>
 
 namespace g2o {
-  using namespace std;
+  
 
   Cache::CacheKey::CacheKey() :
     _type(), _parameters()

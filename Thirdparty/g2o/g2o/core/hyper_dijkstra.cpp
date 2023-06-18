@@ -34,7 +34,7 @@
 
 namespace g2o{
 
-  using namespace std;
+  
 
   double HyperDijkstra::TreeAction::perform(HyperGraph::Vertex* v, HyperGraph::Vertex* vParent, HyperGraph::Edge* e){
     (void) v;

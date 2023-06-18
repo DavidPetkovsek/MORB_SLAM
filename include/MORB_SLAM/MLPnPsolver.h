@@ -235,7 +235,7 @@ class MLPnPsolver {
 
   // Max square error associated with scale level. Max error =
   // th*th*sigma(level)*sigma(level)
-  vector<float> mvMaxError;
+  std::vector<float> mvMaxError;
 
   std::shared_ptr<GeometricCamera> mpCamera;
 };

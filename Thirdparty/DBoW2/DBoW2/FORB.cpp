@@ -17,7 +17,7 @@
 
 #include "FORB.h"
 
-using namespace std;
+
 
 namespace DBoW2 {
 
