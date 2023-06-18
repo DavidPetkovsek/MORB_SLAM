@@ -2,7 +2,7 @@
  * File: BowVector.h
  * Date: March 2011
  * Author: Dorian Galvez-Lopez
- * Description: bag of words std::vector
+ * Description: bag of words vector
  * License: see the LICENSE.txt file
  *
  */
@@ -79,7 +79,7 @@ public:
 	~BowVector(void);
 	
 	/**
-	 * Adds a value to a word value existing in the std::vector, or creates a new
+	 * Adds a value to a word value existing in the vector, or creates a new
 	 * word with the given value
 	 * @param id word id to look for
 	 * @param v value to create the word with, or to add to existing word
@@ -87,27 +87,27 @@ public:
 	void addWeight(WordId id, WordValue v);
 	
 	/**
-	 * Adds a word with a value to the std::vector only if this does not exist yet
+	 * Adds a word with a value to the vector only if this does not exist yet
 	 * @param id word id to look for
 	 * @param v value to give to the word if this does not exist
 	 */
 	void addIfNotExist(WordId id, WordValue v);
 
 	/**
-	 * L1-Normalizes the values in the std::vector 
+	 * L1-Normalizes the values in the vector 
 	 * @param norm_type norm used
 	 */
 	void normalize(LNorm norm_type);
 	
 	/**
-	 * Prints the content of the bow std::vector
+	 * Prints the content of the bow vector
 	 * @param out stream
 	 * @param v
 	 */
 	friend std::ostream& operator<<(std::ostream &out, const BowVector &v);
 	
 	/**
-	 * Saves the bow std::vector as a std::vector in a matlab file
+	 * Saves the bow vector as a vector in a matlab file
 	 * @param filename
 	 * @param W number of words in the vocabulary
 	 */

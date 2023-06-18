@@ -23,7 +23,7 @@ class Curve {
                   "Scalar must be a floating point type.");
     static_assert(IsFloatingPoint<ReturnType>::value,
                   "ReturnType must be either a floating point scalar, "
-                  "std::vector or matrix.");
+                  "vector or matrix.");
 
     return (curve(t + h) - curve(t - h)) / (Scalar(2) * h);
   }
@@ -66,7 +66,7 @@ class VectorField<Scalar, N, 1> {
 /// Calculates the derivative of a curve at a point ``t``.
 ///
 /// Here, a curve is a function from a Scalar to a Euclidean space. Thus, it
-/// returns either a Scalar, a std::vector or a matrix.
+/// returns either a Scalar, a vector or a matrix.
 ///
 template <class Scalar, class Fn>
 auto curveNumDiff(Fn curve, Scalar t,
@@ -75,9 +75,9 @@ auto curveNumDiff(Fn curve, Scalar t,
   return details::Curve<Scalar>::num_diff(std::move(curve), t, h);
 }
 
-/// Calculates the derivative of a std::vector field at a point ``a``.
+/// Calculates the derivative of a vector field at a point ``a``.
 ///
-/// Here, a std::vector field is a function from a std::vector space to another std::vector
+/// Here, a vector field is a function from a vector space to another vector
 /// space.
 ///
 template <class Scalar, int N, int M, class ScalarOrVector, class Fn>

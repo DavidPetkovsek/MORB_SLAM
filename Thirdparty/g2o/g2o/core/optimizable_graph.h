@@ -352,7 +352,7 @@ namespace g2o {
         bool _marginalized;
         int _dimension;
         int _colInHessian;
-        OpenMPmutex _quadraticFormMutex;
+        OpenMPMutex _quadraticFormMutex;
 
         CacheContainer* _cacheContainer;
 

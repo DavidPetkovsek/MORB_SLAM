@@ -47,9 +47,9 @@ namespace Sophus {
 /// Sim3 base type - implements Sim3 class but is storage agnostic.
 ///
 /// Sim(3) is the group of rotations  and translation and scaling in 3d. It is
-/// the semi-direct product of R+xSO(3) and the 3d Euclidean std::vector space.  The
+/// the semi-direct product of R+xSO(3) and the 3d Euclidean vector space.  The
 /// class is represented using a composition of RxSO3  for scaling plus
-/// rotation and a 3-std::vector for translation.
+/// rotation and a 3-vector for translation.
 ///
 /// Sim(3) is neither compact, nor a commutative group.
 ///
@@ -171,7 +171,7 @@ class Sim3Base {
   ///     |  o  1 |
   ///
   /// where ``R`` is a 3x3 rotation matrix, ``s`` a scale factor, ``t`` a
-  /// translation 3-std::vector and ``o`` a 3-column std::vector of zeros.
+  /// translation 3-vector and ``o`` a 3-column vector of zeros.
   ///
   SOPHUS_FUNC Transformation matrix() const {
     Transformation homogenious_matrix;
@@ -268,7 +268,7 @@ class Sim3Base {
   /// Returns internal parameters of Sim(3).
   ///
   /// It returns (q.imag[0], q.imag[1], q.imag[2], q.real, t[0], t[1], t[2]),
-  /// with q being the quaternion, t the translation 3-std::vector.
+  /// with q being the quaternion, t the translation 3-vector.
   ///
   SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
     Sophus::Vector<Scalar, num_parameters> p;
@@ -334,13 +334,13 @@ class Sim3Base {
     rxso3().setScaledRotationMatrix(sR);
   }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC TranslationType& translation() {
     return static_cast<Derived*>(this)->translation();
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC TranslationType const& translation() const {
     return static_cast<Derived const*>(this)->translation();
@@ -382,7 +382,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from RxSO3 and translation std::vector
+  /// Constructor from RxSO3 and translation vector
   ///
   template <class OtherDerived, class D>
   SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
@@ -394,7 +394,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from quaternion and translation std::vector.
+  /// Constructor from quaternion and translation vector.
   ///
   /// Precondition: quaternion must not be close to zero.
   ///
@@ -418,7 +418,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
         translation_(T.template block<3, 1>(0, 3)) {}
 
   /// This provides unsafe read/write access to internal data. Sim(3) is
-  /// represented by an Eigen::Quaternion (four parameters) and a 3-std::vector. When
+  /// represented by an Eigen::Quaternion (four parameters) and a 3-vector. When
   /// using direct write access, the user needs to take care of that the
   /// quaternion is not set close to zero.
   ///
@@ -442,11 +442,11 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   SOPHUS_FUNC RxSo3Member const& rxso3() const { return rxso3_; }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
@@ -465,7 +465,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   ///
   /// The first three components of ``a`` represent the translational part
   /// ``upsilon`` in the tangent space of Sim(3), the following three components
-  /// of ``a`` represents the rotation std::vector ``omega`` and the final component
+  /// of ``a`` represents the rotation vector ``omega`` and the final component
   /// represents the logarithm of the scaling factor ``sigma``.
   /// To be more specific, this function computes ``expmat(hat(a))`` with
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
@@ -541,7 +541,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 7-std::vector representation and returns the corresponding
+  /// It takes in the 7-vector representation and returns the corresponding
   /// matrix representation of Lie algebra element.
   ///
   /// Formally, the hat()-operator of Sim(3) is defined as
@@ -605,7 +605,7 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 4x4-matrix representation ``Omega`` and maps it to the
-  /// corresponding 7-std::vector representation of Lie algebra.
+  /// corresponding 7-vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///
@@ -679,13 +679,13 @@ class Map<Sophus::Sim3<Scalar_>, Options>
     return rxso3_;
   }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options>& translation() {
     return translation_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar>, Options> const& translation() const {
     return translation_;
   }
@@ -724,7 +724,7 @@ class Map<Sophus::Sim3<Scalar_> const, Options>
     return rxso3_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector3<Scalar> const, Options> const& translation()
       const {

@@ -181,7 +181,7 @@ void setElementAt(T& p, Scalar value, int i) {
   return details::SetElementAt<T, Scalar>::impl(p, value, i);
 }
 
-/// Returns the squared 2-norm of ``p``, with ``p`` being a std::vector or a scalar.
+/// Returns the squared 2-norm of ``p``, with ``p`` being a vector or a scalar.
 ///
 template <class T>
 auto squaredNorm(T const& p) -> decltype(details::SquaredNorm<T>::impl(p)) {

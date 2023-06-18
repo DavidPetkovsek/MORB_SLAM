@@ -2,7 +2,7 @@
  * File: FeatureVector.cpp
  * Date: November 2011
  * Author: Dorian Galvez-Lopez
- * Description: feature std::vector
+ * Description: feature vector
  * License: see the LICENSE.txt file
  *
  */

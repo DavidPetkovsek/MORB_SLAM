@@ -83,7 +83,7 @@ void BlockSolver<Traits>::resize(int* blockPoseIndices, int numPoseBlocks,
     _HplCCS = new SparseBlockMatrixCCS<PoseLandmarkMatrixType>(_Hpl->rowBlockIndices(), _Hpl->colBlockIndices());
     _HschurTransposedCCS = new SparseBlockMatrixCCS<PoseMatrixType>(_Hschur->colBlockIndices(), _Hschur->rowBlockIndices());
 #ifdef G2O_OPENMP
-    _coefficientsstd::mutex.resize(numPoseBlocks);
+    _coefficientsMutex.resize(numPoseBlocks);
 #endif
   }
 }
@@ -405,7 +405,7 @@ bool BlockSolver<Traits>::solve(){
       assert(_HplCCS->rowBaseOfBlock(i1) < _sizePoses && "Index out of bounds");
       typename PoseVectorType::MapType Bb(&_coefficients[_HplCCS->rowBaseOfBlock(i1)], Bi->rows());
 #    ifdef G2O_OPENMP
-      ScopedOpenMPmutex std::mutexLock(&_coefficientsstd::mutex[i1]);
+      ScopedOpenMPMutex std::mutexLock(&_coefficientsMutex[i1]);
 #    endif
       Bb.noalias() += (*Bi)*db;
 
@@ -498,7 +498,7 @@ bool BlockSolver<Traits>::computeMarginals(SparseBlockMatrix<Eigen::MatrixXd>& s
 template <typename Traits>
 bool BlockSolver<Traits>::buildSystem()
 {
-  // clear b std::vector
+  // clear b vector
 # ifdef G2O_OPENMP
 # pragma omp parallel for default (shared) if (_optimizer->indexMapping().size() > 1000)
 # endif

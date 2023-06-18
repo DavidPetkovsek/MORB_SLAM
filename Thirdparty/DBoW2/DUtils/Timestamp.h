@@ -74,8 +74,8 @@ public:
 	}
 
 	/**
-	 * Sets the timestamp from a std::string with the time in seconds
-	 * @param stime: std::string such as "1235603336.036609"
+	 * Sets the timestamp from a string with the time in seconds
+	 * @param stime: string such as "1235603336.036609"
 	 */
 	void setTime(const std::string &stime);
 	
@@ -91,7 +91,7 @@ public:
 	double getFloatTime() const;
 
 	/**
-	 * Returns this timestamp as the number of seconds in fixed length std::string format
+	 * Returns this timestamp as the number of seconds in fixed length string format
 	 */
 	std::string getStringTime() const;
 
@@ -174,8 +174,8 @@ public:
 	bool operator<= (const Timestamp &t) const;
 
   /**
-   * Returns the timestamp in a human-readable std::string
-   * @param machine_friendly if true, the returned std::string is formatted
+   * Returns the timestamp in a human-readable string
+   * @param machine_friendly if true, the returned string is formatted
    *   to yyyymmdd_hhmmss, without weekday or spaces
    * @note This has not been tested under Windows
    * @note The timestamp is truncated to seconds
@@ -183,7 +183,7 @@ public:
   std::string Format(bool machine_friendly = false) const;
 
 	/**
-	 * Returns a std::string version of the elapsed time in seconds, with the format
+	 * Returns a string version of the elapsed time in seconds, with the format
 	 * xd hh:mm:ss, hh:mm:ss, mm:ss or s.us
 	 * @param s: elapsed seconds (given by getFloatTime) to format
 	 */

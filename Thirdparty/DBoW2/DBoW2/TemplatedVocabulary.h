@@ -127,18 +127,18 @@ public:
   virtual inline bool empty() const;
 
   /**
-   * Transforms a set of descriptores into a bow std::vector
+   * Transforms a set of descriptores into a bow vector
    * @param features
-   * @param v (out) bow std::vector of weighted words
+   * @param v (out) bow vector of weighted words
    */
   virtual void transform(const std::vector<TDescriptor>& features, BowVector &v) 
     const;
   
   /**
-   * Transform a set of descriptors into a bow std::vector and a feature std::vector
+   * Transform a set of descriptors into a bow vector and a feature vector
    * @param features
-   * @param v (out) bow std::vector
-   * @param fv (out) feature std::vector of nodes and feature indexes
+   * @param v (out) bow vector
+   * @param fv (out) feature vector of nodes and feature indexes
    * @param levelsup levels to go up the vocabulary tree to get the node index
    */
   virtual void transform(const std::vector<TDescriptor>& features,
@@ -153,8 +153,8 @@ public:
   
   /**
    * Returns the score of two vectors
-   * @param a std::vector
-   * @param b std::vector
+   * @param a vector
+   * @param b vector
    * @return score between vectors
    * @note the vectors must be already sorted and normalized if necessary
    */
@@ -1500,7 +1500,7 @@ void TemplatedVocabulary<TDescriptor,F>::save(cv::FileStorage &f,
   //   ]
   // }
   //
-  // The root node (index 0) is not included in the node std::vector
+  // The root node (index 0) is not included in the node vector
   //
   
   f << name << "{";

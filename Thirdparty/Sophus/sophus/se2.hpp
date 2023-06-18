@@ -46,8 +46,8 @@ namespace Sophus {
 /// SE2 base type - implements SE2 class but is storage agnostic.
 ///
 /// SE(2) is the group of rotations  and translation in 2d. It is the
-/// semi-direct product of SO(2) and the 2d Euclidean std::vector space.  The class
-/// is represented using a composition of SO2Group  for rotation and a 2-std::vector
+/// semi-direct product of SO(2) and the 2d Euclidean vector space.  The class
+/// is represented using a composition of SO2Group  for rotation and a 2-vector
 /// for translation.
 ///
 /// SE(2) is neither compact, nor a commutative group.
@@ -194,8 +194,8 @@ class SE2Base {
   ///   | R t |
   ///   | o 1 |
   ///
-  /// where ``R`` is a 2x2 rotation matrix, ``t`` a translation 2-std::vector and
-  /// ``o`` a 2-column std::vector of zeros.
+  /// where ``R`` is a 2x2 rotation matrix, ``t`` a translation 2-vector and
+  /// ``o`` a 2-column vector of zeros.
   ///
   SOPHUS_FUNC Transformation matrix() const {
     Transformation homogenious_matrix;
@@ -286,7 +286,7 @@ class SE2Base {
   /// Returns internal parameters of SE(2).
   ///
   /// It returns (c[0], c[1], t[0], t[1]),
-  /// with c being the unit complex number, t the translation 3-std::vector.
+  /// with c being the unit complex number, t the translation 3-vector.
   ///
   SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
     Sophus::Vector<Scalar, num_parameters> p;
@@ -333,14 +333,14 @@ class SE2Base {
     return static_cast<Derived const*>(this)->so2();
   }
 
-  /// Mutator of translation std::vector.
+  /// Mutator of translation vector.
   ///
   SOPHUS_FUNC
   TranslationType& translation() {
     return static_cast<Derived*>(this)->translation();
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC
   TranslationType const& translation() const {
@@ -394,7 +394,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from SO3 and translation std::vector
+  /// Constructor from SO3 and translation vector
   ///
   template <class OtherDerived, class D>
   SOPHUS_FUNC SE2(SO2Base<OtherDerived> const& so2,
@@ -406,7 +406,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from rotation matrix and translation std::vector
+  /// Constructor from rotation matrix and translation vector
   ///
   /// Precondition: Rotation matrix needs to be orthogonal with determinant
   /// of 1.
@@ -416,12 +416,12 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
       Point const& translation)
       : so2_(rotation_matrix), translation_(translation) {}
 
-  /// Constructor from rotation angle and translation std::vector.
+  /// Constructor from rotation angle and translation vector.
   ///
   SOPHUS_FUNC SE2(Scalar const& theta, Point const& translation)
       : so2_(theta), translation_(translation) {}
 
-  /// Constructor from complex number and translation std::vector
+  /// Constructor from complex number and translation vector
   ///
   /// Precondition: ``complex`` must not be close to zero.
   SOPHUS_FUNC SE2(Vector2<Scalar> const& complex, Point const& translation)
@@ -461,11 +461,11 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   ///
   SOPHUS_FUNC SO2Member const& so2() const { return so2_; }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
@@ -550,7 +550,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   ///
   /// The first two components of ``a`` represent the translational part
   /// ``upsilon`` in the tangent space of SE(2), while the last three components
-  /// of ``a`` represents the rotation std::vector ``omega``.
+  /// of ``a`` represents the rotation vector ``omega``.
   /// To be more specific, this function computes ``expmat(hat(a))`` with
   /// ``expmat(.)`` being the matrix exponential and ``hat(.)`` the hat-operator
   /// of SE(2), see below.
@@ -617,7 +617,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 3-std::vector representation (= twist) and returns the
+  /// It takes in the 3-vector representation (= twist) and returns the
   /// corresponding matrix representation of Lie algebra element.
   ///
   /// Formally, the hat()-operator of SE(3) is defined as
@@ -698,7 +698,7 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 3x3-matrix representation ``Omega`` and maps it to the
-  /// corresponding 3-std::vector representation of Lie algebra.
+  /// corresponding 3-vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///
@@ -774,13 +774,13 @@ class Map<Sophus::SE2<Scalar_>, Options>
     return so2_;
   }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options>& translation() {
     return translation_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options> const& translation() const {
     return translation_;
@@ -819,7 +819,7 @@ class Map<Sophus::SE2<Scalar_> const, Options>
     return so2_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar> const, Options> const& translation()
       const {

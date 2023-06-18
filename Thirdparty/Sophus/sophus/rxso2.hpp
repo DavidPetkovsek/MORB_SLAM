@@ -161,7 +161,7 @@ class RxSO2Base {
   ///
   /// Computes the logarithm, the inverse of the group exponential which maps
   /// element of the group (scaled rotation matrices) to elements of the tangent
-  /// space (rotation-std::vector plus logarithm of scale factor).
+  /// space (rotation-vector plus logarithm of scale factor).
   ///
   /// To be specific, this function computes ``vee(logmat(.))`` with
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
@@ -502,7 +502,7 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 2-std::vector representation ``a`` (= rotation angle plus
+  /// It takes in the 2-vector representation ``a`` (= rotation angle plus
   /// logarithm of scale) and  returns the corresponding matrix representation
   /// of Lie algebra element.
   ///
@@ -554,7 +554,7 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 2x2-matrix representation ``Omega`` and maps it to the
-  /// corresponding std::vector representation of Lie algebra.
+  /// corresponding vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///

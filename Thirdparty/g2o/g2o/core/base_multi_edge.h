@@ -75,7 +75,7 @@ namespace g2o {
 
       /**
        * Linearizes the oplus operator in the vertex, and stores
-       * the result in temporary variable std::vector _jacobianOplus
+       * the result in temporary variable vector _jacobianOplus
        */
       virtual void linearizeOplus();
       

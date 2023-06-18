@@ -153,7 +153,7 @@ void BaseBinaryEdge<D, E, VertexXiType, VertexXjType>::linearizeOplus()
     //Xi - estimate the jacobian numerically
     double add_vi[VertexXiType::Dimension];
     std::fill(add_vi, add_vi + VertexXiType::Dimension, 0.0);
-    // add small step along the unit std::vector in each dimension
+    // add small step along the unit vector in each dimension
     for (int d = 0; d < VertexXiType::Dimension; ++d) {
       vi->push();
       add_vi[d] = delta;
@@ -177,7 +177,7 @@ void BaseBinaryEdge<D, E, VertexXiType, VertexXjType>::linearizeOplus()
     //Xj - estimate the jacobian numerically
     double add_vj[VertexXjType::Dimension];
     std::fill(add_vj, add_vj + VertexXjType::Dimension, 0.0);
-    // add small step along the unit std::vector in each dimension
+    // add small step along the unit vector in each dimension
     for (int d = 0; d < VertexXjType::Dimension; ++d) {
       vj->push();
       add_vj[d] = delta;

@@ -42,7 +42,7 @@ class So3:
     """vee-operator
    
     It takes the 3x3-matrix representation ``Omega`` and maps it to the
-    corresponding std::vector representation of Lie algebra.
+    corresponding vector representation of Lie algebra.
    
     This is the inverse of the hat-operator, see above.
    

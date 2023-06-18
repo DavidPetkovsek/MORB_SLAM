@@ -162,7 +162,7 @@ namespace g2o {
       std::vector<LandmarkVectorType, Eigen::aligned_allocator<LandmarkVectorType> > _diagonalBackupLandmark;
 
 #    ifdef G2O_OPENMP
-      std::vector<OpenMPmutex> _coefficientsstd::mutex;
+      std::vector<OpenMPMutex> _coefficientsMutex;
 #    endif
 
       bool _doSchur;

@@ -40,13 +40,13 @@ namespace g2o {
 #ifdef G2O_OPENMP
 
   /**
-   * \brief std::mutex realized via OpenMP
+   * \brief Mutex realized via OpenMP
    */
-  class OpenMPmutex
+  class OpenMPMutex
   {
     public:
-      OpenMPmutex() { omp_init_lock(&_lock); }
-      ~OpenMPmutex() { omp_destroy_lock(&_lock); }
+      OpenMPMutex() { omp_init_lock(&_lock); }
+      ~OpenMPMutex() { omp_destroy_lock(&_lock); }
       void lock() { omp_set_lock(&_lock); }
       void unlock() { omp_unset_lock(&_lock); }
     protected:
@@ -57,19 +57,19 @@ namespace g2o {
 
   /*
    * dummy which does nothing in case we don't have OpenMP support.
-   * In debug mode, the std::mutex allows to verify the correct lock and unlock behavior
+   * In debug mode, the mutex allows to verify the correct lock and unlock behavior
    */
-  class OpenMPmutex
+  class OpenMPMutex
   {
     public:
 #ifdef NDEBUG
-      OpenMPmutex() {}
+      OpenMPMutex() {}
 #else
-      OpenMPmutex() : _cnt(0) {}
+      OpenMPMutex() : _cnt(0) {}
 #endif
-      ~OpenMPmutex() { assert(_cnt == 0 && "Freeing locked std::mutex");}
-      void lock() { assert(++_cnt == 1 && "Locking already locked std::mutex");}
-      void unlock() { assert(--_cnt == 0 && "Trying to unlock a std::mutex which is not locked");}
+      ~OpenMPMutex() { assert(_cnt == 0 && "Freeing locked mutex");}
+      void lock() { assert(++_cnt == 1 && "Locking already locked mutex");}
+      void unlock() { assert(--_cnt == 0 && "Trying to unlock a mutex which is not locked");}
     protected:
 #ifndef NDEBUG
       char _cnt;
@@ -79,17 +79,17 @@ namespace g2o {
 #endif
 
   /**
-   * \brief lock a std::mutex within a scope
+   * \brief lock a mutex within a scope
    */
-  class ScopedOpenMPmutex
+  class ScopedOpenMPMutex
   {
     public:
-      explicit ScopedOpenMPmutex(OpenMPmutex* mutex) : _mutex(mutex) { _mutex->lock(); }
-      ~ScopedOpenMPmutex() { _mutex->unlock(); }
+      explicit ScopedOpenMPMutex(OpenMPMutex* mutex) : _mutex(mutex) { _mutex->lock(); }
+      ~ScopedOpenMPMutex() { _mutex->unlock(); }
     private:
-      OpenMPmutex* const _mutex;
-      ScopedOpenMPmutex(const ScopedOpenMPmutex&);
-      void operator=(const ScopedOpenMPmutex&);
+      OpenMPMutex* const _mutex;
+      ScopedOpenMPMutex(const ScopedOpenMPMutex&);
+      void operator=(const ScopedOpenMPMutex&);
   };
 
 }

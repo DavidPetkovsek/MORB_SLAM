@@ -28,7 +28,7 @@ public:
   virtual double score(const BowVector &v, const BowVector &w) const = 0;
 
   /**
-   * Returns whether a std::vector must be normalized before scoring according
+   * Returns whether a vector must be normalized before scoring according
    * to the scoring scheme
    * @param norm norm to use
    * @return true iff must normalize
@@ -62,7 +62,7 @@ public:
     virtual double score(const BowVector &v, const BowVector &w) const; \
     \
     /** \
-     * Says if a std::vector must be normalized according to the scoring function \
+     * Says if a vector must be normalized according to the scoring function \
      * @param norm (out) if true, norm to use
      * @return true iff vectors must be normalized \
      */ \

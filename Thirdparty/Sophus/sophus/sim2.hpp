@@ -47,9 +47,9 @@ namespace Sophus {
 /// Sim2 base type - implements Sim2 class but is storage agnostic.
 ///
 /// Sim(2) is the group of rotations  and translation and scaling in 2d. It is
-/// the semi-direct product of R+xSO(2) and the 2d Euclidean std::vector space. The
+/// the semi-direct product of R+xSO(2) and the 2d Euclidean vector space. The
 /// class is represented using a composition of RxSO2  for scaling plus
-/// rotation and a 2-std::vector for translation.
+/// rotation and a 2-vector for translation.
 ///
 /// Sim(2) is neither compact, nor a commutative group.
 ///
@@ -169,7 +169,7 @@ class Sim2Base {
   ///   |  o  1 |
   ///
   /// where ``R`` is a 2x2 rotation matrix, ``s`` a scale factor, ``t`` a
-  /// translation 2-std::vector and ``o`` a 2-column std::vector of zeros.
+  /// translation 2-vector and ``o`` a 2-column vector of zeros.
   ///
   SOPHUS_FUNC Transformation matrix() const {
     Transformation homogenious_matrix;
@@ -254,7 +254,7 @@ class Sim2Base {
   /// Returns internal parameters of Sim(2).
   ///
   /// It returns (c[0], c[1], t[0], t[1]),
-  /// with c being the complex number, t the translation 3-std::vector.
+  /// with c being the complex number, t the translation 3-vector.
   ///
   SOPHUS_FUNC Sophus::Vector<Scalar, num_parameters> params() const {
     Sophus::Vector<Scalar, num_parameters> p;
@@ -334,13 +334,13 @@ class Sim2Base {
     rxso2().setScaledRotationMatrix(sR);
   }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC TranslationType& translation() {
     return static_cast<Derived*>(this)->translation();
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC TranslationType const& translation() const {
     return static_cast<Derived const*>(this)->translation();
@@ -382,7 +382,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from RxSO2 and translation std::vector
+  /// Constructor from RxSO2 and translation vector
   ///
   template <class OtherDerived, class D>
   SOPHUS_FUNC Sim2(RxSO2Base<OtherDerived> const& rxso2,
@@ -394,7 +394,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
                   "must be same Scalar type");
   }
 
-  /// Constructor from complex number and translation std::vector.
+  /// Constructor from complex number and translation vector.
   ///
   /// Precondition: complex number must not be close to zero.
   ///
@@ -416,7 +416,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
         translation_(T.template block<2, 1>(0, 2)) {}
 
   /// This provides unsafe read/write access to internal data. Sim(2) is
-  /// represented by a complex number (two parameters) and a 2-std::vector. When
+  /// represented by a complex number (two parameters) and a 2-vector. When
   /// using direct write access, the user needs to take care of that the
   /// complex number is not set close to zero.
   ///
@@ -440,11 +440,11 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
   ///
   SOPHUS_FUNC RxSo2Member const& rxso2() const { return rxso2_; }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
@@ -525,7 +525,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 4-std::vector representation and returns the corresponding
+  /// It takes in the 4-vector representation and returns the corresponding
   /// matrix representation of Lie algebra element.
   ///
   /// Formally, the hat()-operator of Sim(2) is defined as
@@ -589,7 +589,7 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 3x3-matrix representation ``Omega`` and maps it to the
-  /// corresponding 4-std::vector representation of Lie algebra.
+  /// corresponding 4-vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///
@@ -662,13 +662,13 @@ class Map<Sophus::Sim2<Scalar_>, Options>
     return rxso2_;
   }
 
-  /// Mutator of translation std::vector
+  /// Mutator of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options>& translation() {
     return translation_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar>, Options> const& translation() const {
     return translation_;
   }
@@ -706,7 +706,7 @@ class Map<Sophus::Sim2<Scalar_> const, Options>
     return rxso2_;
   }
 
-  /// Accessor of translation std::vector
+  /// Accessor of translation vector
   ///
   SOPHUS_FUNC Map<Sophus::Vector2<Scalar> const, Options> const& translation()
       const {

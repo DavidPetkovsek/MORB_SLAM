@@ -162,7 +162,7 @@ public:
 protected:
 
   /** 
-   * Creates the std::vector with available values
+   * Creates the vector with available values
    */
   void createValues();
 

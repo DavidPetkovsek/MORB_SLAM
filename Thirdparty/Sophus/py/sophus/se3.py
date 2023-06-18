@@ -10,7 +10,7 @@ class Se3:
 
     def __init__(self, so3, t):
         """ internally represented by a unit quaternion q and a translation
-            3-std::vector """
+            3-vector """
         assert isinstance(so3, sophus.So3)
         assert isinstance(t, sympy.Matrix)
         assert t.shape == (3, 1), t.shape

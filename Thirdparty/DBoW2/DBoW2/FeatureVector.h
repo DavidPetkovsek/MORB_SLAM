@@ -2,7 +2,7 @@
  * File: FeatureVector.h
  * Date: November 2011
  * Author: Dorian Galvez-Lopez
- * Description: feature std::vector
+ * Description: feature vector
  * License: see the LICENSE.txt file
  *
  */
@@ -52,9 +52,9 @@ public:
   void addFeature(NodeId id, unsigned int i_feature);
 
   /**
-   * Sends a std::string versions of the feature std::vector through the stream
+   * Sends a string versions of the feature vector through the stream
    * @param out stream
-   * @param v feature std::vector
+   * @param v feature vector
    */
   friend std::ostream& operator<<(std::ostream &out, const FeatureVector &v);
     

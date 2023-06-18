@@ -161,7 +161,7 @@ class RxSO3Base {
   ///
   /// Computes the logarithm, the inverse of the group exponential which maps
   /// element of the group (scaled rotation matrices) to elements of the tangent
-  /// space (rotation-std::vector plus logarithm of scale factor).
+  /// space (rotation-vector plus logarithm of scale factor).
   ///
   /// To be specific, this function computes ``vee(logmat(.))`` with
   /// ``logmat(.)`` being the matrix logarithm and ``vee(.)`` the vee-operator
@@ -501,7 +501,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   }
   /// Group exponential
   ///
-  /// This functions takes in an element of tangent space (= rotation 3-std::vector
+  /// This functions takes in an element of tangent space (= rotation 3-vector
   /// plus logarithm of scale) and returns the corresponding element of the
   /// group RxSO3.
   ///
@@ -567,7 +567,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
 
   /// hat-operator
   ///
-  /// It takes in the 4-std::vector representation ``a`` (= rotation std::vector plus
+  /// It takes in the 4-vector representation ``a`` (= rotation vector plus
   /// logarithm of scale) and  returns the corresponding matrix representation
   /// of Lie algebra element.
   ///
@@ -623,7 +623,7 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
   /// vee-operator
   ///
   /// It takes the 3x3-matrix representation ``Omega`` and maps it to the
-  /// corresponding std::vector representation of Lie algebra.
+  /// corresponding vector representation of Lie algebra.
   ///
   /// This is the inverse of the hat()-operator, see above.
   ///

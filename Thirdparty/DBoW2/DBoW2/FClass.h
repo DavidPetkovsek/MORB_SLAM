@@ -44,16 +44,16 @@ class FClass
   static double distance(const TDescriptor &a, const TDescriptor &b);
   
   /**
-   * Returns a std::string version of the descriptor
+   * Returns a string version of the descriptor
    * @param a descriptor
-   * @return std::string version
+   * @return string version
    */
   static std::string toString(const TDescriptor &a);
   
   /**
-   * Returns a descriptor from a std::string
+   * Returns a descriptor from a string
    * @param a descriptor
-   * @param s std::string version
+   * @param s string version
    */
   static void fromString(TDescriptor &a, const std::string &s);
 

@@ -10,7 +10,7 @@ class Quaternion:
     """ Quaternion class """
 
     def __init__(self, real, vec):
-        """ Quaternion consists of a real scalar, and an imaginary 3-std::vector """
+        """ Quaternion consists of a real scalar, and an imaginary 3-vector """
         assert isinstance(vec, sympy.Matrix)
         assert vec.shape == (3, 1), vec.shape
         self.real = real

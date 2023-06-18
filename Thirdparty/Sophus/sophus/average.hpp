@@ -135,21 +135,21 @@ Eigen::Quaternion<Scalar> averageUnitQuaternion(
   Eigen::EigenSolver<Eigen::Matrix<Scalar, 4, 4> > es(QQt);
 
   std::complex<Scalar> max_eigenvalue = es.eigenvalues()[0];
-  Eigen::Matrix<std::complex<Scalar>, 4, 1> max_eigenstd::vector =
+  Eigen::Matrix<std::complex<Scalar>, 4, 1> max_eigenvector =
       es.eigenvectors().col(0);
 
   for (int i = 1; i < 4; i++) {
     if (std::norm(es.eigenvalues()[i]) > std::norm(max_eigenvalue)) {
       max_eigenvalue = es.eigenvalues()[i];
-      max_eigenstd::vector = es.eigenvectors().col(i);
+      max_eigenvector = es.eigenvectors().col(i);
     }
   }
   Eigen::Quaternion<Scalar> quat;
   quat.coeffs() <<                //
-      max_eigenstd::vector[0].real(),  //
-      max_eigenstd::vector[1].real(),  //
-      max_eigenstd::vector[2].real(),  //
-      max_eigenstd::vector[3].real();
+      max_eigenvector[0].real(),  //
+      max_eigenvector[1].real(),  //
+      max_eigenvector[2].real(),  //
+      max_eigenvector[3].real();
   return quat;
 }
 }  // namespace details

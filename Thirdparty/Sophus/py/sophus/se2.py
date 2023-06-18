@@ -10,7 +10,7 @@ class Se2:
 
     def __init__(self, so2, t):
         """ internally represented by a unit complex number z and a translation
-            2-std::vector """
+            2-vector """
         self.so2 = so2
         self.t = t
 
