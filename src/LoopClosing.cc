@@ -325,7 +325,7 @@ bool LoopClosing::NewDetectCommonRegions() {
     mpCurrentKF = mlpLoopKeyFrameQueue.front();
     mlpLoopKeyFrameQueue.pop_front();
     // Avoid that a keyframe can be erased while it is being process by this
-    // std::thread
+    // thread
     mpCurrentKF->SetNotErase();
     mpCurrentKF->mbCurrentPlaceRecognition = true;
 
@@ -349,7 +349,7 @@ bool LoopClosing::NewDetectCommonRegions() {
   }
 
   if (mpLastMap->GetAllKeyFrames().size() < 12) {
-    // std::cout << "LoopClousure: Stereo KF inserted without check, std::map is small: "
+    // std::cout << "LoopClousure: Stereo KF inserted without check, map is small: "
     // << mpCurrentKF->mnId << std::endl;
     mpKeyFrameDB->add(mpCurrentKF);
     mpCurrentKF->SetErase();
@@ -499,7 +499,7 @@ bool LoopClosing::NewDetectCommonRegions() {
   std::chrono::steady_clock::time_point time_StartEstSim3_2 =
       std::chrono::steady_clock::now();
 #endif
-  // Check the BoW candidates if the geometric candidate std::list is empty
+  // Check the BoW candidates if the geometric candidate list is empty
   // Loop candidates
   if (!bLoopDetectedInKF && !vpLoopBowCand.empty()) {
     mbLoopDetected = DetectCommonRegionsFromBoW(
@@ -1049,7 +1049,7 @@ void LoopClosing::CorrectLoop() {
 #endif
 
   {
-    // Get Map std::mutex
+    // Get Map Mutex
     std::unique_lock<std::mutex> lock(pLoopMap->mMutexMapUpdate);
 
     const bool bImuInit = pLoopMap->isImuInitialized();
@@ -1131,7 +1131,7 @@ void LoopClosing::CorrectLoop() {
     mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     // Start Loop Fusion
-    // Update matched std::map points and replace if duplicated
+    // Update matched map points and replace if duplicated
     for (size_t i = 0; i < mvpLoopMatchedMPs.size(); i++) {
       if (mvpLoopMatchedMPs[i]) {
         MapPoint* pLoopMP = mvpLoopMatchedMPs[i];
@@ -1223,7 +1223,7 @@ void LoopClosing::CorrectLoop() {
   mpLoopMatchedKF->AddLoopEdge(mpCurrentKF);
   mpCurrentKF->AddLoopEdge(mpLoopMatchedKF);
 
-  // Launch a new std::thread to perform Global Bundle Adjustment (Only if few
+  // Launch a new thread to perform Global Bundle Adjustment (Only if few
   // keyframes, if not it would take too much time)
   if (!pLoopMap->isImuInitialized() ||
       (pLoopMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)) {
@@ -1244,10 +1244,10 @@ void LoopClosing::CorrectLoop() {
 void LoopClosing::MergeLocal() {
   std::cout << "MERGE LOCAL MAP" << std::endl;
   int numTemporalKFs =
-      25;  // Temporal KFs in the local window if the std::map is inertial.
+      25;  // Temporal KFs in the local window if the map is inertial.
 
   // Relationship to rebuild the essential graph, it is used two times, first in
-  // the local window and later in the rest of the std::map
+  // the local window and later in the rest of the map
   KeyFrame* pNewChild;
   KeyFrame* pNewParent;
 
@@ -1285,15 +1285,15 @@ void LoopClosing::MergeLocal() {
 
   mpLocalMapper->EmptyQueue();
 
-  // Merge std::map will become in the new active std::map with the local window of KFs
-  // and MPs from the current std::map. Later, the elements of the current std::map will
-  // be transform to the new active std::map reference, in order to keep real time
+  // Merge map will become in the new active map with the local window of KFs
+  // and MPs from the current map. Later, the elements of the current map will
+  // be transform to the new active map reference, in order to keep real time
   // tracking
   std::shared_ptr<Map> pCurrentMap = mpCurrentKF->GetMap();
   std::shared_ptr<Map> pMergeMap = mpMergeMatchedKF->GetMap();
 
-  // std::cout << "Merge local, Active std::map: " << pCurrentMap->GetId() <<
-  // std::endl; std::cout << "Merge local, Non-Active std::map: " <<
+  // std::cout << "Merge local, Active map: " << pCurrentMap->GetId() <<
+  // std::endl; std::cout << "Merge local, Non-Active map: " <<
   // pMergeMap->GetId() << std::endl;
 
 #ifdef REGISTER_TIMES
@@ -1307,7 +1307,7 @@ void LoopClosing::MergeLocal() {
   // Get the current KF and its neighbors(visual->covisibles;
   // inertial->temporal+covisibles)
   std::set<KeyFrame*> spLocalWindowKFs;
-  // Get MPs in the welding area from the current std::map
+  // Get MPs in the welding area from the current map
   std::set<MapPoint*> spLocalWindowMPs;
   if (pCurrentMap->IsInertial() &&
       pMergeMap->IsInertial())  // TODO Check the correct initialization
@@ -1444,7 +1444,7 @@ void LoopClosing::MergeLocal() {
     }
 
     if (pKFi->GetMap() != pCurrentMap)
-      Verbose::PrintMess("Other std::map KF, this should't happen",
+      Verbose::PrintMess("Other map KF, this should't happen",
                          Verbose::VERBOSITY_DEBUG);
 
     g2o::Sim3 g2oCorrectedSiw;
@@ -1480,7 +1480,7 @@ void LoopClosing::MergeLocal() {
       pKFi->mVwbMerge = Rcor * pKFi->GetVelocity();
     }
 
-    // TODO DEBUG to know which are the KFs that had been moved to the other std::map
+    // TODO DEBUG to know which are the KFs that had been moved to the other map
   }
 
   int numPointsWithCorrection = 0;
@@ -1525,11 +1525,11 @@ void LoopClosing::MergeLocal() {
 
   {
     std::unique_lock<std::mutex> currentLock(
-        pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
+        pCurrentMap->mMutexMapUpdate);  // We update the current map with the
                                         // Merge information
     std::unique_lock<std::mutex> mergeLock(
         pMergeMap->mMutexMapUpdate);  // We remove the Kfs and MPs in the merged
-                                      // area from the old std::map
+                                      // area from the old map
 
     // std::cout << "Merge local window: " << spLocalWindowKFs.size() <<
     // std::endl; std::cout << "[Merge]: init merging maps " << std::endl;
@@ -1582,7 +1582,7 @@ void LoopClosing::MergeLocal() {
           ->GetParent();     // Old parent, it will be the new child of this KF
   pNewParent = mpCurrentKF;  // Old child, now it will be the parent of its own
                              // parent(we need eliminate this KF from children
-                             // std::list in its old parent)
+                             // list in its old parent)
   mpCurrentKF->ChangeParent(mpMergeMatchedKF);
   while (pNewChild) {
     pNewChild->EraseChild(pNewParent);  // We remove the relation between the
@@ -1668,7 +1668,7 @@ void LoopClosing::MergeLocal() {
   // Loop closed. Release Local Mapping.
   mpLocalMapper->Release();
 
-  // Update the non critical area from the current std::map to the merged std::map
+  // Update the non critical area from the current map to the merged map
   std::vector<KeyFrame*> vpCurrentMapKFs = pCurrentMap->GetAllKeyFrames();
   std::vector<MapPoint*> vpCurrentMapMPs = pCurrentMap->GetAllMapPoints();
 
@@ -1676,7 +1676,7 @@ void LoopClosing::MergeLocal() {
   } else {
     if (mpTracker->mSensor == CameraType::MONOCULAR) {
       std::unique_lock<std::mutex> currentLock(
-          pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
+          pCurrentMap->mMutexMapUpdate);  // We update the current map with the
                                           // Merge information
 
       for (KeyFrame* pKFi : vpCurrentMapKFs) {
@@ -1752,11 +1752,11 @@ void LoopClosing::MergeLocal() {
     {
       // Get Merge Map std::mutex
       std::unique_lock<std::mutex> currentLock(
-          pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
+          pCurrentMap->mMutexMapUpdate);  // We update the current map with the
                                           // Merge information
       std::unique_lock<std::mutex> mergeLock(
           pMergeMap->mMutexMapUpdate);  // We remove the Kfs and MPs in the
-                                        // merged area from the old std::map
+                                        // merged area from the old map
 
       // std::cout << "Merge outside KFs: " << vpCurrentMapKFs.size() <<
       // std::endl;
@@ -1798,7 +1798,7 @@ void LoopClosing::MergeLocal() {
   if (bRelaunchBA &&
       (!pCurrentMap->isImuInitialized() ||
        (pCurrentMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1))) {
-    // Launch a new std::thread to perform Global Bundle Adjustment
+    // Launch a new thread to perform Global Bundle Adjustment
     mbRunningGBA = true;
     mbFinishedGBA = false;
     mbStopGBA = false;
@@ -1820,11 +1820,11 @@ void LoopClosing::MergeLocal2() {
   loopClosed = true;
   Verbose::PrintMess("Merge detected!!!", Verbose::VERBOSITY_NORMAL);
 
-  // int numTemporalKFs = 11; UNUSED due to todo // TODO (std::set by parameter): Temporal KFs in the
-                            // local window if the std::map is inertial.
+  // int numTemporalKFs = 11; UNUSED due to todo // TODO (set by parameter): Temporal KFs in the
+                            // local window if the map is inertial.
 
   // Relationship to rebuild the essential graph, it is used two times, first in
-  // the local window and later in the rest of the std::map
+  // the local window and later in the rest of the map
   KeyFrame* pNewChild;
   KeyFrame* pNewParent;
 
@@ -1878,7 +1878,7 @@ void LoopClosing::MergeLocal2() {
     // << std::endl;
 
     // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now(); // UNUSED
-    // std::cout << "updating active std::map to merge reference" << std::endl;
+    // std::cout << "updating active map to merge reference" << std::endl;
     // std::cout << "curr merge KF id: " << mpCurrentKF->mnId << std::endl;
     // std::cout << "curr tracking KF id: " << mpTracker->GetLastKeyFrame()->mnId <<
     // std::endl;
@@ -1906,7 +1906,7 @@ void LoopClosing::MergeLocal2() {
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
     mpTracker->UpdateFrameIMU(1.0f, b, mpTracker->GetLastKeyFrame());
 
-    // Set std::map initialized
+    // Set map initialized
     pCurrentMap->SetIniertialBA2();
     pCurrentMap->SetIniertialBA1();
     pCurrentMap->SetImuInitialized();
@@ -1915,10 +1915,10 @@ void LoopClosing::MergeLocal2() {
   // std::cout << "MergeMap init ID: " << pMergeMap->GetInitKFid() << "       CurrMap
   // init ID: " << pCurrentMap->GetInitKFid() << std::endl;
 
-  // Load KFs and MPs from merge std::map
-  // std::cout << "updating current std::map" << std::endl;
+  // Load KFs and MPs from merge map
+  // std::cout << "updating current map" << std::endl;
   {
-    // Get Merge Map std::mutex (This section stops tracking!!)
+    // Get Merge Map Mutex (This section stops tracking!!)
     std::unique_lock<std::mutex> currentLock(
         pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
                                         // Merge information
@@ -1997,8 +1997,8 @@ void LoopClosing::MergeLocal2() {
 
   // std::cout << "Update relationship between KFs" << std::endl;
   std::vector<MapPoint*>
-      vpCheckFuseMapPoint;  // MapPoint std::vector from current std::map to allow to fuse
-                            // duplicated points with the old std::map (merge)
+      vpCheckFuseMapPoint;  // MapPoint vector from current map to allow to fuse
+                            // duplicated points with the old map (merge)
   std::vector<KeyFrame*> vpCurrentConnectedKFs;
 
   mvpMergeConnectedKFs.push_back(mpMergeMatchedKF);
@@ -2077,8 +2077,8 @@ void LoopClosing::MergeLocal2() {
   if(!good)
       std::cout << "BAD ESSENTIAL GRAPH 4!!" << std::endl;*/
 
-  // TODO Check: If new std::map is too small, we suppose that not informaiton can be
-  // propagated from new to old std::map
+  // TODO Check: If new map is too small, we suppose that not informaiton can be
+  // propagated from new to old map
   if (numKFnew < 10) {
     mpLocalMapper->Release();
     return;
@@ -2139,10 +2139,10 @@ void LoopClosing::CheckObservations(std::set<KeyFrame*>& spKFsMap1,
 
     if (mMatchedMP.size() == 0) {
       std::cout << "CHECK-OBS: KF " << pKFi1->mnId
-           << " has not any matched MP with the other std::map" << std::endl;
+           << " has not any matched MP with the other map" << std::endl;
     } else {
       std::cout << "CHECK-OBS: KF " << pKFi1->mnId << " has matched MP with "
-           << mMatchedMP.size() << " KF from the other std::map" << std::endl;
+           << mMatchedMP.size() << " KF from the other map" << std::endl;
       for (std::pair<KeyFrame*, int> matchedKF : mMatchedMP) {
         std::cout << "   -KF: " << matchedKF.first->mnId
              << ", Number of matches: " << matchedKF.second << std::endl;
@@ -2175,7 +2175,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose& CorrectedPosesMap,
                                       nullptr);
     /*int numFused = */matcher.Fuse(pKFi, Scw, vpMapPoints, 4, vpReplacePoints);
 
-    // Get Map std::mutex
+    // Get Map Mutex
     std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
     const int nLP = vpMapPoints.size();
     for (int i = 0; i < nLP; i++) {
@@ -2216,7 +2216,7 @@ void LoopClosing::SearchAndFuse(const std::vector<KeyFrame*>& vConectedKFs,
                                       nullptr);
     matcher.Fuse(pKF, Scw, vpMapPoints, 4, vpReplacePoints);
 
-    // Get Map std::mutex
+    // Get Map Mutex
     std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
     const int nLP = vpMapPoints.size();
     for (int i = 0; i < nLP; i++) {
@@ -2328,7 +2328,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap,
   // Update all MapPoints and KeyFrames
   // Local Mapping was active during BA, that means that there might be new
   // keyframes not included in the Global BA and they are not consistent with
-  // the updated std::map. We need to propagate the correction through the spanning
+  // the updated map. We need to propagate the correction through the spanning
   // tree
   {
     std::unique_lock<std::mutex> lock(mMutexGBA);
@@ -2339,7 +2339,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap,
     if (!mbStopGBA) {
       Verbose::PrintMess("Global Bundle Adjustment finished",
                          Verbose::VERBOSITY_NORMAL);
-      Verbose::PrintMess("Updating std::map ...", Verbose::VERBOSITY_NORMAL);
+      Verbose::PrintMess("Updating map ...", Verbose::VERBOSITY_NORMAL);
 
       mpLocalMapper->RequestStop();
       // Wait until Local Mapping has effectively stopped
@@ -2348,12 +2348,12 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap,
         usleep(1000);
       }
 
-      // Get Map std::mutex
+      // Get Map Mutex
       std::unique_lock<std::mutex> lock(pActiveMap->mMutexMapUpdate);
-      // std::cout << "LC: Update Map std::mutex adquired" << std::endl;
+      // std::cout << "LC: Update Map mutex adquired" << std::endl;
 
       // pActiveMap->PrintEssentialGraph();
-      // Correct keyframes starting at std::map first keyframe
+      // Correct keyframes starting at map first keyframe
       std::list<KeyFrame*> lpKFtoCheck(pActiveMap->mvpKeyFrameOrigins.begin(),
                                   pActiveMap->mvpKeyFrameOrigins.end());
 
@@ -2451,7 +2451,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap,
                 cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt,
         CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
             }
-            std::cout << "--It has " << num_MPs << " MPs matched in the std::map" << std::endl;
+            std::cout << "--It has " << num_MPs << " MPs matched in the map" << std::endl;
 
             std::string namefile = "./test_GBA/GBA_" + to_string(nLoopKF) + "_KF" +
         to_string(pKF->mnId) +"_D" + to_string(dist) +".png";

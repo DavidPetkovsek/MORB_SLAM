@@ -202,7 +202,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, KeyFrameDatabase *pKFDB)
 void KeyFrame::ComputeBoW() {
   if (mBowVec.empty() || mFeatVec.empty()) {
     std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
-    // Feature std::vector associate features with nodes in the 4th level (from
+    // Feature vector associate features with nodes in the 4th level (from
     // leaves up) We assume the vocabulary tree has 6 levels, change the 4
     // otherwise
     mpORBvocabulary->transform(vCurrentDesc, mBowVec, mFeatVec, 4);
@@ -450,7 +450,7 @@ void KeyFrame::UpdateConnections(bool upParent) {
     vpMP = mvpMapPoints;
   }
 
-  // For all std::map points in keyframe check in which other keyframes are they seen
+  // For all map points in keyframe check in which other keyframes are they seen
   // Increase counter for those keyframes
   for (std::vector<MapPoint *>::iterator vit = vpMP.begin(), vend = vpMP.end();
        vit != vend; vit++) {
@@ -645,7 +645,7 @@ void KeyFrame::SetBadFlag() {
     std::set<KeyFrame *> sParentCandidates;
     if (mpParent) sParentCandidates.insert(mpParent);
 
-    // Assign at each iteration one children with a parent (the std::pair with
+    // Assign at each iteration one children with a parent (the pair with
     // highest covisibility weight) Include that children as new parent
     // candidate for the rest
     while (!mspChildrens.empty()) {
@@ -959,7 +959,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, KeyFrame *> &mpKFid,
        it != end; ++it) {
     KeyFrame *pKFi = mpKFid[it->first];
     if (pKFi == nullptr) {
-      continue;  // pKFi is not std::set, therefore discard this point.
+      continue;  // pKFi is not set, therefore discard this point.
     }
     mConnectedKeyFrameWeights[pKFi] = it->second;
   }

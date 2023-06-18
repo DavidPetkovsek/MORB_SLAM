@@ -1047,11 +1047,11 @@ void LocalMapping::RequestReset() {
 void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
     {
         std::unique_lock<std::mutex> lock(mMutexReset);
-        std::cout << "LM: Active std::map reset recieved" << std::endl;
+        std::cout << "LM: Active map reset recieved" << std::endl;
         mbResetRequestedActiveMap = true;
         mpMapToReset = pMap;
     }
-    std::cout << "LM: Active std::map reset, waiting..." << std::endl;
+    std::cout << "LM: Active map reset, waiting..." << std::endl;
     mbResetRequested = true;
     while (1) {
         {
@@ -1061,7 +1061,7 @@ void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
         }
         usleep(100);
     }
-    std::cout << "LM: Active std::map reset, Done!!!" << std::endl;
+    std::cout << "LM: Active map reset, Done!!!" << std::endl;
 }
 
 void LocalMapping::ResetIfRequested() {
@@ -1090,7 +1090,7 @@ void LocalMapping::ResetIfRequested() {
 
         if (mbResetRequestedActiveMap) {
             executed_reset = true;
-            std::cout << "LM: Reseting current std::map in Local Mapping..." << std::endl;
+            std::cout << "LM: Reseting current map in Local Mapping..." << std::endl;
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
 
@@ -1105,7 +1105,7 @@ void LocalMapping::ResetIfRequested() {
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }
     }
-    if (executed_reset) std::cout << "LM: Reset free the std::mutex" << std::endl;
+    if (executed_reset) std::cout << "LM: Reset free the mutex" << std::endl;
 }
 
 void LocalMapping::RequestFinish() {
@@ -1137,7 +1137,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     size_t nMinKF = 10;
 
     if (mpAtlas->KeyFramesInMap() < nMinKF) {
-        std::cout << "cannot initialize, not enough frames in std::map" << std::endl;
+        std::cout << "cannot initialize, not enough frames in map" << std::endl;
         return;
     }
 
@@ -1152,7 +1152,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
   std::vector<KeyFrame*> vpKF(lpKF.begin(), lpKF.end());
 
     if (vpKF.size() < nMinKF) {
-    std::cout << "cannot initialize, not enough frames in std::map vpKF?" << std::endl;
+    std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
     return; // condition could be here too
     }
 
@@ -1280,10 +1280,10 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
   // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now(); // UNUSED
 
-    Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating std::map ...",
+    Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...",
                        Verbose::VERBOSITY_NORMAL);
 
-    // Get Map std::mutex
+    // Get Map Mutex
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
     unsigned long GBAid = mpCurrentKeyFrame->mnId;
@@ -1295,7 +1295,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         lpKF.push_back(mpCurrentKeyFrame);
     }
 
-    // Correct keyframes starting at std::map first keyframe
+    // Correct keyframes starting at map first keyframe
   std::list<KeyFrame*> lpKFtoCheck(
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.begin(),
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end());
@@ -1336,7 +1336,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pKF->SetVelocity(pKF->mVwbGBA);
             pKF->SetNewBias(pKF->mBiasGBA);
         } else {
-            std::cout << "KF " << pKF->mnId << " not std::set to inertial!! \n";
+            std::cout << "KF " << pKF->mnId << " not set to inertial!! \n";
         }
 
         lpKFtoCheck.pop_front();
@@ -1428,7 +1428,7 @@ void LocalMapping::ScaleRefinement() {
     }
 
     Sophus::SO3d so3wg(mRwg);
-    // Before this line we are not changing the std::map
+    // Before this line we are not changing the map
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
   // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now(); // UNUSED
     if ((fabs(mScale - 1.f) > 0.002) || !mbMonocular) {

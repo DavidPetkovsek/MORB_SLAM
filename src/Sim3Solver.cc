@@ -327,7 +327,7 @@ void Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
   N << N11, N12, N13, N14, N12, N22, N23, N24, N13, N23, N33, N34, N14, N24,
       N34, N44;
 
-  // Step 4: Eigenstd::vector of the highest eigenvalue
+  // Step 4: Eigenvector of the highest eigenvalue
   Eigen::EigenSolver<Eigen::Matrix4f> eigSolver;
   eigSolver.compute(N);
 

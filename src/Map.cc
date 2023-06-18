@@ -318,7 +318,7 @@ void Map::SetLastMapChange(int currentChangeId) {
 void Map::PreSave(std::set<std::shared_ptr<GeometricCamera>>& spCams, std::shared_ptr<Map> sharedMap) {
 
   if(this != sharedMap.get()){
-    throw std::runtime_error("The shared std::map is not equivalent to this");
+    throw std::runtime_error("The shared map is not equivalent to this");
   }
 
   int nMPWithoutObs = 0;
@@ -390,7 +390,7 @@ void Map::PostLoad(
     std::map<unsigned int, std::shared_ptr<GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
 
   if(this != sharedMap.get()){
-  throw std::runtime_error("The shared std::map is not equivalent to this");
+  throw std::runtime_error("The shared map is not equivalent to this");
   }
 
   std::copy(mvpBackupMapPoints.begin(), mvpBackupMapPoints.end(),

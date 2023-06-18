@@ -74,7 +74,7 @@ namespace MORB_SLAM {
                     mvP2D.push_back(kp.pt);
                     mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);
 
-                    //Bearing std::vector should be normalized
+                    //Bearing vector should be normalized
                     cv::Point3f cv_br = mpCamera->unproject(kp.pt);
                     cv_br /= cv_br.z;
                     bearingVector_t br(cv_br.x,cv_br.y,cv_br.z);
@@ -367,7 +367,7 @@ namespace MORB_SLAM {
         for (size_t i = 0; i < numberCorrespondences; i++) {
             bearingVector_t f_current = f[indices[i]];
             points3.col(i) = p[indices[i]];
-            // nullspace of right std::vector
+            // nullspace of right vector
             Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::HouseholderQRPreconditioner>
                     svd_f(f_current.transpose(), Eigen::ComputeFullV);
             nullspaces[i] = svd_f.matrixV().block(0, 1, 3, 2);
@@ -706,7 +706,7 @@ namespace MORB_SLAM {
         Eigen::VectorXd rd(2 * numObservations);
         Eigen::MatrixXd Jac(2 * numObservations, numUnknowns);
         Eigen::VectorXd g(numUnknowns, 1);
-        Eigen::VectorXd dx(numUnknowns, 1); // result std::vector
+        Eigen::VectorXd dx(numUnknowns, 1); // result vector
 
         Jac.setZero();
         r.setZero();

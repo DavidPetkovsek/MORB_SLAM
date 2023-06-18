@@ -155,7 +155,7 @@ class Atlas {
   KeyFrameDatabase* mpKeyFrameDB;
   ORBVocabulary* mpORBVocabulary;
 
-  // mutex
+  // Mutex
   std::mutex mMutexAtlas;
 
 };  // class Atlas

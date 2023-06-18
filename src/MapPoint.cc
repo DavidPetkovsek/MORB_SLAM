@@ -77,7 +77,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, KeyFrame* pRefKF, std::shared_ptr
   mbTrackInViewR = false;
   mbTrackInView = false;
 
-  // MapPoints can be created from Tracking and Local Mapping. This std::mutex avoid
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
@@ -112,8 +112,8 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF,
 
   mNormalVector.setZero();
 
-  // Worldpos is not std::set
-  // MapPoints can be created from Tracking and Local Mapping. This std::mutex avoid
+  // Worldpos is not set
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
@@ -169,7 +169,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
 
   pFrame->mDescriptors.row(idxF).copyTo(mDescriptor);
 
-  // MapPoints can be created from Tracking and Local Mapping. This std::mutex avoid
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
@@ -575,7 +575,7 @@ void MapPoint::PrintObservations() {
     KeyFrame* pKFi = mit->first;
     // std::tuple<int,int> indexes = mit->second; // UNUSED
     // int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes); // UNUSED
-    std::cout << "--OBS in KF " << pKFi->mnId << " in std::map "
+    std::cout << "--OBS in KF " << pKFi->mnId << " in map "
          << pKFi->GetMap()->GetId() << std::endl;
   }
 }
