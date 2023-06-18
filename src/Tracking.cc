@@ -1566,7 +1566,7 @@ void Tracking::PreintegrateIMU() {
 
   const int n = mvImuFromLastFrame.size() - 1;
   if (n == 0) {
-    std::cout << "Empty IMU measurements std::vector!!!\n";
+    std::cout << "Empty IMU measurements vector!!!\n";
     return;
   }
 
@@ -1819,7 +1819,7 @@ void Tracking::Track() {
               CameraType::isInertial(mSensor)) {
             mState = Tracker::LOST;
           } else if (pCurrentMap->KeyFramesInMap() > 10) {
-            // std::cout << "KF in std::map: " << pCurrentMap->KeyFramesInMap() << std::endl;
+            // std::cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << std::endl;
             mState = Tracker::RECENTLY_LOST;
             mTimeStampLost = mCurrentFrame.mTimeStamp;
           } else {
@@ -1857,12 +1857,12 @@ void Tracking::Track() {
             }
           }
         } else if (mState == Tracker::LOST) {
-          Verbose::PrintMess("A new std::map is started...",
+          Verbose::PrintMess("A new map is started...",
                              Verbose::VERBOSITY_NORMAL);
 
           if (pCurrentMap->KeyFramesInMap() < 10) { // Resets maps because they might be garabge KF
             mpSystem->ResetActiveMap();
-            Verbose::PrintMess("Reseting current std::map...",
+            Verbose::PrintMess("Reseting current map...",
                                Verbose::VERBOSITY_NORMAL);
           } else
             CreateMapInAtlas();
@@ -1884,7 +1884,7 @@ void Tracking::Track() {
         bOK = Relocalization();
       } else {
         if (!mbVO) {
-          // In last frame we tracked enough MapPoints in the std::map
+          // In last frame we tracked enough MapPoints in the map
           if (mbVelocity) {
             bOK = TrackWithMotionModel();
           } else {
@@ -2240,7 +2240,7 @@ void Tracking::StereoInitialization() {
                            std::to_string(mpAtlas->MapPointsInMap()) + " points",
                        Verbose::VERBOSITY_QUIET);
 
-    // std::cout << "Active std::map: " << mpAtlas->GetCurrentMap()->GetId() << std::endl;
+    // std::cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << std::endl;
 
     mpLocalMapper->InsertKeyFrame(pKFini);
 
@@ -2480,7 +2480,7 @@ void Tracking::CreateMapInAtlas() {
   // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the
   // current id, because it is the new starting point for new map
   Verbose::PrintMess(
-      "First frame id in std::map: " + std::to_string(mnLastInitFrameId + 1),
+      "First frame id in map: " + std::to_string(mnLastInitFrameId + 1),
       Verbose::VERBOSITY_NORMAL);
   mbVO = false;  // Init value for know if there are enough MapPoints in the
                  // last KF
@@ -3540,7 +3540,7 @@ void Tracking::Reset(bool bLocMap) {
 }
 
 void Tracking::ResetActiveMap(bool bLocMap) {
-  Verbose::PrintMess("Active std::map Reseting", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
 
   std::shared_ptr<Map> pMap = mpAtlas->GetCurrentMap();
 
