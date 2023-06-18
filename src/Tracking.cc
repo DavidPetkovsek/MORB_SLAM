@@ -407,8 +407,8 @@ void Tracking::PrintTimeStats() {
   // Map complexity
   std::cout << "---------------------------" << std::endl;
   std::cout << std::endl << "Map complexity" << std::endl;
-  std::cout << "KFs in std::map: " << mpAtlas->GetAllKeyFrames().size() << std::endl;
-  std::cout << "MPs in std::map: " << mpAtlas->GetAllMapPoints().size() << std::endl;
+  std::cout << "KFs in map: " << mpAtlas->GetAllKeyFrames().size() << std::endl;
+  std::cout << "MPs in map: " << mpAtlas->GetAllMapPoints().size() << std::endl;
   f << "---------------------------" << std::endl;
   f << std::endl << "Map complexity" << std::endl;
   std::vector<Map*> vpMaps = mpAtlas->GetAllMaps();
@@ -420,8 +420,8 @@ void Tracking::PrintTimeStats() {
     }
   }
 
-  f << "KFs in std::map: " << pBestMap->GetAllKeyFrames().size() << std::endl;
-  f << "MPs in std::map: " << pBestMap->GetAllMapPoints().size() << std::endl;
+  f << "KFs in map: " << pBestMap->GetAllKeyFrames().size() << std::endl;
+  f << "MPs in map: " << pBestMap->GetAllMapPoints().size() << std::endl;
 
   f << "---------------------------" << std::endl;
   f << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl;
@@ -1696,7 +1696,7 @@ void Tracking::ResetFrameIMU() {
 
 void Tracking::Track() {
   if (mpLocalMapper->mbBadImu) {
-    std::cout << "TRACK: Reset std::map because local mapper set the bad imu flag "
+    std::cout << "TRACK: Reset map because local mapper set the bad imu flag "
          << std::endl;
     mpSystem->ResetActiveMap();
     return;
@@ -1705,7 +1705,7 @@ void Tracking::Track() {
   std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap(mpSystem);
   if (!pCurrentMap) {
     // if (!mpSystem->isShutDown()){
-    //   std::cout << "ERROR: There is not an active std::map in the atlas" << std::endl;
+    //   std::cout << "ERROR: There is not an active map in the atlas" << std::endl;
     // }
     return;
   }
@@ -1750,7 +1750,7 @@ void Tracking::Track() {
   }
   mbCreatedMap = false;
 
-  // Get Map std::mutex -> Map cannot be changed
+  // Get Map Mutex -> Map cannot be changed
   std::unique_lock<std::mutex> lock(pCurrentMap->mMutexMapUpdate);
 
   mbMapUpdated = false;
@@ -1951,18 +1951,18 @@ void Tracking::Track() {
         std::chrono::steady_clock::now();
 #endif
     // If we have an initial estimation of the camera pose and matching. Track
-    // the local std::map.
+    // the local map.
     if (!mbOnlyTracking) {
       if (bOK) {
         bOK = TrackLocalMap();
       } else {
-        std::cout << "Fail to track local std::map!" << std::endl;
+        std::cout << "Fail to track local map!" << std::endl;
       }
     } else {
-      // mbVO true means that there are few matches to MapPoints in the std::map. We
-      // cannot retrieve a local std::map and therefore we do not perform
+      // mbVO true means that there are few matches to MapPoints in the map. We
+      // cannot retrieve a local map and therefore we do not perform
       // TrackLocalMap(). Once the system relocalizes the camera we will use the
-      // local std::map again.
+      // local map again.
       if (bOK && !mbVO) bOK = TrackLocalMap();
     }
 
@@ -1974,7 +1974,7 @@ void Tracking::Track() {
                            Verbose::VERBOSITY_NORMAL);
         if (!pCurrentMap->isImuInitialized() ||
             !pCurrentMap->GetIniertialBA2()) {
-          std::cout << "IMU is not or recently initialized. Reseting active std::map..."
+          std::cout << "IMU is not or recently initialized. Reseting active map..."
                << std::endl;
           mpSystem->ResetActiveMap();
         }
@@ -2190,7 +2190,7 @@ void Tracking::StereoInitialization() {
     KeyFrame* pKFini =
         new KeyFrame(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
-    // Insert KeyFrame in the std::map
+    // Insert KeyFrame in the map
     mpAtlas->AddKeyFrame(pKFini);
 
     // Create MapPoints and asscoiate to KeyFrame
@@ -2344,7 +2344,7 @@ void Tracking::CreateInitialMapMonocular() {
   pKFini->ComputeBoW();
   pKFcur->ComputeBoW();
 
-  // Insert KFs in the std::map
+  // Insert KFs in the map
   mpAtlas->AddKeyFrame(pKFini);
   mpAtlas->AddKeyFrame(pKFcur);
 
@@ -2478,7 +2478,7 @@ void Tracking::CreateMapInAtlas() {
   // Restart the variable with information about the last KF
   mbVelocity = false;
   // mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the
-  // current id, because it is the new starting point for new std::map
+  // current id, because it is the new starting point for new map
   Verbose::PrintMess(
       "First frame id in std::map: " + to_string(mnLastInitFrameId + 1),
       Verbose::VERBOSITY_NORMAL);
@@ -2518,7 +2518,7 @@ void Tracking::CheckReplacedInLastFrame() {
 }
 
 bool Tracking::TrackReferenceKeyFrame() {
-  // Compute Bag of Words std::vector
+  // Compute Bag of Words vector
   mCurrentFrame.ComputeBoW();
 
   // We perform first an ORB matching with the reference keyframe
@@ -2725,9 +2725,9 @@ bool Tracking::TrackWithMotionModel() {
 }
 
 bool Tracking::TrackLocalMap() {
-  // We have an estimation of the camera pose and some std::map points tracked in the
-  // frame. We retrieve the local std::map and try to find matches to points in the
-  // local std::map.
+  // We have an estimation of the camera pose and some map points tracked in the
+  // frame. We retrieve the local map and try to find matches to points in the
+  // local map.
   mTrackedFr++;
 
   UpdateLocalMap();
@@ -2902,7 +2902,7 @@ bool Tracking::NeedNewKeyFrame() {
   if (mpCamera2) thRefRatio = 0.75f;
 
   if (mSensor == CameraType::IMU_MONOCULAR) {
-    if (mnMatchesInliers > 350)  // Points tracked from the local std::map
+    if (mnMatchesInliers > 350)  // Points tracked from the local map
       thRefRatio = 0.75f;
     else
       thRefRatio = 0.90f;
@@ -2921,7 +2921,7 @@ bool Tracking::NeedNewKeyFrame() {
       mSensor != CameraType::IMU_STEREO && mSensor != CameraType::IMU_RGBD &&
       (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose);
   // Condition 2: Few tracked points compared to reference keyframe. Lots of
-  // visual odometry compared to std::map matches.
+  // visual odometry compared to map matches.
   const bool c2 =
       (((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose)) &&
        mnMatchesInliers > 15);
@@ -3094,7 +3094,7 @@ void Tracking::CreateNewKeyFrame() {
 }
 
 void Tracking::SearchLocalPoints() {
-  // Do not search std::map points already matched
+  // Do not search map points already matched
   for (std::vector<MapPoint*>::iterator vit = mCurrentFrame.mvpMapPoints.begin(),
                                    vend = mCurrentFrame.mvpMapPoints.end();
        vit != vend; vit++) {
@@ -3195,7 +3195,7 @@ void Tracking::UpdateLocalPoints() {
 }
 
 void Tracking::UpdateLocalKeyFrames() {
-  // Each std::map point vote for the keyframes in which it has been observed
+  // Each map point vote for the keyframes in which it has been observed
   std::map<KeyFrame*, int> keyframeCounter;
   if (!mpAtlas->isImuInitialized() ||
       (mCurrentFrame.mnId < mnLastRelocFrameId + 2)) {
@@ -3243,7 +3243,7 @@ void Tracking::UpdateLocalKeyFrames() {
   mvpLocalKeyFrames.clear();
   mvpLocalKeyFrames.reserve(3 * keyframeCounter.size());
 
-  // All keyframes that observe a std::map point are included in the local std::map. Also
+  // All keyframes that observe a map point are included in the local map. Also
   // check which keyframe shares most points
   for (std::map<KeyFrame*, int>::const_iterator it = keyframeCounter.begin(),
                                            itEnd = keyframeCounter.end();
@@ -3558,7 +3558,7 @@ void Tracking::ResetActiveMap(bool bLocMap) {
 
   // Clear BoW Database
   Verbose::PrintMess("Reseting Database", Verbose::VERBOSITY_NORMAL);
-  mpKeyFrameDB->clearMap(pMap);  // Only clear the active std::map references
+  mpKeyFrameDB->clearMap(pMap);  // Only clear the active map references
   Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
   // Clear Map (this erase MapPoints and KeyFrames)

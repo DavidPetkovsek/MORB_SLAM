@@ -1400,7 +1400,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag,
     }
   }
 
-  // Get Map std::mutex
+  // Get Map Mutex
   std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
 
   if (!vToErase.empty()) {
@@ -1741,19 +1741,19 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF,
                                        std::vector<MapPoint*>& vpNonCorrectedMPs) {
   Verbose::PrintMess("Opt_Essential: There are " +
                          std::to_string(vpFixedKFs.size()) +
-                         " KFs fixed in the merged std::map",
+                         " KFs fixed in the merged map",
                      Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess("Opt_Essential: There are " +
                          std::to_string(vpFixedCorrectedKFs.size()) +
-                         " KFs fixed in the old std::map",
+                         " KFs fixed in the old map",
                      Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess("Opt_Essential: There are " +
                          std::to_string(vpNonFixedKFs.size()) +
-                         " KFs non-fixed in the merged std::map",
+                         " KFs non-fixed in the merged map",
                      Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess("Opt_Essential: There are " +
                          std::to_string(vpNonCorrectedMPs.size()) +
-                         " MPs non-corrected in the merged std::map",
+                         " MPs non-corrected in the merged map",
                      Verbose::VERBOSITY_DEBUG);
 
   g2o::SparseOptimizer optimizer;
@@ -2057,7 +2057,7 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF,
 
       pMPi->UpdateNormalAndDepth();
     } else {
-      std::cout << "ERROR: MapPoint has a reference KF from another std::map" << std::endl;
+      std::cout << "ERROR: MapPoint has a reference KF from another map" << std::endl;
     }
   }
 }
@@ -2774,7 +2774,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     }
   }
 
-  // std::cout << "Total std::map points: " << lLocalMapPoints.size() << std::endl;
+  // std::cout << "Total map points: " << lLocalMapPoints.size() << std::endl;
   for (std::map<int, int>::iterator mit = mVisEdges.begin(), mend = mVisEdges.end();
        mit != mend; mit++) {
     assert(mit->second >= 3);
@@ -2819,7 +2819,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     }
   }
 
-  // Get Map std::mutex and erase outliers
+  // Get Map Mutex and erase outliers
   std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
 
   // TODO: Some convergence problems have been detected here
@@ -3228,7 +3228,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
   VertexScale* VS = new VertexScale(1.0);
   VS->setId(maxKFid * 2 + 5);
   VS->setFixed(
-      true);  // Fixed since scale is obtained from already well initialized std::map
+      true);  // Fixed since scale is obtained from already well initialized map
   optimizer.addVertex(VS);
 
   // Graph edges
@@ -3461,7 +3461,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,
   int numInsertedPoints = 0;
   for (KeyFrame* pKFi : vpFixedKF) {
     if (pKFi->isBad() || pKFi->GetMap() != pCurrentMap) {
-      Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current std::map",
+      Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current map",
                          Verbose::VERBOSITY_NORMAL);
       continue;
     }
@@ -3744,7 +3744,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,
                          std::to_string(badStereoMP) + " sterero bad edges",
                      Verbose::VERBOSITY_DEBUG);
 
-  // Get Map std::mutex
+  // Get Map Mutex
   std::unique_lock<std::mutex> lock(pMainKF->GetMap()->mMutexMapUpdate);
 
   if (!vToErase.empty()) {
@@ -3899,7 +3899,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
       break;
   }
 
-  // We fix just once the old std::map
+  // We fix just once the old map
   if (vpOptimizableKFs.back()->mPrevKF) {
     lFixedKeyFrames.push_back(vpOptimizableKFs.back()->mPrevKF);
     vpOptimizableKFs.back()->mPrevKF->mnBAFixedForKF = pCurrKF->mnId;
@@ -4310,7 +4310,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
     }
   }
 
-  // Get Map std::mutex and erase outliers
+  // Get Map Mutex and erase outliers
   std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
   if (!vToErase.empty()) {
     for (size_t i = 0; i < vToErase.size(); i++) {
@@ -4453,7 +4453,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
 
         // Left monocular observation
         if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft) {
-          if (i < Nleft)  // std::pair left-right
+          if (i < Nleft)  // pair left-right
             kpUn = pFrame->mvKeys[i];
           else
             kpUn = pFrame->mvKeysUn[i];
@@ -4821,7 +4821,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
         cv::KeyPoint kpUn;
         // Left monocular observation
         if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft) {
-          if (i < Nleft)  // std::pair left-right
+          if (i < Nleft)  // pair left-right
             kpUn = pFrame->mvKeys[i];
           else
             kpUn = pFrame->mvKeysUn[i];
