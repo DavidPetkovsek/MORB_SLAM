@@ -25,10 +25,11 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "MORB_SLAM/ImprovedTypes.hpp"
+#include "MORB_SLAM/Atlas.h"
+#include "MORB_SLAM/Tracking.h"
 
 namespace MORB_SLAM {
 
-class MapPoint;
 class Viewer;
 
 class FrameDrawer {

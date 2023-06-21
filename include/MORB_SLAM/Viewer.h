@@ -25,6 +25,7 @@
 #include <memory>
 #include <thread>
 
+#include "MORB_SLAM/Tracking.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/FrameDrawer.h"
 #include "MORB_SLAM/MapDrawer.h"

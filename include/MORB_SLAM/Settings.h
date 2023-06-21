@@ -33,6 +33,7 @@
 #include <memory>
 
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
+#include "MORB_SLAM/ImprovedTypes.hpp"
 
 namespace MORB_SLAM {
 
@@ -45,7 +46,7 @@ class Settings {
   /*
    * Enum for the different camera types implemented
    */
-  enum CameraType { PinHole = 0, Rectified = 1, KannalaBrandt = 2 };
+  enum CameraModelType { PinHole = 0, Rectified = 1, KannalaBrandt = 2 };
 
   /*
    * Delete default constructor
@@ -55,7 +56,7 @@ class Settings {
   /*
    * Constructor from file
    */
-  Settings(const std::string& configFile, const int& sensor);
+  Settings(const std::string& configFile, const CameraType& sensor);
 
   /*
    * Ostream operator overloading to dump settings to the terminal
@@ -65,7 +66,7 @@ class Settings {
   /*
    * Getter methods
    */
-  CameraType cameraType() const { return cameraType_; }
+  CameraModelType cameraType() const { return cameraType_; }
   std::shared_ptr<GeometricCamera> camera1() { return calibration1_; }
   std::shared_ptr<GeometricCamera> camera2() { return calibration2_; }
   cv::Mat camera1DistortionCoef() {
@@ -163,8 +164,8 @@ class Settings {
 
   void precomputeRectificationMaps();
 
-  int sensor_;
-  CameraType cameraType_;  // Camera type
+  CameraType sensor_;
+  CameraModelType cameraType_;  // Camera type
 
   /*
    * Visual stuff

@@ -361,6 +361,8 @@ class Tracking {
  public:
   cv::Mat mImRight;
 };
+typedef std::shared_ptr<Tracking> Tracking_ptr;
+typedef std::weak_ptr<Tracking> Tracking_wptr;
 
 }  // namespace MORB_SLAM
 

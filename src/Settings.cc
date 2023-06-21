@@ -128,12 +128,12 @@ cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage& fSettings,
   }
 }
 
-Settings::Settings(const std::string& configFile, const int& sensor)
-    : bNeedToUndistort_(false),
+Settings::Settings(const std::string& configFile, const CameraType& sensor)
+    : sensor_(sensor),
+      bNeedToUndistort_(false),
       bNeedToRectify_(false),
       bNeedToResize1_(false),
       bNeedToResize2_(false) {
-  sensor_ = sensor;
 
   // Open settings file
   cv::FileStorage fSettings(configFile, cv::FileStorage::READ);

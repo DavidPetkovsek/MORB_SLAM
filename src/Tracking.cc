@@ -44,6 +44,7 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
                    KeyFrameDatabase* pKFDB, const std::string& strSettingPath,
                    const CameraType sensor, Settings* settings, const std::string& _nameSeq)
     : mState(TrackingState::NO_IMAGES_YET),
+      mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
       mLastValidFrame(Frame()),
       mTrackedFr(0),
@@ -83,7 +84,7 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
     }
 
     bool b_parse_imu = true;
-    if (CameraType::isInertial(mSensor)) {
+    if (mSensor.isInertial()) {
       b_parse_imu = ParseIMUParamFile(fSettings);
       if (!b_parse_imu) {
         std::cout << "*Error with the IMU parameters in the config file*"
@@ -576,7 +577,7 @@ void Tracking::newParameterLoader(Settings* settings) {
   mK_(0, 2) = mpCamera->getParameter(2);
   mK_(1, 2) = mpCamera->getParameter(3);
 
-  if (CameraType::hasMulticam(mSensor) &&
+  if (mSensor.hasMulticam() &&
       settings->cameraType() == Settings::KannalaBrandt) {
     mpCamera2 = settings->camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
@@ -584,7 +585,7 @@ void Tracking::newParameterLoader(Settings* settings) {
     mTlr = settings->Tlr();
   }
 
-  if (CameraType::hasMulticam(mSensor)) {
+  if (mSensor.hasMulticam()) {
     mbf = settings->bf();
     mThDepth = settings->b() * settings->thDepth();
   }
@@ -893,7 +894,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
       mK_(1, 2) = cy;
     }
 
-    if (CameraType::hasMulticam(mSensor)) {
+    if (mSensor.hasMulticam()) {
       // Right camera
       // Camera calibration parameters
       cv::FileNode node = fSettings["Camera2.fx"];
@@ -1086,7 +1087,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
               << std::endl;
   }
 
-  if (CameraType::hasMulticam(mSensor)) {
+  if (mSensor.hasMulticam()) {
     cv::FileNode node = fSettings["Camera.bf"];
     if (!node.empty() && node.isReal()) {
       mbf = node.real();
@@ -1117,7 +1118,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
   else
     std::cout << "- color order: BGR (ignored if grayscale)" << std::endl;
 
-  if (CameraType::hasMulticam(mSensor)) {
+  if (mSensor.hasMulticam()) {
     float fx = mpCamera->getParameter(0);
     cv::FileNode node = fSettings["ThDepth"];
     if (!node.empty() && node.isReal()) {
@@ -1719,7 +1720,7 @@ void Tracking::Track() {
     }
   }
 
-  if (CameraType::isInertial(mSensor) && mpLastKeyFrame)
+  if (mSensor.isInertial() && mpLastKeyFrame)
     mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
 
   if (mState == TrackingState::NO_IMAGES_YET) {
@@ -1728,7 +1729,7 @@ void Tracking::Track() {
 
   mLastProcessedState = mState;
 
-  if (CameraType::isInertial(mSensor) && !mbCreatedMap) {
+  if (mSensor.isInertial() && !mbCreatedMap) {
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartPreIMU =
         std::chrono::steady_clock::now();
@@ -1760,7 +1761,7 @@ void Tracking::Track() {
   }
 
   if (mState == TrackingState::NOT_INITIALIZED) {
-    if (CameraType::hasMulticam(mSensor)) {
+    if (mSensor.hasMulticam()) {
       StereoInitialization();
     } else {
       MonocularInitialization();
@@ -1813,7 +1814,7 @@ void Tracking::Track() {
         if (!bOK) {
           std::cout << "TrackReferenceKeyFrame failed, is LOST" << std::endl;
           if (mCurrentFrame.mnId <= (mnLastRelocFrameId + mnFramesToResetIMU) &&
-              CameraType::isInertial(mSensor)) {
+              mSensor.isInertial()) {
             mState = TrackingState::LOST;
           } else if (pCurrentMap->KeyFramesInMap() > 10) {
             // std::cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << std::endl;
@@ -1829,7 +1830,7 @@ void Tracking::Track() {
                              Verbose::VERBOSITY_NORMAL);
 
           bOK = true;
-          if (CameraType::isInertial(mSensor)) { // tried setting to false, still goes to inf
+          if (mSensor.isInertial()) { // tried setting to false, still goes to inf
             if (pCurrentMap->isImuInitialized())
               PredictStateIMU();
             else
@@ -1876,7 +1877,7 @@ void Tracking::Track() {
       // Localization Mode: Local Mapping is deactivated (TODO Not available in
       // inertial mode)
       if (mState == TrackingState::LOST) {
-        if (CameraType::isInertial(mSensor))
+        if (mSensor.isInertial())
           Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
         bOK = Relocalization();
       } else {
@@ -1966,7 +1967,7 @@ void Tracking::Track() {
     if (bOK)
       mState = TrackingState::OK;
     else if (mState == TrackingState::OK) {
-      if (CameraType::isInertial(mSensor)) {
+      if (mSensor.isInertial()) {
         Verbose::PrintMess("Track lost for less than one second...",
                            Verbose::VERBOSITY_NORMAL);
         if (!pCurrentMap->isImuInitialized() ||
@@ -1991,7 +1992,7 @@ void Tracking::Track() {
     // modified)
     if ((mCurrentFrame.mnId < (mnLastRelocFrameId + mnFramesToResetIMU)) &&
         (static_cast<int>(mCurrentFrame.mnId) > mnFramesToResetIMU) &&
-        CameraType::isInertial(mSensor) &&
+        mSensor.isInertial() &&
         pCurrentMap->isImuInitialized()) {
       // TODO check this situation
       Verbose::PrintMess("Saving pointer to frame. imu needs reset...",
@@ -2040,7 +2041,7 @@ void Tracking::Track() {
         mbVelocity = false;
       }
 
-      // if (CameraType::isInertial(mSensor))
+      // if (mSensor.isInertial())
       //   mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
       // Clean VO matches
@@ -2071,7 +2072,7 @@ void Tracking::Track() {
       // Check if we need to insert a new keyframe
       // if(bNeedKF && bOK)
       if (bNeedKF && (bOK || (mInsertKFsLost && mState == TrackingState::RECENTLY_LOST &&
-                              CameraType::isInertial(mSensor))))
+                              mSensor.isInertial())))
         CreateNewKeyFrame();
 
 #ifdef REGISTER_TIMES
@@ -2102,7 +2103,7 @@ void Tracking::Track() {
         mpSystem->ResetActiveMap();
         return;
       }
-      if (CameraType::isInertial(mSensor))
+      if (mSensor.isInertial())
         if (!pCurrentMap->isImuInitialized()) {
           Verbose::PrintMess(
               "Track lost before IMU initialisation, reseting...",
@@ -2465,7 +2466,7 @@ void Tracking::CreateInitialMapMonocular() {
 void Tracking::CreateMapInAtlas() {
   mnLastInitFrameId = mCurrentFrame.mnId;
   mpAtlas->CreateNewMap();  
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     mpAtlas->SetInertialSensor();
   mbSetInit = false;
 
@@ -2485,7 +2486,7 @@ void Tracking::CreateMapInAtlas() {
     mbReadyToInitialize = false;
   }
 
-  if (CameraType::isInertial(mSensor) && mpImuPreintegratedFromLastKF) {
+  if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
     delete mpImuPreintegratedFromLastKF;
     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
   }
@@ -2563,7 +2564,7 @@ bool Tracking::TrackReferenceKeyFrame() {
     }
   }
 
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     return true;
   else
     return nmatchesMap >= 10;
@@ -2680,7 +2681,7 @@ bool Tracking::TrackWithMotionModel() {
 
   if (nmatches < 20) {
     Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
-    if (CameraType::isInertial(mSensor))
+    if (mSensor.isInertial())
       return true;
     else
       return false;
@@ -2715,7 +2716,7 @@ bool Tracking::TrackWithMotionModel() {
     return nmatches > 20;
   }
 
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     return true;
   else
     return nmatchesMap >= 10;
@@ -2817,7 +2818,7 @@ bool Tracking::TrackLocalMap() {
 }
 
 bool Tracking::NeedNewKeyFrame() {
-  if (CameraType::isInertial(mSensor) &&
+  if (mSensor.isInertial() &&
       !mpAtlas->GetCurrentMap()->isImuInitialized()) {
     if (mSensor == CameraType::IMU_MONOCULAR &&
         (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.25)
@@ -2994,12 +2995,12 @@ void Tracking::CreateNewKeyFrame() {
                        Verbose::VERBOSITY_NORMAL);
 
   // Reset preintegration from last KF (Create new object)
-  if (CameraType::isInertial(mSensor)) {
+  if (mSensor.isInertial()) {
     mpImuPreintegratedFromLastKF =
         new IMU::Preintegrated(pKF->GetImuBias(), pKF->mImuCalib);
   }
 
-  if (CameraType::hasMulticam(mSensor))  // TODO check if incluide imu_stereo
+  if (mSensor.hasMulticam())  // TODO check if incluide imu_stereo
   {
     mCurrentFrame.UpdatePoseMatrices();
     // std::cout << "create new MPs" << std::endl;
@@ -3138,7 +3139,7 @@ void Tracking::SearchLocalPoints() {
         th = 2;
       else
         th = 6;
-    } else if (!mpAtlas->isImuInitialized() && CameraType::isInertial(mSensor)) {
+    } else if (!mpAtlas->isImuInitialized() && mSensor.isInertial()) {
       th = 10;
     }
 
@@ -3309,7 +3310,7 @@ void Tracking::UpdateLocalKeyFrames() {
   }
 
   // Add 10 last temporal KFs (mainly for IMU)
-  if (CameraType::isInertial(mSensor) &&
+  if (mSensor.isInertial() &&
       mvpLocalKeyFrames.size() < 80) {
     KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
@@ -3511,7 +3512,7 @@ void Tracking::Reset(bool bLocMap) {
   // Clear Map (this erase MapPoints and KeyFrames)
   mpAtlas->clearAtlas();
   mpAtlas->CreateNewMap();
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     mpAtlas->SetInertialSensor();
   mnInitialFrameId = 0;
 

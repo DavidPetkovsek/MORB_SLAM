@@ -246,5 +246,7 @@ private:
 
     Settings* settings_;
 };
+typedef std::shared_ptr<System> System_ptr;
+typedef std::weak_ptr<System> System_wptr;
 
 }// namespace ORB_SLAM

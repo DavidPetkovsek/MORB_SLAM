@@ -56,7 +56,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
       mbReset(false),
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
-      mbDeactivateLocalizationMode(false) {
+      mbDeactivateLocalizationMode(false),
+      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -668,7 +669,7 @@ void System::SaveTrajectoryEuRoC(const std::string& filename) {
   // After a loop closure the first keyframe might not be at the origin.
   Sophus::SE3f
       Twb;  // Can be word to cam0 or world to b depending on IMU or not.
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     Twb = vpKFs[0]->GetImuPose();
   else
     Twb = vpKFs[0]->GetPoseInverse();
@@ -774,7 +775,7 @@ void System::SaveTrajectoryEuRoC(const std::string& filename, std::shared_ptr<Ma
   // After a loop closure the first keyframe might not be at the origin.
   Sophus::SE3f
       Twb;  // Can be word to cam0 or world to b dependingo on IMU or not.
-  if (CameraType::isInertial(mSensor))
+  if (mSensor.isInertial())
     Twb = vpKFs[0]->GetImuPose();
   else
     Twb = vpKFs[0]->GetPoseInverse();
