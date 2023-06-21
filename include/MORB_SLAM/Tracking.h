@@ -43,12 +43,6 @@
 
 namespace MORB_SLAM {
 
-class Atlas;
-class LocalMapping;
-class LoopClosing;
-class System;
-class Settings;
-
 class Tracking {
  public:
   
@@ -231,7 +225,6 @@ class Tracking {
 
   // Vector of IMU measurements from previous to current frame (to be filled by
   // PreintegrateIMU)
-  std::vector<IMU::Point> mvImuFromLastFrame;
   std::mutex mMutexImuQueue;
 
   // Imu calibration parameters

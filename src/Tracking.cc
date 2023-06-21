@@ -633,8 +633,7 @@ void Tracking::newParameterLoader(Settings* settings) {
   const float sf = sqrt(mImuFreq);
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
 
-  mpImuPreintegratedFromLastKF =
-      new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+  mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
 }
 
 bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
@@ -1340,8 +1339,7 @@ bool Tracking::ParseIMUParamFile(cv::FileStorage& fSettings) {
 
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
 
-  mpImuPreintegratedFromLastKF =
-      new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+  mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
 
   return true;
 }
@@ -1533,8 +1531,6 @@ void Tracking::PreintegrateIMU() {
     return;
   }
 
-  mvImuFromLastFrame.clear();
-  mvImuFromLastFrame.reserve(mlQueueImuData.size());
   if (mlQueueImuData.size() == 0) {
     Verbose::PrintMess("Not IMU data in mlQueueImuData!!",
                        Verbose::VERBOSITY_NORMAL);
@@ -1542,79 +1538,65 @@ void Tracking::PreintegrateIMU() {
     return;
   }
 
-  // std::cout << "mImuPer " << mImuPer << std::endl;
+  std::vector<IMU::Point> frameIMUDataList(mlQueueImuData.size());
+  // Fill frameIMUDataList with data for this frame from the global imu data queue
   {
-    std::unique_lock<std::mutex> lock(mMutexImuQueue);
+    std::scoped_lock<std::mutex> lock(mMutexImuQueue);
     auto itr = mlQueueImuData.begin();
-    auto lastItr = itr;
-    for(; itr != mlQueueImuData.end(); ++itr){
-      IMU::Point &point = *itr;
-      if(point.t < mCurrentFrame.mpPrevFrame->mTimeStamp - mImuPer) {
-        // pass
-      }else if(point.t < mCurrentFrame.mTimeStamp - mImuPer){
-        mvImuFromLastFrame.emplace_back(point);
-      }else{
-        break;
-      }
-      lastItr = itr;
-    }
-    if(!mvImuFromLastFrame.empty())
-      mlQueueImuData.erase(mlQueueImuData.begin(), lastItr);
+    // iterate until the end of the queue or until we hit a timestamp that is newer than current frame
+    for(; itr != mlQueueImuData.end() && itr->t < mCurrentFrame.mTimeStamp - mImuPer; ++itr)
+      if(point.t >= mCurrentFrame.mpPrevFrame->mTimeStamp - mImuPer) // ignore measurements before the previous frame
+        frameIMUDataList.emplace_back(*itr); // add to local vector (via copy)
+    // If there are points to remove (we found imu measurements to use)
+    if(!frameIMUDataList.empty() && itr != mlQueueImuData.begin())
+      mlQueueImuData.erase(mlQueueImuData.begin(), --itr); // erase them from the global queue since they are now copied locally
   }
 
-  const int n = mvImuFromLastFrame.size() - 1;
-  if (n <= 0) {
+  const int n = frameIMUDataList.size() - 1;
+  if (n <= 0) { // 0 or 1 measurement
     std::cout << "Empty IMU measurements vector!!!\n";
     return;
   }
 
-  IMU::Preintegrated* pImuPreintegratedFromLastFrame =
-      new IMU::Preintegrated(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
+  IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
 
-  for (int i = 0; i < n; i++) {
+  // we get here only if there are at least 2 measurements
+  for (int i = 0; i < n; i++) { // iterates until the second to last element
     float tstep;
     Eigen::Vector3f acc, angVel;
-    if ((i == 0) && (i < (n - 1))) { //first measurement and has at least 3 imu data points
-      float tab = mvImuFromLastFrame[i + 1].t - mvImuFromLastFrame[i].t;
-      float tini =
-          mvImuFromLastFrame[i].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
-      acc = (mvImuFromLastFrame[i].a + mvImuFromLastFrame[i + 1].a -
-             (mvImuFromLastFrame[i + 1].a - mvImuFromLastFrame[i].a) *
-                 (tini / tab)) *
-            0.5f;
-      angVel = (mvImuFromLastFrame[i].w + mvImuFromLastFrame[i + 1].w -
-                (mvImuFromLastFrame[i + 1].w - mvImuFromLastFrame[i].w) *
-                    (tini / tab)) *
-               0.5f;
-      tstep =
-          mvImuFromLastFrame[i + 1].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
-    } else if (i < (n - 1)) { 
-      acc = (mvImuFromLastFrame[i].a + mvImuFromLastFrame[i + 1].a) * 0.5f;
-      angVel = (mvImuFromLastFrame[i].w + mvImuFromLastFrame[i + 1].w) * 0.5f;
-      tstep = mvImuFromLastFrame[i + 1].t - mvImuFromLastFrame[i].t;
-    } else if ((i > 0) && (i == (n - 1))) {
-      float tab = mvImuFromLastFrame[i + 1].t - mvImuFromLastFrame[i].t;
-      float tend = mvImuFromLastFrame[i + 1].t - mCurrentFrame.mTimeStamp;
-      acc = (mvImuFromLastFrame[i].a + mvImuFromLastFrame[i + 1].a -
-             (mvImuFromLastFrame[i + 1].a - mvImuFromLastFrame[i].a) *
-                 (tend / tab)) *
-            0.5f;
-      angVel = (mvImuFromLastFrame[i].w + mvImuFromLastFrame[i + 1].w -
-                (mvImuFromLastFrame[i + 1].w - mvImuFromLastFrame[i].w) *
-                    (tend / tab)) *
-               0.5f;
-      tstep = mCurrentFrame.mTimeStamp - mvImuFromLastFrame[i].t;
-    } else if ((i == 0) && (i == (n - 1))) {
-      acc = mvImuFromLastFrame[i].a;
-      angVel = mvImuFromLastFrame[i].w;
+    if ((i == 0) && i < (n - 1)) { // first iteration but not the last iteration
+      float dt = frameIMUDataList[1].t - frameIMUDataList[0].t;
+      float timeFromLastFrameToFirstIMUFrame = frameIMUDataList[0].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
+      acc = (frameIMUDataList[0].a + frameIMUDataList[1].a -
+             (frameIMUDataList[1].a - frameIMUDataList[0].a) *
+                 (timeFromLastFrameToFirstIMUFrame / dt)) * 0.5f;
+      angVel = (frameIMUDataList[0].w + frameIMUDataList[1].w -
+                (frameIMUDataList[1].w - frameIMUDataList[0].w) *
+                    (timeFromLastFrameToFirstIMUFrame / dt)) * 0.5f;
+      tstep = frameIMUDataList[i + 1].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
+    } else if (i < (n - 1)) { // not the first nor the last iteration
+      acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a) * 0.5f;
+      angVel = (frameIMUDataList[i].w + frameIMUDataList[i + 1].w) * 0.5f;
+      tstep = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
+    } else if ((i > 0) && (i == (n - 1))) { // not the first but is the last iteration
+      float dt = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
+      float tend = frameIMUDataList[i + 1].t - mCurrentFrame.mTimeStamp;
+      acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a -
+             (frameIMUDataList[i + 1].a - frameIMUDataList[i].a) *
+                 (tend / dt)) * 0.5f;
+      angVel = (frameIMUDataList[i].w + frameIMUDataList[i + 1].w -
+                (frameIMUDataList[i + 1].w - frameIMUDataList[i].w) *
+                    (tend / dt)) * 0.5f;
+      tstep = mCurrentFrame.mTimeStamp - frameIMUDataList[i].t;
+    } else if ((i == 0) && (i == (n - 1))) { // both the first and the last iteration
+      acc = frameIMUDataList[0].a;
+      angVel = frameIMUDataList[0].w;
       tstep = mCurrentFrame.mTimeStamp - mCurrentFrame.mpPrevFrame->mTimeStamp;
     }
 
     // Temporarily remove to clean up log output
     // std::cout << "accel mag: " << std::sqrt((std::pow(acc(0,0), 2) + std::pow(acc(1,0), 2) + std::pow(acc(2,0), 2))) << "direction: " << acc(0,0) << " , " << acc(1,0) << " , " << acc(2,0) << std::endl;
 
-    if (!mpImuPreintegratedFromLastKF)
-      std::cout << "mpImuPreintegratedFromLastKF does not exist" << std::endl;
     mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc, angVel, tstep);
     pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc, angVel, tstep);
   }
@@ -2169,8 +2151,7 @@ void Tracking::StereoInitialization() {
 
       if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
 
-      mpImuPreintegratedFromLastKF =
-          new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+      mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
       mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     }
 
@@ -2275,11 +2256,8 @@ void Tracking::MonocularInitialization() {
       fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
 
       if (mSensor == CameraType::IMU_MONOCULAR) {
-        if (mpImuPreintegratedFromLastKF) {
-          delete mpImuPreintegratedFromLastKF;
-        }
-        mpImuPreintegratedFromLastKF =
-            new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+        if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
+        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
         mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
       }
 
@@ -2420,8 +2398,7 @@ void Tracking::CreateInitialMapMonocular() {
     pKFini->mNextKF = pKFcur;
     pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(
-        pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
+    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
   }
 
   mpLocalMapper->InsertKeyFrame(pKFini);
@@ -2995,10 +2972,8 @@ void Tracking::CreateNewKeyFrame() {
                        Verbose::VERBOSITY_NORMAL);
 
   // Reset preintegration from last KF (Create new object)
-  if (mSensor.isInertial()) {
-    mpImuPreintegratedFromLastKF =
-        new IMU::Preintegrated(pKF->GetImuBias(), pKF->mImuCalib);
-  }
+  if (mSensor.isInertial())
+    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(), pKF->mImuCalib);
 
   if (mSensor.hasMulticam())  // TODO check if incluide imu_stereo
   {
