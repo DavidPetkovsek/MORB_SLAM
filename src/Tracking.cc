@@ -1713,7 +1713,7 @@ void Tracking::Track() {
       std::cerr
           << "ERROR: Frame with a timestamp older than previous frame detected!"
           << std::endl;
-      std::unique_lock<std::mutex> lock(mMutexImuQueue);
+      std::scoped_lock<std::mutex> lock(mMutexImuQueue);
       mlQueueImuData.clear();
       CreateMapInAtlas();
       return;

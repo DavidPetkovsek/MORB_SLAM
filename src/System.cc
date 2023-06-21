@@ -197,7 +197,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // usleep(10*1000*1000);
   }
 
-  if (mSensor == CameraType::IMU_STEREO || mSensor == CameraType::IMU_MONOCULAR || mSensor == CameraType::IMU_RGBD)
+  if (mSensor.isInertial())
     mpAtlas->SetInertialSensor();
 
   // Initialize the Tracking thread
@@ -211,7 +211,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // Initialize the Local Mapping thread and launch
   mpLocalMapper = new LocalMapping(
       this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR,
-      mSensor == CameraType::IMU_MONOCULAR || mSensor == CameraType::IMU_STEREO || mSensor == CameraType::IMU_RGBD,
+      mSensor.isInertial(),
       strSequence);
   
   // Do not axis flip when loading from existing atlas
@@ -258,8 +258,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
                                  const std::vector<IMU::Point>& vImuMeas,
                                  std::string filename) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
-    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to "
-            "Stereo nor Stereo-Inertial."
+    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial."
          << std::endl;
     exit(-1);
   }
@@ -283,7 +282,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
 
   // Check mode change
   {
-    std::unique_lock<std::mutex> lock(mMutexMode);
+    std::scoped_lock<std::mutex> lock(mMutexMode);
     if (mbActivateLocalizationMode) {
       mpLocalMapper->RequestStop();
 
@@ -304,7 +303,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
 
   // Check reset
   {
-    std::unique_lock<std::mutex> lock(mMutexReset);
+    std::scoped_lock<std::mutex> lock(mMutexReset);
     if (mbReset) {
       mpTracker->Reset();
       mbReset = false;
