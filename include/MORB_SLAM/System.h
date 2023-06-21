@@ -88,7 +88,7 @@ public:
 public:
     
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const std::string &strVocFile, const std::string &strSettingsFile, const CameraType::eSensor sensor, const std::string &strSequence = std::string());
+    System(const std::string &strVocFile, const std::string &strSettingsFile, const CameraType sensor, const std::string &strSequence = std::string());
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -158,7 +158,7 @@ public:
 
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
-    Tracker::eTrackingState GetTrackingState();
+    TrackingState GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
@@ -182,7 +182,7 @@ public:
     bool getHasMergedLocalMap();
     bool getIsDoneVIBA();
 
-    void setTrackingState(Tracker::eTrackingState state);
+    void setTrackingState(TrackingState state);
 
     // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
@@ -196,7 +196,7 @@ private:
     std::string CalculateCheckSum(std::string filename, int type);
 
     // Input sensor
-    CameraType::eSensor mSensor;
+    CameraType mSensor;
     std::vector<Camera_ptr> cameras;
 
     // ORB vocabulary used for place recognition and feature matching.
@@ -233,7 +233,7 @@ private:
     bool mbDeactivateLocalizationMode;
 
     // Tracking state
-    Tracker::eTrackingState mTrackingState;
+    TrackingState mTrackingState;
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;

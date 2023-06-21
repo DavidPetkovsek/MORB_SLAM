@@ -42,8 +42,8 @@ namespace MORB_SLAM {
 
 Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
                    KeyFrameDatabase* pKFDB, const std::string& strSettingPath,
-                   const CameraType::eSensor sensor, Settings* settings, const std::string& _nameSeq)
-    : mState(Tracker::NO_IMAGES_YET),
+                   const CameraType sensor, Settings* settings, const std::string& _nameSeq)
+    : mState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
       mLastValidFrame(Frame()),
       mTrackedFr(0),
@@ -1415,7 +1415,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 
   std::cout << "Current state: " << mState << std::endl;
   
-  if (mState != Tracker::LOST && mState != Tracker::RECENTLY_LOST)
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
     //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
     //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
     mLastValidFrame = mCurrentFrame;
@@ -1487,7 +1487,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
   }
 
   if (mSensor == CameraType::MONOCULAR) {
-    if (mState == Tracker::NOT_INITIALIZED || mState == Tracker::NO_IMAGES_YET ||
+    if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET ||
         (lastID - initID) < mMaxFrames)
       mCurrentFrame =
           Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
@@ -1497,7 +1497,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
           Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
                 mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset);
   } else if (mSensor == CameraType::IMU_MONOCULAR) {
-    if (mState == Tracker::NOT_INITIALIZED || mState == Tracker::NO_IMAGES_YET) {
+    if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET) {
       mCurrentFrame =
           Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
                 mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
@@ -1507,7 +1507,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
                 mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
   }
 
-  if (mState == Tracker::NO_IMAGES_YET) t0 = timestamp;
+  if (mState == TrackingState::NO_IMAGES_YET) t0 = timestamp;
 
 #ifdef REGISTER_TIMES
   vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
@@ -1707,7 +1707,7 @@ void Tracking::Track() {
     return;
   }
 
-  if (mState != Tracker::NO_IMAGES_YET) {
+  if (mState != TrackingState::NO_IMAGES_YET) {
     if (mLastFrame.mTimeStamp > mCurrentFrame.mTimeStamp) {
       std::cerr
           << "ERROR: Frame with a timestamp older than previous frame detected!"
@@ -1722,8 +1722,8 @@ void Tracking::Track() {
   if (CameraType::isInertial(mSensor) && mpLastKeyFrame)
     mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
 
-  if (mState == Tracker::NO_IMAGES_YET) {
-    mState = Tracker::NOT_INITIALIZED;
+  if (mState == TrackingState::NO_IMAGES_YET) {
+    mState = TrackingState::NOT_INITIALIZED;
   }
 
   mLastProcessedState = mState;
@@ -1759,7 +1759,7 @@ void Tracking::Track() {
     mbMapUpdated = true;
   }
 
-  if (mState == Tracker::NOT_INITIALIZED) {
+  if (mState == TrackingState::NOT_INITIALIZED) {
     if (CameraType::hasMulticam(mSensor)) {
       StereoInitialization();
     } else {
@@ -1768,7 +1768,7 @@ void Tracking::Track() {
 
     // mpFrameDrawer->Update(this);
 
-    if (mState != Tracker::OK)  // If rightly initialized, mState=OK
+    if (mState != TrackingState::OK)  // If rightly initialized, mState=OK
     {
       mLastFrame = Frame(mCurrentFrame);
       return;
@@ -1792,7 +1792,7 @@ void Tracking::Track() {
       // State OK
       // Local Mapping is activated. This is the normal behaviour, unless
       // you explicitly activate the "only tracking" mode.
-      if (mState == Tracker::OK) {
+      if (mState == TrackingState::OK) {
         // Local Mapping might have changed some MapPoints tracked in last frame
         CheckReplacedInLastFrame();
 
@@ -1814,17 +1814,17 @@ void Tracking::Track() {
           std::cout << "TrackReferenceKeyFrame failed, is LOST" << std::endl;
           if (mCurrentFrame.mnId <= (mnLastRelocFrameId + mnFramesToResetIMU) &&
               CameraType::isInertial(mSensor)) {
-            mState = Tracker::LOST;
+            mState = TrackingState::LOST;
           } else if (pCurrentMap->KeyFramesInMap() > 10) {
             // std::cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << std::endl;
-            mState = Tracker::RECENTLY_LOST;
+            mState = TrackingState::RECENTLY_LOST;
             mTimeStampLost = mCurrentFrame.mTimeStamp;
           } else {
-            mState = Tracker::LOST;
+            mState = TrackingState::LOST;
           }
         }
       } else {
-        if (mState == Tracker::RECENTLY_LOST) {
+        if (mState == TrackingState::RECENTLY_LOST) {
           Verbose::PrintMess("Lost for a short time",
                              Verbose::VERBOSITY_NORMAL);
 
@@ -1837,7 +1837,7 @@ void Tracking::Track() {
 
             if (mCurrentFrame.mTimeStamp - mTimeStampLost >
                 time_recently_lost) {
-              mState = Tracker::LOST;
+              mState = TrackingState::LOST;
               Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
               bOK = false;
             }
@@ -1848,12 +1848,12 @@ void Tracking::Track() {
             // std::to_string(mCurrentFrame.mTimeStamp) << std::endl; std::cout <<
             // "mTimeStampLost:" << std::to_string(mTimeStampLost) << std::endl;
             if (mCurrentFrame.mTimeStamp - mTimeStampLost > 3.0f && !bOK) {
-              mState = Tracker::LOST;
+              mState = TrackingState::LOST;
               Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
               bOK = false;
             }
           }
-        } else if (mState == Tracker::LOST) {
+        } else if (mState == TrackingState::LOST) {
           Verbose::PrintMess("A new map is started...",
                              Verbose::VERBOSITY_NORMAL);
 
@@ -1875,7 +1875,7 @@ void Tracking::Track() {
     } else {
       // Localization Mode: Local Mapping is deactivated (TODO Not available in
       // inertial mode)
-      if (mState == Tracker::LOST) {
+      if (mState == TrackingState::LOST) {
         if (CameraType::isInertial(mSensor))
           Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
         bOK = Relocalization();
@@ -1964,8 +1964,8 @@ void Tracking::Track() {
     }
 
     if (bOK)
-      mState = Tracker::OK;
-    else if (mState == Tracker::OK) {
+      mState = TrackingState::OK;
+    else if (mState == TrackingState::OK) {
       if (CameraType::isInertial(mSensor)) {
         Verbose::PrintMess("Track lost for less than one second...",
                            Verbose::VERBOSITY_NORMAL);
@@ -1976,9 +1976,9 @@ void Tracking::Track() {
           mpSystem->ResetActiveMap();
         }
 
-        mState = Tracker::RECENTLY_LOST;
+        mState = TrackingState::RECENTLY_LOST;
       } else
-        mState = Tracker::RECENTLY_LOST;  // visual to lost
+        mState = TrackingState::RECENTLY_LOST;  // visual to lost
 
       /*if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
       {*/
@@ -2030,7 +2030,7 @@ void Tracking::Track() {
     // if (mCurrentFrame.isSet())
     //   mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
-    if (bOK || mState == Tracker::RECENTLY_LOST) {
+    if (bOK || mState == TrackingState::RECENTLY_LOST) {
       // Update motion model
       if (mLastFrame.isSet() && mCurrentFrame.isSet()) {
         Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
@@ -2070,7 +2070,7 @@ void Tracking::Track() {
 
       // Check if we need to insert a new keyframe
       // if(bNeedKF && bOK)
-      if (bNeedKF && (bOK || (mInsertKFsLost && mState == Tracker::RECENTLY_LOST &&
+      if (bNeedKF && (bOK || (mInsertKFsLost && mState == TrackingState::RECENTLY_LOST &&
                               CameraType::isInertial(mSensor))))
         CreateNewKeyFrame();
 
@@ -2097,7 +2097,7 @@ void Tracking::Track() {
     }
 
     // Reset if the camera get lost soon after initialization
-    if (mState == Tracker::LOST) {
+    if (mState == TrackingState::LOST) {
       if (pCurrentMap->KeyFramesInMap() <= 10) {
         mpSystem->ResetActiveMap();
         return;
@@ -2122,7 +2122,7 @@ void Tracking::Track() {
     mLastFrame = Frame(mCurrentFrame);
   }
 
-  if (mState == Tracker::OK || mState == Tracker::RECENTLY_LOST) {
+  if (mState == TrackingState::OK || mState == TrackingState::RECENTLY_LOST) {
     // Store frame pose information to retrieve the complete camera trajectory
     // afterwards.
     if (mCurrentFrame.isSet()) {
@@ -2131,13 +2131,13 @@ void Tracking::Track() {
       mlRelativeFramePoses.push_back(Tcr_);
       mlpReferences.push_back(mCurrentFrame.mpReferenceKF);
       mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
-      mlbLost.push_back(mState == Tracker::LOST);
+      mlbLost.push_back(mState == TrackingState::LOST);
     } else {
       // This can happen if tracking is lost
       mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
       mlpReferences.push_back(mlpReferences.back());
       mlFrameTimes.push_back(mlFrameTimes.back());
-      mlbLost.push_back(mState == Tracker::LOST);
+      mlbLost.push_back(mState == TrackingState::LOST);
     }
   }
 
@@ -2257,7 +2257,7 @@ void Tracking::StereoInitialization() {
 
     // mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
-    mState = Tracker::OK;
+    mState = TrackingState::OK;
   }
 }
 
@@ -2457,7 +2457,7 @@ void Tracking::CreateInitialMapMonocular() {
 
   mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
 
-  mState = Tracker::OK;
+  mState = TrackingState::OK;
 
   initID = pKFcur->mnId;
 }
@@ -2470,7 +2470,7 @@ void Tracking::CreateMapInAtlas() {
   mbSetInit = false;
 
   mnInitialFrameId = mCurrentFrame.mnId + 1;
-  mState = Tracker::NO_IMAGES_YET;
+  mState = TrackingState::NO_IMAGES_YET;
 
   // Restart the variable with information about the last KF
   mbVelocity = false;
@@ -2795,7 +2795,7 @@ bool Tracking::TrackLocalMap() {
       mnMatchesInliers < 50)
     return false;
 
-  if ((mnMatchesInliers > 10) && (mState == Tracker::RECENTLY_LOST)) return true;
+  if ((mnMatchesInliers > 10) && (mState == TrackingState::RECENTLY_LOST)) return true;
 
   if (mSensor == CameraType::IMU_MONOCULAR) {
     if ((mnMatchesInliers < 15 && mpAtlas->isImuInitialized()) ||
@@ -2939,12 +2939,12 @@ bool Tracking::NeedNewKeyFrame() {
 
   bool c4 = false;
   if ((((mnMatchesInliers < 75) && (mnMatchesInliers > 15)) ||
-       mState == Tracker::RECENTLY_LOST) &&
+       mState == TrackingState::RECENTLY_LOST) &&
       (mSensor ==
        CameraType::IMU_MONOCULAR))  // MODIFICATION_2, originally
                                 // ((((mnMatchesInliers<75) &&
                                 // (mnMatchesInliers>15)) ||
-                                // mState==Tracker::RECENTLY_LOST) && ((mSensor ==
+                                // mState==TrackingState::RECENTLY_LOST) && ((mSensor ==
                                 // CameraType::IMU_MONOCULAR)))
     c4 = true;
   else
@@ -3145,8 +3145,8 @@ void Tracking::SearchLocalPoints() {
     // If the camera has been relocalised recently, perform a coarser search
     if (mCurrentFrame.mnId < mnLastRelocFrameId + 2) th = 5;
 
-    if (mState == Tracker::LOST ||
-        mState == Tracker::RECENTLY_LOST)  // Lost for less than 1 second
+    if (mState == TrackingState::LOST ||
+        mState == TrackingState::RECENTLY_LOST)  // Lost for less than 1 second
       th = 15;                    // 15
 
     /*int matches = */matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints,
@@ -3517,7 +3517,7 @@ void Tracking::Reset(bool bLocMap) {
 
   KeyFrame::nNextId = 0;
   Frame::nNextId = 0;
-  mState = Tracker::NO_IMAGES_YET;
+  mState = TrackingState::NO_IMAGES_YET;
 
   mbReadyToInitialize = false;
   mbSetInit = false;
@@ -3565,7 +3565,7 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   // Frame::nNextId = mnLastInitFrameId;
   mnLastInitFrameId = Frame::nNextId;
   // mnLastRelocFrameId = mnLastInitFrameId;
-  mState = Tracker::NO_IMAGES_YET;  // Tracker::NOT_INITIALIZED;
+  mState = TrackingState::NO_IMAGES_YET;  // TrackingState::NOT_INITIALIZED;
 
   mbReadyToInitialize = false;
 

@@ -47,7 +47,7 @@ class FrameDrawer {
 
  protected:
   bool both;
-  void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
+  void DrawTextInfo(cv::Mat &im, TrackingState nState, cv::Mat &imText);
 
   // Info of the frame to be drawn
   cv::Mat mIm, mImRight;
@@ -58,7 +58,7 @@ class FrameDrawer {
   int mnTracked, mnTrackedVO;
   std::vector<cv::KeyPoint> mvIniKeys;
   std::vector<int> mvIniMatches;
-  int mState;
+  TrackingState mState;
   std::vector<float> mvCurrentDepth;
   float mThDepth;
 

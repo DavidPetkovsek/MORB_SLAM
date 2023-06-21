@@ -181,7 +181,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings) {
 }
 
 void Viewer::update(const Sophus::SE3f &pose){
-  if(mpTracker->mState != Tracker::NOT_INITIALIZED){
+  if(mpTracker->mState != TrackingState::NOT_INITIALIZED){
     mpFrameDrawer.Update(mpTracker);
     mpMapDrawer.SetCurrentCameraPose(pose);
   }

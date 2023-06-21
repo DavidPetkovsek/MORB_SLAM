@@ -49,7 +49,7 @@ namespace MORB_SLAM {
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const std::string& strVocFile, const std::string& strSettingsFile,
-               const CameraType::eSensor sensor,
+               const CameraType sensor,
                const std::string& strSequence)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
@@ -668,7 +668,7 @@ void System::SaveTrajectoryEuRoC(const std::string& filename) {
   // After a loop closure the first keyframe might not be at the origin.
   Sophus::SE3f
       Twb;  // Can be word to cam0 or world to b depending on IMU or not.
-  if (mSensor == CameraType::IMU_MONOCULAR || mSensor == CameraType::IMU_STEREO || mSensor == CameraType::IMU_RGBD)
+  if (CameraType::isInertial(mSensor))
     Twb = vpKFs[0]->GetImuPose();
   else
     Twb = vpKFs[0]->GetPoseInverse();
@@ -774,7 +774,7 @@ void System::SaveTrajectoryEuRoC(const std::string& filename, std::shared_ptr<Ma
   // After a loop closure the first keyframe might not be at the origin.
   Sophus::SE3f
       Twb;  // Can be word to cam0 or world to b dependingo on IMU or not.
-  if (mSensor == CameraType::IMU_MONOCULAR || mSensor == CameraType::IMU_STEREO || mSensor == CameraType::IMU_RGBD)
+  if (CameraType::isInertial(mSensor))
     Twb = vpKFs[0]->GetImuPose();
   else
     Twb = vpKFs[0]->GetPoseInverse();
@@ -1331,7 +1331,7 @@ void System::SaveDebugData(const int& initIdx) {
   f.close();
 }
 
-Tracker::eTrackingState System::GetTrackingState() {
+TrackingState System::GetTrackingState() {
   std::unique_lock<std::mutex> lock(mMutexState);
   return mTrackingState;
 }
@@ -1359,7 +1359,7 @@ bool System::isLost() {
     return false;
   else {
     if ((mpTracker->mState ==
-         Tracker::LOST))  //||(mpTracker->mState==Tracker::RECENTLY_LOST))
+         TrackingState::LOST))  //||(mpTracker->mState==TrackingState::RECENTLY_LOST))
       return true;
     else
       return false;
@@ -1566,7 +1566,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   return checksum;
 }
 
-void System::setTrackingState(Tracker::eTrackingState state) {
+void System::setTrackingState(TrackingState state) {
   mpTracker->mState = state;
 }
 
