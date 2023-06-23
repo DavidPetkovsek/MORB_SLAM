@@ -336,7 +336,7 @@ std::vector<KeyFrame *> KeyFrame::GetBestCovisibilityKeyFrames(const int &N) {
     return mvpOrderedConnectedKeyFrames;
   else
     return std::vector<KeyFrame *>(mvpOrderedConnectedKeyFrames.begin(),
-                              mvpOrderedConnectedKeyFrames.begin() + N);
+                              mvpOrderedConnectedKeyFrames.begin() + N); //SUS
 }
 
 std::vector<KeyFrame *> KeyFrame::GetCovisiblesByWeight(const int &w) {
@@ -422,7 +422,7 @@ int KeyFrame::TrackedMapPoints(const int &minObs) {
         if (bCheckObs) {
           if (mvpMapPoints[i]->Observations() >= minObs) nPoints++;
         } else
-          nPoints++;
+          nPoints++;//SUS
       }
     }
   }

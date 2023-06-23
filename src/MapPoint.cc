@@ -46,7 +46,6 @@ MapPoint::MapPoint()
       mnFound(1),
       mbBad(false),
       mpReplaced(nullptr) {
-  mpReplaced = nullptr;
 }
 
 MapPoint::MapPoint(const Eigen::Vector3f& Pos, KeyFrame* pRefKF, std::shared_ptr<Map> pMap)
@@ -269,11 +268,9 @@ void MapPoint::SetBadFlag() {
     obs = mObservations;
     mObservations.clear();
   }
-  for (std::map<KeyFrame*, std::tuple<int, int>>::iterator mit = obs.begin(),
-                                                 mend = obs.end();
-       mit != mend; mit++) {
-    KeyFrame* pKF = mit->first;
-    int leftIndex = std::get<0>(mit->second), rightIndex = std::get<1>(mit->second);
+  for (auto &pair : obs) {
+    KeyFrame* pKF = pair.first;
+    int leftIndex = std::get<0>(pair.second), rightIndex = std::get<1>(pair.second);
     if (leftIndex != -1) {
       pKF->EraseMapPointMatch(leftIndex);
     }
@@ -307,13 +304,11 @@ void MapPoint::Replace(MapPoint* pMP) {
     mpReplaced = pMP;
   }
 
-  for (std::map<KeyFrame*, std::tuple<int, int>>::iterator mit = obs.begin(),
-                                                 mend = obs.end();
-       mit != mend; mit++) {
+  for (auto &pair : obs) {
     // Replace measurement in keyframe
-    KeyFrame* pKF = mit->first;
+    KeyFrame* pKF = pair.first;
 
-    std::tuple<int, int> indexes = mit->second;
+    std::tuple<int, int> indexes = pair.second;
     int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
     if (!pMP->IsInKeyFrame(pKF)) {

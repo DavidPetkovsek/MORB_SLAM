@@ -142,7 +142,6 @@ class Tracking {
   std::list<bool> mlbLost;
 
   // frames with estimated pose
-  int mTrackedFr;
   bool mbStep;
 
   // True if local mapping is deactivated and we are performing only
@@ -157,7 +156,9 @@ class Tracking {
   double t0;     // time-stamp of first read frame
   double t0vis;  // time-stamp of first inserted keyframe
   double t0IMU;  // time-stamp of IMU initialization
+ protected:
   bool mFastInit = false;
+ public:
 
   std::vector<MapPoint*> GetLocalMapMPS();
 
@@ -238,7 +239,7 @@ class Tracking {
   // enough matches with temporal points. In that case we are doing visual
   // odometry. The system will try to do relocalization to recover "zero-drift"
   // localization to the map.
-  bool mbVO;
+  bool notEnoughMatchPoints_trackOnlyMode;
 
   // Other Thread Pointers
   LocalMapping* mpLocalMapper;
@@ -313,7 +314,7 @@ class Tracking {
   bool mbCreatedMap;
 
   // Motion Model
-  bool mbVelocity{false};
+  bool imuMotionModelPrepedAfterRecentlyLostTracking{false};
   Sophus::SE3f mVelocity;
 
   // Color order (true RGB, false BGR, ignored if grayscale)
