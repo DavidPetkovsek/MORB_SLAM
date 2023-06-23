@@ -127,44 +127,27 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   mStrVocabularyFilePath = strVocFile;
 
   // bool loadedAtlas = false; // UNUSED
-
   bool isRead = false;
+  // Load ORB Vocabulary
+  std::cout << std::endl
+        << "Loading ORB Vocabulary. This could take a while..." << std::endl;
+
+  mpVocabulary = new ORBVocabulary();
+  if (!mpVocabulary->loadFromTextFile(strVocFile)) {
+    std::cerr << "Wrong path to vocabulary. " << std::endl;
+    std::cerr << "Failed to open at: " << strVocFile << std::endl;
+    exit(-1);
+  }
+  std::cout << "Vocabulary loaded!" << std::endl << std::endl;
+
+  // Create KeyFrame Database
+  mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+
   if (mStrLoadAtlasFromFile.empty()) {
-    // Load ORB Vocabulary
-    std::cout << std::endl
-         << "Loading ORB Vocabulary. This could take a while..." << std::endl;
-
-    mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    if (!bVocLoad) {
-      std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Falied to open at: " << strVocFile << std::endl;
-      exit(-1);
-    }
-    std::cout << "Vocabulary loaded!" << std::endl << std::endl;
-
-    // Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
     // Create the Atlas
     std::cout << "Initialization of Atlas from scratch " << std::endl;
     // mpAtlas = new Atlas(0);
   } else {
-    // Load ORB Vocabulary
-    std::cout << std::endl
-         << "Loading ORB Vocabulary. This could take a while..." << std::endl;
-
-    mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    if (!bVocLoad) {
-      std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Falied to open at: " << strVocFile << std::endl;
-      exit(-1);
-    }
-    std::cout << "Vocabulary loaded!" << std::endl << std::endl;
-
-    // Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
     std::cout << "Load File" << std::endl;
 
