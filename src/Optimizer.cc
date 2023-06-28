@@ -4494,7 +4494,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
           Eigen::Matrix<double, 3, 1> obs;
           obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
-          EdgeStereoOnlyPose* e = new EdgeStereoOnlyPose(pMP->GetWorldPos());
+          EdgeStereoOnlyPose* e = new EdgeStereoOnlyPose(pMP->GetWorldPos()); 
 
           e->setVertex(0, VP);
           e->setMeasurement(obs);
@@ -4516,7 +4516,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
         }
 
         // Right monocular observation
-        if (bRight && i >= Nleft) {
+        if (bRight && i >= Nleft) { // else ?!
           nInitialMonoCorrespondences++;
           pFrame->mvbOutlier[i] = false;
 
