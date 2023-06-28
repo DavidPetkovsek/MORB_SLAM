@@ -261,14 +261,16 @@ int ORBmatcher::SearchByBoW(KeyFrame *pKF, Frame &F,
         int bestDist2R = 256;
 
         for (size_t iF = 0; iF < vIndicesF.size(); iF++) {
+
+          const unsigned int realIdxF = vIndicesF[iF];
+
+          if (vpMapPointMatches[realIdxF]) continue;
+
+          const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+
+          const int dist = DescriptorDistance(dKF, dF);
+          
           if (F.Nleft == -1) {
-            const unsigned int realIdxF = vIndicesF[iF];
-
-            if (vpMapPointMatches[realIdxF]) continue;
-
-            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
-
-            const int dist = DescriptorDistance(dKF, dF);
 
             if (dist < bestDist1) {
               bestDist2 = bestDist1;
@@ -278,13 +280,6 @@ int ORBmatcher::SearchByBoW(KeyFrame *pKF, Frame &F,
               bestDist2 = dist;
             }
           } else {
-            const unsigned int realIdxF = vIndicesF[iF];
-
-            if (vpMapPointMatches[realIdxF]) continue;
-
-            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
-
-            const int dist = DescriptorDistance(dKF, dF);
 
             if (static_cast<int>(realIdxF) < F.Nleft && dist < bestDist1) {
               bestDist2 = bestDist1;
