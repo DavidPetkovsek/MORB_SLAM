@@ -4725,17 +4725,13 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
   H.block<3, 3>(9, 9) += egr->GetHessian2();
   H.block<3, 3>(12, 12) += ear->GetHessian2();
 
-  int tot_in = 0, tot_out = 0;
   for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
     EdgeMonoOnlyPose* e = vpEdgesMono[i];
 
     const size_t idx = vnIndexEdgeMono[i];
 
-    if (!pFrame->mvbOutlier[idx]) {
+    if (!pFrame->mvbOutlier[idx]) 
       H.block<6, 6>(0, 0) += e->GetHessian();
-      tot_in++;
-    } else
-      tot_out++;
   }
 
   for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
@@ -4743,15 +4739,11 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
 
     const size_t idx = vnIndexEdgeStereo[i];
 
-    if (!pFrame->mvbOutlier[idx]) {
+    if (!pFrame->mvbOutlier[idx])
       H.block<6, 6>(0, 0) += e->GetHessian();
-      tot_in++;
-    } else
-      tot_out++;
   }
 
-  pFrame->mpcpi =
-      std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb,
+  pFrame->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb,
                             VV->estimate(), VG->estimate(), VA->estimate(), H);
 
   return nInitialCorrespondences - nBad;
