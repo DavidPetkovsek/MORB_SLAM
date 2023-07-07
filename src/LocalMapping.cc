@@ -1142,18 +1142,18 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
     // Retrieve all keyframe in temporal order
-  std::list<KeyFrame*> lpKF;
-  KeyFrame* pKF = mpCurrentKeyFrame;
+    std::list<KeyFrame*> lpKF;
+    KeyFrame* pKF = mpCurrentKeyFrame;
     while (pKF->mPrevKF) {
         lpKF.push_front(pKF);
         pKF = pKF->mPrevKF;
     }
     lpKF.push_front(pKF);
-  std::vector<KeyFrame*> vpKF(lpKF.begin(), lpKF.end());
+    std::vector<KeyFrame*> vpKF(lpKF.begin(), lpKF.end());
 
     if (vpKF.size() < nMinKF) {
-    std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
-    return; // condition could be here too
+        std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
+        return; // condition could be here too
     }
 
     mFirstTs = vpKF.front()->mTimeStamp;
@@ -1177,11 +1177,11 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         dirG.setZero();
     // std::cout << "Keyframes---------------------------------------------: " << N << std::endl;
 
-    for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
+        for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
 
       // std::cout << "Hello" << std::endl;
-      if (!(*itKF)->mpImuPreintegrated) continue; // || isnan((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity().sum())
-      if (!(*itKF)->mPrevKF) continue; //  || isnan((*itKF)->mPrevKF->GetImuRotation().sum()
+            if (!(*itKF)->mpImuPreintegrated) continue; // || isnan((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity().sum())
+            if (!(*itKF)->mPrevKF) continue; //  || isnan((*itKF)->mPrevKF->GetImuRotation().sum()
 
       // std::cout << "initDirG------------------------------------------------------: " << dirG << std::endl;
       // std::cout << "getImuRot------------------------------------------------------: " << (*itKF)->mPrevKF->GetImuRotation() << std::endl;
@@ -1190,21 +1190,20 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             dirG -= (*itKF)->mPrevKF->GetImuRotation() *
                     (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
       // std::cout << "dirGLoop------------------------------------------------------: " << dirG << std::endl;
-      Eigen::Vector3f _vel =
-          ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition()) /
+            Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition()) /
                                    (*itKF)->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
-    }
+        }
 
     // if(dirG.sum() == 0){ mRwg << 0.99600422382354736,0.059227496385574341,0.066840663552284241,
         //   0.059227496385574341,0.12209725379943848,-0.99074935913085938,
         //   -0.066840663552284241,0.99074935913085938,0.11810147762298584;
         // } else{
-    std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
+        std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
         dirG = dirG / dirG.norm();
-    std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
-    Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
+        std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
+        Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
 
@@ -1246,16 +1245,15 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     {
         std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
-      Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-      mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
-            mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(),
-                                      mpCurrentKeyFrame);
+            Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
+            mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
+            mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
         }
 
         // Check if initialization OK
         if (!mpAtlas->isImuInitialized())
             for (int i = 0; i < N; i++) {
-        KeyFrame* pKF2 = vpKF[i];
+                KeyFrame* pKF2 = vpKF[i];
                 pKF2->bImu = true;
             }
     }
@@ -1271,8 +1269,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     if (bFIBA) {
         if (priorA != 0.f)
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
-                                mpCurrentKeyFrame->mnId, nullptr, true, priorG,
-                                priorA);
+                                      mpCurrentKeyFrame->mnId, nullptr, true, priorG, priorA);
         else
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                       mpCurrentKeyFrame->mnId, nullptr, false);
@@ -1296,17 +1293,17 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
     // Correct keyframes starting at map first keyframe
-  std::list<KeyFrame*> lpKFtoCheck(
+    std::list<KeyFrame*> lpKFtoCheck(
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.begin(),
-        mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end());
+        mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end()
+    );
 
     while (!lpKFtoCheck.empty()) {
-    KeyFrame* pKF = lpKFtoCheck.front();
-    const std::set<KeyFrame*> sChilds = pKF->GetChilds();
+        KeyFrame* pKF = lpKFtoCheck.front();
+        const std::set<KeyFrame*> sChilds = pKF->GetChilds();
         Sophus::SE3f Twc = pKF->GetPoseInverse();
-    for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin();
-             sit != sChilds.end(); sit++) {
-      KeyFrame* pChild = *sit;
+        for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin(); it != sChilds.end(); sit++) {
+            KeyFrame* pChild = *sit;
             if (!pChild || pChild->isBad()) continue;
 
             if (pChild->mnBAGlobalForKF != GBAid) {
@@ -1343,10 +1340,10 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
     // Correct MapPoints
-  const std::vector<MapPoint*> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
+    const std::vector<MapPoint*> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
 
     for (size_t i = 0; i < vpMPs.size(); i++) {
-    MapPoint* pMP = vpMPs[i];
+        MapPoint* pMP = vpMPs[i];
 
         if (pMP->isBad()) continue;
 
@@ -1355,7 +1352,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pMP->SetWorldPos(pMP->mPosGBA);
         } else {
             // Update according to the correction of its reference keyframe
-      KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
+            KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
 
             if (pRefKF->mnBAGlobalForKF != GBAid) continue;
 
@@ -1372,12 +1369,12 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     mnKFs = vpKF.size();
     mIdxInit++;
 
-  for (std::list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(),
-                                    lend = mlNewKeyFrames.end();
-         lit != lend; lit++) {
+    for (std::list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend = mlNewKeyFrames.end();
+        lit != lend; lit++) {
         (*lit)->SetBadFlag();
         delete *lit;
     }
+    
     mlNewKeyFrames.clear();
 
     mpTracker->mState = TrackingState::OK;
