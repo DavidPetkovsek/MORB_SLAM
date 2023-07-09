@@ -622,17 +622,12 @@ void KeyFrame::SetBadFlag() {
     }
   }
 
-  for (std::map<KeyFrame *, int>::iterator mit = mConnectedKeyFrameWeights.begin(),
-                                      mend = mConnectedKeyFrameWeights.end();
-       mit != mend; mit++) {
-    mit->first->EraseConnection(this);
-  }
+  for (auto &pair : mConnectedKeyFrameWeights)
+    pair.first->EraseConnection(this);
 
-  for (size_t i = 0; i < mvpMapPoints.size(); i++) {
-    if (mvpMapPoints[i]) {
-      mvpMapPoints[i]->EraseObservation(this);
-    }
-  }
+  for (MapPoint *pMP : mvpMapPoints)
+    if (pMP)
+      pMP->EraseObservation(this);
 
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
@@ -655,23 +650,18 @@ void KeyFrame::SetBadFlag() {
       KeyFrame *pC;
       KeyFrame *pP;
 
-      for (std::set<KeyFrame *>::iterator sit = mspChildrens.begin(),
-                                     send = mspChildrens.end();
-           sit != send; sit++) {
-        KeyFrame *pKF = *sit;
+      for (KeyFrame *pKF : mspChildrens) {
         if (pKF->isBad()) continue;
 
         // Check if a parent candidate is connected to the keyframe
         std::vector<KeyFrame *> vpConnected = pKF->GetVectorCovisibleKeyFrames();
-        for (size_t i = 0, iend = vpConnected.size(); i < iend; i++) {
-          for (std::set<KeyFrame *>::iterator spcit = sParentCandidates.begin(),
-                                         spcend = sParentCandidates.end();
-               spcit != spcend; spcit++) {
-            if (vpConnected[i]->mnId == (*spcit)->mnId) {
-              int w = pKF->GetWeight(vpConnected[i]);
+        for (KeyFrame *connectedKF : vpConnected) {
+          for (KeyFrame *candidate : sParentCandidates) {
+            if (connectedKF->mnId == candidate->mnId) {
+              int w = pKF->GetWeight(connectedKF);
               if (w > max) {
                 pC = pKF;
-                pP = vpConnected[i];
+                pP = connectedKF;
                 max = w;
                 bContinue = true;
               }
@@ -690,12 +680,9 @@ void KeyFrame::SetBadFlag() {
 
     // If a children has no covisibility links with any parent candidate, assign
     // to the original parent of this KF
-    if (!mspChildrens.empty()) {
-      for (std::set<KeyFrame *>::iterator sit = mspChildrens.begin();
-           sit != mspChildrens.end(); sit++) {
-        (*sit)->ChangeParent(mpParent);
-      }
-    }
+    if (!mspChildrens.empty())
+      for (KeyFrame *pKF : mspChildrens)
+        pKF->ChangeParent(mpParent);
 
     if (mpParent) {
       mpParent->EraseChild(this);
@@ -735,33 +722,23 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y,
   float factorX = r;
   float factorY = r;
 
-  const int nMinCellX =
-      std::max(0, (int)std::floor((x - mnMinX - factorX) * mfGridElementWidthInv));
+  const int nMinCellX = std::max(0, (int)std::floor((x - mnMinX - factorX) * mfGridElementWidthInv));
   if (nMinCellX >= mnGridCols) return vIndices;
 
-  const int nMaxCellX =
-      std::min((int)mnGridCols - 1,
-          (int)std::ceil((x - mnMinX + factorX) * mfGridElementWidthInv));
+  const int nMaxCellX = std::min((int)mnGridCols - 1, (int)std::ceil((x - mnMinX + factorX) * mfGridElementWidthInv));
   if (nMaxCellX < 0) return vIndices;
 
-  const int nMinCellY =
-      std::max(0, (int)std::floor((y - mnMinY - factorY) * mfGridElementHeightInv));
+  const int nMinCellY = std::max(0, (int)std::floor((y - mnMinY - factorY) * mfGridElementHeightInv));
   if (nMinCellY >= mnGridRows) return vIndices;
 
-  const int nMaxCellY =
-      std::min((int)mnGridRows - 1,
-          (int)std::ceil((y - mnMinY + factorY) * mfGridElementHeightInv));
+  const int nMaxCellY = std::min((int)mnGridRows - 1, (int)std::ceil((y - mnMinY + factorY) * mfGridElementHeightInv));
   if (nMaxCellY < 0) return vIndices;
 
   for (int ix = nMinCellX; ix <= nMaxCellX; ix++) {
     for (int iy = nMinCellY; iy <= nMaxCellY; iy++) {
-      const std::vector<size_t> vCell =
-          (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
+      const std::vector<size_t> vCell = (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
       for (size_t j = 0, jend = vCell.size(); j < jend; j++) {
-        const cv::KeyPoint &kpUn =
-            (NLeft == -1)
-                ? mvKeysUn[vCell[j]]
-                : (!bRight) ? mvKeys[vCell[j]] : mvKeysRight[vCell[j]];
+        const cv::KeyPoint &kpUn = (NLeft == -1) ? mvKeysUn[vCell[j]] : (!bRight) ? mvKeys[vCell[j]] : mvKeysRight[vCell[j]];
         const float distx = kpUn.pt.x - x;
         const float disty = kpUn.pt.y - y;
 
@@ -1022,8 +999,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, KeyFrame *> &mpKFid,
   UpdateBestCovisibles();
 }
 
-bool KeyFrame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u,
-                                   float &v) {
+bool KeyFrame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u, float &v) {
   // 3D in absolute coordinates
   Eigen::Vector3f P = pMP->GetWorldPos();
 
