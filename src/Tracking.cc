@@ -46,8 +46,6 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
-      mLastValidFrame(Frame()),
-      mbStep(false),
       mbOnlyTracking(false),
       mbMapUpdated(false),
       notEnoughMatchPoints_trackOnlyMode(false),
@@ -102,8 +100,6 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
 
   initID = 0;
   lastID = 0;
-  mbInitWith3KFs = false;
-  mnNumDataset = 0;
 
   std::vector<std::shared_ptr<GeometricCamera>> vpCams = mpAtlas->GetAllCameras();
   std::cout << "There are " << vpCams.size() << " cameras in the atlas"
@@ -547,9 +543,7 @@ void Tracking::PrintTimeStats() {
 
 #endif
 
-Tracking::~Tracking() {
-  // f_track_stats.close();
-}
+Tracking::~Tracking() {}
 
 void Tracking::newParameterLoader(Settings* settings) {
   mpCamera = settings->camera1();
@@ -599,7 +593,6 @@ void Tracking::newParameterLoader(Settings* settings) {
 
   mMinFrames = 0;
   mMaxFrames = settings->fps();
-  mbRGB = settings->rgb();
 
   // ORB parameters
   int nFeatures = settings->nFeatures();
@@ -1108,14 +1101,6 @@ bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
 
   std::cout << "- fps: " << fps << std::endl;
 
-  int nRGB = fSettings["Camera.RGB"];
-  mbRGB = nRGB;
-
-  if (mbRGB)
-    std::cout << "- color order: RGB (ignored if grayscale)" << std::endl;
-  else
-    std::cout << "- color order: BGR (ignored if grayscale)" << std::endl;
-
   if (mSensor.hasMulticam()) {
     float fx = mpCamera->getParameter(0);
     cv::FileNode node = fSettings["ThDepth"];
@@ -1351,35 +1336,24 @@ void Tracking::SetLoopClosing(LoopClosing* pLoopClosing) {
   mpLoopClosing = pLoopClosing;
 }
 
-Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
+StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
                                        const cv::Mat& imRectRight,
                                        const double& timestamp,
                                        const std::string &filename,
                                        const Camera_ptr &cam) {
   // std::cout << "GrabImageStereo" << std::endl;
 
-  mImGray = imRectLeft;
+  cv::Mat mImGray = imRectLeft;
   cv::Mat imGrayRight = imRectRight;
-  mImRight = imRectRight;
 
   if (mImGray.channels() == 3) {
     // std::cout << "Image with 3 channels" << std::endl;
-    if (mbRGB) {
-      cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
-      cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGB2GRAY);
-    } else {
-      cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
-      cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGR2GRAY);
-    }
+    cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
+    cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGR2GRAY);
   } else if (mImGray.channels() == 4) {
     // std::cout << "Image with 4 channels" << std::endl;
-    if (mbRGB) {
-      cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
-      cvtColor(imGrayRight, imGrayRight, cv::COLOR_RGBA2GRAY);
-    } else {
-      cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
-      cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGRA2GRAY);
-    }
+    cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
+    cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGRA2GRAY);
   }
 
   // std::cout << "Incoming frame creation" << std::endl;
@@ -1387,19 +1361,19 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   if (mSensor == CameraType::STEREO && !mpCamera2)
     mCurrentFrame = Frame(cam, mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                           mpORBextractorRight, mpORBVocabulary, mK, mDistCoef,
-                          mbf, mThDepth, mpCamera, filename, mnNumDataset);
+                          mbf, mThDepth, mpCamera, filename);
   else if (mSensor == CameraType::STEREO && mpCamera2)
     mCurrentFrame = Frame(cam, mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                           mpORBextractorRight, mpORBVocabulary, mK, mDistCoef,
-                          mbf, mThDepth, mpCamera, mpCamera2, filename, mnNumDataset, mTlr);
+                          mbf, mThDepth, mpCamera, mpCamera2, filename, mTlr);
   else if (mSensor == CameraType::IMU_STEREO && !mpCamera2)
     mCurrentFrame = Frame(cam, mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                           mpORBextractorRight, mpORBVocabulary, mK, mDistCoef,
-                          mbf, mThDepth, mpCamera, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
+                          mbf, mThDepth, mpCamera, filename, &mLastFrame, *mpImuCalib);
   else if (mSensor == CameraType::IMU_STEREO && mpCamera2)
     mCurrentFrame = Frame(cam, mImGray, imGrayRight, timestamp, mpORBextractorLeft,
                           mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf,
-                          mThDepth, mpCamera, mpCamera2, filename, mnNumDataset, mTlr, &mLastFrame, *mpImuCalib);
+                          mThDepth, mpCamera, mpCamera2, filename, mTlr, &mLastFrame, *mpImuCalib);
 
   // std::cout << "Incoming frame ended" << std::endl;
 
@@ -1412,50 +1386,35 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 
   std::cout << "Current state: " << mState << std::endl;
   
+  //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
+  //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
-    //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-    mLastValidFrame = mCurrentFrame;
+    return StereoPacket(mCurrentFrame.GetPose(), mImGray, imGrayRight);
 
-  if (!mpLocalMapper->getIsDoneVIBA())
-  {
-    Sophus::SE3f originPose(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
-    return originPose;  
-  }
-    
-
-  return mLastValidFrame.GetPose();
+  return StereoPacket(mImGray, imGrayRight); // we do not have a new pose to report
 }
 
-Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                                      const double& timestamp, const std::string &filename,
                                      const Camera_ptr &cam) {
-  mImGray = imRGB;
+  cv::Mat mImGray = imRGB;
   cv::Mat imDepth = imD;
 
   if (mImGray.channels() == 3) {
-    if (mbRGB)
-      cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
-    else
-      cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
+    cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
   } else if (mImGray.channels() == 4) {
-    if (mbRGB)
-      cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
-    else
-      cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
+    cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
   }
 
   if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
     imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
 
   if (mSensor == CameraType::RGBD)
-    mCurrentFrame =
-        Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
-              mK, mDistCoef, mbf, mThDepth, mpCamera, filename, mnNumDataset);
+    mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
+                          mK, mDistCoef, mbf, mThDepth, mpCamera, filename);
   else if (mSensor == CameraType::IMU_RGBD)
-    mCurrentFrame =
-        Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
-              mK, mDistCoef, mbf, mThDepth, mpCamera, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
+    mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
+                          mK, mDistCoef, mbf, mThDepth, mpCamera, filename, &mLastFrame, *mpImuCalib);
 
 #ifdef REGISTER_TIMES
   vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
@@ -1463,48 +1422,40 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
 
   Track();
 
-  return mCurrentFrame.GetPose();
+  //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
+  //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
+    return RGBDPacket(mCurrentFrame.GetPose(), mImGray, imDepth);
+  return RGBDPacket(mImGray, imDepth);
 }
 
-Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
+MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im,
                                           const double& timestamp,
                                           const std::string &filename,
                                           const Camera_ptr &cam) {
-  mImGray = im;
+  cv::Mat mImGray = im;
   if (mImGray.channels() == 3) {
-    if (mbRGB)
-      cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
-    else
-      cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
+    cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
   } else if (mImGray.channels() == 4) {
-    if (mbRGB)
-      cvtColor(mImGray, mImGray, cv::COLOR_RGBA2GRAY);
-    else
-      cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
+    cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
   }
 
   if (mSensor == CameraType::MONOCULAR) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET ||
         (lastID - initID) < mMaxFrames)
-      mCurrentFrame =
-          Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
-                mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
+                            mpCamera, mDistCoef, mbf, mThDepth, filename);
     else
-      mCurrentFrame =
-          Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
+                            mpCamera, mDistCoef, mbf, mThDepth, filename);
   } else if (mSensor == CameraType::IMU_MONOCULAR) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET) {
-      mCurrentFrame =
-          Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
-                mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
+                            mpCamera, mDistCoef, mbf, mThDepth, filename, &mLastFrame, *mpImuCalib);
     } else
-      mCurrentFrame =
-          Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                mpCamera, mDistCoef, mbf, mThDepth, filename, mnNumDataset, &mLastFrame, *mpImuCalib);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
+                            mpCamera, mDistCoef, mbf, mThDepth, filename, &mLastFrame, *mpImuCalib);
   }
-
-  if (mState == TrackingState::NO_IMAGES_YET) t0 = timestamp;
 
 #ifdef REGISTER_TIMES
   vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
@@ -1513,11 +1464,16 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
   lastID = mCurrentFrame.mnId;
   Track();
 
-  return mCurrentFrame.GetPose();
+  //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
+  //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
+    return MonoPacket(mCurrentFrame.GetPose(), mImGray);
+
+  return MonoPacket(mImGray);
 }
 
 void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
-  std::unique_lock<std::mutex> lock(mMutexImuQueue);
+  std::scoped_lock<std::mutex> lock(mMutexImuQueue);
   for(auto &point : imuMeasurements)
     mlQueueImuData.emplace_back(point); // copy ctor
 }
@@ -2035,15 +1991,6 @@ void Tracking::Track() {
           }
       }
 
-      // Delete temporal MapPoints
-      for (std::list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(),
-                                     lend = mlpTemporalPoints.end();
-           lit != lend; lit++) {
-        MapPoint* pMP = *lit;
-        delete pMP;
-      }
-      mlpTemporalPoints.clear();
-
 #ifdef REGISTER_TIMES
       std::chrono::steady_clock::time_point time_StartNewKF =
           std::chrono::steady_clock::now();
@@ -2110,13 +2057,11 @@ void Tracking::Track() {
                           mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr_);
       mlpReferences.push_back(mCurrentFrame.mpReferenceKF);
-      mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
       mlbLost.push_back(mState == TrackingState::LOST);
     } else {
       // This can happen if tracking is lost
       mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
       mlpReferences.push_back(mlpReferences.back());
-      mlFrameTimes.push_back(mlFrameTimes.back());
       mlbLost.push_back(mState == TrackingState::LOST);
     }
   }
@@ -2282,9 +2227,10 @@ void Tracking::MonocularInitialization() {
     Sophus::SE3f Tcw;
     std::vector<bool> vbTriangulated;  // Triangulated Correspondences (mvIniMatches)
 
+    std::vector<cv::Point3f> vIniP3D;
     if (mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,
                                           mCurrentFrame.mvKeysUn, mvIniMatches,
-                                          Tcw, mvIniP3D, vbTriangulated)) {
+                                          Tcw, vIniP3D, vbTriangulated)) {
       for (size_t i = 0, iend = mvIniMatches.size(); i < iend; i++) {
         if (mvIniMatches[i] >= 0 && !vbTriangulated[i]) {
           mvIniMatches[i] = -1;
@@ -2296,12 +2242,12 @@ void Tracking::MonocularInitialization() {
       mInitialFrame.SetPose(Sophus::SE3f());
       mCurrentFrame.SetPose(Tcw);
 
-      CreateInitialMapMonocular();
+      CreateInitialMapMonocular(vIniP3D);
     }
   }
 }
 
-void Tracking::CreateInitialMapMonocular() {
+void Tracking::CreateInitialMapMonocular(std::vector<cv::Point3f> &vIniP3D) {
   // Create KeyFrames
   KeyFrame* pKFini =
       new KeyFrame(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
@@ -2323,7 +2269,7 @@ void Tracking::CreateInitialMapMonocular() {
 
     // Create MapPoint.
     Eigen::Vector3f worldPos;
-    worldPos << mvIniP3D[i].x, mvIniP3D[i].y, mvIniP3D[i].z;
+    worldPos << vIniP3D[i].x, vIniP3D[i].y, vIniP3D[i].z;
     MapPoint* pMP = new MapPoint(worldPos, pKFcur, mpAtlas->GetCurrentMap());
 
     pKFini->AddMapPoint(pMP, i);
@@ -2581,8 +2527,6 @@ void Tracking::UpdateLastFrame() {
 
       MapPoint* pNewMP = new MapPoint(x3D, mpAtlas->GetCurrentMap(), &mLastFrame, i);
       mLastFrame.mvpMapPoints[i] = pNewMP;
-
-      mlpTemporalPoints.push_back(pNewMP);
     }
     nPoints++;
 
@@ -3353,7 +3297,6 @@ void Tracking::Reset(bool bLocMap) {
 
   mlRelativeFramePoses.clear();
   mlpReferences.clear();
-  mlFrameTimes.clear();
   mlbLost.clear();
   mCurrentFrame = Frame();
   mnLastRelocFrameId = 0;
@@ -3440,8 +3383,6 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
-std::vector<MapPoint*> Tracking::GetLocalMapMPS() { return mvpLocalMapPoints; }
-
 void Tracking::ChangeCalibration(const std::string& strSettingPath) {
   cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
   float fx = fSettings["Camera.fx"];
@@ -3486,9 +3427,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurr
   // unsigned int index = mnFirstFrameId; // UNUSED
   std::list<MORB_SLAM::KeyFrame*>::iterator lRit = mlpReferences.begin();
   std::list<bool>::iterator lbL = mlbLost.begin();
-  for (auto lit = mlRelativeFramePoses.begin(),
-            lend = mlRelativeFramePoses.end();
-       lit != lend; lit++, lRit++, lbL++) {
+  for (auto lit = mlRelativeFramePoses.begin(), lend = mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lbL++) {
     if (*lbL) continue;
 
     KeyFrame* pKF = *lRit;
@@ -3553,24 +3492,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurr
   mnFirstImuFrameId = mCurrentFrame.mnId;
 }
 
-void Tracking::NewDataset() { mnNumDataset++; }
-
-int Tracking::GetNumberDataset() { return mnNumDataset; }
-
 int Tracking::GetMatchesInliers() { return mnMatchesInliers; }
-
-void Tracking::SaveSubTrajectory(std::string strNameFile_frames,
-                                 std::string strNameFile_kf, std::string strFolder) {
-  mpSystem->SaveTrajectoryEuRoC(strFolder + strNameFile_frames);
-  // mpSystem->SaveKeyFrameTrajectoryEuRoC(strFolder + strNameFile_kf);
-}
-
-void Tracking::SaveSubTrajectory(std::string strNameFile_frames,
-                                 std::string strNameFile_kf, std::shared_ptr<Map> pMap) {
-  mpSystem->SaveTrajectoryEuRoC(strNameFile_frames, pMap);
-  if (!strNameFile_kf.empty())
-    mpSystem->SaveKeyFrameTrajectoryEuRoC(strNameFile_kf, pMap);
-}
 
 float Tracking::GetImageScale() { return mImageScale; }
 

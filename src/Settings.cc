@@ -435,7 +435,6 @@ void Settings::readImageInfo(cv::FileStorage& fSettings) {
   }
 
   fps_ = readParameter<int>(fSettings, "Camera.fps", found);
-  bRGB_ = (bool)readParameter<int>(fSettings, "Camera.RGB", found);
 }
 
 void Settings::readIMU(cv::FileStorage& fSettings) {

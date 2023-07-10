@@ -27,6 +27,7 @@
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/Tracking.h"
+#include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
 
@@ -38,7 +39,7 @@ class FrameDrawer {
   FrameDrawer(const Atlas_ptr &pAtlas);
 
   // Update info from the last processed frame.
-  void Update(const Tracking_ptr &pTracker);
+  void Update(const Tracking_ptr &pTracker, const Packet &pose);
 
   // Draw last processed frame.
   cv::Mat DrawFrame(float imageScale = 1.f);

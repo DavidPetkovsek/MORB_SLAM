@@ -726,7 +726,7 @@ void LocalMapping::SearchInNeighbors() {
     std::vector<MapPoint*> vpFuseCandidates;
     vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
 
-    for (KeyFrame* pKFi : = vpTargetKFs) {
+    for (KeyFrame* pKFi : vpTargetKFs) {
         for (MapPoint* pMP : pKFi->GetMapPointMatches()) {
             if (!pMP) continue;
             if (pMP->isBad() || pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId)
@@ -1160,7 +1160,6 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     mpTracker->UpdateFrameIMU(1.0, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
-        mpTracker->t0IMU = mpTracker->mCurrentFrame.mTimeStamp;
         mpCurrentKeyFrame->bImu = true;
     }
 

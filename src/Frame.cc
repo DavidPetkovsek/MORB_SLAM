@@ -153,7 +153,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
-             const std::shared_ptr<GeometricCamera> &pCamera, const std::string &pNameFile, int pnNumDataset,
+             const std::shared_ptr<GeometricCamera> &pCamera, const std::string &pNameFile,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
@@ -173,7 +173,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
       mNameFile{pNameFile},
-      mnDataset{pnNumDataset},
       mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam),
@@ -282,7 +281,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<GeometricCamera> &pCamera,
-             const std::string &pNameFile, int pnNumDataset, Frame *pPrevF,
+             const std::string &pNameFile, Frame *pPrevF,
              const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
@@ -302,7 +301,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
       mNameFile{pNameFile},
-      mnDataset{pnNumDataset},
       mbIsSet(false),
       mbImuPreintegrated(false),
       camera{cam}, 
@@ -395,7 +393,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, ORBVocabulary *voc,
              const std::shared_ptr<GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
-             const float &thDepth, const std::string &pNameFile, int pnNumDataset,
+             const float &thDepth, const std::string &pNameFile,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
@@ -415,7 +413,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
       mNameFile{pNameFile},
-      mnDataset{pnNumDataset},
       mbIsSet(false),
       mbImuPreintegrated(false),
       camera{cam},
@@ -544,11 +541,9 @@ void Frame::ExtractORB(bool isLeft, const cv::Mat &im, const int x0,
                        const int x1) {
   std::vector<int> vLapping = {x0, x1};
   if (isLeft)
-    monoLeft =
-        (*mpORBextractorLeft)(im, cv::Mat(), mvKeys, mDescriptors, vLapping);
+    monoLeft = (*mpORBextractorLeft)(im, cv::Mat(), mvKeys, mDescriptors, vLapping);
   else
-    monoRight = (*mpORBextractorRight)(im, cv::Mat(), mvKeysRight,
-                                       mDescriptorsRight, vLapping);
+    monoRight = (*mpORBextractorRight)(im, cv::Mat(), mvKeysRight, mDescriptorsRight, vLapping);
 }
 
 bool Frame::isSet() const { return mbIsSet; }
@@ -573,9 +568,7 @@ void Frame::SetVelocity(Eigen::Vector3f Vwb) {
 
 Eigen::Vector3f Frame::GetVelocity() const { return mVw; }
 
-void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb,
-                               const Eigen::Vector3f &twb,
-                               const Eigen::Vector3f &Vwb) {
+void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb) {
   mVw = Vwb;
   mbHasVelocity = true;
 
@@ -690,8 +683,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit) {
   }
 }
 
-bool Frame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u,
-                                float &v) {
+bool Frame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u, float &v) {
   // 3D in absolute coordinates
   Eigen::Vector3f P = pMP->GetWorldPos();
 
@@ -1112,7 +1104,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<GeometricCamera> &pCamera, const std::shared_ptr<GeometricCamera> &pCamera2,
-             const std::string &pNameFile, int pnNumDataset,
+             const std::string &pNameFile,
              Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
@@ -1132,7 +1124,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
       mNameFile{pNameFile},
-      mnDataset{pnNumDataset},
       mbImuPreintegrated(false),
       camera{cam},
       mpCamera(pCamera),

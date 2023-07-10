@@ -87,7 +87,6 @@ class Settings {
 
   const cv::Size &newImSize() const { return newImSize_; }
   float fps() const { return fps_; }
-  bool rgb() const { return bRGB_; }
   bool needToResize() const { return bNeedToResize1_; }
   bool needToRectify() const { return bNeedToRectify_; }
 
@@ -176,7 +175,6 @@ class Settings {
 
   cv::Size originalImSize_, newImSize_;
   float fps_;
-  bool bRGB_;
 
   bool bNeedToUndistort_;
   bool bNeedToRectify_;
