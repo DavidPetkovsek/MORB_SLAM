@@ -102,8 +102,7 @@ class ORBmatcher {
                    const Sophus::Sim3f &S12, const float th);
 
   // Project MapPoints into KeyFrame and search for duplicated MapPoints.
-  int Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
-           const float th = 3.0, const bool bRight = false);
+  int Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints, const float th = 3.0, const bool bRight = false);
 
   // Project MapPoints into KeyFrame using a given Sim3 and search for
   // duplicated MapPoints.

@@ -1013,8 +1013,7 @@ int ORBmatcher::SearchForTriangulation(
   return nmatches;
 }
 
-int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
-                     const float th, const bool bRight) {
+int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints, const float th, const bool bRight) {
   std::shared_ptr<GeometricCamera> pCamera;
   Sophus::SE3f Tcw;
   Eigen::Vector3f Ow;
@@ -1037,34 +1036,27 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
 
   int nFused = 0;
 
-  const int nMPs = vpMapPoints.size();
-
-  // For debbuging
-  int count_notMP = 0, count_bad = 0, count_isinKF = 0, count_negdepth = 0,
-      count_notinim = 0, count_dist = 0, count_normal = 0, count_notidx = 0,
-      count_thcheck = 0;
-  for (int i = 0; i < nMPs; i++) {
-    MapPoint *pMP = vpMapPoints[i];
-
-    if (!pMP) {
-      count_notMP++;
-      continue;
-    }
+  // For debbuging // UNUSED
+  // int count_notMP = 0, count_bad = 0, count_isinKF = 0, count_negdepth = 0,
+  //     count_notinim = 0, count_dist = 0, count_normal = 0, count_notidx = 0,
+  //     count_thcheck = 0;
+  for (MapPoint *pMP : vpMapPoints) {
+    if (!pMP) continue;
 
     if (pMP->isBad()) {
-      count_bad++;
+      // count_bad++;
       continue;
     } else if (pMP->IsInKeyFrame(pKF)) {
-      count_isinKF++;
+      // count_isinKF++;
       continue;
     }
 
-    Eigen::Vector3f p3Dw = pMP->GetWorldPos();
-    Eigen::Vector3f p3Dc = Tcw * p3Dw;
+    Eigen::Vector3f p3Dw = pMP->GetWorldPos(); // Nicole comment: untransformed 3d map point pos
+    Eigen::Vector3f p3Dc = Tcw * p3Dw; // Nicole comment: transformed 3d map point pos
 
     // Depth must be positive
     if (p3Dc(2) < 0.0f) {
-      count_negdepth++;
+      // count_negdepth++;
       continue;
     }
 
@@ -1074,20 +1066,20 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
 
     // Point must be inside the image
     if (!pKF->IsInImage(uv(0), uv(1))) {
-      count_notinim++;
+      // count_notinim++;
       continue;
     }
 
-    const float ur = uv(0) - bf * invz;
+    const float ur = uv(0) - bf * invz; // Nicole comment: ???
 
     const float maxDistance = pMP->GetMaxDistanceInvariance();
     const float minDistance = pMP->GetMinDistanceInvariance();
-    Eigen::Vector3f PO = p3Dw - Ow;
-    const float dist3D = PO.norm();
+    Eigen::Vector3f PO = p3Dw - Ow; // Nicole comment: Get the untransformed 3d map point pos relative to the camera center pos
+    const float dist3D = PO.norm(); // Nicole comment: distance between the untransformed 3d map point and the camera center
 
     // Depth must be inside the scale pyramid of the image
     if (dist3D < minDistance || dist3D > maxDistance) {
-      count_dist++;
+      // count_dist++;
       continue;
     }
 
@@ -1095,7 +1087,7 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
     Eigen::Vector3f Pn = pMP->GetNormal();
 
     if (PO.dot(Pn) < 0.5 * dist3D) {
-      count_normal++;
+      // count_normal++;
       continue;
     }
 
@@ -1104,11 +1096,10 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
     // Search in a radius
     const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
 
-    const std::vector<size_t> vIndices =
-        pKF->GetFeaturesInArea(uv(0), uv(1), radius, bRight);
+    const std::vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0), uv(1), radius, bRight);
 
     if (vIndices.empty()) {
-      count_notidx++;
+      // count_notidx++;
       continue;
     }
 
@@ -1118,14 +1109,10 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
 
     int bestDist = 256;
     int bestIdx = -1;
-    for (std::vector<size_t>::const_iterator vit = vIndices.begin(),
-                                        vend = vIndices.end();
-         vit != vend; vit++) {
-      size_t idx = *vit;
-      const cv::KeyPoint &kp =
-          (pKF->NLeft == -1)
-              ? pKF->mvKeysUn[idx]
-              : (!bRight) ? pKF->mvKeys[idx] : pKF->mvKeysRight[idx];
+    for (size_t idx : vIndices) {
+      const cv::KeyPoint &kp = (pKF->NLeft == -1) ? pKF->mvKeysUn[idx]
+                                                  : (!bRight) ? pKF->mvKeys[idx] 
+                                                              : pKF->mvKeysRight[idx];
 
       const int &kpLevel = kp.octave;
 
@@ -1179,8 +1166,8 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
         pKF->AddMapPoint(pMP, bestIdx);
       }
       nFused++;
-    } else
-      count_thcheck++;
+    }
+      // else count_thcheck++;
   }
 
   return nFused;
