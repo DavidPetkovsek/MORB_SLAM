@@ -1537,14 +1537,15 @@ void Tracking::PreintegrateIMU() {
     return;
   }
 
-  std::vector<IMU::Point> frameIMUDataList(mlQueueImuData.size());
+  std::vector<IMU::Point> frameIMUDataList;
+  frameIMUDataList.reserve(mlQueueImuData.size());
   // Fill frameIMUDataList with data for this frame from the global imu data queue
   {
     std::scoped_lock<std::mutex> lock(mMutexImuQueue);
     auto itr = mlQueueImuData.begin();
     // iterate until the end of the queue or until we hit a timestamp that is newer than current frame
     for(; itr != mlQueueImuData.end() && itr->t < mCurrentFrame.mTimeStamp - mImuPer; ++itr)
-      if(point.t >= mCurrentFrame.mpPrevFrame->mTimeStamp - mImuPer) // ignore measurements before the previous frame
+      if(itr->t >= mCurrentFrame.mpPrevFrame->mTimeStamp - mImuPer) // ignore measurements before the previous frame
         frameIMUDataList.emplace_back(*itr); // add to local vector (via copy)
     // If there are points to remove (we found imu measurements to use)
     if(!frameIMUDataList.empty() && itr != mlQueueImuData.begin())

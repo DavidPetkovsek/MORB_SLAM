@@ -1509,7 +1509,7 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame,
 
         if (invzc < 0) continue;
 
-        Eigen::Vector2f Get  = CurrentFrame.mpCamera->project(x3Dc);
+        Eigen::Vector2f uv  = CurrentFrame.mpCamera->project(x3Dc);
 
         if (uv(0) < CurrentFrame.mnMinX || uv(0) > CurrentFrame.mnMaxX)
           continue;
