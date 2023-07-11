@@ -1302,7 +1302,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         KeyFrame* pKF = lpKFtoCheck.front();
         const std::set<KeyFrame*> sChilds = pKF->GetChilds();
         Sophus::SE3f Twc = pKF->GetPoseInverse();
-        for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin(); it != sChilds.end(); sit++) {
+        for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin(); sit != sChilds.end(); sit++) {
             KeyFrame* pChild = *sit;
             if (!pChild || pChild->isBad()) continue;
 
