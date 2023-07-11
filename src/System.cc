@@ -92,7 +92,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
   if (!fsSettings.isOpened()) {
     std::cerr << "Failed to open settings file at: " << strSettingsFile << std::endl;
-    exit(-1);
+    throw std::invalid_argument("Failed to open settings file at: " + strSettingsFile);
   }
 
   cv::FileNode node = fsSettings["File.version"];
@@ -136,8 +136,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if (!bVocLoad) {
       std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Falied to open at: " << strVocFile << std::endl;
-      exit(-1);
+      std::cerr << "Failed to open at: " << strVocFile << std::endl;
+      throw std::invalid_argument("Failed to open at: " + strVocFile);
     }
     std::cout << "Vocabulary loaded!" << std::endl << std::endl;
 
@@ -149,15 +149,14 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // mpAtlas = new Atlas(0);
   } else {
     // Load ORB Vocabulary
-    std::cout << std::endl
-         << "Loading ORB Vocabulary. This could take a while..." << std::endl;
+    std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
     mpVocabulary = new ORBVocabulary();
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if (!bVocLoad) {
       std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Falied to open at: " << strVocFile << std::endl;
-      exit(-1);
+      std::cerr << "Failed to open at: " << strVocFile << std::endl;
+      throw std::invalid_argument("Failed to open at: " + strVocFile);
     }
     std::cout << "Vocabulary loaded!" << std::endl << std::endl;
 
@@ -169,15 +168,12 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // Load the file with an earlier session
     // clock_t start = clock();
 
-    std::cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile
-         << std::endl;
+    std::cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile << std::endl;
     isRead = LoadAtlas(FileType::BINARY_FILE);
 
     if (!isRead) {
-      std::cout << "Error to load the file, please try with other session file or "
-              "vocabulary file"
-           << std::endl;
-      exit(-1);
+      std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
+      throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
@@ -253,9 +249,8 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
                                  const std::vector<IMU::Point>& vImuMeas,
                                  std::string filename) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
-    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial."
-         << std::endl;
-    exit(-1);
+    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
+    throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
   }
 
   cv::Mat imLeftToFeed, imRightToFeed;
@@ -333,9 +328,8 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
                                const std::vector<IMU::Point>& vImuMeas,
                                std::string filename) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
-    std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD."
-         << std::endl;
-    exit(-1);
+    std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
+    throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
   }
 
   cv::Mat imToFeed = im.clone();
@@ -403,10 +397,8 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   // }
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
-    std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to "
-            "Monocular nor Monocular-Inertial."
-         << std::endl;
-    exit(-1);
+    std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
+    throw std::invalid_argument("ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial.");
   }
 
   cv::Mat imToFeed = im.clone();

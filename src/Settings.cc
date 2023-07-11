@@ -29,6 +29,7 @@
 
 #include "MORB_SLAM/CameraModels/KannalaBrandt8.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"
+#include <stdexcept>
 
 namespace MORB_SLAM {
 
@@ -39,18 +40,16 @@ float Settings::readParameter<float>(cv::FileStorage& fSettings,
   cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
-      std::cerr << name << " required parameter does not exist, aborting..."
-                << std::endl;
-      exit(-1);
+      std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+      throw std::invalid_argument(name + " required parameter does not exist, aborting...");
     } else {
       std::cerr << name << " optional parameter does not exist..." << std::endl;
       found = false;
       return 0.0f;
     }
   } else if (!node.isReal()) {
-    std::cerr << name << " parameter must be a real number, aborting..."
-              << std::endl;
-    exit(-1);
+    std::cerr << name << " parameter must be a real number, aborting..." << std::endl;
+    throw std::invalid_argument(name + " parameter must be a real number, aborting...");
   } else {
     found = true;
     return node.real();
@@ -64,18 +63,16 @@ int Settings::readParameter<int>(cv::FileStorage& fSettings,
   cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
-      std::cerr << name << " required parameter does not exist, aborting..."
-                << std::endl;
-      exit(-1);
+      std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+      throw std::invalid_argument(name + " required parameter does not exist, aborting...");
     } else {
       std::cerr << name << " optional parameter does not exist..." << std::endl;
       found = false;
       return 0;
     }
   } else if (!node.isInt()) {
-    std::cerr << name << " parameter must be an integer number, aborting..."
-              << std::endl;
-    exit(-1);
+    std::cerr << name << " parameter must be an integer number, aborting..." << std::endl;
+    throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
   } else {
     found = true;
     return node.operator int();
@@ -89,18 +86,16 @@ std::string Settings::readParameter<std::string>(cv::FileStorage& fSettings,
   cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
-      std::cerr << name << " required parameter does not exist, aborting..."
-                << std::endl;
-      exit(-1);
+      std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+      throw std::invalid_argument(name + " required parameter does not exist, aborting...");
     } else {
       std::cerr << name << " optional parameter does not exist..." << std::endl;
       found = false;
       return std::string();
     }
   } else if (!node.isString()) {
-    std::cerr << name << " parameter must be a std::string, aborting..."
-              << std::endl;
-    exit(-1);
+    std::cerr << name << " parameter must be a std::string, aborting..." << std::endl;
+    throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
   } else {
     found = true;
     return node.string();
@@ -114,9 +109,8 @@ cv::Mat Settings::readParameter<cv::Mat>(cv::FileStorage& fSettings,
   cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
-      std::cerr << name << " required parameter does not exist, aborting..."
-                << std::endl;
-      exit(-1);
+      std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+      throw std::invalid_argument(name + " required parameter does not exist, aborting...");
     } else {
       std::cerr << name << " optional parameter does not exist..." << std::endl;
       found = false;
@@ -142,7 +136,7 @@ Settings::Settings(const std::string& configFile, const CameraType& sensor)
          << std::endl;
     std::cerr << "Aborting..." << std::endl;
 
-    exit(-1);
+    throw std::invalid_argument("[ERROR]: could not open configuration file at: " + configFile);
   } else {
     std::cout << "Loading settings from " << configFile << std::endl;
   }
@@ -281,7 +275,7 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
     }
   } else {
     std::cerr << "Error: " << cameraModel << " not known" << std::endl;
-    exit(-1);
+    throw std::invalid_argument("Error: " + cameraModel + " not known");
   }
 }
 

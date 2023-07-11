@@ -31,6 +31,7 @@
 
 #include <string>
 #include <memory>
+#include <stdexcept>
 
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
@@ -135,12 +136,10 @@ class Settings {
     cv::FileNode node = fSettings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..."
-                  << std::endl;
-        exit(-1);
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..."
-                  << std::endl;
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
         found = false;
         return T();
       }
