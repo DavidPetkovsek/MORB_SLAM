@@ -48,9 +48,7 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const std::string& strVocFile, const std::string& strSettingsFile,
-               const CameraType sensor,
-               const std::string& strSequence)
+System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
       mbReset(false),
@@ -203,21 +201,18 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this
   // constructor)
-  std::cout << "Seq. Name: " << strSequence << std::endl;
   mpTracker = new Tracking(this, mpVocabulary,
                            mpAtlas, mpKeyFrameDatabase, strSettingsFile,
-                           mSensor, settings_, strSequence);
+                           mSensor, settings_);
 
   // Initialize the Local Mapping thread and launch
   mpLocalMapper = new LocalMapping(
       this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR,
-      mSensor.isInertial(),
-      strSequence);
+      mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
     mpLocalMapper->setIsDoneVIBA(true);
-    mpLocalMapper->setNotifyIsDoneVIBA(true);
   }
 
   mptLocalMapping = new std::thread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);

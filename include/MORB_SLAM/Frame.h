@@ -298,10 +298,6 @@ public:
     std::map<long unsigned int, cv::Point2f> mmProjectPoints;
     std::map<long unsigned int, cv::Point2f> mmMatchedInImage;
 
-    std::string mNameFile;
-
-    int mnDataset;
-
 #ifdef REGISTER_TIMES
     double mTimeORB_Ext;
     double mTimeStereoMatch;
@@ -358,20 +354,6 @@ public:
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
 
     cv::Mat imgLeft, imgRight;
-
-    void PrintPointDistribution(){
-        int left = 0, right = 0;
-        int Nlim = (Nleft != -1) ? Nleft : N;
-        for(int i = 0; i < N; i++){
-            if(mvpMapPoints[i] && !mvbOutlier[i]){
-                if(i < Nlim) left++;
-                else right++;
-            }
-        }
-        std::cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << std::endl;
-    }
-
-    Sophus::SE3<double> T_test;
 };
 
 }// namespace ORB_SLAM

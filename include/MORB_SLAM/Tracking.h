@@ -49,8 +49,7 @@ class Tracking {
   
   Tracking(System* pSys, ORBVocabulary* pVoc,
            const Atlas_ptr &pAtlas, KeyFrameDatabase* pKFDB,
-           const std::string& strSettingPath, const CameraType sensor, Settings* settings,
-           const std::string& _nameSeq = std::string());
+           const std::string& strSettingPath, const CameraType sensor, Settings* settings);
 
   ~Tracking();
 

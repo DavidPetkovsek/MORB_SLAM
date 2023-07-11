@@ -2979,7 +2979,6 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg,
                                      double& scale, Eigen::Vector3d& bg,
                                      Eigen::Vector3d& ba, bool bMono,
-                                     Eigen::MatrixXd& covInertial,
                                      bool bFixedVel, bool bGauss, 
                                      ImuInitializater::ImuInitType priorG,
                                      ImuInitializater::ImuInitType priorA) {

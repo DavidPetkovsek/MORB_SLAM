@@ -42,7 +42,7 @@ namespace MORB_SLAM {
 
 Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
                    KeyFrameDatabase* pKFDB, const std::string& strSettingPath,
-                   const CameraType sensor, Settings* settings, const std::string& _nameSeq)
+                   const CameraType sensor, Settings* settings)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
@@ -2450,8 +2450,6 @@ bool Tracking::TrackReferenceKeyFrame() {
 
   mCurrentFrame.mvpMapPoints = vpMapPointMatches;
   mCurrentFrame.SetPose(mLastFrame.GetPose());
-
-  // mCurrentFrame.PrintPointDistribution();
 
   // std::cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw <<
   // std::endl;
