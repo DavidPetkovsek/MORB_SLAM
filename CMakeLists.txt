@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24.0)
+cmake_minimum_required(VERSION 3.16.0)
 
 set(MORB_VERSION_MAJOR 0 CACHE STRING "major version" FORCE) 
 set(MORB_VERSION_MINOR 0 CACHE STRING "major version" FORCE) 
