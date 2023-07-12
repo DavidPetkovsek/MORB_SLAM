@@ -614,8 +614,8 @@ void KeyFrame::SetBadFlag() {
     }
   }
 
-  for (auto &pair : mConnectedKeyFrameWeights)
-    pair.first->EraseConnection(this);
+  for (std::map<KeyFrame *, int>::iterator mit = mConnectedKeyFrameWeights.begin(), mend = mConnectedKeyFrameWeights.end(); mit != mend; mit++)
+    mit->first->EraseConnection(this);
 
   for (MapPoint *pMP : mvpMapPoints)
     if (pMP)

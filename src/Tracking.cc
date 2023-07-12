@@ -1991,6 +1991,15 @@ void Tracking::Track() {
           }
       }
 
+      // Delete temporal MapPoints
+      for (std::list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(),
+                                     lend = mlpTemporalPoints.end();
+           lit != lend; lit++) {
+        MapPoint* pMP = *lit;
+        delete pMP;
+      }
+      mlpTemporalPoints.clear();
+
 #ifdef REGISTER_TIMES
       std::chrono::steady_clock::time_point time_StartNewKF =
           std::chrono::steady_clock::now();
@@ -2525,6 +2534,7 @@ void Tracking::UpdateLastFrame() {
 
       MapPoint* pNewMP = new MapPoint(x3D, mpAtlas->GetCurrentMap(), &mLastFrame, i);
       mLastFrame.mvpMapPoints[i] = pNewMP;
+      mlpTemporalPoints.push_back(pNewMP);
     }
     nPoints++;
 

@@ -291,6 +291,8 @@ public:
   bool imuMotionModelPrepedAfterRecentlyLostTracking{false};
   Sophus::SE3f mVelocity;
 
+  std::list<MapPoint*> mlpTemporalPoints;
+
   std::shared_ptr<GeometricCamera> mpCamera;
   std::shared_ptr<GeometricCamera> mpCamera2;
 
