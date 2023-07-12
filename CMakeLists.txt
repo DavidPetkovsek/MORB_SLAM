@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24.0)
+cmake_minimum_required(VERSION 3.16.0)
 
 set(MORB_VERSION_MAJOR 0 CACHE STRING "major version" FORCE) 
 set(MORB_VERSION_MINOR 0 CACHE STRING "major version" FORCE) 
@@ -63,7 +63,7 @@ set(TARGET_NAME ${PROJECT_NAME})
 
 find_package(Threads REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(realsense2) # realsense only needed for example
+find_package(realsense2 QUIET) # realsense only needed for example
 find_package(Pangolin REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization regex)
@@ -145,6 +145,8 @@ if(realsense2_FOUND)
   target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
   target_link_libraries( ${TARGET_NAME} PUBLIC ${Pangolin_LIBRARIES} )
   target_link_libraries(stereo_inertial_realsense_D435i PRIVATE ${PROJECT_NAME})
+else()
+  message(STATUS "** Stereo inertial realsense D435i example will not compile because librealsense2 was not found")
 endif()
 
 
