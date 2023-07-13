@@ -236,7 +236,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
-Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
+StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
                                  double timestamp,
                                  const std::vector<IMU::Point>& vImuMeas,
                                  std::string filename) {
@@ -301,7 +301,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
     mpTracker->GrabImuData(vImuMeas);
 
   // std::cout << "start GrabImageStereo" << std::endl;
-  Sophus::SE3f Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed,
+  StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed,
                                                 timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
 
   // Eigen::Vector3f vel = mpTracker->mCurrentFrame.GetVelocity();
@@ -316,7 +316,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   return Tcw;
 }
 
-Sophus::SE3f System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
+RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
                                double timestamp,
                                const std::vector<IMU::Point>& vImuMeas,
                                std::string filename) {
@@ -373,7 +373,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   if (mSensor == CameraType::IMU_RGBD)
     mpTracker->GrabImuData(vImuMeas);
 
-  Sophus::SE3f Tcw =
+  RGBDPacket Tcw =
       mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
 
   std::unique_lock<std::mutex> lock2(mMutexState);
@@ -383,7 +383,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   return Tcw;
 }
 
-Sophus::SE3f System::TrackMonocular(const cv::Mat& im, double timestamp,
+MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
                                     const std::vector<IMU::Point>& vImuMeas,
                                     std::string filename) {
   // {
@@ -443,7 +443,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat& im, double timestamp,
   if (mSensor == CameraType::IMU_MONOCULAR)
     mpTracker->GrabImuData(vImuMeas);
 
-  Sophus::SE3f Tcw =
+  MonoPacket Tcw =
       mpTracker->GrabImageMonocular(imToFeed, timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
 
   std::unique_lock<std::mutex> lock2(mMutexState);

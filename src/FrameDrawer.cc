@@ -297,16 +297,22 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, TrackingState nState, cv::Mat &imTex
               cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 255), 1, 8);
 }
 
-void FrameDrawer::Update(const Tracking_ptr &pTracker) {
+void FrameDrawer::Update(const Tracking_ptr &pTracker, const Packet &pose) {
   std::unique_lock<std::mutex> lock(mMutex);
-  pTracker->mImGray.copyTo(mIm);
+  if (const StereoPacket *sp = dynamic_cast<const StereoPacket*> (&pose))
+    sp->imgLeft.copyTo(mIm);
+  else if (const RGBDPacket *rp = dynamic_cast<const RGBDPacket*> (&pose))
+    rp->img.copyTo(mIm);
+  else if (const MonoPacket *mp = dynamic_cast<const MonoPacket*> (&pose))
+    mp->img.copyTo(mIm);
   mvCurrentKeys = pTracker->mCurrentFrame.mvKeys;
   mThDepth = pTracker->mCurrentFrame.mThDepth;
   mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;
 
   if (both) {
     mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
-    pTracker->mImRight.copyTo(mImRight);
+    if (const StereoPacket *sp = dynamic_cast<const StereoPacket*> (&pose))
+      sp->imgRight.copyTo(mImRight);
     N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
   } else {
     N = mvCurrentKeys.size();

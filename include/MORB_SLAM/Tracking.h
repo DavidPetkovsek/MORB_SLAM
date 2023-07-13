@@ -40,6 +40,7 @@
 #include "MORB_SLAM/System.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
+#include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
 
@@ -60,14 +61,14 @@ class Tracking {
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
-  Sophus::SE3f GrabImageStereo(const cv::Mat& imRectLeft,
+  StereoPacket GrabImageStereo(const cv::Mat& imRectLeft,
                                const cv::Mat& imRectRight,
                                const double& timestamp, const std::string &filename,
                                const Camera_ptr &cam);
-  Sophus::SE3f GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                              const double& timestamp, const std::string &filename,
                              const Camera_ptr &cam);
-  Sophus::SE3f GrabImageMonocular(const cv::Mat& im, const double& timestamp,
+  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp,
                                   const std::string &filename, const Camera_ptr &cam);
 
   void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
@@ -123,15 +124,12 @@ class Tracking {
   Frame mCurrentFrame;
   Frame mLastFrame;
 
-  cv::Mat mImGray;
-
   // Initialization Variables (Monocular)
   std::vector<int> mvIniLastMatches;
   std::vector<int> mvIniMatches;
   std::vector<cv::Point2f> mvbPrevMatched;
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
-  Frame mLastValidFrame;
 
   // Lists used to recover the full camera trajectory at the end of the
   // execution. Basically we store the reference keyframe for each frame and its
@@ -351,9 +349,6 @@ class Tracking {
   bool mbNotStop;
   std::mutex mMutexStop;
 #endif
-
- public:
-  cv::Mat mImRight;
 };
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 typedef std::weak_ptr<Tracking> Tracking_wptr;

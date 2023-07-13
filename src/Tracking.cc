@@ -46,7 +46,6 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
-      mLastValidFrame(Frame()),
       mbStep(false),
       mbOnlyTracking(false),
       mbMapUpdated(false),
@@ -1351,16 +1350,15 @@ void Tracking::SetLoopClosing(LoopClosing* pLoopClosing) {
   mpLoopClosing = pLoopClosing;
 }
 
-Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
+StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
                                        const cv::Mat& imRectRight,
                                        const double& timestamp,
                                        const std::string &filename,
                                        const Camera_ptr &cam) {
   // std::cout << "GrabImageStereo" << std::endl;
 
-  mImGray = imRectLeft;
+  cv::Mat mImGray = imRectLeft;
   cv::Mat imGrayRight = imRectRight;
-  mImRight = imRectRight;
 
   if (mImGray.channels() == 3) {
     // std::cout << "Image with 3 channels" << std::endl;
@@ -1416,22 +1414,15 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
     //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
     //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-    mLastValidFrame = mCurrentFrame;
+    return StereoPacket(mCurrentFrame.GetPose(), mImGray, imGrayRight);
 
-  if (!mpLocalMapper->getIsDoneVIBA())
-  {
-    Sophus::SE3f originPose(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
-    return originPose;  
-  }
-    
-
-  return mLastValidFrame.GetPose();
+  return StereoPacket(mImGray, imGrayRight);
 }
 
-Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                                      const double& timestamp, const std::string &filename,
                                      const Camera_ptr &cam) {
-  mImGray = imRGB;
+  cv::Mat mImGray = imRGB;
   cv::Mat imDepth = imD;
 
   if (mImGray.channels() == 3) {
@@ -1464,14 +1455,19 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
 
   Track();
 
-  return mCurrentFrame.GetPose();
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
+    //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
+    //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
+    return RGBDPacket(mCurrentFrame.GetPose(), mImGray, imDepth);
+
+  return RGBDPacket(mImGray, imDepth);
 }
 
-Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
+MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im,
                                           const double& timestamp,
                                           const std::string &filename,
                                           const Camera_ptr &cam) {
-  mImGray = im;
+  cv::Mat mImGray = im;
   if (mImGray.channels() == 3) {
     if (mbRGB)
       cvtColor(mImGray, mImGray, cv::COLOR_RGB2GRAY);
@@ -1514,7 +1510,12 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat& im,
   lastID = mCurrentFrame.mnId;
   Track();
 
-  return mCurrentFrame.GetPose();
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
+    //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
+    //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
+    return MonoPacket(mCurrentFrame.GetPose(), mImGray);
+
+  return MonoPacket(mImGray);
 }
 
 void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {

@@ -95,7 +95,7 @@ static rs2_option get_sensor_option(const rs2::sensor& sensor)
 }
 
 
-Sophus::SE3f sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
+MORB_SLAM::StereoPacket sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
                             const float& im_timestamp, std::vector<MORB_SLAM::IMU::Point>& vImuMeas, MORB_SLAM::System_ptr SLAM) {
 
     float imageScale = SLAM->GetImageScale();
@@ -109,9 +109,10 @@ Sophus::SE3f sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
         cv::resize(imRight, imRight, cv::Size(width, height));
     }
     
-    Sophus::SE3f sophusPose = SLAM->TrackStereo(imLeft, imRight, im_timestamp, vImuMeas);
+    MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(imLeft, imRight, im_timestamp, vImuMeas);
 
-    sophusPose = sophusPose.inverse();
+    if (sophusPose.pose)
+        sophusPose.pose = sophusPose.pose->inverse();
     return sophusPose;
 }
 
