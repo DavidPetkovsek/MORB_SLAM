@@ -115,8 +115,10 @@ class Tracking {
   Frame mLastFrame;
 
   // Initialization Variables (Monocular)
+  std::vector<int> mvIniLastMatches;
   std::vector<int> mvIniMatches;
   std::vector<cv::Point2f> mvbPrevMatched;
+  std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
   // Lists used to recover the full camera trajectory at the end of the
@@ -164,7 +166,7 @@ public:
   // Map initialization for monocular
   void MonocularInitialization();
   // void CreateNewMapPoints();
-  void CreateInitialMapMonocular(std::vector<cv::Point3f> &vIniP3D);
+  void CreateInitialMapMonocular();
 
   void CheckReplacedInLastFrame();
   bool TrackReferenceKeyFrame();

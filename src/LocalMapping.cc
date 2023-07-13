@@ -731,7 +731,8 @@ void LocalMapping::SearchInNeighbors() {
 
     // Update points
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-    for (MapPoint* pMP : vpMapPointMatches) {
+    for (size_t i = 0, iend = vpMapPointMatches.size(); i < iend; i++) {
+        MapPoint* pMP = vpMapPointMatches[i];
         if (pMP) {
             if (!pMP->isBad()) {
                 pMP->ComputeDistinctiveDescriptors();
@@ -861,11 +862,12 @@ void LocalMapping::KeyFrameCulling() {
 
             const int& scaleLevel = (pKF->NLeft == -1) ? pKF->mvKeysUn[i].octave :
                     ((static_cast<int>(i) < pKF->NLeft) ? pKF->mvKeys[i].octave : pKF->mvKeysRight[i].octave);
+            const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
             int nObs = 0;
-            for (auto &pair : pMP->GetObservations()) { // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
-                KeyFrame* pKFi = pair.first;
+             for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) { // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
+                KeyFrame* pKFi = mit->first;
                 if (pKFi == pKF) continue;
-                std::tuple<int, int> indexes = pair.second;
+                std::tuple<int, int> indexes = mit->second;
                 int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
                 int scaleLeveli = -1;
                 if (pKFi->NLeft == -1)
