@@ -1991,6 +1991,15 @@ void Tracking::Track() {
           }
       }
 
+      // Delete temporal MapPoints
+      for (std::list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(),
+                                     lend = mlpTemporalPoints.end();
+           lit != lend; lit++) {
+        MapPoint* pMP = *lit;
+        delete pMP;
+      }
+      mlpTemporalPoints.clear();
+
 #ifdef REGISTER_TIMES
       std::chrono::steady_clock::time_point time_StartNewKF =
           std::chrono::steady_clock::now();
@@ -2227,10 +2236,9 @@ void Tracking::MonocularInitialization() {
     Sophus::SE3f Tcw;
     std::vector<bool> vbTriangulated;  // Triangulated Correspondences (mvIniMatches)
 
-    std::vector<cv::Point3f> vIniP3D;
     if (mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,
                                           mCurrentFrame.mvKeysUn, mvIniMatches,
-                                          Tcw, vIniP3D, vbTriangulated)) {
+                                          Tcw, mvIniP3D, vbTriangulated)) {
       for (size_t i = 0, iend = mvIniMatches.size(); i < iend; i++) {
         if (mvIniMatches[i] >= 0 && !vbTriangulated[i]) {
           mvIniMatches[i] = -1;
@@ -2242,12 +2250,12 @@ void Tracking::MonocularInitialization() {
       mInitialFrame.SetPose(Sophus::SE3f());
       mCurrentFrame.SetPose(Tcw);
 
-      CreateInitialMapMonocular(vIniP3D);
+      CreateInitialMapMonocular();
     }
   }
 }
 
-void Tracking::CreateInitialMapMonocular(std::vector<cv::Point3f> &vIniP3D) {
+void Tracking::CreateInitialMapMonocular() {
   // Create KeyFrames
   KeyFrame* pKFini =
       new KeyFrame(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
@@ -2269,7 +2277,7 @@ void Tracking::CreateInitialMapMonocular(std::vector<cv::Point3f> &vIniP3D) {
 
     // Create MapPoint.
     Eigen::Vector3f worldPos;
-    worldPos << vIniP3D[i].x, vIniP3D[i].y, vIniP3D[i].z;
+    worldPos << mvIniP3D[i].x, mvIniP3D[i].y, mvIniP3D[i].z;
     MapPoint* pMP = new MapPoint(worldPos, pKFcur, mpAtlas->GetCurrentMap());
 
     pKFini->AddMapPoint(pMP, i);
@@ -2525,6 +2533,7 @@ void Tracking::UpdateLastFrame() {
 
       MapPoint* pNewMP = new MapPoint(x3D, mpAtlas->GetCurrentMap(), &mLastFrame, i);
       mLastFrame.mvpMapPoints[i] = pNewMP;
+      mlpTemporalPoints.push_back(pNewMP);
     }
     nPoints++;
 

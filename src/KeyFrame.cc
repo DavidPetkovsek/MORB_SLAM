@@ -614,12 +614,12 @@ void KeyFrame::SetBadFlag() {
     }
   }
 
-  for (auto &pair : mConnectedKeyFrameWeights)
-    pair.first->EraseConnection(this);
+  for (std::map<KeyFrame *, int>::iterator mit = mConnectedKeyFrameWeights.begin(), mend = mConnectedKeyFrameWeights.end(); mit != mend; mit++)
+    mit->first->EraseConnection(this);
 
-  for (MapPoint *pMP : mvpMapPoints)
-    if (pMP)
-      pMP->EraseObservation(this);
+  for (size_t i = 0; i < mvpMapPoints.size(); i++)
+    if (mvpMapPoints[i])
+      mvpMapPoints[i]->EraseObservation(this);
 
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
