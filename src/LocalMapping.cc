@@ -706,7 +706,7 @@ void LocalMapping::SearchInNeighbors() {
     std::vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for (KeyFrame* pKFi : vpTargetKFs) {
         matcher.Fuse(pKFi, vpMapPointMatches);
-        if (pKFi->NLeft != -1) matcher.Fuse(pKFi, vpMapPointMatches, true);
+        if (pKFi->NRight != -1) matcher.Fuse(pKFi, vpMapPointMatches, 3.0 /*default*/, true);
     }
 
     if (mbAbortBA) return;
@@ -726,8 +726,8 @@ void LocalMapping::SearchInNeighbors() {
     }
 
     matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
-    if (mpCurrentKeyFrame->NLeft != -1)
-        matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates, true);
+    if (mpCurrentKeyFrame->NRight != -1)
+        matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates, 3.0/*default*/, true);
 
     // Update points
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
