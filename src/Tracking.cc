@@ -1584,22 +1584,19 @@ bool Tracking::PredictStateIMU() {
     const float t12 = mpImuPreintegratedFromLastKF->dT;
 
     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(
-        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(
-                   mpLastKeyFrame->GetImuBias()));
+        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
     Eigen::Vector3f twb2 =
         twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(
-                   mpLastKeyFrame->GetImuBias());
+        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
     Eigen::Vector3f Vwb2 =
         Vwb1 + t12 * Gz +
-        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(
-                   mpLastKeyFrame->GetImuBias());
+        Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
 
     mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
     mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
     return true;
-  } else if (!mbMapUpdated) {
+  } else if (!mbMapUpdated && mCurrentFrame.mpImuPreintegratedFrame) {
     const Eigen::Vector3f twb1 = mLastFrame.GetImuPosition();
     const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
     const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
@@ -1607,16 +1604,13 @@ bool Tracking::PredictStateIMU() {
     const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT; 
 
     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(
-        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(
-                   mLastFrame.mImuBias));
+        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
     Eigen::Vector3f twb2 =
         twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz +
-        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(
-                   mLastFrame.mImuBias);
+        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
     Eigen::Vector3f Vwb2 =
         Vwb1 + t12 * Gz +
-        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(
-                   mLastFrame.mImuBias);
+        Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
 
@@ -1773,7 +1767,7 @@ void Tracking::Track() {
           bOK = true;
           if (mSensor.isInertial()) { // tried setting to false, still goes to inf
             if (pCurrentMap->isImuInitialized())
-              PredictStateIMU();
+              bOK = PredictStateIMU();
             else
               bOK = false;
 
@@ -2550,8 +2544,7 @@ bool Tracking::TrackWithMotionModel() {
 
   if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mnFramesToResetIMU)) {
     // Predict state with IMU if it is initialized and it doesnt need reset
-    PredictStateIMU();
-    return true;
+    return PredictStateIMU();
   }
   mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
 
