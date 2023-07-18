@@ -4,7 +4,7 @@ cd "$parent_path" # change directories so working directory is where the script 
 #apt update for good measure
 sudo apt update
 
-sudo apt install -y build-essential cmake ninja-build libeigen3-dev libssl-dev libboost-all-dev libopencv-dev
+sudo apt install -y build-essential cmake ninja-build libeigen3-dev libssl-dev libboost-all-dev libopencv-dev libpython3.9
 
 #pangolin
 git clone --recursive https://github.com/stevenlovegrove/Pangolin.git --depth=1 -b v0.8

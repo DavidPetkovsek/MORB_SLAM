@@ -298,22 +298,20 @@ int main(int argc, char **argv) {
 
 
     rs2::stream_profile imu_stream = pipe_profile.get_stream(RS2_STREAM_GYRO);
-    float* Rbc = cam_left.get_extrinsics_to(imu_stream).rotation;
-    float* tbc = cam_left.get_extrinsics_to(imu_stream).translation;
+    auto extrinLeft = cam_left.get_extrinsics_to(imu_stream);
     std::cout << "Tbc (left) = " << std::endl;
     for(int i = 0; i<3; i++){
         for(int j = 0; j<3; j++)
-            std::cout << Rbc[i*3 + j] << ", ";
-        std::cout << tbc[i] << "\n";
+            std::cout << extrinLeft.rotation[i*3 + j] << ", ";
+        std::cout << extrinLeft.translation[i] << "\n";
     }
 
-    float* Rlr = cam_right.get_extrinsics_to(cam_left).rotation;
-    float* tlr = cam_right.get_extrinsics_to(cam_left).translation;
+    auto extrinRight = cam_right.get_extrinsics_to(cam_left);
     std::cout << "Tlr  = " << std::endl;
     for(int i = 0; i<3; i++){
         for(int j = 0; j<3; j++)
-            std::cout << Rlr[i*3 + j] << ", ";
-        std::cout << tlr[i] << "\n";
+            std::cout << extrinRight.rotation[i*3 + j] << ", ";
+        std::cout << extrinRight.translation[i] << "\n";
     }
 
 

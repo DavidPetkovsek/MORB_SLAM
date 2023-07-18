@@ -1158,7 +1158,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
   // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now(); // UNUSED
     if (bFIBA) {
-        if (priorA != 0.f)
+        if (priorA != ImuInitializater::ImuInitType::VIBA2_A)
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                 mpCurrentKeyFrame->mnId, nullptr, true, priorG,
                                 priorA);

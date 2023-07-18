@@ -2999,7 +2999,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   g2o::OptimizationAlgorithmLevenberg* solver =
       new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-  if (priorG != 0.f) solver->setUserLambdaInit(1e3);
+  if (priorG != ImuInitializater::ImuInitType::VIBA2_G) solver->setUserLambdaInit(1e3);
 
   optimizer.setAlgorithm(solver);
 
