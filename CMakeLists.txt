@@ -6,18 +6,23 @@ set(MORB_VERSION_PATCH 1 CACHE STRING "major version" FORCE)
 set(MORB_VERSION_SHORT ${MORB_VERSION_MAJOR}.${MORB_VERSION_MINOR} CACHE STRING "short-version" FORCE)
 set(MORB_VERSION ${MORB_VERSION_SHORT}.${MORB_VERSION_PATCH} CACHE STRING "version" FORCE)
 
+find_program(CLANGXX_17_FOUND clang++-17)
+if(CLANGXX_17_FOUND)
+    set(CMAKE_C_COMPILER "clang-17")
+    set(CMAKE_CXX_COMPILER "clang++-17")
+endif()
 
 project(MORB_SLAM 
     VERSION ${MORB_VERSION}
     DESCRIPTION "A library for visual simultanious localization and mapping (vSLAM) for autonomous vehicles"
     HOMEPAGE_URL "https://github.com/DavidPetkovsek/MORB_SLAM"
-    LANGUAGES CXX
+    LANGUAGES C CXX # if you do not specify C in addition to CXX, GNU compilers will fail to find threads on some computers
 )
 
 
 include(GNUInstallDirs)
-# Set compiler standard to C++17
-set(CMAKE_CXX_STANDARD 17)
+# Set compiler standard to C++20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if( NOT CMAKE_BUILD_TYPE )
     set(CMAKE_BUILD_TYPE Release)
@@ -25,12 +30,18 @@ ENDIF()
 
 # https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_GENERATOR STREQUAL "Ninja")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
+    endif()
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7) # required for eigen
-        message(FATAL_ERROR "Insufficient gcc version must be at least 7, required for eigen")
+        message(FATAL_ERROR "Insufficient g++ version must be at least 7, required for eigen")
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_GENERATOR STREQUAL "Ninja")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
+    endif()
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5) # required for eigen
-        message(FATAL_ERROR "Insufficient clang version must be at least 5, required for eigen")
+        message(FATAL_ERROR "Insufficient clang++ version must be at least 5, required for eigen")
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.12) # required for eigen
