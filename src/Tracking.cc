@@ -2627,7 +2627,7 @@ bool Tracking::TrackLocalMap() {
     }
 */
   // int inliers; // UNUSED
-  if (!mpAtlas->isImuInitialized())
+  if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr)
     Optimizer::PoseOptimization(&mCurrentFrame);
   else {
     if (mCurrentFrame.mnId <= mnLastRelocFrameId + mnFramesToResetIMU) {
