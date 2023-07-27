@@ -50,11 +50,6 @@ class Settings {
   enum CameraModelType { PinHole = 0, Rectified = 1, KannalaBrandt = 2 };
 
   /*
-   * Delete default constructor
-   */
-  Settings() = delete;
-
-  /*
    * Constructor from file
    */
   Settings(const std::string& configFile, const CameraType& sensor);
@@ -68,15 +63,19 @@ class Settings {
    * Getter methods
    */
   CameraModelType cameraType() const { return cameraType_; }
-  std::shared_ptr<GeometricCamera> camera1() { return calibration1_; }
-  std::shared_ptr<GeometricCamera> camera2() { return calibration2_; }
-  cv::Mat camera1DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F,
-                   vPinHoleDistorsion1_.data());
+  std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
+  std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
+  cv::Mat camera1DistortionCoef() const {
+    cv::Mat distortionMat(vPinHoleDistorsion1_.size(), 1, CV_32F);
+    std::copy(vPinHoleDistorsion1_.begin(), vPinHoleDistorsion1_.end(), distortionMat.ptr<float>());
+
+    return distortionMat;
   }
-  cv::Mat camera2DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F,
-                   vPinHoleDistorsion2_.data());
+  cv::Mat camera2DistortionCoef() const {
+    cv::Mat distortionMat(vPinHoleDistorsion2_.size(), 1, CV_32F);
+    std::copy(vPinHoleDistorsion2_.begin(), vPinHoleDistorsion2_.end(), distortionMat.ptr<float>());
+
+    return distortionMat;
   }
 
   const Sophus::SE3f &Tlr() const { return Tlr_; }
@@ -123,6 +122,7 @@ class Settings {
   const std::string &atlasSaveFile() const { return sSaveto_; }
 
   float thFarPoints() const { return thFarPoints_; }
+  bool activeLoopClosing() const { return activeLoopClosing_; }
 
   const cv::Mat &M1l() const { return M1l_; }
   const cv::Mat &M2l() const { return M2l_; }
@@ -169,7 +169,6 @@ class Settings {
    * Visual stuff
    */
   std::shared_ptr<GeometricCamera> calibration1_, calibration2_;  // Camera calibration
-  GeometricCamera *originalCalib1_, *originalCalib2_;
   std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
 
   cv::Size originalImSize_, newImSize_;
@@ -232,6 +231,7 @@ class Settings {
    * Other stuff
    */
   float thFarPoints_;
+  bool activeLoopClosing_;
 };
 }  // namespace MORB_SLAM
 

@@ -98,7 +98,7 @@ Eigen::Vector2f KannalaBrandt8::projectMat(const cv::Point3f &p3D) const {
   return Eigen::Vector2f(point.x, point.y);
 }
 
-float KannalaBrandt8::uncertainty2(const Eigen::Matrix<double, 2, 1> &p2D) {
+float KannalaBrandt8::uncertainty2(const Eigen::Matrix<double, 2, 1> &p2D) const {
   /*Eigen::Matrix<double,2,1> c;
   c << mvParameters[2], mvParameters[3];
   if ((p2D-c).squaredNorm()>57600) // 240*240 (256)
@@ -146,8 +146,7 @@ cv::Point3f KannalaBrandt8::unproject(const cv::Point2f &p2D) const {
   return cv::Point3f(pw.x * scale, pw.y * scale, 1.f);
 }
 
-Eigen::Matrix<double, 2, 3> KannalaBrandt8::projectJac(
-    const Eigen::Vector3d &v3D) {
+Eigen::Matrix<double, 2, 3> KannalaBrandt8::projectJac(const Eigen::Vector3d &v3D) const {
   double x2 = v3D[0] * v3D[0], y2 = v3D[1] * v3D[1], z2 = v3D[2] * v3D[2];
   double r2 = x2 + y2;
   double r = sqrt(r2);
@@ -187,10 +186,10 @@ bool KannalaBrandt8::ReconstructWithTwoViews(
     const std::vector<cv::KeyPoint> &vKeys1,
     const std::vector<cv::KeyPoint> &vKeys2, const std::vector<int> &vMatches12,
     Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D,
-    std::vector<bool> &vbTriangulated) {
+    std::vector<bool> &vbTriangulated) const {
   if (!tvr) {
     Eigen::Matrix3f K = this->toK_();
-    tvr = new TwoViewReconstruction(K);
+    tvr = std::make_shared<TwoViewReconstruction>(K);
   }
 
   // Correct FishEye distortion
@@ -227,9 +226,9 @@ Eigen::Matrix3f KannalaBrandt8::toK_() const {
 }
 
 bool KannalaBrandt8::epipolarConstrain(
-    const std::shared_ptr<GeometricCamera> &pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2,
+    const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2,
     const Eigen::Matrix3f &R12, const Eigen::Vector3f &t12,
-    const float sigmaLevel, const float unc) {
+    const float sigmaLevel, const float unc) const {
   Eigen::Vector3f p3D;
   return this->TriangulateMatches(pCamera2, kp1, kp2, R12, t12, sigmaLevel, unc,
                                   p3D) > 0.0001f;
@@ -238,7 +237,7 @@ bool KannalaBrandt8::epipolarConstrain(
 bool KannalaBrandt8::matchAndtriangulate(
     const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, GeometricCamera *pOther,
     Sophus::SE3f &Tcw1, Sophus::SE3f &Tcw2, const float sigmaLevel1,
-    const float sigmaLevel2, Eigen::Vector3f &x3Dtriangulated) {
+    const float sigmaLevel2, Eigen::Vector3f &x3Dtriangulated) const {
   Eigen::Matrix<float, 3, 4> eigTcw1 = Tcw1.matrix3x4();
   Eigen::Matrix3f Rcw1 = eigTcw1.block<3, 3>(0, 0);
   Eigen::Matrix3f Rwc1 = Rcw1.transpose();
@@ -320,10 +319,10 @@ bool KannalaBrandt8::matchAndtriangulate(
   return true;
 }
 
-float KannalaBrandt8::TriangulateMatches(
-    const std::shared_ptr<GeometricCamera> &pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2,
+float KannalaBrandt8::TriangulateMatches (
+    const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2,
     const Eigen::Matrix3f &R12, const Eigen::Vector3f &t12,
-    const float sigmaLevel, const float unc, Eigen::Vector3f &p3D) {
+    const float sigmaLevel, const float unc, Eigen::Vector3f &p3D) const {
   Eigen::Vector3f r1 = this->unprojectEig(kp1.pt);
   Eigen::Vector3f r2 = pCamera2->unprojectEig(kp2.pt);
 
@@ -415,7 +414,7 @@ std::istream &operator>>(std::istream &is, KannalaBrandt8 &kb) {
 void KannalaBrandt8::Triangulate(const cv::Point2f &p1, const cv::Point2f &p2,
                                  const Eigen::Matrix<float, 3, 4> &Tcw1,
                                  const Eigen::Matrix<float, 3, 4> &Tcw2,
-                                 Eigen::Vector3f &x3D) {
+                                 Eigen::Vector3f &x3D) const {
   Eigen::Matrix<float, 4, 4> A;
   A.row(0) = p1.x * Tcw1.row(2) - Tcw1.row(0);
   A.row(1) = p1.y * Tcw1.row(2) - Tcw1.row(1);
@@ -427,7 +426,7 @@ void KannalaBrandt8::Triangulate(const cv::Point2f &p1, const cv::Point2f &p2,
   x3D = x3Dh.head(3) / x3Dh(3);
 }
 
-bool KannalaBrandt8::IsEqual(const std::shared_ptr<GeometricCamera> &pCam) {
+bool KannalaBrandt8::IsEqual(const std::shared_ptr<GeometricCamera> &pCam) const {
   if (pCam->GetType() != GeometricCamera::CAM_FISHEYE) return false;
 
   std::shared_ptr<KannalaBrandt8> pKBCam = std::static_pointer_cast<KannalaBrandt8>(pCam);
@@ -445,5 +444,31 @@ bool KannalaBrandt8::IsEqual(const std::shared_ptr<GeometricCamera> &pCam) {
   }
   return is_same_camera;
 }
+
+bool KannalaBrandt8::IsEqual(const std::shared_ptr<const GeometricCamera> &pCam) const {
+  if (pCam->GetType() != GeometricCamera::CAM_FISHEYE) return false;
+
+  std::shared_ptr<const KannalaBrandt8> pKBCam = std::static_pointer_cast<const KannalaBrandt8>(pCam);
+
+  if (abs(precision - pKBCam->GetPrecision()) > 1e-6) return false;
+
+  if (size() != pKBCam->size()) return false;
+
+  bool is_same_camera = true;
+  for (size_t i = 0; i < size(); ++i) {
+    if (abs(mvParameters[i] - pKBCam->getParameter(i)) > 1e-6) {
+      is_same_camera = false;
+      break;
+    }
+  }
+  return is_same_camera;
+}
+
+const std::vector<int> &KannalaBrandt8::getLappingArea() const { return mvLappingArea; }
+void KannalaBrandt8::scaleLappingArea(float f){
+  mvLappingArea[0] *= f;
+  mvLappingArea[1] *= f;
+}
+
 
 }  // namespace MORB_SLAM

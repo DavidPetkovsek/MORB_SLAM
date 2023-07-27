@@ -73,81 +73,21 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
        << "under certain conditions. See LICENSE.txt." << std::endl
        << std::endl;
 
-  std::cout << "Input sensor was set to: ";
+  std::cout << "Input sensor was set to: " << mSensor << std::endl;
 
-  if (mSensor == CameraType::MONOCULAR)
-    std::cout << "Monocular" << std::endl;
-  else if (mSensor == CameraType::STEREO)
-    std::cout << "Stereo" << std::endl;
-  else if (mSensor == CameraType::RGBD)
-    std::cout << "RGB-D" << std::endl;
-  else if (mSensor == CameraType::IMU_MONOCULAR)
-    std::cout << "Monocular-Inertial" << std::endl;
-  else if (mSensor == CameraType::IMU_STEREO)
-    std::cout << "Stereo-Inertial" << std::endl;
-  else if (mSensor == CameraType::IMU_RGBD)
-    std::cout << "RGB-D-Inertial" << std::endl;
 
-  // Check settings file
-  cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-  if (!fsSettings.isOpened()) {
-    std::cerr << "Failed to open settings file at: " << strSettingsFile << std::endl;
-    throw std::invalid_argument("Failed to open settings file at: " + strSettingsFile);
-  }
+  settings = std::make_shared<Settings>(strSettingsFile, mSensor);
+  mStrLoadAtlasFromFile = settings->atlasLoadFile();
+  mStrSaveAtlasToFile = settings->atlasSaveFile();
 
-  cv::FileNode node = fsSettings["File.version"];
-  if (!node.empty() && node.isString() && node.string() == "1.0") {
-    settings_ = new Settings(strSettingsFile, mSensor);
-
-    mStrLoadAtlasFromFile = settings_->atlasLoadFile();
-    mStrSaveAtlasToFile = settings_->atlasSaveFile();
-
-    // std::cout << (*settings_) << std::endl;
-  } else {
-    settings_ = nullptr;
-    cv::FileNode node = fsSettings["System.LoadAtlasFromFile"];
-    if (!node.empty() && node.isString()) {
-      mStrLoadAtlasFromFile = (std::string)node;
-    }
-
-    node = fsSettings["System.SaveAtlasToFile"];
-    if (!node.empty() && node.isString()) {
-      mStrSaveAtlasToFile = (std::string)node;
-    }
-  }
-
-  node = fsSettings["loopClosing"];
-  bool activeLC = true;
-  if (!node.empty()) {
-    activeLC = static_cast<int>(fsSettings["loopClosing"]) != 0;
-  }
+  bool activeLC = settings->activeLoopClosing();
 
   mStrVocabularyFilePath = strVocFile;
 
   // bool loadedAtlas = false; // UNUSED
 
   bool isRead = false;
-  if (mStrLoadAtlasFromFile.empty()) {
-    // Load ORB Vocabulary
-    std::cout << std::endl
-         << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
-    mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    if (!bVocLoad) {
-      std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Failed to open at: " << strVocFile << std::endl;
-      throw std::invalid_argument("Failed to open at: " + strVocFile);
-    }
-    std::cout << "Vocabulary loaded!" << std::endl << std::endl;
-
-    // Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-
-    // Create the Atlas
-    std::cout << "Initialization of Atlas from scratch " << std::endl;
-    // mpAtlas = new Atlas(0);
-  } else {
     // Load ORB Vocabulary
     std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
@@ -163,8 +103,9 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // Create KeyFrame Database
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
-    std::cout << "Load File" << std::endl;
-
+  if (mStrLoadAtlasFromFile.empty()) {
+    std::cout << "Initialization of Atlas from scratch " << std::endl;
+  } else {
     // Load the file with an earlier session
     // clock_t start = clock();
 
@@ -199,7 +140,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // constructor)
   mpTracker = new Tracking(this, mpVocabulary,
                            mpAtlas, mpKeyFrameDatabase, strSettingsFile,
-                           mSensor, settings_);
+                           mSensor, settings);
 
   // Initialize the Local Mapping thread and launch
   mpLocalMapper = new LocalMapping(
@@ -212,10 +153,10 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   }
 
   mptLocalMapping = new std::thread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
-  if (settings_)
-    mpLocalMapper->mThFarPoints = settings_->thFarPoints();
-  else
-    mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
+  // if (settings)
+  mpLocalMapper->mThFarPoints = settings->thFarPoints();
+  // else
+  //   mpLocalMapper->mThFarPoints = settings-> fsSettings["thFarPoints"];
   if (mpLocalMapper->mThFarPoints != 0) {
     std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints
          << " m from current camera" << std::endl;
@@ -254,17 +195,17 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   }
 
   cv::Mat imLeftToFeed, imRightToFeed;
-  if (settings_ && settings_->needToRectify()) {
-    const cv::Mat &M1l = settings_->M1l();
-    const cv::Mat &M2l = settings_->M2l();
-    const cv::Mat &M1r = settings_->M1r();
-    const cv::Mat &M2r = settings_->M2r();
+  if (settings && settings->needToRectify()) {
+    const cv::Mat &M1l = settings->M1l();
+    const cv::Mat &M2l = settings->M2l();
+    const cv::Mat &M1r = settings->M1r();
+    const cv::Mat &M2r = settings->M2r();
 
     cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
     cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
-  } else if (settings_ && settings_->needToResize()) {
-    cv::resize(imLeft, imLeftToFeed, settings_->newImSize());
-    cv::resize(imRight, imRightToFeed, settings_->newImSize());
+  } else if (settings && settings->needToResize()) {
+    cv::resize(imLeft, imLeftToFeed, settings->newImSize());
+    cv::resize(imRight, imRightToFeed, settings->newImSize());
   } else {
     imLeftToFeed = imLeft;
     imRightToFeed = imRight;
@@ -334,12 +275,12 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
 
   cv::Mat imToFeed = im.clone();
   cv::Mat imDepthToFeed = depthmap.clone();
-  if (settings_ && settings_->needToResize()) {
+  if (settings && settings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings_->newImSize());
+    cv::resize(im, resizedIm, settings->newImSize());
     imToFeed = resizedIm;
 
-    cv::resize(depthmap, imDepthToFeed, settings_->newImSize());
+    cv::resize(depthmap, imDepthToFeed, settings->newImSize());
   }
 
   // Check mode change
@@ -402,9 +343,9 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   }
 
   cv::Mat imToFeed = im.clone();
-  if (settings_ && settings_->needToResize()) {
+  if (settings && settings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings_->newImSize());
+    cv::resize(im, resizedIm, settings->newImSize());
     imToFeed = resizedIm;
   }
 
@@ -762,5 +703,7 @@ bool System::getHasMergedLocalMap() {
 bool System::getIsDoneVIBA() {
   return mpLocalMapper->getIsDoneVIBA();
 }
+
+std::shared_ptr<Settings> System::getSettings() const { return settings; }
 
 }  // namespace MORB_SLAM

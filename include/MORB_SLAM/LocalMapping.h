@@ -28,7 +28,6 @@
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/LoopClosing.h"
-#include "MORB_SLAM/Settings.h"
 #include "MORB_SLAM/Tracking.h"
 
 namespace MORB_SLAM {

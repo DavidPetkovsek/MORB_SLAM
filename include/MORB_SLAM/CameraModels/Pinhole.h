@@ -42,67 +42,66 @@ class Pinhole : public GeometricCamera {
     mnType = CAM_PINHOLE;
   }
   Pinhole(const std::vector<float> _vParameters)
-      : GeometricCamera(_vParameters), tvr(nullptr) {
+      : GeometricCamera(_vParameters) {
     assert(mvParameters.size() == 4);
     mnId = nNextId++;
     mnType = CAM_PINHOLE;
   }
 
   Pinhole(Pinhole* pPinhole)
-      : GeometricCamera(pPinhole->mvParameters), tvr(nullptr) {
+      : GeometricCamera(pPinhole->mvParameters) {
     assert(mvParameters.size() == 4);
     mnId = nNextId++;
     mnType = CAM_PINHOLE;
   }
 
-  virtual ~Pinhole() {
-    if (tvr) delete tvr;
-  }
+  virtual ~Pinhole() {}
 
-  cv::Point2f project(const cv::Point3f& p3D) const;
-  Eigen::Vector2d project(const Eigen::Vector3d& v3D) const;
-  Eigen::Vector2f project(const Eigen::Vector3f& v3D) const;
-  Eigen::Vector2f projectMat(const cv::Point3f& p3D) const;
+  virtual cv::Point2f project(const cv::Point3f& p3D) const override;
+  virtual Eigen::Vector2d project(const Eigen::Vector3d& v3D) const override;
+  virtual Eigen::Vector2f project(const Eigen::Vector3f& v3D) const override;
+  virtual Eigen::Vector2f projectMat(const cv::Point3f& p3D) const override;
 
-  float uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D);
+  virtual float uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D) const override;
 
-  Eigen::Vector3f unprojectEig(const cv::Point2f& p2D) const;
-  cv::Point3f unproject(const cv::Point2f& p2D) const;
+  virtual Eigen::Vector3f unprojectEig(const cv::Point2f& p2D) const override;
+  virtual cv::Point3f unproject(const cv::Point2f& p2D) const override;
 
-  Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d& v3D);
+  virtual Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d& v3D) const override;
 
-  bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1,
+  virtual bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1,
                                const std::vector<cv::KeyPoint>& vKeys2,
                                const std::vector<int>& vMatches12,
                                Sophus::SE3f& T21,
                                std::vector<cv::Point3f>& vP3D,
-                               std::vector<bool>& vbTriangulated);
+                               std::vector<bool>& vbTriangulated) const override;
 
-  cv::Mat toK() const;
-  Eigen::Matrix3f toK_()const;
+  virtual cv::Mat toK() const override;
+  virtual Eigen::Matrix3f toK_()const override;
 
-  bool epipolarConstrain(const std::shared_ptr<GeometricCamera> &pCamera2, const cv::KeyPoint& kp1,
+  virtual bool epipolarConstrain(const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint& kp1,
                          const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12,
                          const Eigen::Vector3f& t12, const float sigmaLevel,
-                         const float unc);
+                         const float unc) const override;
 
-  bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2,
+  virtual bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2,
                            GeometricCamera* pOther, Sophus::SE3f& Tcw1,
                            Sophus::SE3f& Tcw2, const float sigmaLevel1,
                            const float sigmaLevel2,
-                           Eigen::Vector3f& x3Dtriangulated) {
+                           Eigen::Vector3f& x3Dtriangulated) const override {
     return false;
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Pinhole& ph);
   friend std::istream& operator>>(std::istream& os, Pinhole& ph);
 
-  bool IsEqual(const std::shared_ptr<GeometricCamera> &pCam);
+  virtual bool IsEqual(const std::shared_ptr<GeometricCamera> &pCam) const override;
+  virtual bool IsEqual(const std::shared_ptr<const GeometricCamera> &pCam) const override;
 
  private:
   // Parameters vector corresponds to
   //      [fx, fy, cx, cy]
-  TwoViewReconstruction* tvr;
+  // TwoViewReconstruction* tvr;
 };
 }  // namespace MORB_SLAM
 

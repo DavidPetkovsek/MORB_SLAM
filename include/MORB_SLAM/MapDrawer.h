@@ -35,8 +35,6 @@ class MapDrawer
     void newParameterLoader(const Settings& settings);
     Atlas_ptr mpAtlas;
     
-    bool ParseViewerParamFile(cv::FileStorage &fSettings);
-
     float mKeyFrameSize;
     float mKeyFrameLineWidth;
     float mGraphLineWidth;
@@ -56,7 +54,6 @@ class MapDrawer
                                 {0.0f, 1.0f, 1.0f}};
 
 public:
-    MapDrawer(const Atlas_ptr &pAtlas, const std::string &strSettingPath);
     MapDrawer(const Atlas_ptr &pAtlas, const Settings& settings);
 
     void DrawMapPoints();

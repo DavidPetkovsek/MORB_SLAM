@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM, argv[2]);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
 
     float imageScale = SLAM->GetImageScale();

@@ -838,7 +838,7 @@ int ORBmatcher::SearchForTriangulation(
   Eigen::Matrix3f R12;  // for fastest computation
   Eigen::Vector3f t12;  // for fastest computation
 
-  std::shared_ptr<GeometricCamera> pCamera1 = pKF1->mpCamera, pCamera2 = pKF2->mpCamera;
+  std::shared_ptr<const GeometricCamera> pCamera1 = pKF1->mpCamera, pCamera2 = pKF2->mpCamera;
 
   if (!pKF1->mpCamera2 && !pKF2->mpCamera2) {
     T12 = T1w * Tw2;
@@ -1043,7 +1043,7 @@ int ORBmatcher::SearchForTriangulation(
 
 int ORBmatcher::Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
                      const float th, const bool bRight) {
-  std::shared_ptr<GeometricCamera> pCamera;
+  std::shared_ptr<const GeometricCamera> pCamera;
   Sophus::SE3f Tcw;
   Eigen::Vector3f Ow;
 

@@ -222,12 +222,12 @@ bool VertexSim3Expmap::read(std::istream& is) {
   float nextParam;
   for (size_t i = 0; i < pCamera1->size(); i++) {
     is >> nextParam;
-    pCamera1->setParameter(nextParam, i);
+    std::const_pointer_cast<GeometricCamera>(pCamera1)->setParameter(nextParam, i);
   }
 
   for (size_t i = 0; i < pCamera2->size(); i++) {
     is >> nextParam;
-    pCamera2->setParameter(nextParam, i);
+    std::const_pointer_cast<GeometricCamera>(pCamera2)->setParameter(nextParam, i);
   }
 
   setEstimate(g2o::Sim3(cam2world).inverse());

@@ -49,14 +49,9 @@ class Tracking {
   
   Tracking(System* pSys, ORBVocabulary* pVoc,
            const Atlas_ptr &pAtlas, KeyFrameDatabase* pKFDB,
-           const std::string& strSettingPath, const CameraType sensor, Settings* settings);
+           const std::string& strSettingPath, const CameraType sensor, std::shared_ptr<Settings> settings);
 
   ~Tracking();
-
-  // Parse the config file
-  bool ParseCamParamFile(cv::FileStorage& fSettings);
-  bool ParseORBParamFile(cv::FileStorage& fSettings);
-  bool ParseIMUParamFile(cv::FileStorage& fSettings);
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
@@ -78,7 +73,6 @@ class Tracking {
   // Load new settings
   // The focal lenght should be similar or scale prediction will fail when
   // projecting points
-  void ChangeCalibration(const std::string& strSettingPath);
 
   // Use this function if you have deactivated local mapping and you only want
   // to localize the camera.
@@ -295,14 +289,14 @@ public:
 
   std::list<MapPoint*> mlpTemporalPoints;
 
-  std::shared_ptr<GeometricCamera> mpCamera;
-  std::shared_ptr<GeometricCamera> mpCamera2;
+  std::shared_ptr<const GeometricCamera> mpCamera;
+  std::shared_ptr<const GeometricCamera> mpCamera2;
 
   int initID, lastID;
 
   Sophus::SE3f mTlr;
 
-  void newParameterLoader(Settings* settings);
+  void newParameterLoader(Settings& settings);
 
 #ifdef REGISTER_LOOP
   bool Stop();

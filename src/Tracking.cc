@@ -42,7 +42,7 @@ namespace MORB_SLAM {
 
 Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
                    KeyFrameDatabase* pKFDB, const std::string& strSettingPath,
-                   const CameraType sensor, Settings* settings)
+                   const CameraType sensor, std::shared_ptr<Settings> settings)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
@@ -62,49 +62,15 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
       mbCreatedMap(false),
       mpCamera2(nullptr) {
   // Load camera parameters from settings file
-  if (settings) {
-    newParameterLoader(settings);
-  } else {
-    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-
-    bool b_parse_cam = ParseCamParamFile(fSettings);
-    if (!b_parse_cam) {
-      std::cout << "*Error with the camera parameters in the config file*"
-                << std::endl;
-    }
-
-    // Load ORB parameters
-    bool b_parse_orb = ParseORBParamFile(fSettings);
-    if (!b_parse_orb) {
-      std::cout << "*Error with the ORB parameters in the config file*"
-                << std::endl;
-    }
-
-    bool b_parse_imu = true;
-    if (mSensor.isInertial()) {
-      b_parse_imu = ParseIMUParamFile(fSettings);
-      if (!b_parse_imu) {
-        std::cout << "*Error with the IMU parameters in the config file*"
-                  << std::endl;
-      }
-
-      mnFramesToResetIMU = mMaxFrames;
-    }
-
-    if (!b_parse_cam || !b_parse_orb || !b_parse_imu) {
-      std::cerr << "**ERROR in the config file, the format is not correct**"
-                << std::endl;
-      throw std::runtime_error("**ERROR in the config file, the format is not correct**");
-    }
-  }
+  newParameterLoader(*settings);
 
   initID = 0;
   lastID = 0;
 
-  std::vector<std::shared_ptr<GeometricCamera>> vpCams = mpAtlas->GetAllCameras();
+  std::vector<std::shared_ptr<const GeometricCamera>> vpCams = mpAtlas->GetAllCameras();
   std::cout << "There are " << vpCams.size() << " cameras in the atlas"
             << std::endl;
-  for (std::shared_ptr<GeometricCamera> pCam : vpCams) {
+  for (std::shared_ptr<const GeometricCamera> pCam : vpCams) {
     std::cout << "Camera " << pCam->GetId();
     if (pCam->GetType() == GeometricCamera::CAM_PINHOLE) {
       std::cout << " is pinhole" << std::endl;
@@ -545,12 +511,12 @@ void Tracking::PrintTimeStats() {
 
 Tracking::~Tracking() {}
 
-void Tracking::newParameterLoader(Settings* settings) {
-  mpCamera = settings->camera1();
+void Tracking::newParameterLoader(Settings& settings) {
+  mpCamera = settings.camera1();
   mpCamera = mpAtlas->AddCamera(mpCamera);
 
-  if (settings->needToUndistort()) {
-    mDistCoef = settings->camera1DistortionCoef();
+  if (settings.needToUndistort()) {
+    mDistCoef = settings.camera1DistortionCoef();
   } else {
     mDistCoef = cv::Mat::zeros(4, 1, CV_32F);
   }
@@ -571,20 +537,20 @@ void Tracking::newParameterLoader(Settings* settings) {
   mK_(1, 2) = mpCamera->getParameter(3);
 
   if (mSensor.hasMulticam() &&
-      settings->cameraType() == Settings::KannalaBrandt) {
-    mpCamera2 = settings->camera2();
+      settings.cameraType() == Settings::KannalaBrandt) {
+    mpCamera2 = settings.camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
-    mTlr = settings->Tlr();
+    mTlr = settings.Tlr();
   }
 
   if (mSensor.hasMulticam()) {
-    mbf = settings->bf();
-    mThDepth = settings->b() * settings->thDepth();
+    mbf = settings.bf();
+    mThDepth = settings.b() * settings.thDepth();
   }
 
   if (mSensor == CameraType::RGBD || mSensor == CameraType::IMU_RGBD) {
-    mDepthMapFactor = settings->depthMapFactor();
+    mDepthMapFactor = settings.depthMapFactor();
     if (fabs(mDepthMapFactor) < 1e-5)
       mDepthMapFactor = 1;
     else
@@ -592,14 +558,14 @@ void Tracking::newParameterLoader(Settings* settings) {
   }
 
   mMinFrames = 0;
-  mMaxFrames = settings->fps();
+  mMaxFrames = settings.fps();
 
   // ORB parameters
-  int nFeatures = settings->nFeatures();
-  int nLevels = settings->nLevels();
-  int fIniThFAST = settings->initThFAST();
-  int fMinThFAST = settings->minThFAST();
-  float fScaleFactor = settings->scaleFactor();
+  int nFeatures = settings.nFeatures();
+  int nLevels = settings.nLevels();
+  int fIniThFAST = settings.initThFAST();
+  int fMinThFAST = settings.minThFAST();
+  float fScaleFactor = settings.scaleFactor();
 
   mpORBextractorLeft = std::make_shared<ORBextractor>(nFeatures, fScaleFactor, nLevels,
                                         fIniThFAST, fMinThFAST);
@@ -613,719 +579,19 @@ void Tracking::newParameterLoader(Settings* settings) {
                                          fIniThFAST, fMinThFAST);
 
   // IMU parameters
-  Sophus::SE3f Tbc = settings->Tbc();
-  mInsertKFsLost = settings->insertKFsWhenLost();
-  mImuFreq = settings->imuFrequency();
+  Sophus::SE3f Tbc = settings.Tbc();
+  mInsertKFsLost = settings.insertKFsWhenLost();
+  mImuFreq = settings.imuFrequency();
   mImuPer = 0.001;  // 1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
-  float Ng = settings->noiseGyro();
-  float Na = settings->noiseAcc();
-  float Ngw = settings->gyroWalk();
-  float Naw = settings->accWalk();
+  float Ng = settings.noiseGyro();
+  float Na = settings.noiseAcc();
+  float Ngw = settings.gyroWalk();
+  float Naw = settings.accWalk();
 
   const float sf = sqrt(mImuFreq);
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
 
   mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
-}
-
-bool Tracking::ParseCamParamFile(cv::FileStorage& fSettings) {
-  mDistCoef = cv::Mat::zeros(4, 1, CV_32F);
-  std::cout << std::endl << "Camera Parameters: " << std::endl;
-  bool b_miss_params = false;
-
-  std::string sCameraName = fSettings["Camera.type"];
-  if (sCameraName == "PinHole") {
-    float fx=0.f, fy=0.f, cx=0.f, cy=0.f;
-    mImageScale = 1.f;
-
-    // Camera calibration parameters
-    cv::FileNode node = fSettings["Camera.fx"];
-    if (!node.empty() && node.isReal()) {
-      fx = node.real();
-    } else {
-      std::cerr << "*Camera.fx parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.fy"];
-    if (!node.empty() && node.isReal()) {
-      fy = node.real();
-    } else {
-      std::cerr << "*Camera.fy parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.cx"];
-    if (!node.empty() && node.isReal()) {
-      cx = node.real();
-    } else {
-      std::cerr << "*Camera.cx parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.cy"];
-    if (!node.empty() && node.isReal()) {
-      cy = node.real();
-    } else {
-      std::cerr << "*Camera.cy parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    // Distortion parameters
-    node = fSettings["Camera.k1"];
-    if (!node.empty() && node.isReal()) {
-      mDistCoef.at<float>(0) = node.real();
-    } else {
-      std::cerr << "*Camera.k1 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.k2"];
-    if (!node.empty() && node.isReal()) {
-      mDistCoef.at<float>(1) = node.real();
-    } else {
-      std::cerr << "*Camera.k2 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.p1"];
-    if (!node.empty() && node.isReal()) {
-      mDistCoef.at<float>(2) = node.real();
-    } else {
-      std::cerr << "*Camera.p1 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.p2"];
-    if (!node.empty() && node.isReal()) {
-      mDistCoef.at<float>(3) = node.real();
-    } else {
-      std::cerr << "*Camera.p2 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.k3"];
-    if (!node.empty() && node.isReal()) {
-      mDistCoef.resize(5);
-      mDistCoef.at<float>(4) = node.real();
-    }
-
-    node = fSettings["Camera.imageScale"];
-    if (!node.empty() && node.isReal()) {
-      mImageScale = node.real();
-    }
-
-    if (b_miss_params) {
-      return false;
-    }
-
-    if (mImageScale != 1.f) {
-      // K matrix parameters must be scaled.
-      fx = fx * mImageScale;
-      fy = fy * mImageScale;
-      cx = cx * mImageScale;
-      cy = cy * mImageScale;
-    }
-
-    std::vector<float> vCamCalib{fx, fy, cx, cy};
-
-    mpCamera = std::make_shared<Pinhole>(vCamCalib);
-
-    mpCamera = mpAtlas->AddCamera(mpCamera);
-
-    std::cout << "- Camera: Pinhole" << std::endl;
-    std::cout << "- Image scale: " << mImageScale << std::endl;
-    std::cout << "- fx: " << fx << std::endl;
-    std::cout << "- fy: " << fy << std::endl;
-    std::cout << "- cx: " << cx << std::endl;
-    std::cout << "- cy: " << cy << std::endl;
-    std::cout << "- k1: " << mDistCoef.at<float>(0) << std::endl;
-    std::cout << "- k2: " << mDistCoef.at<float>(1) << std::endl;
-
-    std::cout << "- p1: " << mDistCoef.at<float>(2) << std::endl;
-    std::cout << "- p2: " << mDistCoef.at<float>(3) << std::endl;
-
-    if (mDistCoef.rows == 5)
-      std::cout << "- k3: " << mDistCoef.at<float>(4) << std::endl;
-
-    mK = cv::Mat::eye(3, 3, CV_32F);
-    mK.at<float>(0, 0) = fx;
-    mK.at<float>(1, 1) = fy;
-    mK.at<float>(0, 2) = cx;
-    mK.at<float>(1, 2) = cy;
-
-    mK_.setIdentity();
-    mK_(0, 0) = fx;
-    mK_(1, 1) = fy;
-    mK_(0, 2) = cx;
-    mK_(1, 2) = cy;
-  } else if (sCameraName == "KannalaBrandt8") {
-    float fx=0.f, fy=0.f, cx=0.f, cy=0.f;
-    float k1=0.f, k2=0.f, k3=0.f, k4=0.f;
-    mImageScale = 1.f;
-
-    // Camera calibration parameters
-    cv::FileNode node = fSettings["Camera.fx"];
-    if (!node.empty() && node.isReal()) {
-      fx = node.real();
-    } else {
-      std::cerr << "*Camera.fx parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-    node = fSettings["Camera.fy"];
-    if (!node.empty() && node.isReal()) {
-      fy = node.real();
-    } else {
-      std::cerr << "*Camera.fy parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.cx"];
-    if (!node.empty() && node.isReal()) {
-      cx = node.real();
-    } else {
-      std::cerr << "*Camera.cx parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.cy"];
-    if (!node.empty() && node.isReal()) {
-      cy = node.real();
-    } else {
-      std::cerr << "*Camera.cy parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    // Distortion parameters
-    node = fSettings["Camera.k1"];
-    if (!node.empty() && node.isReal()) {
-      k1 = node.real();
-    } else {
-      std::cerr << "*Camera.k1 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-    node = fSettings["Camera.k2"];
-    if (!node.empty() && node.isReal()) {
-      k2 = node.real();
-    } else {
-      std::cerr << "*Camera.k2 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.k3"];
-    if (!node.empty() && node.isReal()) {
-      k3 = node.real();
-    } else {
-      std::cerr << "*Camera.k3 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.k4"];
-    if (!node.empty() && node.isReal()) {
-      k4 = node.real();
-    } else {
-      std::cerr << "*Camera.k4 parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-
-    node = fSettings["Camera.imageScale"];
-    if (!node.empty() && node.isReal()) {
-      mImageScale = node.real();
-    }
-
-    if (!b_miss_params) {
-      if (mImageScale != 1.f) {
-        // K matrix parameters must be scaled.
-        fx = fx * mImageScale;
-        fy = fy * mImageScale;
-        cx = cx * mImageScale;
-        cy = cy * mImageScale;
-      }
-
-      std::vector<float> vCamCalib{fx, fy, cx, cy, k1, k2, k3, k4};
-      mpCamera = std::make_shared<KannalaBrandt8>(vCamCalib);
-      mpCamera = mpAtlas->AddCamera(mpCamera);
-      std::cout << "- Camera: Fisheye" << std::endl;
-      std::cout << "- Image scale: " << mImageScale << std::endl;
-      std::cout << "- fx: " << fx << std::endl;
-      std::cout << "- fy: " << fy << std::endl;
-      std::cout << "- cx: " << cx << std::endl;
-      std::cout << "- cy: " << cy << std::endl;
-      std::cout << "- k1: " << k1 << std::endl;
-      std::cout << "- k2: " << k2 << std::endl;
-      std::cout << "- k3: " << k3 << std::endl;
-      std::cout << "- k4: " << k4 << std::endl;
-
-      mK = cv::Mat::eye(3, 3, CV_32F);
-      mK.at<float>(0, 0) = fx;
-      mK.at<float>(1, 1) = fy;
-      mK.at<float>(0, 2) = cx;
-      mK.at<float>(1, 2) = cy;
-
-      mK_.setIdentity();
-      mK_(0, 0) = fx;
-      mK_(1, 1) = fy;
-      mK_(0, 2) = cx;
-      mK_(1, 2) = cy;
-    }
-
-    if (mSensor.hasMulticam()) {
-      // Right camera
-      // Camera calibration parameters
-      cv::FileNode node = fSettings["Camera2.fx"];
-      if (!node.empty() && node.isReal()) {
-        fx = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.fx parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-      node = fSettings["Camera2.fy"];
-      if (!node.empty() && node.isReal()) {
-        fy = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.fy parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      node = fSettings["Camera2.cx"];
-      if (!node.empty() && node.isReal()) {
-        cx = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.cx parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      node = fSettings["Camera2.cy"];
-      if (!node.empty() && node.isReal()) {
-        cy = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.cy parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      // Distortion parameters
-      node = fSettings["Camera2.k1"];
-      if (!node.empty() && node.isReal()) {
-        k1 = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.k1 parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-      node = fSettings["Camera2.k2"];
-      if (!node.empty() && node.isReal()) {
-        k2 = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.k2 parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      node = fSettings["Camera2.k3"];
-      if (!node.empty() && node.isReal()) {
-        k3 = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.k3 parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      node = fSettings["Camera2.k4"];
-      if (!node.empty() && node.isReal()) {
-        k4 = node.real();
-      } else {
-        std::cerr
-            << "*Camera2.k4 parameter doesn't exist or is not a real number*"
-            << std::endl;
-        b_miss_params = true;
-      }
-
-      int leftLappingBegin = -1;
-      int leftLappingEnd = -1;
-
-      int rightLappingBegin = -1;
-      int rightLappingEnd = -1;
-
-      node = fSettings["Camera.lappingBegin"];
-      if (!node.empty() && node.isInt()) {
-        leftLappingBegin = node.operator int();
-      } else {
-        std::cout << "WARNING: Camera.lappingBegin not correctly defined"
-                  << std::endl;
-      }
-      node = fSettings["Camera.lappingEnd"];
-      if (!node.empty() && node.isInt()) {
-        leftLappingEnd = node.operator int();
-      } else {
-        std::cout << "WARNING: Camera.lappingEnd not correctly defined"
-                  << std::endl;
-      }
-      node = fSettings["Camera2.lappingBegin"];
-      if (!node.empty() && node.isInt()) {
-        rightLappingBegin = node.operator int();
-      } else {
-        std::cout << "WARNING: Camera2.lappingBegin not correctly defined"
-                  << std::endl;
-      }
-      node = fSettings["Camera2.lappingEnd"];
-      if (!node.empty() && node.isInt()) {
-        rightLappingEnd = node.operator int();
-      } else {
-        std::cout << "WARNING: Camera2.lappingEnd not correctly defined"
-                  << std::endl;
-      }
-
-      node = fSettings["Tlr"];
-      cv::Mat cvTlr;
-      if (!node.empty()) {
-        cvTlr = node.mat();
-        if (cvTlr.rows != 3 || cvTlr.cols != 4) {
-          std::cerr << "*Tlr matrix have to be a 3x4 transformation matrix*"
-                    << std::endl;
-          b_miss_params = true;
-        }
-      } else {
-        std::cerr << "*Tlr matrix doesn't exist*" << std::endl;
-        b_miss_params = true;
-      }
-
-      if (!b_miss_params) {
-        if (mImageScale != 1.f) {
-          // K matrix parameters must be scaled.
-          fx = fx * mImageScale;
-          fy = fy * mImageScale;
-          cx = cx * mImageScale;
-          cy = cy * mImageScale;
-
-          leftLappingBegin = leftLappingBegin * mImageScale;
-          leftLappingEnd = leftLappingEnd * mImageScale;
-          rightLappingBegin = rightLappingBegin * mImageScale;
-          rightLappingEnd = rightLappingEnd * mImageScale;
-        }
-
-        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[0] =
-            leftLappingBegin;
-        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera)->mvLappingArea[1] =
-            leftLappingEnd;
-
-        std::vector<float> vCamCalib2{fx, fy, cx, cy, k1, k2, k3, k4};
-        mpCamera2 = std::make_shared<KannalaBrandt8>(vCamCalib2);
-        mpCamera2 = mpAtlas->AddCamera(mpCamera2);
-
-        mTlr = Converter::toSophus(cvTlr);
-
-        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[0] =
-            rightLappingBegin;
-        std::reinterpret_pointer_cast<KannalaBrandt8>(mpCamera2)->mvLappingArea[1] =
-            rightLappingEnd;
-
-        std::cout << "- Camera1 Lapping: " << leftLappingBegin << ", "
-                  << leftLappingEnd << std::endl;
-
-        std::cout << std::endl << "Camera2 Parameters:" << std::endl;
-        std::cout << "- Camera: Fisheye" << std::endl;
-        std::cout << "- Image scale: " << mImageScale << std::endl;
-        std::cout << "- fx: " << fx << std::endl;
-        std::cout << "- fy: " << fy << std::endl;
-        std::cout << "- cx: " << cx << std::endl;
-        std::cout << "- cy: " << cy << std::endl;
-        std::cout << "- k1: " << k1 << std::endl;
-        std::cout << "- k2: " << k2 << std::endl;
-        std::cout << "- k3: " << k3 << std::endl;
-        std::cout << "- k4: " << k4 << std::endl;
-
-        std::cout << "- mTlr: \n" << cvTlr << std::endl;
-
-        std::cout << "- Camera2 Lapping: " << rightLappingBegin << ", "
-                  << rightLappingEnd << std::endl;
-      }
-    }
-
-    if (b_miss_params) {
-      return false;
-    }
-
-  } else {
-    std::cerr << "*Not Supported Camera Sensor*" << std::endl;
-    std::cerr << "Check an example configuration file with the desired sensor"
-              << std::endl;
-  }
-
-  if (mSensor.hasMulticam()) {
-    cv::FileNode node = fSettings["Camera.bf"];
-    if (!node.empty() && node.isReal()) {
-      mbf = node.real();
-      if (mImageScale != 1.f) {
-        mbf *= mImageScale;
-      }
-    } else {
-      std::cerr << "*Camera.bf parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-  }
-
-  float fps = fSettings["Camera.fps"];
-  if (fps == 0) fps = 30;
-
-  // Max/Min Frames to insert keyframes and to check relocalisation
-  mMinFrames = 0;
-  mMaxFrames = fps;
-
-  std::cout << "- fps: " << fps << std::endl;
-
-  if (mSensor.hasMulticam()) {
-    float fx = mpCamera->getParameter(0);
-    cv::FileNode node = fSettings["ThDepth"];
-    if (!node.empty() && node.isReal()) {
-      mThDepth = node.real();
-      mThDepth = mbf * mThDepth / fx;
-      std::cout << std::endl
-           << "Depth Threshold (Close/Far Points): " << mThDepth << std::endl;
-    } else {
-      std::cerr << "*ThDepth parameter doesn't exist or is not a real number*"
-                << std::endl;
-      b_miss_params = true;
-    }
-  }
-
-  if (mSensor == CameraType::RGBD || mSensor == CameraType::IMU_RGBD) {
-    cv::FileNode node = fSettings["DepthMapFactor"];
-    if (!node.empty() && node.isReal()) {
-      mDepthMapFactor = node.real();
-      if (fabs(mDepthMapFactor) < 1e-5)
-        mDepthMapFactor = 1;
-      else
-        mDepthMapFactor = 1.0f / mDepthMapFactor;
-    } else {
-      std::cerr
-          << "*DepthMapFactor parameter doesn't exist or is not a real number*"
-          << std::endl;
-      b_miss_params = true;
-    }
-  }
-
-  if (b_miss_params) {
-    return false;
-  }
-
-  return true;
-}
-
-bool Tracking::ParseORBParamFile(cv::FileStorage& fSettings) {
-  bool b_miss_params = false;
-  int nFeatures = 0, nLevels = 0, fIniThFAST = 0, fMinThFAST = 0;
-  float fScaleFactor = 0.f;
-
-  cv::FileNode node = fSettings["ORBextractor.nFeatures"];
-  if (!node.empty() && node.isInt()) {
-    nFeatures = node.operator int();
-  } else {
-    std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an "
-                 "integer*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["ORBextractor.scaleFactor"];
-  if (!node.empty() && node.isReal()) {
-    fScaleFactor = node.real();
-  } else {
-    std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not "
-                 "a real number*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["ORBextractor.nLevels"];
-  if (!node.empty() && node.isInt()) {
-    nLevels = node.operator int();
-  } else {
-    std::cerr
-        << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["ORBextractor.iniThFAST"];
-  if (!node.empty() && node.isInt()) {
-    fIniThFAST = node.operator int();
-  } else {
-    std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an "
-                 "integer*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["ORBextractor.minThFAST"];
-  if (!node.empty() && node.isInt()) {
-    fMinThFAST = node.operator int();
-  } else {
-    std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an "
-                 "integer*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  if (b_miss_params) {
-    return false;
-  }
-
-  mpORBextractorLeft = std::make_shared<ORBextractor>(nFeatures, fScaleFactor, nLevels,
-                                        fIniThFAST, fMinThFAST);
-
-  if (mSensor == CameraType::STEREO || mSensor == CameraType::IMU_STEREO)
-    mpORBextractorRight = std::make_shared<ORBextractor>(nFeatures, fScaleFactor, nLevels,
-                                           fIniThFAST, fMinThFAST);
-
-  if (mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR)
-    mpIniORBextractor = std::make_shared<ORBextractor>(5 * nFeatures, fScaleFactor, nLevels,
-                                         fIniThFAST, fMinThFAST);
-
-  std::cout << std::endl << "ORB Extractor Parameters: " << std::endl;
-  std::cout << "- Number of Features: " << nFeatures << std::endl;
-  std::cout << "- Scale Levels: " << nLevels << std::endl;
-  std::cout << "- Scale Factor: " << fScaleFactor << std::endl;
-  std::cout << "- Initial Fast Threshold: " << fIniThFAST << std::endl;
-  std::cout << "- Minimum Fast Threshold: " << fMinThFAST << std::endl;
-
-  return true;
-}
-
-bool Tracking::ParseIMUParamFile(cv::FileStorage& fSettings) {
-  bool b_miss_params = false;
-
-  cv::Mat cvTbc;
-  cv::FileNode node = fSettings["Tbc"];
-  if (!node.empty()) {
-    cvTbc = node.mat();
-    if (cvTbc.rows != 4 || cvTbc.cols != 4) {
-      std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*"
-                << std::endl;
-      b_miss_params = true;
-    }
-  } else {
-    std::cerr << "*Tbc matrix doesn't exist*" << std::endl;
-    b_miss_params = true;
-  }
-  std::cout << std::endl;
-  std::cout << "Left camera to Imu Transform (Tbc): " << std::endl << cvTbc << std::endl;
-  Eigen::Matrix<float, 4, 4, Eigen::RowMajor> eigTbc(cvTbc.ptr<float>(0));
-  Sophus::SE3f Tbc(eigTbc);
-
-  node = fSettings["InsertKFsWhenLost"];
-  mInsertKFsLost = true;
-  if (!node.empty() && node.isInt()) {
-    mInsertKFsLost = (bool)node.operator int();
-  }
-
-  if (!mInsertKFsLost)
-    std::cout << "Do not insert keyframes when lost visual tracking " << std::endl;
-
-  float Ng=0.f, Na=0.f, Ngw=0.f, Naw=0.f;
-
-  node = fSettings["IMU.Frequency"];
-  if (!node.empty() && node.isInt()) {
-    mImuFreq = node.operator int();
-    mImuPer = 0.001;  // 1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
-  } else {
-    std::cerr << "*IMU.Frequency parameter doesn't exist or is not an integer*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["IMU.NoiseGyro"];
-  if (!node.empty() && node.isReal()) {
-    Ng = node.real();
-  } else {
-    std::cerr
-        << "*IMU.NoiseGyro parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["IMU.NoiseAcc"];
-  if (!node.empty() && node.isReal()) {
-    Na = node.real();
-  } else {
-    std::cerr
-        << "*IMU.NoiseAcc parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["IMU.GyroWalk"];
-  if (!node.empty() && node.isReal()) {
-    Ngw = node.real();
-  } else {
-    std::cerr
-        << "*IMU.GyroWalk parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["IMU.AccWalk"];
-  if (!node.empty() && node.isReal()) {
-    Naw = node.real();
-  } else {
-    std::cerr << "*IMU.AccWalk parameter doesn't exist or is not a real number*"
-              << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["IMU.fastInit"];
-  mFastInit = false;
-  if (!node.empty()) {
-    mFastInit = static_cast<int>(fSettings["IMU.fastInit"]) != 0;
-  }
-
-  if (mFastInit)
-    std::cout << "Fast IMU initialization. Acceleration is not checked \n";
-
-  if (b_miss_params) {
-    return false;
-  }
-
-  const float sf = sqrt(mImuFreq);
-  std::cout << std::endl;
-  std::cout << "IMU frequency: " << mImuFreq << " Hz" << std::endl;
-  std::cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << std::endl;
-  std::cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << std::endl;
-  std::cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << std::endl;
-  std::cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << std::endl;
-
-  mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
-
-  mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
-
-  return true;
 }
 
 void Tracking::SetLocalMapper(LocalMapping* pLocalMapper) {
@@ -3381,43 +2647,6 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   imuMotionModelPrepedAfterRecentlyLostTracking = false;
 
   Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
-}
-
-void Tracking::ChangeCalibration(const std::string& strSettingPath) {
-  cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-  float fx = fSettings["Camera.fx"];
-  float fy = fSettings["Camera.fy"];
-  float cx = fSettings["Camera.cx"];
-  float cy = fSettings["Camera.cy"];
-
-  mK_.setIdentity();
-  mK_(0, 0) = fx;
-  mK_(1, 1) = fy;
-  mK_(0, 2) = cx;
-  mK_(1, 2) = cy;
-
-  cv::Mat K = cv::Mat::eye(3, 3, CV_32F);
-  K.at<float>(0, 0) = fx;
-  K.at<float>(1, 1) = fy;
-  K.at<float>(0, 2) = cx;
-  K.at<float>(1, 2) = cy;
-  K.copyTo(mK);
-
-  cv::Mat DistCoef(4, 1, CV_32F);
-  DistCoef.at<float>(0) = fSettings["Camera.k1"];
-  DistCoef.at<float>(1) = fSettings["Camera.k2"];
-  DistCoef.at<float>(2) = fSettings["Camera.p1"];
-  DistCoef.at<float>(3) = fSettings["Camera.p2"];
-  const float k3 = fSettings["Camera.k3"];
-  if (k3 != 0) {
-    DistCoef.resize(5);
-    DistCoef.at<float>(4) = k3;
-  }
-  DistCoef.copyTo(mDistCoef);
-
-  mbf = fSettings["Camera.bf"];
-
-  Frame::mbInitialComputations = true;
 }
 
 void Tracking::InformOnlyTracking(const bool& flag) { mbOnlyTracking = flag; }

@@ -423,7 +423,7 @@ void LocalMapping::CreateNewMapPoints() {
 
         KeyFrame* pKF2 = vpNeighKFs[i];
 
-        std::shared_ptr<GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera,
+        std::shared_ptr<const GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera,
                                          pCamera2 = pKF2->mpCamera;
 
         // Check first that baseline is not too short

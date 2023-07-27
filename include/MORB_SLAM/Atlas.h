@@ -88,8 +88,8 @@ class Atlas {
   // void EraseMapPoint(MapPoint* pMP);
   // void EraseKeyFrame(KeyFrame* pKF);
 
-  std::shared_ptr<GeometricCamera> AddCamera(const std::shared_ptr<GeometricCamera> &pCam);
-  std::vector<std::shared_ptr<GeometricCamera>> GetAllCameras();
+  std::shared_ptr<const GeometricCamera> AddCamera(const std::shared_ptr<const GeometricCamera> &pCam);
+  std::vector<std::shared_ptr<const GeometricCamera>> GetAllCameras();
 
   /* All methods without Map pointer work on current map */
   void SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs);
@@ -147,7 +147,7 @@ class Atlas {
 
   std::shared_ptr<Map> mpCurrentMap;
 
-  std::vector<std::shared_ptr<GeometricCamera>> mvpCameras;
+  std::vector<std::shared_ptr<const GeometricCamera>> mvpCameras;
 
   unsigned long int mnLastInitKFidMap;
 

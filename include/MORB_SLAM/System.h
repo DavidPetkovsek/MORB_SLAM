@@ -160,6 +160,8 @@ public:
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     LoopClosing* mpLoopCloser;
 
+    std::shared_ptr<Settings> getSettings() const;
+
 private:
 
     void SaveAtlas(int type);
@@ -216,7 +218,7 @@ private:
 
     std::string mStrVocabularyFilePath;
 
-    Settings* settings_;
+    std::shared_ptr<Settings> settings;
 };
 typedef std::shared_ptr<System> System_ptr;
 typedef std::weak_ptr<System> System_wptr;

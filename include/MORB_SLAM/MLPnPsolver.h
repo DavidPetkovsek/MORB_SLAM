@@ -237,7 +237,7 @@ class MLPnPsolver {
   // th*th*sigma(level)*sigma(level)
   std::vector<float> mvMaxError;
 
-  std::shared_ptr<GeometricCamera> mpCamera;
+  std::shared_ptr<const GeometricCamera> mpCamera;
 };
 
 }  // namespace MORB_SLAM

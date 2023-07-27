@@ -36,35 +36,14 @@
 
 namespace MORB_SLAM {
 
-void Viewer::setBoth(const bool b){
-  both = true;
-  mpFrameDrawer.both = true;
-}
-
-Viewer::Viewer(const System_ptr &pSystem, const std::string &strSettingPath)
+Viewer::Viewer(const System_ptr &pSystem)
     : mpSystem(pSystem),
       mpFrameDrawer(pSystem->mpAtlas),
-      mpMapDrawer(pSystem->mpAtlas, strSettingPath),
-      mpTracker(pSystem->mpTracker),
-      both(false),
-      mbClosed(false){
-    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
-    if (!ParseViewerParamFile(fSettings)) {
-      std::cerr << "**ERROR in the config file, the format is not correct**"
-                << std::endl;
-      throw std::runtime_error("**ERROR in the config file, the format is not correct**");
-    }
-    mptViewer = std::thread(&Viewer::Run, this);
-}
-
-Viewer::Viewer(const System_ptr &pSystem, const Settings &settings)
-    : mpSystem(pSystem),
-      mpFrameDrawer(pSystem->mpAtlas),
-      mpMapDrawer(pSystem->mpAtlas, settings),
+      mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
       mbClosed(true){
-    newParameterLoader(settings);
+    newParameterLoader(*pSystem->getSettings());
     mptViewer = std::thread(&Viewer::Run, this);
 }
 
@@ -92,90 +71,10 @@ void Viewer::newParameterLoader(const Settings &settings) {
 
   if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO ||
         mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) &&
-        settings.cameraType() == Settings::KannalaBrandt)
-        setBoth(true);
-}
-
-bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings) {
-  bool b_miss_params = false;
-  mImageViewerScale = 1.f;
-
-  float fps = fSettings["Camera.fps"];
-  if (fps < 1) fps = 30;
-  mT = 1e3 / fps;
-
-  cv::FileNode node = fSettings["Camera.width"];
-  if (!node.empty()) {
-    mImageWidth = node.real();
-  } else {
-    std::cerr
-        << "*Camera.width parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
+        settings.cameraType() == Settings::KannalaBrandt){
+    both = true;
+    mpFrameDrawer.both = true;
   }
-
-  node = fSettings["Camera.height"];
-  if (!node.empty()) {
-    mImageHeight = node.real();
-  } else {
-    std::cerr
-        << "*Camera.height parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["Viewer.imageViewScale"];
-  if (!node.empty()) {
-    mImageViewerScale = node.real();
-  }
-
-  node = fSettings["Viewer.ViewpointX"];
-  if (!node.empty()) {
-    mViewpointX = node.real();
-  } else {
-    std::cerr
-        << "*Viewer.ViewpointX parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["Viewer.ViewpointY"];
-  if (!node.empty()) {
-    mViewpointY = node.real();
-  } else {
-    std::cerr
-        << "*Viewer.ViewpointY parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["Viewer.ViewpointZ"];
-  if (!node.empty()) {
-    mViewpointZ = node.real();
-  } else {
-    std::cerr
-        << "*Viewer.ViewpointZ parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  node = fSettings["Viewer.ViewpointF"];
-  if (!node.empty()) {
-    mViewpointF = node.real();
-  } else {
-    std::cerr
-        << "*Viewer.ViewpointF parameter doesn't exist or is not a real number*"
-        << std::endl;
-    b_miss_params = true;
-  }
-
-  if(!b_miss_params){
-    std::string sCameraName = fSettings["Camera.type"];
-    if (mpTracker->mSensor.hasMulticam() && sCameraName == "KannalaBrandt8")
-          setBoth(true);
-  }
-
-  return !b_miss_params;
 }
 
 void Viewer::update(const Packet &pose){

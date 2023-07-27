@@ -285,7 +285,7 @@ bool VertexPose::read(std::istream& is) {
     float nextParam;
     for (size_t i = 0; i < _estimate.pCamera[idx]->size(); i++) {
       is >> nextParam;
-      _estimate.pCamera[idx]->setParameter(nextParam, i);
+      std::const_pointer_cast<GeometricCamera>(_estimate.pCamera[idx])->setParameter(nextParam, i);
     }
   }
 

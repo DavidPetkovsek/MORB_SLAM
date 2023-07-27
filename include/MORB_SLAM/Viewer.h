@@ -42,8 +42,7 @@ class Viewer {
   void Run();
  public:
 
-  Viewer(const System_ptr &pSystem, const std::string &strSettingPath);
-  Viewer(const System_ptr &pSystem, const Settings &settings);
+  Viewer(const System_ptr &pSystem);
 
   virtual ~Viewer();
 
@@ -55,9 +54,6 @@ class Viewer {
 
 
  private:
-  void setBoth(const bool b);
-  bool ParseViewerParamFile(cv::FileStorage& fSettings);
-
   bool Stop();
 
   System_ptr mpSystem;

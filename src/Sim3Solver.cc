@@ -423,7 +423,7 @@ float Sim3Solver::GetEstimatedScale() { return mBestScale; }
 
 void Sim3Solver::Project(const std::vector<Eigen::Vector3f> &vP3Dw,
                          std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw,
-                         const std::shared_ptr<GeometricCamera> &pCamera) {
+                         const std::shared_ptr<const GeometricCamera> &pCamera) {
   Eigen::Matrix3f Rcw = Tcw.block<3, 3>(0, 0);
   Eigen::Vector3f tcw = Tcw.block<3, 1>(0, 3);
 
@@ -439,7 +439,7 @@ void Sim3Solver::Project(const std::vector<Eigen::Vector3f> &vP3Dw,
 
 void Sim3Solver::FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc,
                                    std::vector<Eigen::Vector2f> &vP2D,
-                                   const std::shared_ptr<GeometricCamera> &pCamera) {
+                                   const std::shared_ptr<const GeometricCamera> &pCamera) {
   vP2D.clear();
   vP2D.reserve(vP3Dc.size());
 
