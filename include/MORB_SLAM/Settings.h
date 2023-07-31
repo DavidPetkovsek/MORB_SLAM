@@ -65,17 +65,19 @@ class Settings {
   CameraModelType cameraType() const { return cameraType_; }
   std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
   std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
-  cv::Mat camera1DistortionCoef() const {
-    cv::Mat distortionMat(vPinHoleDistorsion1_.size(), 1, CV_32F);
-    std::copy(vPinHoleDistorsion1_.begin(), vPinHoleDistorsion1_.end(), distortionMat.ptr<float>());
+  cv::Mat camera1DistortionCoef() {
+    return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
+    // cv::Mat distortionMat(vPinHoleDistorsion1_.size(), 1, CV_32F);
+    // std::copy(vPinHoleDistorsion1_.begin(), vPinHoleDistorsion1_.end(), distortionMat.ptr<float>());
 
-    return distortionMat;
+    // return distortionMat;
   }
-  cv::Mat camera2DistortionCoef() const {
-    cv::Mat distortionMat(vPinHoleDistorsion2_.size(), 1, CV_32F);
-    std::copy(vPinHoleDistorsion2_.begin(), vPinHoleDistorsion2_.end(), distortionMat.ptr<float>());
+  cv::Mat camera2DistortionCoef() {
+    return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data());
+    // cv::Mat distortionMat(vPinHoleDistorsion2_.size(), 1, CV_32F);
+    // std::copy(vPinHoleDistorsion2_.begin(), vPinHoleDistorsion2_.end(), distortionMat.ptr<float>());
 
-    return distortionMat;
+    // return distortionMat;
   }
 
   const Sophus::SE3f &Tlr() const { return Tlr_; }

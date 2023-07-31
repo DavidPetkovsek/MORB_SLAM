@@ -498,6 +498,7 @@ void Settings::readOtherParameters(cv::FileStorage& fSettings) {
 
   thFarPoints_ = readParameter<float>(fSettings, "System.thFarPoints", found, false);
   activeLoopClosing_ = readParameter<bool>(fSettings, "System.activeLoopClosing", found, false);
+  if (!found) activeLoopClosing_ = true;
 }
 
 void Settings::precomputeRectificationMaps() {
