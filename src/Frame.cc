@@ -62,6 +62,8 @@ Frame::Frame()
   mpMutexImu = std::make_shared<std::mutex>();
 }
 
+Frame::~Frame(){}
+
 // Copy Constructor
 Frame::Frame(const Frame &frame)
     : mpcpi(frame.mpcpi),
@@ -151,7 +153,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
-             const std::shared_ptr<const GeometricCamera> &pCamera, const std::string &pNameFile,
+             const std::shared_ptr<const GeometricCamera> &pCamera,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
@@ -258,14 +260,11 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   AssignFeaturesToGrid();
 }
 
-Frame::~Frame(){}
-
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDepth,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
-             const std::string &pNameFile, Frame *pPrevF,
-             const IMU::Calib &ImuCalib)
+             Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
       mbHasVelocity(false),
@@ -367,8 +366,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, ORBVocabulary *voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
-             const float &thDepth, const std::string &pNameFile,
-             Frame *pPrevF, const IMU::Calib &ImuCalib)
+             const float &thDepth, Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
       mbHasPose(false),
       mbHasVelocity(false),
@@ -474,6 +472,136 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
 
   mpMutexImu = std::make_shared<std::mutex>();
 }
+
+Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
+             const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
+             const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
+             cv::Mat &distCoef, const float &bf, const float &thDepth,
+             const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
+             Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)
+    : mpcpi(nullptr),
+      mbHasPose(false),
+      mbHasVelocity(false),
+      mpORBvocabulary(voc),
+      mpORBextractorLeft(extractorLeft),
+      mpORBextractorRight(extractorRight),
+      mTimeStamp(timeStamp),
+      mK(K.clone()),
+      mK_(Converter::toMatrix3f(K)),
+      mDistCoef(distCoef.clone()),
+      mbf(bf),
+      mThDepth(thDepth),
+      mImuCalib(ImuCalib),
+      mpImuPreintegrated(nullptr),
+      mpPrevFrame(pPrevF),
+      mpImuPreintegratedFrame(nullptr),
+      mpReferenceKF(nullptr),
+      mbImuPreintegrated(false),
+      camera{cam},
+      mpCamera(pCamera),
+      mpCamera2(pCamera2)
+
+{
+  imgLeft = imLeft.clone();
+  imgRight = imRight.clone();
+
+  // Frame ID
+  mnId = nNextId++;
+
+  // Scale Level Info
+  mnScaleLevels = mpORBextractorLeft->GetLevels();
+  mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+  mfLogScaleFactor = log(mfScaleFactor);
+  mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+  mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+  mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+  mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+
+  // ORB extraction
+#ifdef REGISTER_TIMES
+  std::chrono::steady_clock::time_point time_StartExtORB =
+      std::chrono::steady_clock::now();
+#endif
+  auto leftFut = camera->queueLeft(std::bind(&Frame::ExtractORB, this, true, imLeft,
+                    std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[0],
+                    std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[1]));
+  auto rightFut = camera->queueRight(std::bind(
+      &Frame::ExtractORB, this, false, imRight,
+      std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[0],
+      std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[1]));
+  if(!leftFut.get() || !rightFut.get()) return;
+#ifdef REGISTER_TIMES
+  std::chrono::steady_clock::time_point time_EndExtORB =
+      std::chrono::steady_clock::now();
+
+  mTimeORB_Ext =
+      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+          time_EndExtORB - time_StartExtORB)
+          .count();
+#endif
+
+  // This is done only for the first Frame (or after a change in the
+  // calibration)
+  if (mbInitialComputations) {
+    ComputeImageBounds(imLeft);
+
+    mfGridElementWidthInv =
+        static_cast<float>(FRAME_GRID_COLS) / (mnMaxX - mnMinX);
+    mfGridElementHeightInv =
+        static_cast<float>(FRAME_GRID_ROWS) / (mnMaxY - mnMinY);
+
+    fx = K.at<float>(0, 0);
+    fy = K.at<float>(1, 1);
+    cx = K.at<float>(0, 2);
+    cy = K.at<float>(1, 2);
+    invfx = 1.0f / fx;
+    invfy = 1.0f / fy;
+
+    mbInitialComputations = false;
+  }
+
+  Nleft = mvKeys.size();
+  Nright = mvKeysRight.size();
+  N = Nleft + Nright;
+
+  if (N == 0) return;
+
+  mb = mbf / fx;
+
+  // Sophus/Eigen
+  mTlr = Tlr;
+  mTrl = mTlr.inverse();
+  mRlr = mTlr.rotationMatrix();
+  mtlr = mTlr.translation();
+
+#ifdef REGISTER_TIMES
+  std::chrono::steady_clock::time_point time_StartStereoMatches =
+      std::chrono::steady_clock::now();
+#endif
+  ComputeStereoFishEyeMatches();
+#ifdef REGISTER_TIMES
+  std::chrono::steady_clock::time_point time_EndStereoMatches =
+      std::chrono::steady_clock::now();
+
+  mTimeStereoMatch =
+      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+          time_EndStereoMatches - time_StartStereoMatches)
+          .count();
+#endif
+
+  // Put all descriptors in the same matrix
+  cv::vconcat(mDescriptors, mDescriptorsRight, mDescriptors);
+
+  mvpMapPoints = std::vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
+  mvbOutlier = std::vector<bool>(N, false);
+
+  AssignFeaturesToGrid();
+
+  mpMutexImu = std::make_shared<std::mutex>();
+
+  UndistortKeyPoints();
+}
+
 
 void Frame::AssignFeaturesToGrid() {
   // Fill matrix with points
@@ -794,6 +922,8 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY) {
 void Frame::ComputeBoW() {
   if (mBowVec.empty()) {
     std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
+    // Updates mBowVec and mFeatVec with the WordValue and NodeID respectively, for each descriptor
+    // Third-party, so probably works properly
     mpORBvocabulary->transform(vCurrentDesc, mBowVec, mFeatVec, 4);
   }
 }
@@ -1064,135 +1194,6 @@ void Frame::setIntegrated() {
   mbImuPreintegrated = true;
 }
 
-Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
-             const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
-             const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
-             cv::Mat &distCoef, const float &bf, const float &thDepth,
-             const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
-             const std::string &pNameFile,
-             Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)
-    : mpcpi(nullptr),
-      mbHasPose(false),
-      mbHasVelocity(false),
-      mpORBvocabulary(voc),
-      mpORBextractorLeft(extractorLeft),
-      mpORBextractorRight(extractorRight),
-      mTimeStamp(timeStamp),
-      mK(K.clone()),
-      mK_(Converter::toMatrix3f(K)),
-      mDistCoef(distCoef.clone()),
-      mbf(bf),
-      mThDepth(thDepth),
-      mImuCalib(ImuCalib),
-      mpImuPreintegrated(nullptr),
-      mpPrevFrame(pPrevF),
-      mpImuPreintegratedFrame(nullptr),
-      mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
-      camera{cam},
-      mpCamera(pCamera),
-      mpCamera2(pCamera2)
-
-{
-  imgLeft = imLeft.clone();
-  imgRight = imRight.clone();
-
-  // Frame ID
-  mnId = nNextId++;
-
-  // Scale Level Info
-  mnScaleLevels = mpORBextractorLeft->GetLevels();
-  mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
-  mfLogScaleFactor = log(mfScaleFactor);
-  mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-  mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-  mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
-
-  // ORB extraction
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartExtORB =
-      std::chrono::steady_clock::now();
-#endif
-  auto leftFut = camera->queueLeft(std::bind(&Frame::ExtractORB, this, true, imLeft,
-                    std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[0],
-                    std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[1]));
-  auto rightFut = camera->queueRight(std::bind(
-      &Frame::ExtractORB, this, false, imRight,
-      std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[0],
-      std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[1]));
-  if(!leftFut.get() || !rightFut.get()) return;
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndExtORB =
-      std::chrono::steady_clock::now();
-
-  mTimeORB_Ext =
-      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-          time_EndExtORB - time_StartExtORB)
-          .count();
-#endif
-
-  // This is done only for the first Frame (or after a change in the
-  // calibration)
-  if (mbInitialComputations) {
-    ComputeImageBounds(imLeft);
-
-    mfGridElementWidthInv =
-        static_cast<float>(FRAME_GRID_COLS) / (mnMaxX - mnMinX);
-    mfGridElementHeightInv =
-        static_cast<float>(FRAME_GRID_ROWS) / (mnMaxY - mnMinY);
-
-    fx = K.at<float>(0, 0);
-    fy = K.at<float>(1, 1);
-    cx = K.at<float>(0, 2);
-    cy = K.at<float>(1, 2);
-    invfx = 1.0f / fx;
-    invfy = 1.0f / fy;
-
-    mbInitialComputations = false;
-  }
-
-  Nleft = mvKeys.size();
-  Nright = mvKeysRight.size();
-  N = Nleft + Nright;
-
-  if (N == 0) return;
-
-  mb = mbf / fx;
-
-  // Sophus/Eigen
-  mTlr = Tlr;
-  mTrl = mTlr.inverse();
-  mRlr = mTlr.rotationMatrix();
-  mtlr = mTlr.translation();
-
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartStereoMatches =
-      std::chrono::steady_clock::now();
-#endif
-  ComputeStereoFishEyeMatches();
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndStereoMatches =
-      std::chrono::steady_clock::now();
-
-  mTimeStereoMatch =
-      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-          time_EndStereoMatches - time_StartStereoMatches)
-          .count();
-#endif
-
-  // Put all descriptors in the same matrix
-  cv::vconcat(mDescriptors, mDescriptorsRight, mDescriptors);
-
-  mvpMapPoints = std::vector<MapPoint *>(N, static_cast<MapPoint *>(nullptr));
-  mvbOutlier = std::vector<bool>(N, false);
-
-  AssignFeaturesToGrid();
-
-  mpMutexImu = std::make_shared<std::mutex>();
-
-  UndistortKeyPoints();
-}
 
 void Frame::ComputeStereoFishEyeMatches() {
   // Speed it up by matching keypoints in the lapping area

@@ -64,7 +64,7 @@ class Optimizer {
 
   void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
                                     int &num_fixedKF, int &num_OptKF,
-                                    int &num_MPs, int &num_edges);
+                                    int &num_MPs, int &num_edges, bool bInertial);
 
   int static PoseOptimization(Frame *pFrame);
   int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame,

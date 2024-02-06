@@ -50,7 +50,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
-      mpAtlas(std::make_shared<Atlas>(0)),
+      mpAtlas(std::make_shared<Atlas>),
       mbReset(false),
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
@@ -59,6 +59,9 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
+  std::cout << "Input sensor was set to: " << mSensor << std::endl;
+  
+  {
   std::cout << std::endl
        << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, "
           "Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of "
@@ -72,10 +75,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
        << std::endl
        << "under certain conditions. See LICENSE.txt." << std::endl
        << std::endl;
-
-  std::cout << "Input sensor was set to: " << mSensor << std::endl;
-
-
+  }
+  
   settings = std::make_shared<Settings>(strSettingsFile, mSensor);
   mStrLoadAtlasFromFile = settings->atlasLoadFile();
   mStrSaveAtlasToFile = settings->atlasSaveFile();
@@ -132,8 +133,6 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // usleep(10*1000*1000);
   }
 
-  if (mSensor.isInertial())
-    mpAtlas->SetInertialSensor();
 
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this
@@ -168,7 +167,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
   mpLoopCloser =
       new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary,
-                      mSensor != CameraType::MONOCULAR, activeLC);  // mSensor!=CameraType::MONOCULAR);
+                      mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
   mptLoopClosing = new std::thread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
 
   // Set pointers between threads
@@ -187,8 +186,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
 StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
                                  double timestamp,
-                                 const std::vector<IMU::Point>& vImuMeas,
-                                 std::string filename) {
+                                 const std::vector<IMU::Point>& vImuMeas) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
     std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
@@ -250,7 +248,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
 
   // std::cout << "start GrabImageStereo" << std::endl;
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed,
-                                                timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
+                                                timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   // Eigen::Vector3f vel = mpTracker->mCurrentFrame.GetVelocity();
 
@@ -261,7 +259,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
   mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
-  return Tcw;
+  return Tcw * mpTracker->GetPoseReverseAxisFlip();
 }
 
 RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,

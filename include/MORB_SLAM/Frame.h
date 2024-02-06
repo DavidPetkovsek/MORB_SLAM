@@ -61,13 +61,13 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for stereo cameras.
-    Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft, const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, const std::string &pNameFile, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft, const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
 
     // Constructor for RGB-D cameras.
-    Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, const std::string &pNameFile, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
 
     // Constructor for Monocular cameras.
-    Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,ORBVocabulary* voc, const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::string &pNameFile, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,ORBVocabulary* voc, const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
 
     // Destructor
     virtual ~Frame();

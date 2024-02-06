@@ -65,7 +65,6 @@ class Map
         ar & mnBackupKFlowerID;
 
         ar & mbImuInitialized;
-        ar & mbIsInertial;
         ar & mbIMU_BA1;
         ar & mbIMU_BA2;
     }
@@ -99,11 +98,7 @@ public:
 
     KeyFrame* GetOriginKF();
 
-    void SetCurrentMap();
-    void SetStoredMap();
-
     bool HasThumbnail();
-    bool IsInUse();
 
     void SetBad();
     bool IsBad();
@@ -120,8 +115,6 @@ public:
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
-    void SetInertialSensor();
-    bool IsInertial();
     void SetIniertialBA1();
     void SetIniertialBA2();
     bool GetIniertialBA1();
@@ -188,12 +181,9 @@ protected:
     // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
 
-
-    bool mIsInUse;
     bool mHasTumbnail;
     bool mbBad = false;
 
-    bool mbIsInertial;
     bool mbIMU_BA1;
     bool mbIMU_BA2;
 

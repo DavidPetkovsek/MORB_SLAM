@@ -61,7 +61,7 @@ public:
 
     bool loopClosed = false;
 
-    LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale, const bool bActiveLC);
+    LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
 
     void SetTracker(Tracking* pTracker);
 
@@ -244,6 +244,8 @@ protected:
 
     // To (de)activate LC
     bool mbActiveLC = true;
+
+    bool mbInertial;
 
 #ifdef REGISTER_LOOP
     std::string mstrFolderLoop;

@@ -1053,7 +1053,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
 void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag,
                                       std::shared_ptr<Map> pMap, int& num_fixedKF,
                                       int& num_OptKF, int& num_MPs,
-                                      int& num_edges) {
+                                      int& num_edges, bool bInertial) {
   // Local KeyFrames: First Breath Search from Current Keyframe
   std::list<KeyFrame*> lLocalKeyFrames;
 
@@ -1134,7 +1134,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag,
 
   g2o::OptimizationAlgorithmLevenberg* solver =
       new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-  if (pMap->IsInertial()) solver->setUserLambdaInit(100.0);
+  if (bInertial) solver->setUserLambdaInit(100.0);
 
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
@@ -4388,18 +4388,15 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
   pMap->IncreaseChangeIndex();
 }
 
-int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
-                                                    bool bRecInit) {
+int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
 
   g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
-  g2o::OptimizationAlgorithmGaussNewton* solver =
-      new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
+  g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
   optimizer.setVerbose(false);
   optimizer.setAlgorithm(solver);
 
@@ -4546,8 +4543,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame,
       }
     }
   }
-  nInitialCorrespondences =
-      nInitialMonoCorrespondences + nInitialStereoCorrespondences;
+  nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
   KeyFrame* pKF = pFrame->mpLastKeyFrame;
   VertexPose* VPk = new VertexPose(pKF);
@@ -4762,13 +4758,11 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
 
   g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
-  g2o::OptimizationAlgorithmGaussNewton* solver =
-      new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
+  g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
 
@@ -4915,8 +4909,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     }
   }
 
-  nInitialCorrespondences =
-      nInitialMonoCorrespondences + nInitialStereoCorrespondences;
+  nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
   // Set Previous Frame Vertex
   Frame* pFp = pFrame->mpPrevFrame;

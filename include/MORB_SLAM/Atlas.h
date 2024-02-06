@@ -117,8 +117,6 @@ class Atlas {
   void SetMapBad(std::shared_ptr<Map> pMap);
   void RemoveBadMaps();
 
-  bool isInertial();
-  void SetInertialSensor();
   void SetImuInitialized();
   bool isImuInitialized();
 

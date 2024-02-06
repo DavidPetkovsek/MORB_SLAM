@@ -70,7 +70,7 @@ namespace MORB_SLAM
 
 
         // Keypoints from Reference Frame (Frame 1)
-        std::vector<cv::KeyPoint> mvKeys1;
+        std::vector<cv::KeyPoint> 1;
 
         // Keypoints from Current Frame (Frame 2)
         std::vector<cv::KeyPoint> mvKeys2;

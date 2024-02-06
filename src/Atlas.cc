@@ -29,7 +29,10 @@
 
 namespace MORB_SLAM {
 
-Atlas::Atlas() { mpCurrentMap = nullptr; }
+Atlas::Atlas() : mnLastInitKFidMap(0) { 
+  mpCurrentMap = nullptr;
+  CreateNewMap();
+}
 
 Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid) {
   mpCurrentMap = nullptr;
@@ -42,29 +45,23 @@ void Atlas::CreateNewMap() {
   std::unique_lock<std::mutex> lock(mMutexAtlas);
   std::cout << "Creation of new std::map with id: " << Map::nNextId << std::endl;
   if (mpCurrentMap) {
+    //If it's not a new Atlas, and there aren't 0 KFs in the current map
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() +
-                          1;  // The init KF is the next of current maximum
+      // The map's init KF ID is one after the current map's maximum KF ID
+      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  
 
-    mpCurrentMap->SetStoredMap();
     std::cout << "Stored std::map with ID: " << mpCurrentMap->GetId() << std::endl;
   }
   std::cout << "Creation of new std::map with last KF id: " << mnLastInitKFidMap << std::endl;
 
   mpCurrentMap = std::make_shared<Map>(mnLastInitKFidMap);
-  mpCurrentMap->SetCurrentMap();
   mspMaps.insert(mpCurrentMap);
 }
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   std::unique_lock<std::mutex> lock(mMutexAtlas);
   std::cout << "Change to std::map with id: " << pMap->GetId() << std::endl;
-  if (mpCurrentMap) {
-    mpCurrentMap->SetStoredMap();
-  }
-
   mpCurrentMap = pMap;
-  mpCurrentMap->SetCurrentMap();
 }
 
 unsigned long int Atlas::GetLastInitKFid() {
@@ -216,15 +213,6 @@ void Atlas::RemoveBadMaps() {
   mspBadMaps.clear();
 }
 
-bool Atlas::isInertial() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
-  return mpCurrentMap->IsInertial();
-}
-
-void Atlas::SetInertialSensor() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
-  mpCurrentMap->SetInertialSensor();
-}
 
 void Atlas::SetImuInitialized() {
   std::unique_lock<std::mutex> lock(mMutexAtlas);

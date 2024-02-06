@@ -372,7 +372,7 @@ class KeyFrame {
 
   // KeyPoints, stereo coordinate and descriptors (all associated by an index)
   const std::vector<cv::KeyPoint> mvKeys;
-  const std::vector<cv::KeyPoint> mvKeysUn;
+  const std::vector<cv::KeyPoint> Un;
   const std::vector<float> mvuRight;  // negative value for monocular points
   const std::vector<float> mvDepth;   // negative value for monocular points
   const cv::Mat mDescriptors;
@@ -499,7 +499,7 @@ class KeyFrame {
   Sophus::SE3f GetRelativePoseTlr();
 
   // KeyPoints in the right image (for stereo fisheye, coordinates are needed)
-  const std::vector<cv::KeyPoint> mvKeysRight;
+  const std::vector<cv::KeyPoint> Right;
 
   const int NLeft, NRight;
 

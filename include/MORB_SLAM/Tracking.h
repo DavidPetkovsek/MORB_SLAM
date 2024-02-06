@@ -57,7 +57,7 @@ class Tracking {
   // matching.
   StereoPacket GrabImageStereo(const cv::Mat& imRectLeft,
                                const cv::Mat& imRectRight,
-                               const double& timestamp, const std::string &filename,
+                               const double& timestamp,
                                const Camera_ptr &cam);
   RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                              const double& timestamp, const std::string &filename,
@@ -130,10 +130,6 @@ public:
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);
 
- protected:
-  bool mFastInit = false;
- public:
-
 #ifdef REGISTER_TIMES
   void LocalMapStats2File();
   void TrackStats2File();
@@ -202,7 +198,7 @@ public:
   std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // Last Bias Estimation (at keyframe creation)
-  IMU::Bias mLastBias;
+  //IMU::Bias mLastBias;
 
   // In case of performing only localization, this flag is true when there are
   // no matches to points in the map. Still tracking will continue if there are
@@ -226,7 +222,6 @@ public:
 
   // Initalization (only for monocular)
   bool mbReadyToInitialize;
-  bool mbSetInit;
 
   // Local Map
   KeyFrame* mpReferenceKF;
@@ -247,14 +242,12 @@ public:
   float mImageScale;
 
   float mImuFreq;
-  double mImuPer;
   bool mInsertKFsLost;
 
   // New KeyFrame rules (according to fps)
   int mMinFrames;
   int mMaxFrames;
 
-  int mnFirstImuFrameId;
   int mnFramesToResetIMU;
 
   // Threshold close/far points
@@ -279,7 +272,6 @@ public:
 
   unsigned int mnFirstFrameId;
   unsigned int mnInitialFrameId;
-  unsigned int mnLastInitFrameId;
 
   bool mbCreatedMap;
 

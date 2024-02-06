@@ -40,7 +40,7 @@ class Atlas;
 class LocalMapping {
  public:
   
-  LocalMapping(System* pSys, const Atlas_ptr &pAtlas, const float bMonocular, bool bInertial);
+  LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
 
   void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -78,6 +78,8 @@ class LocalMapping {
   double GetCurrKFTime();
   KeyFrame* GetCurrKF();
 
+  Sophus::SE3f LocalMapping::GetPoseReverseAxisFlip();
+
   std::mutex mMutexImuInit;
 
   Eigen::MatrixXd mcovInertial;
@@ -99,6 +101,8 @@ class LocalMapping {
   // not consider far points (clouds)
   bool mbFarPoints;
   float mThFarPoints;
+
+  
 
 #ifdef REGISTER_TIMES
   std::vector<double> vdKFInsert_ms;
@@ -176,6 +180,9 @@ class LocalMapping {
   float mTinit;
 
   bool isDoneVIBA;
+
+  // used when returning from TrackStereo to undo the Axis Flip bug
+  Sophus::SE3f mPoseReverseAxisFlip;
 };
 
 }  // namespace MORB_SLAM

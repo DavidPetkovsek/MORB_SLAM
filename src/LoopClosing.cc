@@ -35,7 +35,7 @@ namespace MORB_SLAM {
 
 LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
                          ORBVocabulary* pVoc, const bool bFixScale,
-                         const bool bActiveLC)
+                         const bool bActiveLC, bool bInertial)
     : 
 #ifdef REGISTER_TIMES
       nMerges(0),
@@ -69,20 +69,20 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
       mstrFolderSubTraj("SubTrajectories/"),
       mnNumCorrection(0),
       mnCorrectionGBA(0),
-      mbActiveLC(bActiveLC) {
+      mbActiveLC(bActiveLC)
+      mbInertial(bInertial) {
 
 }
 
 void LoopClosing::SetTracker(Tracking* pTracker) { mpTracker = pTracker; }
 
-void LoopClosing::SetLocalMapper(LocalMapping* pLocalMapper) {
-  mpLocalMapper = pLocalMapper;
-}
+void LoopClosing::SetLocalMapper(LocalMapping* pLocalMapper) { mpLocalMapper = pLocalMapper; }
 
 void LoopClosing::Run() {
   mbFinished = false;
 
   while (1) {
+
     // NEW LOOP AND MERGE DETECTION ALGORITHM
     //----------------------------
 
@@ -110,10 +110,7 @@ void LoopClosing::Run() {
 #endif
       if (bFindedRegion) {
         if (mbMergeDetected) {
-          if ((mpTracker->mSensor == CameraType::IMU_MONOCULAR ||
-               mpTracker->mSensor == CameraType::IMU_STEREO ||
-               mpTracker->mSensor == CameraType::IMU_RGBD) &&
-              (!mpCurrentKF->GetMap()->isImuInitialized())) {
+          if (mbInertial && (!mpCurrentKF->GetMap()->isImuInitialized())) {
             std::cout << "IMU is not initilized, merge is aborted" << std::endl;
           } else {
             Sophus::SE3d mTmw = mpMergeMatchedKF->GetPose().cast<double>();
@@ -125,8 +122,7 @@ void LoopClosing::Run() {
 
             mSold_new = (gSw2c * gScw1);
 
-            if (mpCurrentKF->GetMap()->IsInertial() &&
-                mpMergeMatchedKF->GetMap()->IsInertial()) {
+            if (mbInertial) {
               std::cout << "Merge check transformation with IMU" << std::endl;
               if (mSold_new.scale() < 0.90 || mSold_new.scale() > 1.1) {
                 mpMergeLastCurrentKF->SetErase();
@@ -224,7 +220,7 @@ void LoopClosing::Run() {
           Verbose::PrintMess("*Loop detected", Verbose::VERBOSITY_QUIET);
 
           mg2oLoopScw = mg2oLoopSlw;  //*mvg2oSim3LoopTcw[nCurrentIndex];
-          if (mpCurrentKF->GetMap()->IsInertial()) {
+          if (mbInertial) {
             Sophus::SE3d Twc = mpCurrentKF->GetPoseInverse().cast<double>();
             g2o::Sim3 g2oTwc(Twc.unit_quaternion(), Twc.translation(), 1.0);
             g2o::Sim3 g2oSww_new = g2oTwc * mg2oLoopScw;
@@ -234,18 +230,13 @@ void LoopClosing::Run() {
             std::cout << "phi = " << phi.transpose() << std::endl;
             if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
                 fabs(phi(2)) < 0.349f) {
-              if (mpCurrentKF->GetMap()->IsInertial()) {
                 // If inertial, force only yaw
-                if ((mpTracker->mSensor == CameraType::IMU_MONOCULAR ||
-                     mpTracker->mSensor == CameraType::IMU_STEREO ||
-                     mpTracker->mSensor == CameraType::IMU_RGBD) &&
-                    mpCurrentKF->GetMap()->GetIniertialBA2()) {
-                  phi(0) = 0;
-                  phi(1) = 0;
-                  g2oSww_new =
-                      g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
-                  mg2oLoopScw = g2oTwc.inverse() * g2oSww_new;
-                }
+              if (mpCurrentKF->GetMap()->GetIniertialBA2()) {
+                phi(0) = 0;
+                phi(1) = 0;
+                g2oSww_new =
+                    g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
+                mg2oLoopScw = g2oTwc.inverse() * g2oSww_new;
               }
 
             } else {
@@ -331,7 +322,7 @@ bool LoopClosing::NewDetectCommonRegions() {
     mpLastMap = mpCurrentKF->GetMap();
   }
 
-  if (mpLastMap->IsInertial() && !mpLastMap->GetIniertialBA2()) {
+  if (mbInertial && !mpLastMap->GetIniertialBA2()) {
     mpKeyFrameDB->add(mpCurrentKF);
     mpCurrentKF->SetErase();
     return false;
@@ -1194,7 +1185,7 @@ void LoopClosing::CorrectLoop() {
   vdLoopFusion_ms.push_back(timeFusion);
 #endif
   // std::cout << "Optimize essential graph" << std::endl;
-  if (pLoopMap->IsInertial() && pLoopMap->isImuInitialized()) {
+  if (mbInertial && pLoopMap->isImuInitialized()) {
     Optimizer::OptimizeEssentialGraph4DoF(pLoopMap, mpLoopMatchedKF,
                                           mpCurrentKF, NonCorrectedSim3,
                                           CorrectedSim3, LoopConnections);
@@ -1241,8 +1232,7 @@ void LoopClosing::CorrectLoop() {
 
 void LoopClosing::MergeLocal() {
   std::cout << "MERGE LOCAL MAP" << std::endl;
-  int numTemporalKFs =
-      25;  // Temporal KFs in the local window if the map is inertial.
+  int numTemporalKFs = 25;  // Temporal KFs in the local window if the map is inertial.
 
   // Relationship to rebuild the essential graph, it is used two times, first in
   // the local window and later in the rest of the map
@@ -1307,9 +1297,8 @@ void LoopClosing::MergeLocal() {
   std::set<KeyFrame*> spLocalWindowKFs;
   // Get MPs in the welding area from the current map
   std::set<MapPoint*> spLocalWindowMPs;
-  if (pCurrentMap->IsInertial() &&
-      pMergeMap->IsInertial())  // TODO Check the correct initialization
-  {
+  if (mbInertial){  // TODO Check the correct initialization
+    
     KeyFrame* pKFi = mpCurrentKF;
     int nInserted = 0;
     while (pKFi && nInserted < numTemporalKFs) {
@@ -1367,9 +1356,7 @@ void LoopClosing::MergeLocal() {
   // to_string(spLocalWindowMPs.size()) << std::endl;
 
   std::set<KeyFrame*> spMergeConnectedKFs;
-  if (pCurrentMap->IsInertial() &&
-      pMergeMap->IsInertial())  // TODO Check the correct initialization
-  {
+  if (mbInertial){  // TODO Check the correct initialization
     KeyFrame* pKFi = mpMergeMatchedKF;
     int nInserted = 0;
     while (pKFi && nInserted < numTemporalKFs / 2) {
@@ -1891,10 +1878,7 @@ void LoopClosing::MergeLocal2() {
 
   const int numKFnew = pCurrentMap->KeyFramesInMap();
 
-  if ((mpTracker->mSensor == CameraType::IMU_MONOCULAR ||
-       mpTracker->mSensor == CameraType::IMU_STEREO ||
-       mpTracker->mSensor == CameraType::IMU_RGBD) &&
-      !pCurrentMap->GetIniertialBA2()) {
+  if (mpTracker->mSensor.isInertial() && !pCurrentMap->GetIniertialBA2()) {
     // Map is not completly initialized
     Eigen::Vector3d bg, ba;
     bg << 0., 0., 0.;
