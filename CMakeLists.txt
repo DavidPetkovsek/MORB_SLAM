@@ -80,6 +80,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization regex)
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(ixwebsocket QUIET) # only needed for getting realsense data through a websocket
 
 file(GLOB CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 file(GLOB CPP_CAMERA_MODELS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/CameraModels/*.cpp)
@@ -158,6 +159,15 @@ if(realsense2_FOUND)
   target_link_libraries(stereo_inertial_realsense_D435i PRIVATE ${PROJECT_NAME})
 else()
   message(STATUS "** Stereo inertial realsense D435i example will not compile because librealsense2 was not found")
+endif()
+
+if(ixwebsocket_FOUND)
+    set(TARGET_NAME realsense_websocket_client)
+    add_executable(${TARGET_NAME} Examples/Stereo-Inertial/realsense_websocket_client.cpp)
+    target_link_libraries( ${TARGET_NAME} PUBLIC ixwebsocket::ixwebsocket ) 
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} ) 
+else()
+    message(STATUS "** Realsense websocket client will not compile because ixwebsocket was not found")
 endif()
 
 

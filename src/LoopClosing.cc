@@ -69,7 +69,7 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
       mstrFolderSubTraj("SubTrajectories/"),
       mnNumCorrection(0),
       mnCorrectionGBA(0),
-      mbActiveLC(bActiveLC)
+      mbActiveLC(bActiveLC),
       mbInertial(bInertial) {
 
 }

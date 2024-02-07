@@ -29,10 +29,7 @@
 
 namespace MORB_SLAM {
 
-Atlas::Atlas() : mnLastInitKFidMap(0) { 
-  mpCurrentMap = nullptr;
-  CreateNewMap();
-}
+Atlas::Atlas() { mpCurrentMap = nullptr; }
 
 Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid) {
   mpCurrentMap = nullptr;

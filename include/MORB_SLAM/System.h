@@ -100,12 +100,12 @@ public:
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.

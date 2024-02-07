@@ -50,7 +50,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
-      mpAtlas(std::make_shared<Atlas>),
+      mpAtlas(std::make_shared<Atlas>(0)),
       mbReset(false),
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
@@ -259,13 +259,12 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
   mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
-  return Tcw * mpTracker->GetPoseReverseAxisFlip();
+  return Tcw;
 }
 
 RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
                                double timestamp,
-                               const std::vector<IMU::Point>& vImuMeas,
-                               std::string filename) {
+                               const std::vector<IMU::Point>& vImuMeas) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
     std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
@@ -318,7 +317,7 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   if (mSensor == CameraType::IMU_RGBD)
     mpTracker->GrabImuData(vImuMeas);
 
-  RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
+  RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   std::unique_lock<std::mutex> lock2(mMutexState);
   mTrackingState = mpTracker->mState;
@@ -328,8 +327,7 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
 }
 
 MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
-                                    const std::vector<IMU::Point>& vImuMeas,
-                                    std::string filename) {
+                                    const std::vector<IMU::Point>& vImuMeas) {
   // {
   //   std::unique_lock<std::mutex> lock(mMutexReset);
   //   if (mbShutDown) return Sophus::SE3f();
@@ -385,7 +383,7 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   if (mSensor == CameraType::IMU_MONOCULAR)
     mpTracker->GrabImuData(vImuMeas);
 
-  MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, filename, cameras[0]); // for now we know cameras[0] is providing the image
+  MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   std::unique_lock<std::mutex> lock2(mMutexState);
   mTrackingState = mpTracker->mState;

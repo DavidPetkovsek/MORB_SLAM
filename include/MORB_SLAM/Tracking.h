@@ -59,11 +59,8 @@ class Tracking {
                                const cv::Mat& imRectRight,
                                const double& timestamp,
                                const Camera_ptr &cam);
-  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
-                             const double& timestamp, const std::string &filename,
-                             const Camera_ptr &cam);
-  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp,
-                                  const std::string &filename, const Camera_ptr &cam);
+  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
+  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
 
   void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
 

@@ -63,7 +63,7 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       bInitializing(false),
       mTinit(0.f),
       isDoneVIBA(false),
-      mPoseReverseAxisFlip(Sophus::SE3f::Identity()) {
+      mPoseReverseAxisFlip(Sophus::SE3f(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero())) {
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser) {
@@ -997,7 +997,7 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
 
-            mPoseReverseAxisFlip = Sophus::SE3f::Identity();
+            mPoseReverseAxisFlip = Sophus::SE3f(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }

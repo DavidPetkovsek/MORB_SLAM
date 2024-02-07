@@ -560,7 +560,7 @@ void Tracking::newParameterLoader(Settings& settings) {
   mMinFrames = 0;
   mMaxFrames = settings.fps();
   // might be pointless
-  mnFramesToResetIMU = mMaxFrames
+  mnFramesToResetIMU = mMaxFrames;
 
   // ORB parameters
   int nFeatures = settings.nFeatures();
@@ -656,14 +656,13 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    return StereoPacket(mCurrentFrame.GetPose(), imGrayLeft, imGrayRight);
+    return StereoPacket(mCurrentFrame.GetPose() * mpLocalMapper->GetPoseReverseAxisFlip(), imGrayLeft, imGrayRight);
 
   return StereoPacket(imGrayLeft, imGrayRight); // we do not have a new pose to report
 }
 
 RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
-                                     const double& timestamp, const std::string &filename,
-                                     const Camera_ptr &cam) {
+                                     const double& timestamp, const Camera_ptr &cam) {
   cv::Mat mImGray = imRGB;
   cv::Mat imDepth = imD;
 
@@ -678,10 +677,10 @@ RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
 
   if (mSensor == CameraType::RGBD)
     mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                          mK, mDistCoef, mbf, mThDepth, mpCamera, filename);
+                          mK, mDistCoef, mbf, mThDepth, mpCamera);
   else if (mSensor == CameraType::IMU_RGBD)
     mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                          mK, mDistCoef, mbf, mThDepth, mpCamera, filename, &mLastFrame, *mpImuCalib);
+                          mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, *mpImuCalib);
 
 #ifdef REGISTER_TIMES
   vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
@@ -696,10 +695,8 @@ RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
   return RGBDPacket(mImGray, imDepth);
 }
 
-MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im,
-                                          const double& timestamp,
-                                          const std::string &filename,
-                                          const Camera_ptr &cam) {
+MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam) {
+
   cv::Mat mImGray = im;
   if (mImGray.channels() == 3) {
     cvtColor(mImGray, mImGray, cv::COLOR_BGR2GRAY);
@@ -711,17 +708,17 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im,
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET ||
         (lastID - initID) < mMaxFrames)
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
-                            mpCamera, mDistCoef, mbf, mThDepth, filename);
+                            mpCamera, mDistCoef, mbf, mThDepth);
     else
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                            mpCamera, mDistCoef, mbf, mThDepth, filename);
+                            mpCamera, mDistCoef, mbf, mThDepth);
   } else if (mSensor == CameraType::IMU_MONOCULAR) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET) {
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary,
-                            mpCamera, mDistCoef, mbf, mThDepth, filename, &mLastFrame, *mpImuCalib);
+                            mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame, *mpImuCalib);
     } else
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary,
-                            mpCamera, mDistCoef, mbf, mThDepth, filename, &mLastFrame, *mpImuCalib);
+                            mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame, *mpImuCalib);
   }
 
 #ifdef REGISTER_TIMES
@@ -2008,12 +2005,12 @@ bool Tracking::TrackLocalMap() {
 
   if(mSensor.isInertial()){
     if (!mSensor.hasMulticam()) {
-      return !((mnMatchesInliers < 15 && mpAtlas->isImuInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isImuInitialized()))
+      return !((mnMatchesInliers < 15 && mpAtlas->isImuInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isImuInitialized()));
     } else {
-      return mnMatchesInliers >= 15
+      return mnMatchesInliers >= 15;
     } 
   } else {
-    return mnMatchesInliers >= 30
+    return mnMatchesInliers >= 30;
     }
 }
 

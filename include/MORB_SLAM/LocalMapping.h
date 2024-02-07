@@ -78,7 +78,7 @@ class LocalMapping {
   double GetCurrKFTime();
   KeyFrame* GetCurrKF();
 
-  Sophus::SE3f LocalMapping::GetPoseReverseAxisFlip();
+  Sophus::SE3f GetPoseReverseAxisFlip();
 
   std::mutex mMutexImuInit;
 
@@ -101,8 +101,6 @@ class LocalMapping {
   // not consider far points (clouds)
   bool mbFarPoints;
   float mThFarPoints;
-
-  
 
 #ifdef REGISTER_TIMES
   std::vector<double> vdKFInsert_ms;
