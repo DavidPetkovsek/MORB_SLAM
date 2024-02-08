@@ -116,13 +116,23 @@ int main(int argc, char **argv) {
             imu_points.push_back(new_point);
         }
 
-        // cv::imshow("LEFT", local_left_img);
-        // cv::imshow("RIGHT", local_right_img);
+        cv::imshow("LEFT", local_left_img);
+        cv::imshow("RIGHT", local_right_img);
+
+        std::cout << imu_points[0].a[0] << ", " << imu_points[0].a[1] << ", " << imu_points[0].a[2] << std::endl;
         // std::cout << size(imu_points) << std::endl;
-        // if(size(imu_points) > 0) {
-        //     std::cout << imu_points[size(imu_points)-1].w[0] << ", " << imu_points[size(imu_points)-1].w[1] << ", " << imu_points[size(imu_points)-1].w[2] << std::endl;
+        // for(int i = 1; i < size(imu_points); i++) {
+        //     std::cout << imu_points[i].a[0] << ", " << imu_points[i].a[1] << ", " << imu_points[i].a[2] << std::endl;
         //     std::cout << std::fixed;
-        //     std::cout << imu_points[0].t << std::endl;
+        //     std::cout << imu_points[i].t << " - " << imu_points[i-1].t << " = " << imu_points[i].t-imu_points[i-1].t << std::endl;
+
+        //     std::cout << "first a: " << imu_points[i-1].a[0] << ", " << imu_points[i-1].a[1] << ", " << imu_points[i-1].a[2] << std::endl;
+        //     std::cout << "second a: " << imu_points[i].a[0] << ", " << imu_points[i].a[1] << ", " << imu_points[i].a[2] << std::endl;
+
+        //     std::cout << "first w: " << imu_points[i-1].w[0] << ", " << imu_points[i-1].w[1] << ", " << imu_points[i-1].w[2] << std::endl;
+        //     std::cout << "second w: " << imu_points[i].w[0] << ", " << imu_points[i].w[1] << ", " << imu_points[i].w[2] << std::endl;
+
+        //     std::cout << "-----------------------------------------------------" << std::endl;
         // }
         // std::cout << std::fixed;
         // std::cout << local_img_timestamp << std::endl;
