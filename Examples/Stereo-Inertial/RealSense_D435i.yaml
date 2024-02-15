@@ -8,15 +8,15 @@ File.version: "1.0"
 Camera.type: "Rectified"
 
 # Rectified Camera calibration (OpenCV)
-Camera1.fx: 382.613
-Camera1.fy: 382.613
-Camera1.cx: 320.183
-Camera1.cy: 236.455
+Camera1.fx: 421.524
+Camera1.fy: 421.524
+Camera1.cx: 424.973
+Camera1.cy: 239.928
 
 Stereo.b: 0.0499585
 
 # Camera resolution
-Camera.width: 640
+Camera.width: 848
 Camera.height: 480
 
 # Camera frames per second

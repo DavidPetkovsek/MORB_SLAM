@@ -11,29 +11,27 @@
 int main(int argc, char **argv) {
     ix::initNetSystem();
     ix::WebSocket webSocket;
-
+    //set to the address of the websocket host sending the IMU data
     std::string url("ws://172.17.112.1:8765");
     webSocket.setUrl(url);
-
     std::cout << "Connecting to " << url << std::endl;
 
     cv::Mat left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat right_img(cv::Size(848, 480), CV_8UC1);
-
     // TODO make img/imu timestamps std::chrono so you can read in either sec or ms
     // For now it's just seconds
     double img_timestamp = 0;
-    int image_size = left_img.total()*left_img.elemSize();
-    int timestamp_size = sizeof(double);
-
+    
     std::vector<float> imu(6);
     double imu_timestamp = 0;
-    int imu_size = sizeof(float)*6;
-
+    
     std::vector<std::vector<float>> imu_measurements;
     std::vector<double> imu_timestamps;
-
     std::vector<MORB_SLAM::IMU::Point> imu_points;
+
+    int image_size = left_img.total()*left_img.elemSize();
+    int timestamp_size = sizeof(double);
+    int imu_size = sizeof(float)*6;
 
     bool connected = false;
     bool new_img = false;
@@ -41,7 +39,6 @@ int main(int argc, char **argv) {
     std::mutex imu_mutex;
     std::condition_variable cond_image_rec;
 
-    
 
     webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &imu_timestamp, &imu_timestamps, &imu, &imu_measurements, timestamp_size, image_size, imu_size, &imu_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
@@ -60,7 +57,6 @@ int main(int argc, char **argv) {
                     std::memcpy(imu.data(), msg->str.data()+1+timestamp_size, imu_size);
                     imu_measurements.push_back(imu);
                     imu_timestamps.push_back(imu_timestamp);
-                    //std::memcpy((char *)gyro, msg->str.data()+1+imu_size+timestamp_size, imu_size);
                 }
             }
             else if(msg->type == ix::WebSocketMessageType::Open) {
@@ -92,7 +88,7 @@ int main(int argc, char **argv) {
     while(!connected) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    //std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
     while(true) {
         {
             std::unique_lock<std::mutex> lk(imu_mutex);
@@ -116,33 +112,6 @@ int main(int argc, char **argv) {
             imu_points.push_back(new_point);
         }
 
-        cv::imshow("LEFT", local_left_img);
-        cv::imshow("RIGHT", local_right_img);
-
-        std::cout << imu_points[0].a[0] << ", " << imu_points[0].a[1] << ", " << imu_points[0].a[2] << std::endl;
-        // std::cout << size(imu_points) << std::endl;
-        // for(int i = 1; i < size(imu_points); i++) {
-        //     std::cout << imu_points[i].a[0] << ", " << imu_points[i].a[1] << ", " << imu_points[i].a[2] << std::endl;
-        //     std::cout << std::fixed;
-        //     std::cout << imu_points[i].t << " - " << imu_points[i-1].t << " = " << imu_points[i].t-imu_points[i-1].t << std::endl;
-
-        //     std::cout << "first a: " << imu_points[i-1].a[0] << ", " << imu_points[i-1].a[1] << ", " << imu_points[i-1].a[2] << std::endl;
-        //     std::cout << "second a: " << imu_points[i].a[0] << ", " << imu_points[i].a[1] << ", " << imu_points[i].a[2] << std::endl;
-
-        //     std::cout << "first w: " << imu_points[i-1].w[0] << ", " << imu_points[i-1].w[1] << ", " << imu_points[i-1].w[2] << std::endl;
-        //     std::cout << "second w: " << imu_points[i].w[0] << ", " << imu_points[i].w[1] << ", " << imu_points[i].w[2] << std::endl;
-
-        //     std::cout << "-----------------------------------------------------" << std::endl;
-        // }
-        // std::cout << std::fixed;
-        // std::cout << local_img_timestamp << std::endl;
-        // char key = cv::waitKey(1);
-        // if(key == 'q') {
-        //     webSocket.close();
-        //     break;
-        // }
-
-
         if(imageScale != 1.f) {
             int width = local_left_img.cols * imageScale;
             int height = local_left_img.rows * imageScale;
@@ -158,7 +127,7 @@ int main(int argc, char **argv) {
         }
         
         viewer->update(sophusPose);
-
+        //std::cout << sophusPose.pose->translation()[0] << ", " << sophusPose.pose->translation()[1] << ", " << sophusPose.pose->translation()[2] << std::endl;
         imu_points.clear();
     }
 
