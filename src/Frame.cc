@@ -1190,7 +1190,7 @@ void Frame::setIntegrated() {
     mpMutexImu = std::make_shared<std::mutex>();
 
   std::unique_lock<std::mutex> lock(*mpMutexImu);
-  std::cout << "-----------------------------------------------------------" << std::endl;
+  //std::cout << "-----------------------------------------------------------" << std::endl;
   mbImuPreintegrated = true;
 }
 

@@ -651,7 +651,8 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 
   Track();
 
-  std::cout << "Current state: " << mState << std::endl;
+  if(mState != TrackingState::OK)
+    std::cout << "Current state: " << mState << std::endl;
   
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
@@ -1959,10 +1960,10 @@ bool Tracking::TrackLocalMap() {
     } else {
       // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
       if (!mbMapUpdated) {  //  && (mnMatchesInliers>30))
-        Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
+        //Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
         /*inliers = */Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);  // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
       } else {
-        Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
+        //Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
         /*inliers = */Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);  // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
       }
     }

@@ -42,7 +42,7 @@ Viewer::Viewer(const System_ptr &pSystem)
       mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
-      mbClosed(true){
+      mbClosed(false){
     newParameterLoader(*pSystem->getSettings());
     mptViewer = std::thread(&Viewer::Run, this);
 }
