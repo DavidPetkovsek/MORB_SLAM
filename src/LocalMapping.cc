@@ -147,10 +147,10 @@ void LocalMapping::Run() {
                         float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                             (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
-                        if (dist > 0.05)
+                        if (true || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
                         if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if ((mTinit < 10.f) && (dist < 0.02)) {
+                            if (false && (mTinit < 10.f) && (dist < 0.02)) {
                                 std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
                                 std::scoped_lock<std::mutex> lock(mMutexReset);
                                 mbResetRequestedActiveMap = true;
@@ -208,7 +208,7 @@ void LocalMapping::Run() {
                         InitializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);  
                 }
                 // Check redundant local Keyframes
-                KeyFrameCulling();
+                if(mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
 
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point time_EndKFCulling =
@@ -1071,36 +1071,28 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
-    // std::cout << "Keyframes---------------------------------------------: " << N << std::endl;
+        // std::cout << "Keyframes---------------------------------------------: " << N << std::endl;
 
-    for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
+        for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
 
-      // std::cout << "Hello" << std::endl;
-      if (!(*itKF)->mpImuPreintegrated) continue; // || isnan((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity().sum())
-      if (!(*itKF)->mPrevKF) continue; //  || isnan((*itKF)->mPrevKF->GetImuRotation().sum()
+            if (!(*itKF)->mpImuPreintegrated) continue; // || isnan((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity().sum())
+            if (!(*itKF)->mPrevKF) continue; //  || isnan((*itKF)->mPrevKF->GetImuRotation().sum()
 
-      // std::cout << "initDirG------------------------------------------------------: " << dirG << std::endl;
-      // std::cout << "getImuRot------------------------------------------------------: " << (*itKF)->mPrevKF->GetImuRotation() << std::endl;
-      // std::cout << "getUpdDeltaV------------------------------------------------------: " <<(*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity() << std::endl;
+            // std::cout << "initDirG------------------------------------------------------: " << dirG << std::endl;
+            // std::cout << "getImuRot------------------------------------------------------: " << (*itKF)->mPrevKF->GetImuRotation() << std::endl;
+            // std::cout << "getUpdDeltaV------------------------------------------------------: " <<(*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity() << std::endl;
 
-            dirG -= (*itKF)->mPrevKF->GetImuRotation() *
-                    (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
-      // std::cout << "dirGLoop------------------------------------------------------: " << dirG << std::endl;
-      Eigen::Vector3f _vel =
-          ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition()) /
-                                   (*itKF)->mpImuPreintegrated->dT;
+            dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+            // std::cout << "dirGLoop------------------------------------------------------: " << dirG << std::endl;
+            Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
-    }
+        }
 
-    // if(dirG.sum() == 0){ mRwg << 0.99600422382354736,0.059227496385574341,0.066840663552284241,
-        //   0.059227496385574341,0.12209725379943848,-0.99074935913085938,
-        //   -0.066840663552284241,0.99074935913085938,0.11810147762298584;
-        // } else{
-    std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
+        std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
         dirG = dirG / dirG.norm();
-    std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
-    Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
+        std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
+        Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
 
@@ -1115,7 +1107,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
-        //}
+
     } else {
         mRwg = Eigen::Matrix3d::Identity();
         mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();

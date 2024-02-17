@@ -793,9 +793,9 @@ void Tracking::PreintegrateIMU() {
   // we get here only if there are at least 2 measurements
   for (int i = 0; i < n; i++) { // iterates until the second to last element
     float tstep;
+    float dt = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
     Eigen::Vector3f acc, angVel;
     if ((i == 0) && i < (n - 1)) { // first iteration but not the last iteration
-      float dt = frameIMUDataList[1].t - frameIMUDataList[0].t;
       float timeFromLastFrameToFirstIMUFrame = frameIMUDataList[0].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
       acc = (frameIMUDataList[0].a + frameIMUDataList[1].a -
              (frameIMUDataList[1].a - frameIMUDataList[0].a) *
@@ -807,9 +807,8 @@ void Tracking::PreintegrateIMU() {
     } else if (i < (n - 1)) { // not the first nor the last iteration
       acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a) * 0.5f;
       angVel = (frameIMUDataList[i].w + frameIMUDataList[i + 1].w) * 0.5f;
-      tstep = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
+      tstep = dt;
     } else if ((i > 0) && (i == (n - 1))) { // not the first but is the last iteration
-      float dt = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
       float timeFromeLastIMUFrameToCurrentFrame = frameIMUDataList[i + 1].t - mCurrentFrame.mTimeStamp;
       acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a -
              (frameIMUDataList[i + 1].a - frameIMUDataList[i].a) *
@@ -823,6 +822,11 @@ void Tracking::PreintegrateIMU() {
       acc = frameIMUDataList[0].a;
       angVel = frameIMUDataList[0].w;
       tstep = mCurrentFrame.mTimeStamp - mCurrentFrame.mpPrevFrame->mTimeStamp;
+    }
+
+    if (dt == 0 || tstep == 0) {
+      std::cout << "WARNING: a PreintegrateIMU datapoint has dt=0, skipping iteration" << std::endl;
+      continue;
     }
 
     // Temporarily remove to clean up log output
