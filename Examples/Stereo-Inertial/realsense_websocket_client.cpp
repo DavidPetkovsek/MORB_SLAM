@@ -122,12 +122,14 @@ int main(int argc, char **argv) {
 
         MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp, imu_points);
 
-        if(sophusPose.pose) {
-            sophusPose.pose = sophusPose.pose->inverse();
-        }
+        // if(sophusPose.pose) {
+        //     sophusPose.pose = sophusPose.pose->inverse();
+        // }
         
         viewer->update(sophusPose);
-        //std::cout << sophusPose.pose->translation()[0] << ", " << sophusPose.pose->translation()[1] << ", " << sophusPose.pose->translation()[2] << std::endl;
+        // if(sophusPose.pose.has_value())
+        Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
+        std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
         imu_points.clear();
     }
 

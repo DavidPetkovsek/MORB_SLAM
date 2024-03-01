@@ -63,7 +63,7 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       bInitializing(false),
       mTinit(0.f),
       isDoneVIBA(false),
-      mPoseReverseAxisFlip(Sophus::SE3f(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero())) {
+      mPoseReverseAxisFlip(Sophus::SE3f()) {
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser) {
@@ -147,10 +147,10 @@ void LocalMapping::Run() {
                         float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                             (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
-                        if (true || dist > 0.05)
+                        if (mpTracker->fastIMUInitEnabled() || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if (false && (mTinit < 10.f) && (dist < 0.02)) {
+                        if (!mpTracker->fastIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
+                            if ((mTinit < 10.f) && (dist < 0.02)) {
                                 std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
                                 std::scoped_lock<std::mutex> lock(mMutexReset);
                                 mbResetRequestedActiveMap = true;
@@ -996,7 +996,8 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
 
-            mPoseReverseAxisFlip = Sophus::SE3f(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
+            mPoseReverseAxisFlip = Sophus::SE3f();
+            mpSystem->setUseGravityDirectionFromLastMap(false);
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }
@@ -1028,6 +1029,17 @@ bool LocalMapping::isFinished() {
 
 void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA) {
     if (mbResetRequested) return;
+
+    // std::cout << "INITIALIZEIMU()" << std::endl;
+    // if (mpSystem->UseGravityDirectionFromLastMap()) {
+    //     std::cout << "entered" << std::endl;
+    //     mTinit = 0;
+    //     std::cout << "time" << std::endl;
+    //     mpCurrentKeyFrame->GetMap()->SetImuInitialized();
+    //     mpCurrentKeyFrame->bImu = true;
+    //     std::cout << "returned" << std::endl;
+    //     return;
+    // }
 
     float minTime = mbMonocular ? 2.0 : 1.0;
     size_t nMinKF = 10;
@@ -1067,7 +1079,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     IMU::Bias b(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
-    if (!mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+    if (!mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -1107,7 +1119,13 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
-
+        mPoseReverseAxisFlip = Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
+        mpSystem->setUseGravityDirectionFromLastMap(true);
+    } else if(mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+        mRwg = Eigen::Matrix3d::Identity();
+        mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
+        mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
+        mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
     } else {
         mRwg = Eigen::Matrix3d::Identity();
         mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
@@ -1134,7 +1152,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
-            mPoseReverseAxisFlip = Tgw * mPoseReverseAxisFlip;
+            // mPoseReverseAxisFlip = Tgw * mPoseReverseAxisFlip;
         }
 
         // Check if initialization OK
@@ -1317,7 +1335,7 @@ void LocalMapping::ScaleRefinement() {
     Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
         mpTracker->UpdateFrameIMU(mScale, mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
-        mPoseReverseAxisFlip = Tgw * mPoseReverseAxisFlip;
+        // mPoseReverseAxisFlip = Tgw * mPoseReverseAxisFlip;
     }
   // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now(); // UNUSED
 

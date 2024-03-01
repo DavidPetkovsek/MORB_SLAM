@@ -536,7 +536,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     g2o::HyperGraph::Vertex* VG = optimizer.vertex(4 * maxKFid + 2);
     g2o::HyperGraph::Vertex* VA = optimizer.vertex(4 * maxKFid + 3);
 
-    // Add prior to comon biases
+    // Add prior to common biases
     Eigen::Vector3f bprior;
     bprior.setZero();
 
@@ -2351,6 +2351,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
   }
 
   int N = vpOptimizableKFs.size();
+  // std::cout << "LocalInertialBA: N = " << N << std::endl;
 
   // Optimizable points seen by temporal optimizable keyframes
   std::list<MapPoint*> lLocalMapPoints;
@@ -2976,6 +2977,7 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
   return res;
 }
 
+// used in LocalMapping::InitializeIMU()
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg,
                                      double& scale, Eigen::Vector3d& bg,
                                      Eigen::Vector3d& ba, bool bMono,
@@ -3155,6 +3157,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   }
 }
 
+// used in LoopClosing
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d& bg,
                                      Eigen::Vector3d& ba, ImuInitializater::ImuInitType priorG,
                                      ImuInitializater::ImuInitType priorA) {
@@ -3226,8 +3229,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
   optimizer.addVertex(VGDir);
   VertexScale* VS = new VertexScale(1.0);
   VS->setId(maxKFid * 2 + 5);
-  VS->setFixed(
-      true);  // Fixed since scale is obtained from already well initialized map
+  VS->setFixed(true);  // Fixed since scale is obtained from already well initialized map
   optimizer.addVertex(VS);
 
   // Graph edges
@@ -3313,6 +3315,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
   }
 }
 
+// used in LocalMapping::ScaleRefinement()
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg,
                                      double& scale) {
   int its = 10;
@@ -4397,8 +4400,8 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
   g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
   g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
-  optimizer.setVerbose(false);
   optimizer.setAlgorithm(solver);
+  optimizer.setVerbose(false);
 
   int nInitialMonoCorrespondences = 0;
   int nInitialStereoCorrespondences = 0;
@@ -4543,9 +4546,12 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
       }
     }
   }
+  
   nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
+  // Set KeyFrame Vertex
   KeyFrame* pKF = pFrame->mpLastKeyFrame;
+
   VertexPose* VPk = new VertexPose(pKF);
   VPk->setId(4);
   VPk->setFixed(true);
@@ -4576,17 +4582,14 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG =
-      pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12)
-                              .cast<double>()
-                              .inverse();
+  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
@@ -4595,7 +4598,6 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
   // at the end they can be classified as inliers again.
   float chi2Mono[4] = {12, 7.5, 5.991, 5.991};
   float chi2Stereo[4] = {15.6, 9.8, 7.815, 7.815};
-
   int its[4] = {10, 10, 10, 10};
 
   int nBad = 0;
@@ -4944,17 +4946,14 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG =
-      pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12)
-                              .cast<double>()
-                              .inverse();
+  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
@@ -4998,6 +4997,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     nInliersStereo = 0;
     float chi2close = 1.5 * chi2Mono[it];
 
+    // For monocular observations
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
       EdgeMonoOnlyPose* e = vpEdgesMono[i];
 
@@ -5024,6 +5024,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
       if (it == 2) e->setRobustKernel(0);
     }
 
+    // For stereo observations
     for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
       EdgeStereoOnlyPose* e = vpEdgesStereo[i];
 
@@ -5056,6 +5057,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     }
   }
 
+  // If not too much tracks, recover not too bad points
   if ((nInliers < 30) && !bRecInit) {
     nBad = 0;
     const float chi2MonoOut = 18.f;
@@ -5066,23 +5068,35 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
       const size_t idx = vnIndexEdgeMono[i];
       e1 = vpEdgesMono[i];
       e1->computeError();
-      if (e1->chi2() < chi2MonoOut)
+      if (e1->chi2() < chi2MonoOut) {
         pFrame->mvbOutlier[idx] = false;
-      else
+        nInliers++;
+      } else {
         nBad++;
+      }
     }
+
     for (size_t i = 0, iend = vnIndexEdgeStereo.size(); i < iend; i++) {
       const size_t idx = vnIndexEdgeStereo[i];
       e2 = vpEdgesStereo[i];
       e2->computeError();
-      if (e2->chi2() < chi2StereoOut)
+      if (e2->chi2() < chi2StereoOut) {
         pFrame->mvbOutlier[idx] = false;
-      else
+        nInliers++;
+      } else {
         nBad++;
+      }
     }
   }
 
-  nInliers = nInliersMono + nInliersStereo;
+  // don't change state if we dont have enough points
+  // if(nInliers < 30 || oldMpcpi == pFp->mpcpi) {
+  //   oldMpcpi = nullptr;
+  //   pFrame->mpcpi = pFp->mpcpi;
+  //   pFp->mpcpi = nullptr;
+  //   std::cout << "PoseInertialOptimizationLastFrame Failed, n = " << nInliers << std::endl;
+  //   return nInliers;
+  // }
 
   // Recover optimized pose, velocity and biases
   pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(),
@@ -5144,13 +5158,21 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
       VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(),
       VA->estimate(), H.block<15, 15>(15, 15));
   if (oldMpcpi == pFp->mpcpi) {
-    std::cerr << "\033[22;34mSAME MPCPI" << std::endl;
+    std::cerr << "\033[22;34mSAME MPCPI\033[0m" << std::endl;
   } else {
     oldMpcpi = pFp->mpcpi;
     pFp->mpcpi = nullptr;
   }
   return nInitialCorrespondences - nBad;
 }
+
+// MORBSLAM Special
+// set state variables when skipping PoseOptimization (for when mState == RECENTLY_LOST)
+void Optimizer::SkipPoseOptimization(Frame* pFrame) {
+  pFrame->mImuBias = pFrame->mpLastKeyFrame->GetImuBias();
+  pFrame->mpcpi = pFrame->mpPrevFrame->mpcpi;
+}
+
 
 void Optimizer::OptimizeEssentialGraph4DoF(
     std::shared_ptr<Map> pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,

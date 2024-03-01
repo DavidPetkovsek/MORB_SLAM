@@ -55,7 +55,9 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
       mbDeactivateLocalizationMode(false),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
+      mTrackingState(TrackingState::SYSTEM_NOT_READY),
+      mStereoInitDefaultPose(Sophus::SE3f()),
+      mUseGravityDirectionFromLastMap(false) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -701,5 +703,13 @@ bool System::getIsDoneVIBA() {
 }
 
 std::shared_ptr<Settings> System::getSettings() const { return settings; }
+
+void System::setStereoInitDefaultPose(const Sophus::SE3f default_pose) {
+  mStereoInitDefaultPose = default_pose;
+}
+
+void System::setUseGravityDirectionFromLastMap(bool is_true) {
+  mUseGravityDirectionFromLastMap = is_true;
+}
 
 }  // namespace MORB_SLAM

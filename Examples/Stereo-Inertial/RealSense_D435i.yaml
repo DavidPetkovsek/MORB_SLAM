@@ -1,7 +1,13 @@
 %YAML:1.0
 
 #--------------------------------------------------------------------------------------------
-# Camera Parameters. Adjust them!
+# System Parameters
+#--------------------------------------------------------------------------------------------
+
+System.FastIMUInit: "ON"
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters (calibration and biases vary from camera to camera)
 #--------------------------------------------------------------------------------------------
 File.version: "1.0"
 
@@ -36,7 +42,7 @@ IMU.T_b_c1: !!opencv-matrix
           0.0, 0.0, 0.0, 1.0]
 
 # Do not insert KFs when recently lost
-IMU.InsertKFsWhenLost: 0
+IMU.InsertKFsWhenLost: "false"
 
 # IMU noise (Use those from VINS-mono)
 IMU.NoiseGyro:  0.008449 # 1e-3 # rad/s^0.5 # 1e-3 2.44e-4
@@ -78,11 +84,13 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -3.5
 Viewer.ViewpointF: 500.0
 
+#--------------------------------------------------------------------------------------------
+# Map/Atlas IO
+#--------------------------------------------------------------------------------------------
+
 # Save/load Map
 # System.LoadAtlasFromFile: "/home/landson/MORB_SLAM/trial"
 # System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
 # System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
 # System.SaveAtlasToFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"
 # System.LoadAtlasFromFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"
-
-

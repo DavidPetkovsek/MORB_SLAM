@@ -143,6 +143,12 @@ public:
 
     float GetImageScale();
 
+    Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
+    void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
+
+    bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
+    void setUseGravityDirectionFromLastMap(bool is_true);
+
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);
     void InsertResizeTime(double& time);
@@ -219,6 +225,9 @@ private:
     std::string mStrVocabularyFilePath;
 
     std::shared_ptr<Settings> settings;
+
+    Sophus::SE3f mStereoInitDefaultPose;
+    bool mUseGravityDirectionFromLastMap;
 };
 typedef std::shared_ptr<System> System_ptr;
 typedef std::weak_ptr<System> System_wptr;

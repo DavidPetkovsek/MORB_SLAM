@@ -125,6 +125,7 @@ class Settings {
 
   float thFarPoints() const { return thFarPoints_; }
   bool activeLoopClosing() const { return activeLoopClosing_; }
+  bool fastIMUInit() const { return fastIMUInit_; }
 
   const cv::Mat &M1l() const { return M1l_; }
   const cv::Mat &M2l() const { return M2l_; }
@@ -234,6 +235,7 @@ class Settings {
    */
   float thFarPoints_;
   bool activeLoopClosing_;
+  bool fastIMUInit_;
 };
 }  // namespace MORB_SLAM
 

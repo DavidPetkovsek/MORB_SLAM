@@ -440,11 +440,8 @@ void Settings::readIMU(cv::FileStorage& fSettings) {
   cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
   Tbc_ = Converter::toSophus(cvTbc);
 
-  readParameter<int>(fSettings, "IMU.InsertKFsWhenLost", found, false);
-  if (found) {
-    insertKFsWhenLost_ = (bool)readParameter<int>(
-        fSettings, "IMU.InsertKFsWhenLost", found, false);
-  } else {
+  insertKFsWhenLost_ = readParameter<bool>(fSettings, "IMU.InsertKFsWhenLost", found, false);
+  if (!found) {
     insertKFsWhenLost_ = true;
   }
 }
@@ -499,6 +496,7 @@ void Settings::readOtherParameters(cv::FileStorage& fSettings) {
   thFarPoints_ = readParameter<float>(fSettings, "System.thFarPoints", found, false);
   activeLoopClosing_ = readParameter<bool>(fSettings, "System.activeLoopClosing", found, false);
   if (!found) activeLoopClosing_ = true;
+  fastIMUInit_ = readParameter<bool>(fSettings, "System.FastIMUInit", found, false);
 }
 
 void Settings::precomputeRectificationMaps() {

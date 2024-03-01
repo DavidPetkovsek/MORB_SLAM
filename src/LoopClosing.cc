@@ -225,17 +225,15 @@ void LoopClosing::Run() {
             g2o::Sim3 g2oTwc(Twc.unit_quaternion(), Twc.translation(), 1.0);
             g2o::Sim3 g2oSww_new = g2oTwc * mg2oLoopScw;
 
-            Eigen::Vector3d phi =
-                LogSO3(g2oSww_new.rotation().toRotationMatrix());
+            Eigen::Vector3d phi = LogSO3(g2oSww_new.rotation().toRotationMatrix());
             std::cout << "phi = " << phi.transpose() << std::endl;
-            if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
-                fabs(phi(2)) < 0.349f) {
+            if (fabs(phi(0)) < /*0.008f*/0.024f && fabs(phi(1)) < /*0.008f*/0.024f/* &&
+                fabs(phi(2)) < 0.349f*/) {
                 // If inertial, force only yaw
               if (mpCurrentKF->GetMap()->GetIniertialBA2()) {
-                phi(0) = 0;
-                phi(1) = 0;
-                g2oSww_new =
-                    g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
+                //phi(0) = 0;
+                //phi(1) = 0;
+                g2oSww_new = g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
                 mg2oLoopScw = g2oTwc.inverse() * g2oSww_new;
               }
 
@@ -269,6 +267,7 @@ void LoopClosing::Run() {
 #endif
 
             mnNumCorrection += 1;
+            std::cout << "Loop Closed Successfully" << std::endl;
           }
 
           // Reset all variables
@@ -585,13 +584,13 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
   int nBoWInliers = 15;
   int nSim3Inliers = 20;
   int nProjMatches = 50;
-  int nProjOptMatches = 80;
+  int nProjOptMatches = 100;//80;
 
   std::set<KeyFrame*> spConnectedKeyFrames = mpCurrentKF->GetConnectedKeyFrames();
 
   int nNumCovisibles = 10;
 
-  ORBmatcher matcherBoW(0.9, true);
+  ORBmatcher matcherBoW(0.8, true);
   ORBmatcher matcher(0.75, true);
 
   // Varibles to select the best numbe
@@ -646,7 +645,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
     int numBoWMatches = 0;
 
     KeyFrame* pMostBoWMatchesKF = pKFi;
-    int nMostBoWNumMatches = 0;
+    // int nMostBoWNumMatches = 0; // UNUSED
 
     std::vector<MapPoint*> vpMatchedPoints = std::vector<MapPoint*>(
         mpCurrentKF->GetMapPointMatches().size(), nullptr);
@@ -657,12 +656,14 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
     for (size_t j = 0; j < vpCovKFi.size(); ++j) {
       if (!vpCovKFi[j] || vpCovKFi[j]->isBad()) continue;
 
-      int num =
-          matcherBoW.SearchByBoW(mpCurrentKF, vpCovKFi[j], vvpMatchedMPs[j]);
-      if (num > nMostBoWNumMatches) {
-        nMostBoWNumMatches = num;
-        // nIndexMostBoWMatchesKF = j; // UNUSED
-      }
+      //int num =  // UNUSED
+        matcherBoW.SearchByBoW(mpCurrentKF, vpCovKFi[j], vvpMatchedMPs[j]); 
+
+      // UNUSED
+      // if (num > nMostBoWNumMatches) {
+      //   nMostBoWNumMatches = num;
+      //   nIndexMostBoWMatchesKF = j;
+      // }
     }
 
     for (size_t j = 0; j < vpCovKFi.size(); ++j) {
@@ -693,8 +694,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
       Sim3Solver solver =
           Sim3Solver(mpCurrentKF, pMostBoWMatchesKF, vpMatchedPoints,
                      bFixedScale, vpKeyFrameMatchedMP);
-      solver.SetRansacParameters(0.99, nBoWInliers,
-                                 300);  // at least 15 inliers
+      solver.SetRansacParameters(0.99, nBoWInliers, 300);  // at least 15 inliers
 
       bool bNoMore = false;
       std::vector<bool> vbInliers;
@@ -716,8 +716,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
         // to_string(nBoWInliers) + " BoW matches", Verbose::VERBOSITY_DEBUG);
         // Match by reprojection
         vpCovKFi.clear();
-        vpCovKFi =
-            pMostBoWMatchesKF->GetBestCovisibilityKeyFrames(nNumCovisibles);
+        vpCovKFi = pMostBoWMatchesKF->GetBestCovisibilityKeyFrames(nNumCovisibles);
         vpCovKFi.push_back(pMostBoWMatchesKF);
         std::set<KeyFrame*> spCheckKFs(vpCovKFi.begin(), vpCovKFi.end());
 
@@ -747,9 +746,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
                        (double)solver.GetEstimatedScale());
         g2o::Sim3 gSmw(pMostBoWMatchesKF->GetRotation().cast<double>(),
                        pMostBoWMatchesKF->GetTranslation().cast<double>(), 1.0);
-        g2o::Sim3 gScw =
-            gScm *
-            gSmw;  // Similarity matrix of current from the world position
+        g2o::Sim3 gScw = gScm * gSmw;  // Similarity matrix of current from the world position
         Sophus::Sim3f mScw = Converter::toSophus(gScw);
 
         std::vector<MapPoint*> vpMatchedMP;
@@ -782,9 +779,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
             g2o::Sim3 gSmw(pMostBoWMatchesKF->GetRotation().cast<double>(),
                            pMostBoWMatchesKF->GetTranslation().cast<double>(),
                            1.0);
-            g2o::Sim3 gScw =
-                gScm *
-                gSmw;  // Similarity matrix of current from the world position
+            g2o::Sim3 gScw = gScm * gSmw;  // Similarity matrix of current from the world position
             Sophus::Sim3f mScw = Converter::toSophus(gScw);
 
             std::vector<MapPoint*> vpMatchedMP;
@@ -880,6 +875,9 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
     g2oScw = g2oBestScw;
     vpMPs = vpBestMapPoints;
     vpMatchedMPs = vpBestMatchedMapPoints;
+    if(nNumCoincidences >= 3){
+      std::cout << "Number of matches: " << nBestMatchesReproj << std::endl;
+    }
 
     return nNumCoincidences >= 3;
   /* Everything down here does not change any state and is UNUSED
@@ -1562,9 +1560,8 @@ void LoopClosing::MergeLocal() {
 
   // Rebuild the essential graph in the local window
   pCurrentMap->GetOriginKF()->SetFirstConnection(false);
-  pNewChild =
-      mpCurrentKF
-          ->GetParent();     // Old parent, it will be the new child of this KF
+  pNewChild = mpCurrentKF->GetParent();     
+                             // Old parent, it will be the new child of this KF
   pNewParent = mpCurrentKF;  // Old child, now it will be the parent of its own
                              // parent(we need eliminate this KF from children
                              // list in its old parent)

@@ -119,6 +119,8 @@ protected:
   std::list<Sophus::SE3f> mlRelativeFramePoses;
   std::list<KeyFrame*> mlpReferences;
   std::list<bool> mlbLost;
+
+  bool mFastInit;
 public:
 
   // True if local mapping is deactivated and we are performing only localization
@@ -126,6 +128,8 @@ public:
 
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);
+
+  bool fastIMUInitEnabled() const { return mFastInit; }
 
 #ifdef REGISTER_TIMES
   void LocalMapStats2File();
