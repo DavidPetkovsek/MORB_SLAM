@@ -105,6 +105,7 @@ target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
 target_link_libraries( ${TARGET_NAME} PRIVATE OpenSSL::SSL )
 target_link_libraries( ${TARGET_NAME} PRIVATE ${Pangolin_LIBRARIES} )
+target_link_libraries( ${TARGET_NAME} PUBLIC ixwebsocket::ixwebsocket ) 
 
 
 # https://cmake.org/cmake/help/latest/guide/importing-exporting/index.html#creating-a-package-version-file

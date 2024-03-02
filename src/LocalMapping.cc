@@ -246,10 +246,7 @@ void LocalMapping::Run() {
                         if (mbMonocular && ((mpAtlas->KeyFramesInMap()) <= 200) &&
                             ((mTinit > 25.0f && mTinit < 25.5f) ||
                                 (mTinit > 35.0f && mTinit < 35.5f) ||
-                                (mTinit > 45.0f && mTinit < 45.5f) ||
-                                (mTinit > 55.0f && mTinit < 55.5f) ||
-                                (mTinit > 65.0f && mTinit < 65.5f) ||
-                                (mTinit > 75.0f && mTinit < 75.5f))) {
+                                (mTinit > 45.0f && mTinit < 45.5f))) {
                             ScaleRefinement();
                         }
                     }

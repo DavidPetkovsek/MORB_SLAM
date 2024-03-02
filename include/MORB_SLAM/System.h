@@ -70,6 +70,7 @@ public:
 };
 
 class Viewer;
+class ExternalMapViewer;
 class Atlas;
 class Tracking;
 class LocalMapping;
@@ -156,6 +157,7 @@ public:
 #endif
 
     friend Viewer;
+    friend ExternalMapViewer;
 
     bool getHasMergedLocalMap();
     bool getIsDoneVIBA();

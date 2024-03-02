@@ -149,6 +149,11 @@ Frame::Frame(const Frame &frame)
 #endif
 }
 
+Frame::Frame(const Frame &frame, const bool copyExternalMapViewer)
+    : mTcw(frame.mTcw),
+      mnId(frame.mnId),
+      mpReferenceKF(frame.mpReferenceKF){}
+
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
