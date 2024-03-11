@@ -123,7 +123,7 @@ async def main():
                 if n == 10:
                     axAIV.plot(positionAIV[:, 0], positionAIV[:, 1])
                     axSLAM.plot(positionSLAM[:, 0], positionSLAM[:, 1])
-                    plt.pause(0.05)
+                    plt.pause(0.1)
                     # plt.draw()
                     n=0
     except:
