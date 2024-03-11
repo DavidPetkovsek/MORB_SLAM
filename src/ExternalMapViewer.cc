@@ -30,39 +30,55 @@ ExternalMapViewer::~ExternalMapViewer() {
 }
 
 void ExternalMapViewer::run() {
+    std::cout << "EXTERNALMAPVIEWER IS RUNNING!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
     ix::WebSocketServer server(serverPort, serverAddress);
 
     Tracking_ptr trackpointpointtracking(mpSystem->mpTracker);
 
     server.setOnClientMessageCallback([&trackpointpointtracking](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
-        Frame currentFrame;
-        long unsigned int prevFrameID = 0;
-        int message;
-        bool isKF;
-        int state;
-
-        // size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool);
-        // std::vector<uint8_t> binaryOutput(outputSize);
-
         if (msg->type == ix::WebSocketMessageType::Open) {
+            Frame currentFrame;
+            long unsigned int prevFrameID = 0;
+            int message = 0; // TODO
+            bool isKF;
+            int state;
+            Sophus::SE3f currentPose;
+
+            // size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool);
+            // std::vector<uint8_t> binaryOutput(outputSize);
             while(true) {
                 if(prevFrameID != trackpointpointtracking->mLastFrame.mnId) {
                     currentFrame = Frame(trackpointpointtracking->mLastFrame, true);
+                    prevFrameID = currentFrame.mnId;
                     state = trackpointpointtracking->mState.getID();
 
-                    prevFrameID = currentFrame.mnId;
-                    isKF = currentFrame.mpReferenceKF->mnId == prevFrameID;
-                    message = 0; // TODO
+                    if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
+                        isKF = true;
+                    } else {
+                        isKF = false;
+                    }
+
                     // binaryOutput = dataToBinary(currentFrame.GetPose().rotationMatrix(), currentFrame.GetPose().translation(), state, message, isKF);
-                    webSocket.sendBinary(ExternalMapViewer::dataToBinary(currentFrame.GetPose().rotationMatrix(), currentFrame.GetPose().translation(), state, message, isKF));
+                    // std::cout << "SEND" << std::endl;
+                    currentPose = currentFrame.GetPose();
+
+                    webSocket.sendBinary(ExternalMapViewer::dataToBinary(currentPose.rotationMatrix(), currentPose.rotationMatrix().inverse()*currentPose.translation(), state, message, isKF));
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
         }
     });
 
+    auto res = server.listen();
+    if (!res.first) {
+        std::cerr << res.second << std::endl;
+        return;
+    }
+
     server.start();
     server.wait();
+    std::cout << "______________________________ITS OVER_____________________________" << std::endl;
 }
 
 std::vector<uint8_t> ExternalMapViewer::dataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF) {
