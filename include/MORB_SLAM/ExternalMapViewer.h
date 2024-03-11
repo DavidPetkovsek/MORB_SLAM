@@ -21,8 +21,11 @@ class ExternalMapViewer {
         std::mutex mutexEMV;
         std::condition_variable condvarEMV;
 
-        static std::vector<uint8_t> dataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF);
+        static std::vector<uint8_t> poseToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF);
+        static std::vector<uint8_t> coordsToBinary(const std::vector<float>& coords);
+
         void pushValues(float x, float y, float z);
+
     private:
         std::thread threadEMV;
         System_ptr mpSystem;
@@ -32,6 +35,9 @@ class ExternalMapViewer {
         const std::string serverAddress;
         // Websocket port
         const int serverPort;
+
+        std::vector<float> pushedValues;
+        bool valuesPushed;
 
         void run();
         
