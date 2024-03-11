@@ -121,14 +121,14 @@ async def main():
                 #     axAIV.set_zlim(mins[2], maxs[2])
 
                 if n == 10:
-                    axAIV.plot(positionAIV[:, 0], positionAIV[:, 1])
-                    axSLAM.plot(positionSLAM[:, 0], positionSLAM[:, 1])
+                    n=0
+                    axAIV.plot(positionAIV[:, 0], positionAIV[:, 1], 'o', markersize=2)
+                    axSLAM.plot(positionSLAM[:, 0], positionSLAM[:, 1], 'o', markersize=2)
                     plt.pause(0.1)
                     # plt.draw()
-                    n=0
     except:
-        axSLAM.plot(positionSLAM[:, 0], positionSLAM[:, 1], 'bo', markersize=3)
-        axAIV.plot(positionAIV[:, 0], positionAIV[:, 1], 'go', markersize=3)
+        axSLAM.plot(positionSLAM[:, 0], positionSLAM[:, 1], 'o', markersize=3)
+        axAIV.plot(positionAIV[:, 0], positionAIV[:, 1], 'o', markersize=3)
         plt.pause(0.01)
         plt.draw()
         while True:
