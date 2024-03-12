@@ -29,6 +29,10 @@ ExternalMapViewer::~ExternalMapViewer() {
     if(threadEMV.joinable()) threadEMV.join();
 }
 
+void ExternalMapViewer::pushValues(float x, float y, float z){
+
+}
+
 void ExternalMapViewer::run() {
     std::cout << "EXTERNALMAPVIEWER IS RUNNING!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
