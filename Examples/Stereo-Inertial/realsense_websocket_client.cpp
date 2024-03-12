@@ -90,6 +90,8 @@ int main(int argc, char **argv) {
     cv::Mat local_right_img(cv::Size(848, 480), CV_8UC1);
     double local_img_timestamp;
 
+    int x = 0;
+
     webSocket.start();
 
     while(!connected) {
@@ -133,6 +135,8 @@ int main(int argc, char **argv) {
         //     sophusPose.pose = sophusPose.pose->inverse();
         // }
         
+        externalViewer->pushValues(x/100.0, x/100.0, x/100.0);
+        x++;
         // viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
         Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
