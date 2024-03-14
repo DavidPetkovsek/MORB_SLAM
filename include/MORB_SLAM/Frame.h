@@ -171,20 +171,21 @@ public:
 
 private:
     //Sophus/Eigen migration
-    Sophus::SE3<float> mTcw;
-    Eigen::Matrix<float,3,3> mRwc;
-    Eigen::Matrix<float,3,1> mOw;
-    Eigen::Matrix<float,3,3> mRcw;
-    Eigen::Matrix<float,3,1> mtcw;
-    bool mbHasPose;
+    Sophus::SE3<float> mTcw; // Pose of the frame relative to the map
+    Eigen::Matrix<float,3,3> mRwc; // Inverse rotation matrix of mTcw (pose)
+    Eigen::Matrix<float,3,1> mOw; // Inverse translation of mTcw (pose)
+    Eigen::Matrix<float,3,3> mRcw; // rotation matrix of mTcw (pose)
+    Eigen::Matrix<float,3,1> mtcw; // translation of mTcw (pose)
+    bool mbHasPose; // if mTcw (pose) has been set
 
     //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
     //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()
     //Twc_ not necessary as Sophus has a method for easily computing the inverse pose: Tcw_.inverse()
 
-    Sophus::SE3<float> mTlr, mTrl;
-    Eigen::Matrix<float,3,3> mRlr;
-    Eigen::Vector3f mtlr;
+    // Below is not set if there is no need for this (ie we are kannalabrandt8 fisheye)
+    Sophus::SE3<float> mTlr, mTrl; // mtlr: Transformation matrix from right camera to left camera     mTrl: Inverse of mTlr
+    Eigen::Matrix<float,3,3> mRlr; // rotation matrix of  mTrl
+    Eigen::Vector3f mtlr; // translation of mTlr
 
 
     // IMU linear velocity
@@ -325,6 +326,11 @@ private:
 
     std::shared_ptr<std::mutex> mpMutexImu;
 
+    bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
+
+    //Stereo fisheye
+    void ComputeStereoFishEyeMatches();
+
 public:
     Camera_ptr camera; 
     std::shared_ptr<const GeometricCamera> mpCamera, mpCamera2;
@@ -349,10 +355,6 @@ public:
 
     Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft, const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2, Sophus::SE3f& Tlr,Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
 
-    //Stereo fisheye
-    void ComputeStereoFishEyeMatches();
-
-    bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
 
