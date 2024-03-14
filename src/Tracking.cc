@@ -60,7 +60,8 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
       mnFirstFrameId(0),
       mnInitialFrameId(0),
       mbCreatedMap(false),
-      mpCamera2(nullptr) {
+      mpCamera2(nullptr),
+      mForcedLost(false) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -939,6 +940,7 @@ void Tracking::Track() {
     // if (!mpSystem->isShutDown()){
     std::cout << "ERROR: There is not an active map in the atlas" << std::endl;
     // }
+    mForcedLost = false;
     return;
   }
 
@@ -1009,6 +1011,7 @@ void Tracking::Track() {
     if (mState != TrackingState::OK)  // If rightly initialized, mState=OK
     {
       mLastFrame = Frame(mCurrentFrame);
+      mForcedLost = false;
       return;
     }
 
@@ -1388,6 +1391,12 @@ void Tracking::Track() {
     }
   }
 
+  if(mForcedLost) {
+    mForcedLost = false;
+    mState = TrackingState::LOST;
+    std::cout << "TrackingState forcefully set to LOST" << std::endl;
+  }
+
 #ifdef REGISTER_LOOP
   if (Stop()) {
     // Safe area to stop
@@ -1749,6 +1758,8 @@ void Tracking::CreateMapInAtlas() {
   
   // only used by the viewer or monocular tracking
   mvIniMatches.clear();
+
+  mForcedLost = false;
 }
 
 void Tracking::CheckReplacedInLastFrame() {
@@ -2790,6 +2801,7 @@ int Tracking::GetMatchesInliers() { return mnMatchesInliers; }
 
 float Tracking::GetImageScale() { return mImageScale; }
 
+void Tracking::setForcedLost(bool forceLost) { mForcedLost = forceLost; }
 
 #ifdef REGISTER_LOOP
 void Tracking::RequestStop() {
