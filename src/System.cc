@@ -690,6 +690,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   return checksum;
 }
 
+// Don't use, the setter could be ignored depending on where in Track() you are
 void System::setTrackingState(TrackingState state) {
   mpTracker->mState = state;
 }
@@ -711,5 +712,8 @@ void System::setStereoInitDefaultPose(const Sophus::SE3f default_pose) {
 void System::setUseGravityDirectionFromLastMap(bool is_true) {
   mUseGravityDirectionFromLastMap = is_true;
 }
+
+// Bonk
+void System::ForceLost() { mpTracker->setForcedLost(true); }
 
 }  // namespace MORB_SLAM

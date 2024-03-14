@@ -150,6 +150,8 @@ public:
     bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
     void setUseGravityDirectionFromLastMap(bool is_true);
 
+    void ForceLost();
+
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);
     void InsertResizeTime(double& time);

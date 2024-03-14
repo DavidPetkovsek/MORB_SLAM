@@ -131,6 +131,8 @@ public:
 
   bool fastIMUInitEnabled() const { return mFastInit; }
 
+  void setForcedLost(bool forceLost);
+
 #ifdef REGISTER_TIMES
   void LocalMapStats2File();
   void TrackStats2File();
@@ -290,6 +292,8 @@ public:
   Sophus::SE3f mTlr;
 
   void newParameterLoader(Settings& settings);
+
+  bool mForcedLost;
 
 #ifdef REGISTER_LOOP
   bool Stop();

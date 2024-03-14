@@ -1027,19 +1027,11 @@ bool LocalMapping::isFinished() {
 void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA) {
     if (mbResetRequested) return;
 
-    // std::cout << "INITIALIZEIMU()" << std::endl;
-    // if (mpSystem->UseGravityDirectionFromLastMap()) {
-    //     std::cout << "entered" << std::endl;
-    //     mTinit = 0;
-    //     std::cout << "time" << std::endl;
-    //     mpCurrentKeyFrame->GetMap()->SetImuInitialized();
-    //     mpCurrentKeyFrame->bImu = true;
-    //     std::cout << "returned" << std::endl;
-    //     return;
-    // }
 
     float minTime = mbMonocular ? 2.0 : 1.0;
     size_t nMinKF = 10;
+
+    bool setUseGravDir = false;
 
     if (mpAtlas->KeyFramesInMap() < nMinKF) {
         std::cout << "cannot initialize, not enough frames in map" << std::endl;
@@ -1117,7 +1109,6 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
         mPoseReverseAxisFlip = Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-        mpSystem->setUseGravityDirectionFromLastMap(true);
     } else if(mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         mRwg = Eigen::Matrix3d::Identity();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
@@ -1168,13 +1159,15 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
   // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now(); // UNUSED
     if (bFIBA) {
-        if (priorA != ImuInitializater::ImuInitType::VIBA2_A)
+        if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                 mpCurrentKeyFrame->mnId, nullptr, true, priorG,
                                 priorA);
-        else
+        } else {
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                       mpCurrentKeyFrame->mnId, nullptr, false);
+            mpSystem->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
+        }  
     }
 
   // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now(); // UNUSED
@@ -1282,7 +1275,12 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
     mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
 
-    return;
+    if (mpSystem->UseGravityDirectionFromLastMap()) {
+        mpCurrentKeyFrame->GetMap()->SetImuInitialized();
+        mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+        mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+        mTinit = 100;
+    } 
 }
 
 void LocalMapping::ScaleRefinement() {

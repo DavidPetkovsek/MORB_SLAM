@@ -79,8 +79,8 @@ int main(int argc, char **argv) {
     int portNumber = 9002;
 
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    // auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
-    auto externalViewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, hostAddress, portNumber);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+    // auto externalViewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, hostAddress, portNumber);
 
     float imageScale = SLAM->GetImageScale();
     
@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
     double local_img_timestamp;
 
     int x = 0;
+    int y = 0;
 
     webSocket.start();
 
@@ -135,9 +136,17 @@ int main(int argc, char **argv) {
         //     sophusPose.pose = sophusPose.pose->inverse();
         // }
         
-        externalViewer->pushValues(x/100.0, x/100.0, x/100.0);
-        x++;
-        // viewer->update(sophusPose);
+        // externalViewer->pushValues((x+y)/100.0, y/100.0, 0);
+        y++;
+        if(y%500 == 0) {
+            std::cout << y << std::endl;
+        }
+        if(y > 1500) {
+            SLAM->ForceLost();
+            x += 500;
+            y = 0;
+        }
+        viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
         Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
         // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
