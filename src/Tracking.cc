@@ -928,6 +928,7 @@ void Tracking::ResetFrameIMU() {
 void Tracking::Track() {
   //TK1
   if (mpLocalMapper->mbBadImu) {
+    mForcedLost = false;
     std::cout << "TRACK: Reset map because local mapper set the bad imu flag "
          << std::endl;
     mpSystem->ResetActiveMap();
@@ -947,6 +948,7 @@ void Tracking::Track() {
   //TK3
   if (mState != TrackingState::NO_IMAGES_YET) {
     if (mLastFrame.mTimeStamp > mCurrentFrame.mTimeStamp) {
+      mForcedLost = false;
       std::cerr
           << "ERROR: Frame with a timestamp older than previous frame detected!"
           << std::endl;
@@ -1095,6 +1097,7 @@ void Tracking::Track() {
         }
         //TK8 (I don't think a Track() loop can start with the state set to LOST, unless thru non-stereoinertial runs?)
       } else if (mState == TrackingState::LOST) {
+        mForcedLost = false;
         Verbose::PrintMess("A new map is started...",
                             Verbose::VERBOSITY_NORMAL);
         //TK8A
@@ -1217,8 +1220,8 @@ void Tracking::Track() {
         //TK11
         if (!pCurrentMap->isImuInitialized() ||
             !pCurrentMap->GetIniertialBA2()) {
-          std::cout << "IMU is not or recently initialized. Reseting active map..."
-               << std::endl;
+          std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
+          mForcedLost = false;
           mpSystem->ResetActiveMap();
         }
         //TK10
@@ -1345,7 +1348,13 @@ void Tracking::Track() {
 
     //TK19
     // Reset if the camera get lost soon after initialization
-    if (mState == TrackingState::LOST) {
+    if (mState == TrackingState::LOST || mForcedLost) {
+      if(mForcedLost) {
+        std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
+        mForcedLost = false;
+      }
+
+
       if (pCurrentMap->KeyFramesInMap() <= 10) {
         mpSystem->ResetActiveMap();
         return;
@@ -1391,11 +1400,6 @@ void Tracking::Track() {
     }
   }
 
-  if(mForcedLost) {
-    mForcedLost = false;
-    mState = TrackingState::LOST;
-    std::cout << "TrackingState forcefully set to LOST" << std::endl;
-  }
 
 #ifdef REGISTER_LOOP
   if (Stop()) {
@@ -1758,8 +1762,6 @@ void Tracking::CreateMapInAtlas() {
   
   // only used by the viewer or monocular tracking
   mvIniMatches.clear();
-
-  mForcedLost = false;
 }
 
 void Tracking::CheckReplacedInLastFrame() {
