@@ -626,6 +626,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           std::cout << "opt 823" << std::endl;
           kpUn = pKFi->mvKeysUn[leftIndex];
           const float kp_ur = pKFi->mvuRight[leftIndex];
+          std::cout << "opt 8231" << std::endl;
           Eigen::Matrix<double, 3, 1> obs;
           obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -634,22 +635,26 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           g2o::OptimizableGraph::Vertex* VP =
               dynamic_cast<g2o::OptimizableGraph::Vertex*>(
                   optimizer.vertex(pKFi->mnId));
+          std::cout << "opt 8232" << std::endl;
           if (bAllFixed)
             if (!VP->fixed()) bAllFixed = false;
 
           e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
                               optimizer.vertex(id)));
+          std::cout << "opt 8233" << std::endl;
           e->setVertex(1, VP);
           e->setMeasurement(obs);
           const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
 
           e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
+          std::cout << "opt 8234" << std::endl;
 
           g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
           e->setRobustKernel(rk);
           rk->setDelta(thHuberStereo);
 
           optimizer.addEdge(e);
+          std::cout << "opt 8235" << std::endl;
         }
 
         if (pKFi->mpCamera2) {  // Monocular right observation
