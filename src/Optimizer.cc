@@ -531,8 +531,9 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
              << std::endl;
     }
   }
-
+  std::cout << "Before bInit" << std::endl;
   if (bInit) {
+  std::cout << "In bInit" << std::endl;
     g2o::HyperGraph::Vertex* VG = optimizer.vertex(4 * maxKFid + 2);
     g2o::HyperGraph::Vertex* VA = optimizer.vertex(4 * maxKFid + 3);
 
@@ -552,6 +553,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     epg->setInformation(infoPriorG * Eigen::Matrix3d::Identity());
     optimizer.addEdge(epg);
   }
+  std::cout << "Done bInit" << std::endl;
 
   const float thHuberMono = sqrt(5.991);
   const float thHuberStereo = sqrt(7.815);
@@ -560,6 +562,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
   std::vector<bool> vbNotIncludedMP(vpMPs.size(), false);
 
+  std::cout << "opt 6" << std::endl;
   for (size_t i = 0; i < vpMPs.size(); i++) {
     MapPoint* pMP = vpMPs[i];
     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
@@ -574,6 +577,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     bool bAllFixed = true;
 
     // Set edges
+  std::cout << "opt 8" << std::endl;
     for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator
              mit = observations.begin(),
              mend = observations.end();
@@ -679,19 +683,23 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
         }
       }
     }
-
+    std::cout << "opt 9" << std::endl;
     if (bAllFixed) {
       optimizer.removeVertex(vPoint);
       vbNotIncludedMP[i] = true;
     }
   }
+  std::cout << "opt 5" << std::endl;
 
   if (pbStopFlag)
     if (*pbStopFlag) return;
 
+  std::cout << "opt 4" << std::endl;
   optimizer.initializeOptimization();
+  std::cout << "opt 3" << std::endl;
   optimizer.optimize(its);
 
+  std::cout << "opt 2" << std::endl;
   // Recover optimized data
   // Keyframes
   for (size_t i = 0; i < vpKFs.size(); i++) {
@@ -738,6 +746,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
       }
     }
   }
+  std::cout << "opt 1" << std::endl;
 
   // Points
   for (size_t i = 0; i < vpMPs.size(); i++) {
@@ -757,6 +766,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   }
 
   pMap->IncreaseChangeIndex();
+  std::cout << "End of opt" << std::endl;
 }
 
 int Optimizer::PoseOptimization(Frame* pFrame) {
