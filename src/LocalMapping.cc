@@ -201,6 +201,7 @@ void LocalMapping::Run() {
 
                 // Initialize IMU here
                 if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial) {
+                    
                     isDoneVIBA = false;
                     if (mbMonocular)
                         InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
@@ -1280,6 +1281,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
         mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
         mTinit = 100;
+        isDoneVIBA = true;
     } 
 }
 
