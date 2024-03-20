@@ -583,16 +583,19 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
              mend = observations.end();
          mit != mend; mit++) {
       KeyFrame* pKFi = mit->first;
+      std::cout << "opt 81" << std::endl;
 
-      if (pKFi->mnId > maxKFid) continue;
+      if (pKFi->mnId > maxKFid){std::cout << "opt 811" << std::endl; continue;}
+      std::cout << "opt 82" << std::endl;
 
       if (!pKFi->isBad()) {
+        std::cout << "opt 821" << std::endl;
         const int leftIndex = std::get<0>(mit->second);
         cv::KeyPoint kpUn;
 
-        if (leftIndex != -1 &&
-            pKFi->mvuRight[std::get<0>(mit->second)] < 0)  // Monocular observation
+        if (leftIndex != -1 && pKFi->mvuRight[std::get<0>(mit->second)] < 0)  // Monocular observation
         {
+        std::cout << "opt 822" << std::endl;
           kpUn = pKFi->mvKeysUn[leftIndex];
           Eigen::Matrix<double, 2, 1> obs;
           obs << kpUn.pt.x, kpUn.pt.y;
@@ -618,11 +621,12 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           rk->setDelta(thHuberMono);
 
           optimizer.addEdge(e);
-        } else if (leftIndex != -1 &&
-                   pKFi->mvuRight[leftIndex] >= 0)  // stereo observation
+        } else if (leftIndex != -1 && pKFi->mvuRight[leftIndex] >= 0)  // stereo observation
         {
+          std::cout << "opt 823" << std::endl;
           kpUn = pKFi->mvKeysUn[leftIndex];
           const float kp_ur = pKFi->mvuRight[leftIndex];
+          std::cout << "opt 8231" << std::endl;
           Eigen::Matrix<double, 3, 1> obs;
           obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -631,25 +635,30 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           g2o::OptimizableGraph::Vertex* VP =
               dynamic_cast<g2o::OptimizableGraph::Vertex*>(
                   optimizer.vertex(pKFi->mnId));
+          std::cout << "opt 8232" << std::endl;
           if (bAllFixed)
             if (!VP->fixed()) bAllFixed = false;
 
           e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
                               optimizer.vertex(id)));
+          std::cout << "opt 8233" << std::endl;
           e->setVertex(1, VP);
           e->setMeasurement(obs);
           const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
 
           e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
+          std::cout << "opt 8234" << std::endl;
 
           g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
           e->setRobustKernel(rk);
           rk->setDelta(thHuberStereo);
 
           optimizer.addEdge(e);
+          std::cout << "opt 8235" << std::endl;
         }
 
         if (pKFi->mpCamera2) {  // Monocular right observation
+          std::cout << "opt 824 never" << std::endl;
           int rightIndex = std::get<1>(mit->second);
 
           if (rightIndex != -1 && rightIndex < static_cast<int>(pKFi->mvKeysRight.size())) {
@@ -682,6 +691,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           }
         }
       }
+      std::cout << "opt 83" << std::endl;
     }
     std::cout << "opt 9" << std::endl;
     if (bAllFixed) {
