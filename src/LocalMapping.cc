@@ -1111,6 +1111,14 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
         mPoseReverseAxisFlip = Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
     } else if(mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+        for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
+            if (!(*itKF)->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
+
+            Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->mpImuPreintegrated->dT;
+            (*itKF)->SetVelocity(_vel);
+            (*itKF)->mPrevKF->SetVelocity(_vel);
+        }
+
         mRwg = Eigen::Matrix3d::Identity();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
         mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
