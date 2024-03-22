@@ -665,7 +665,7 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    return StereoPacket(mCurrentFrame.GetPose(), imGrayLeft, imGrayRight);
+    return StereoPacket(GetPoseRelativeToBase(mCurrentFrame.GetPose()), imGrayLeft, imGrayRight);
 
   return StereoPacket(imGrayLeft, imGrayRight); // we do not have a new pose to report
 }
@@ -2835,6 +2835,11 @@ int Tracking::GetMatchesInliers() { return mnMatchesInliers; }
 float Tracking::GetImageScale() { return mImageScale; }
 
 void Tracking::setForcedLost(bool forceLost) { mForcedLost = forceLost; }
+
+Sophus::SE3f Tracking::GetPoseRelativeToBase(Sophus::SE3f initialPose) {
+  Eigen::Vector3f newTranslation = initialPose.translation() + initialPose.rotationMatrix()*mBaseTranslation;
+  return Sophus::SE3f(initialPose.rotationMatrix(), newTranslation);
+}
 
 #ifdef REGISTER_LOOP
 void Tracking::RequestStop() {

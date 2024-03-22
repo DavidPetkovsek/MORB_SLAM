@@ -194,6 +194,8 @@ public:
   // Reset IMU biases and compute frame velocity
   void ResetFrameIMU();
 
+  Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
+
   bool mbMapUpdated;
 
   // Imu preintegration from last frame
