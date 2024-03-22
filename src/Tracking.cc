@@ -61,7 +61,9 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
       mnInitialFrameId(0),
       mbCreatedMap(false),
       mpCamera2(nullptr),
-      mForcedLost(false) {
+      mForcedLost(false),
+      mTeleported(false),
+      mLockPreTeleportTranslation(false) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -81,6 +83,9 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
       std::cout << " is unknown" << std::endl;
     }
   }
+
+  mBaseTranslation.setZero();
+  mPreTeleportTranslation.setZero();
 
 #ifdef REGISTER_TIMES
   vdRectStereo_ms.clear();
@@ -877,9 +882,13 @@ bool Tracking::PredictStateIMU() {
         Vwb1 + t12 * Gz +
         Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
-    // std::cout << "accel" << (/*Rwb1**/mpImuPreintegratedFromLastKF->avgA).transpose() << std::endl;
-    // std::cout << "bias" << b.bax << " " << b.bay << " " << b.baz << " " << b.bwx << " " << b.bwy << " " << b.bwz << std::endl;
-    // std::cout << "______________________________1_____________________________________" << std::endl;
+
+    // Eigen::Vector3f test_displacement = Vwb2; //twb2-twb1; //Rwb2*mCurrentFrame.GetVelocity()*(mCurrentFrame.timestamp - mLastFrame.timestamp);
+    // std::cout << "mbMapUpdated, using KeyFrame" << std::endl;
+    // if(mpAtlas->GetCurrentMap()->GetIniertialBA2())
+    //   std::cout << "bias" << test_displacement.transpose() << std::endl;
+    // else
+    //   std::cout << "bias0 0 0" << std::endl;
 
     mCurrentFrame.mImuBias = b;
     mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
@@ -904,10 +913,12 @@ bool Tracking::PredictStateIMU() {
         Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
 
     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
-    // Eigen::Vector3f b_acc(b.bax,b.bay,b.baz);
-    // std::cout << "accel" << (mCurrentFrame.mpImuPreintegratedFrame->avgA).transpose() << std::endl;
-    // std::cout << "bias" << (b_acc).transpose() << " " << b.bwx << " " << b.bwy << " " << b.bwz << std::endl;
-    // std::cout << "________________________________2___________________________________" << std::endl;
+
+    // Eigen::Vector3f test_displacement = Vwb2; //twb2-twb1; //Rwb2*mCurrentFrame.GetVelocity()*(mCurrentFrame.timestamp - mLastFrame.timestamp);
+    // if(mpAtlas->GetCurrentMap()->GetIniertialBA2())
+    //   std::cout << "bias" << test_displacement.transpose() << std::endl;
+    // else
+    //   std::cout << "bias0 0 0" << std::endl;
 
     mCurrentFrame.mImuBias = b;
     mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
@@ -1036,7 +1047,7 @@ void Tracking::Track() {
       // Local Mapping is activated. This is the normal behaviour, unless
       // you explicitly activate the "only tracking" mode.
       //TK6
-      if (mState == TrackingState::OK) {
+      if (mState == TrackingState::OK && !mForcedLost) {
         //TK6A
         // Local Mapping might have changed some MapPoints tracked in last frame
         CheckReplacedInLastFrame();
@@ -1078,9 +1089,14 @@ void Tracking::Track() {
           else
             bOK = false;
           //TK7B
-          if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost) {
+          if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost || mForcedLost) {
+            if(mForcedLost) {
+              std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
+              mForcedLost = false;
+            } else {
+              Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+            }
             mState = TrackingState::LOST;
-            Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
             bOK = false;
           }
         } else {
@@ -1096,8 +1112,11 @@ void Tracking::Track() {
           }
         }
         //TK8 (I don't think a Track() loop can start with the state set to LOST, unless thru non-stereoinertial runs?)
-      } else if (mState == TrackingState::LOST) {
-        mForcedLost = false;
+      } else if (mState == TrackingState::LOST || mForcedLost) {
+        if(mForcedLost) {
+          std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
+          mForcedLost = false;
+        }
         Verbose::PrintMess("A new map is started...",
                             Verbose::VERBOSITY_NORMAL);
         //TK8A
@@ -1218,8 +1237,7 @@ void Tracking::Track() {
         Verbose::PrintMess("Track lost for less than one second...",
                            Verbose::VERBOSITY_NORMAL);
         //TK11
-        if (!pCurrentMap->isImuInitialized() ||
-            !pCurrentMap->GetIniertialBA2()) {
+        if (!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2()) {
           std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
           mForcedLost = false;
           mpSystem->ResetActiveMap();
@@ -1348,13 +1366,8 @@ void Tracking::Track() {
 
     //TK19
     // Reset if the camera get lost soon after initialization
-    if (mState == TrackingState::LOST || mForcedLost) {
-      if(mForcedLost) {
-        std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
-        mForcedLost = false;
-      }
-
-
+    if(mState == TrackingState::LOST) {
+      mForcedLost = false;
       if (pCurrentMap->KeyFramesInMap() <= 10) {
         mpSystem->ResetActiveMap();
         return;
@@ -1376,6 +1389,24 @@ void Tracking::Track() {
 
     if (!mCurrentFrame.mpReferenceKF)
       mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+    if(!mTeleported && !mLockPreTeleportTranslation) {
+      mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
+    } else if(mTeleported) {
+      mTeleported = false;
+      mLockPreTeleportTranslation = false;
+      mBaseTranslation -= (mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation()) - mPreTeleportTranslation;
+      mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
+      if(pCurrentMap->GetIniertialBA2())
+        mpLocalMapper->setIsDoneVIBA(true);
+    }
+
+    if(mpLocalMapper->getIsDoneVIBA()) {
+      Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation();
+      std::cout << "bias" << (translation_print+mBaseTranslation).transpose() << std::endl;
+    } else {
+      std::cout << "bias0 0 0" << std::endl;
+    }
 
     mLastFrame = Frame(mCurrentFrame);
   }

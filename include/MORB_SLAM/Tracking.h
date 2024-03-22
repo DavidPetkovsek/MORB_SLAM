@@ -112,6 +112,15 @@ class Tracking {
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
+  // The sum of all the changes in translation (teleportations) caused by InitializeIMU(), Loop Closing, and Map Merging
+  Eigen::Vector3f mBaseTranslation;
+  // Stores the current KeyFrame's translation before each teleportation 
+  Eigen::Vector3f mPreTeleportTranslation;
+  // Set to true after teleportation occurs
+  bool mTeleported;
+  // Set to true right before a teleportation occurs, prevents mPreTeleportTranslation from being changed
+  bool mLockPreTeleportTranslation;
+
   // Lists used to recover the full camera trajectory at the end of the
   // execution. Basically we store the reference keyframe for each frame and its
   // relative transformation

@@ -209,15 +209,14 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   B.setZero();
 
   Eigen::Vector3f a, w;
-  a << acceleration(0) - b.bax, acceleration(1) - b.bay,
-      acceleration(2) - b.baz;
+  a << acceleration(0) - b.bax, acceleration(1) - b.bay, acceleration(2) - b.baz;
   w << angVel(0) - b.bwx, angVel(1) - b.bwy, angVel(2) - b.bwz;
 
   // the robot can only move in the direction it's facing, therefore the acceleration relative to the origin is
   //   the acceleration vector a rotated by the current heading rotation matrix dR
   avgA = (dT * avgA + dt * dR * a) / (dT + dt);
   // similarly, the real displacement is dR*d
-  // uses previous value for dV (maybe use average instead?)
+  // uses previous value for dV
   dP = dP + dV * dt + dR * (0.5f * a * dt * dt);
   // the real velocity is dR*v
   dV = dV + dR * (a * dt);

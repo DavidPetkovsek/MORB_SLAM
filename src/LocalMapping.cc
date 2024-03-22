@@ -161,9 +161,10 @@ void LocalMapping::Run() {
 
                         bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
                                         ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
-                        Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
-                                                    num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
-                                                    !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                        // if (mpTracker->mState == TrackingState::OK)
+                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
+                                                        num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
+                                                        !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
 #endif
@@ -203,10 +204,13 @@ void LocalMapping::Run() {
                 if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial) {
                     
                     isDoneVIBA = false;
-                    if (mbMonocular)
+                    mpTracker->mLockPreTeleportTranslation = true;
+                    if (mbMonocular) {
                         InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
-                    else
-                        InitializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);  
+                    } else {
+                        InitializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
+                    }
+                    mpTracker->mTeleported = true;
                 }
                 // Check redundant local Keyframes
                 if(mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
@@ -226,19 +230,21 @@ void LocalMapping::Run() {
                     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
                         if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()) {
                             if (mTinit > 5.0f) {
+                                mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 1" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
                                 InitializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
-
+                                mpTracker->mTeleported = true;
                                 std::cout << "end VIBA 1" << std::endl;
                             }
                         } else if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
                             if (mTinit > 15.0f) {
+                                mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 2" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
                                 InitializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
-
-                                isDoneVIBA = true;
+                                // isDoneVIBA = true;
+                                mpTracker->mTeleported = true;
                                 std::cout << "end VIBA 2" << std::endl;
                             }
                         }
@@ -1032,26 +1038,24 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     float minTime = mbMonocular ? 2.0 : 1.0;
     size_t nMinKF = 10;
 
-    bool setUseGravDir = false;
-
     if (mpAtlas->KeyFramesInMap() < nMinKF) {
         std::cout << "cannot initialize, not enough frames in map" << std::endl;
         return;
     }
 
     // Retrieve all keyframe in temporal order
-  std::list<KeyFrame*> lpKF;
-  KeyFrame* pKF = mpCurrentKeyFrame;
+    std::list<KeyFrame*> lpKF;
+    KeyFrame* pKF = mpCurrentKeyFrame;
     while (pKF->mPrevKF) {
         lpKF.push_front(pKF);
         pKF = pKF->mPrevKF;
     }
     lpKF.push_front(pKF);
-  std::vector<KeyFrame*> vpKF(lpKF.begin(), lpKF.end());
+    std::vector<KeyFrame*> vpKF(lpKF.begin(), lpKF.end());
 
     if (vpKF.size() < nMinKF) {
-    std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
-    return; // condition could be here too
+        std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
+        return; // condition could be here too
     }
 
     mFirstTs = vpKF.front()->mTimeStamp;
@@ -1167,17 +1171,19 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
   // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now(); // UNUSED
-    if (bFIBA) {
-        if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
-                                mpCurrentKeyFrame->mnId, nullptr, true, priorG,
-                                priorA);
-        } else {
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
-                                      mpCurrentKeyFrame->mnId, nullptr, false);
-            mpSystem->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
-        }  
-    }
+    // if FullInertialBA isn't called, SLAM instantly gets lost
+    // also bFIBA is always true
+    // if (bFIBA) {
+    if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
+        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
+                            mpCurrentKeyFrame->mnId, nullptr, true, priorG, priorA);
+    } else {
+        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
+                                    mpCurrentKeyFrame->mnId, nullptr, false);
+        mpSystem->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
+        mPoseReverseAxisFlip = mpCurrentKeyFrame->GetPose();
+    }  
+    // }
 
   // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now(); // UNUSED
 
@@ -1197,30 +1203,28 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
     // Correct keyframes starting at map first keyframe
-  std::list<KeyFrame*> lpKFtoCheck(
+    std::list<KeyFrame*> lpKFtoCheck(
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.begin(),
         mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end());
 
     while (!lpKFtoCheck.empty()) {
-    KeyFrame* pKF = lpKFtoCheck.front();
-    const std::set<KeyFrame*> sChilds = pKF->GetChilds();
+        KeyFrame* pKF = lpKFtoCheck.front();
+        const std::set<KeyFrame*> sChilds = pKF->GetChilds();
         Sophus::SE3f Twc = pKF->GetPoseInverse();
-    for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin();
-             sit != sChilds.end(); sit++) {
-      KeyFrame* pChild = *sit;
+        for (std::set<KeyFrame*>::const_iterator sit = sChilds.begin();
+            sit != sChilds.end(); sit++) {
+            KeyFrame* pChild = *sit;
             if (!pChild || pChild->isBad()) continue;
 
             if (pChild->mnBAGlobalForKF != GBAid) {
                 Sophus::SE3f Tchildc = pChild->GetPose() * Twc;
                 pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;
 
-                Sophus::SO3f Rcor =
-                    pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3();
+                Sophus::SO3f Rcor = pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3();
                 if (pChild->isVelocitySet()) {
                     pChild->mVwbGBA = Rcor * pChild->GetVelocity();
                 } else {
-                    Verbose::PrintMess("Child velocity empty!! ",
-                                       Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
                 }
 
                 pChild->mBiasGBA = pChild->GetImuBias();
@@ -1244,7 +1248,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
     // Correct MapPoints
-  const std::vector<MapPoint*> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
+    const std::vector<MapPoint*> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
 
     for (size_t i = 0; i < vpMPs.size(); i++) {
         MapPoint* pMP = vpMPs[i];
@@ -1256,7 +1260,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pMP->SetWorldPos(pMP->mPosGBA);
         } else {
             // Update according to the correction of its reference keyframe
-      KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
+            KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
 
             if (pRefKF->mnBAGlobalForKF != GBAid) continue;
 
@@ -1267,6 +1271,14 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
         }
     }
+
+    // if (mpSystem->UseGravityDirectionFromLastMap()) {
+    //     mpCurrentKeyFrame->GetMap()->SetImuInitialized();
+    //     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+    //     mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+    //     mTinit = 10;
+    //     isDoneVIBA = true;
+    // } 
 
     Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
 
@@ -1284,13 +1296,6 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
     mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
 
-    if (mpSystem->UseGravityDirectionFromLastMap()) {
-        mpCurrentKeyFrame->GetMap()->SetImuInitialized();
-        mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-        mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
-        mTinit = 100;
-        isDoneVIBA = true;
-    } 
 }
 
 void LocalMapping::ScaleRefinement() {

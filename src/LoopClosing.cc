@@ -164,6 +164,8 @@ void LoopClosing::Run() {
 
             nMerges += 1;
 #endif
+            mpLocalMapper->setIsDoneVIBA(false);
+            mpTracker->mLockPreTeleportTranslation = true;
             // TODO UNCOMMENT
             if (mpTracker->mSensor == CameraType::IMU_MONOCULAR ||
                 mpTracker->mSensor == CameraType::IMU_STEREO ||
@@ -183,6 +185,7 @@ void LoopClosing::Run() {
                     .count();
             vdMergeTotal_ms.push_back(timeMergeTotal);
 #endif
+            mpTracker->mTeleported = true;
             Verbose::PrintMess("Merge finished!", Verbose::VERBOSITY_QUIET);
           }
 
@@ -227,12 +230,12 @@ void LoopClosing::Run() {
 
             Eigen::Vector3d phi = LogSO3(g2oSww_new.rotation().toRotationMatrix());
             std::cout << "phi = " << phi.transpose() << std::endl;
-            if (fabs(phi(0)) < /*0.008f*/0.024f && fabs(phi(1)) < /*0.008f*/0.024f/* &&
-                fabs(phi(2)) < 0.349f*/) {
+            if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f &&
+                fabs(phi(2)) < 0.349f) {
                 // If inertial, force only yaw
               if (mpCurrentKF->GetMap()->GetIniertialBA2()) {
-                //phi(0) = 0;
-                //phi(1) = 0;
+                phi(0) = 0;
+                phi(1) = 0;
                 g2oSww_new = g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
                 mg2oLoopScw = g2oTwc.inverse() * g2oSww_new;
               }
@@ -245,7 +248,8 @@ void LoopClosing::Run() {
 
           if (bGoodLoop) {
             mvpLoopMapPoints = mvpLoopMPs;
-
+            mpLocalMapper->setIsDoneVIBA(false);
+            mpTracker->mLockPreTeleportTranslation = true;
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartLoop =
                 std::chrono::steady_clock::now();
@@ -267,6 +271,7 @@ void LoopClosing::Run() {
 #endif
 
             mnNumCorrection += 1;
+            mpTracker->mTeleported = true;
             std::cout << "Loop Closed Successfully" << std::endl;
           }
 
@@ -1848,8 +1853,7 @@ void LoopClosing::MergeLocal2() {
 
   {
     float s_on = mSold_new.scale();
-    Sophus::SE3f T_on(mSold_new.rotation().cast<float>(),
-                      mSold_new.translation().cast<float>());
+    Sophus::SE3f T_on(mSold_new.rotation().cast<float>(), mSold_new.translation().cast<float>());
 
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
@@ -1867,8 +1871,7 @@ void LoopClosing::MergeLocal2() {
     bool bScaleVel = false;
     if (s_on != 1) bScaleVel = true;
     mpAtlas->GetCurrentMap()->ApplyScaledRotation(T_on, s_on, bScaleVel);
-    mpTracker->UpdateFrameIMU(s_on, mpCurrentKF->GetImuBias(),
-                              mpTracker->GetLastKeyFrame());
+    mpTracker->UpdateFrameIMU(s_on, mpCurrentKF->GetImuBias(), mpTracker->GetLastKeyFrame());
 
     // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now(); // UNUSED
   }
@@ -1898,11 +1901,9 @@ void LoopClosing::MergeLocal2() {
   // std::cout << "updating current map" << std::endl;
   {
     // Get Merge Map Mutex (This section stops tracking!!)
-    std::unique_lock<std::mutex> currentLock(
-        pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
+    std::unique_lock<std::mutex> currentLock(pCurrentMap->mMutexMapUpdate);  // We update the current std::map with the
                                         // Merge information
-    std::unique_lock<std::mutex> mergeLock(
-        pMergeMap->mMutexMapUpdate);  // We remove the Kfs and MPs in the merged
+    std::unique_lock<std::mutex> mergeLock(pMergeMap->mMutexMapUpdate);  // We remove the Kfs and MPs in the merged
                                       // area from the old std::map
 
     std::vector<KeyFrame*> vpMergeMapKFs = pMergeMap->GetAllKeyFrames();
@@ -1949,16 +1950,11 @@ void LoopClosing::MergeLocal2() {
   // std::cout << "Update essential graph" << std::endl;
   // mpCurrentKF->UpdateConnections(); // to put at false mbFirstConnection
   pMergeMap->GetOriginKF()->SetFirstConnection(false);
-  pNewChild =
-      mpMergeMatchedKF
-          ->GetParent();  // Old parent, it will be the new child of this KF
-  pNewParent = mpMergeMatchedKF;  // Old child, now it will be the parent of its
-                                  // own parent(we need eliminate this KF from
-                                  // children std::list in its old parent)
+  pNewChild = mpMergeMatchedKF->GetParent();  // Old parent, it will be the new child of this KF
+  pNewParent = mpMergeMatchedKF;  // Old child, now it will be the parent of its own parent(we need eliminate this KF from children std::list in its old parent)
   mpMergeMatchedKF->ChangeParent(mpCurrentKF);
   while (pNewChild) {
-    pNewChild->EraseChild(pNewParent);  // We remove the relation between the
-                                        // old parent and the new for avoid loop
+    pNewChild->EraseChild(pNewParent);  // We remove the relation between the old parent and the new for avoid loop
     KeyFrame* pOldParent = pNewChild->GetParent();
     pNewChild->ChangeParent(pNewParent);
     pNewParent = pNewChild;
@@ -1975,18 +1971,14 @@ void LoopClosing::MergeLocal2() {
       std::cout << "BAD ESSENTIAL GRAPH 1!!" << std::endl;*/
 
   // std::cout << "Update relationship between KFs" << std::endl;
-  std::vector<MapPoint*>
-      vpCheckFuseMapPoint;  // MapPoint vector from current map to allow to fuse
-                            // duplicated points with the old map (merge)
+  std::vector<MapPoint*> vpCheckFuseMapPoint;  // MapPoint vector from current map to allow to fuse duplicated points with the old map (merge)
   std::vector<KeyFrame*> vpCurrentConnectedKFs;
 
   mvpMergeConnectedKFs.push_back(mpMergeMatchedKF);
   std::vector<KeyFrame*> aux = mpMergeMatchedKF->GetVectorCovisibleKeyFrames();
-  mvpMergeConnectedKFs.insert(mvpMergeConnectedKFs.end(), aux.begin(),
-                              aux.end());
-  if (mvpMergeConnectedKFs.size() > 6)
-    mvpMergeConnectedKFs.erase(mvpMergeConnectedKFs.begin() + 6,
-                               mvpMergeConnectedKFs.end());
+  mvpMergeConnectedKFs.insert(mvpMergeConnectedKFs.end(), aux.begin(), aux.end());
+  if(mvpMergeConnectedKFs.size() > 6)
+    mvpMergeConnectedKFs.erase(mvpMergeConnectedKFs.begin() + 6, mvpMergeConnectedKFs.end());
   /*mvpMergeConnectedKFs = mpMergeMatchedKF->GetVectorCovisibleKeyFrames();
   mvpMergeConnectedKFs.push_back(mpMergeMatchedKF);*/
 
@@ -2076,9 +2068,7 @@ void LoopClosing::MergeLocal2() {
     mpLocalMapper->Release();
     return;
   }
-
-  Optimizer::MergeInertialBA(pCurrKF, mpMergeMatchedKF, &bStopFlag, pCurrentMap,
-                             CorrectedSim3);
+  Optimizer::MergeInertialBA(pCurrKF, mpMergeMatchedKF, &bStopFlag, pCurrentMap, CorrectedSim3);
   // std::cout << "end MergeInertialBA" << std::endl;
 
   /*good = pCurrentMap->CheckEssentialGraph();

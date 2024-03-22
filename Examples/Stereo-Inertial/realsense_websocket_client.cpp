@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
 
     int x = 0;
     int y = 0;
+    bool doTheBonk = false;
 
     webSocket.start();
 
@@ -137,18 +138,22 @@ int main(int argc, char **argv) {
         // }
         
         // externalViewer->pushValues((x+y)/100.0, y/100.0, 0);
-        y++;
-        if(y%500 == 0) {
-            std::cout << y << std::endl;
+        
+        if(doTheBonk) {
+            y++;
+            if(y%600 == 0) {
+                std::cout << "____________________________________________________________________________________" << std::endl;
+            }
+            if(y > 700) {
+                SLAM->ForceLost();
+                // x += 500;
+                y = 0;
+            }
         }
-        if(y > 1500) {
-            SLAM->ForceLost();
-            x += 500;
-            y = 0;
-        }
+
         viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
-        Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
+        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().transpose()*sophusPose.pose->translation();
         // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
         imu_points.clear();
     }

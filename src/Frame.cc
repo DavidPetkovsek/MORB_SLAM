@@ -60,6 +60,7 @@ Frame::Frame()
   mTimeORB_Ext = 0;
 #endif
   mpMutexImu = std::make_shared<std::mutex>();
+  mnId = nNextId++;
 }
 
 Frame::~Frame(){}
