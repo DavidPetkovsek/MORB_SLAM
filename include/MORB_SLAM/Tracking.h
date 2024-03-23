@@ -121,6 +121,8 @@ class Tracking {
   // Set to true right before a teleportation occurs, prevents mPreTeleportTranslation from being changed
   bool mLockPreTeleportTranslation;
 
+  Sophus::SE3f mReturnPose;
+
   // Lists used to recover the full camera trajectory at the end of the
   // execution. Basically we store the reference keyframe for each frame and its
   // relative transformation

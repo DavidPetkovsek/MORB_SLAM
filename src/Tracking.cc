@@ -665,7 +665,9 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    return StereoPacket(GetPoseRelativeToBase(mCurrentFrame.GetPose()), imGrayLeft, imGrayRight);
+    return StereoPacket(mReturnPose, imGrayLeft, imGrayRight);
+    // return StereoPacket(mCurrentFrame.GetPose(), imGrayLeft, imGrayRight);
+    
 
   return StereoPacket(imGrayLeft, imGrayRight); // we do not have a new pose to report
 }
@@ -1403,9 +1405,11 @@ void Tracking::Track() {
 
     if(mpLocalMapper->getIsDoneVIBA()) {
       Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation();
-      std::cout << "bias" << (translation_print+mBaseTranslation).transpose() << std::endl;
+      mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), translation_print+mBaseTranslation);
     } else {
-      std::cout << "bias0 0 0" << std::endl;
+      Eigen::Vector3f zero;
+      zero.setZero();
+      mReturnPose = Sophus::SE3f(Eigen::Matrix3f::Identity(), zero);
     }
 
     mLastFrame = Frame(mCurrentFrame);
@@ -2837,8 +2841,12 @@ float Tracking::GetImageScale() { return mImageScale; }
 void Tracking::setForcedLost(bool forceLost) { mForcedLost = forceLost; }
 
 Sophus::SE3f Tracking::GetPoseRelativeToBase(Sophus::SE3f initialPose) {
-  Eigen::Vector3f newTranslation = initialPose.translation() + initialPose.rotationMatrix()*mBaseTranslation;
-  return Sophus::SE3f(initialPose.rotationMatrix(), newTranslation);
+  Eigen::Vector3f translation0 = initialPose.rotationMatrix().transpose()*initialPose.translation();
+  Eigen::Vector3f translation1 = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation()+mBaseTranslation;
+  
+  if(!mpLocalMapper->getIsDoneVIBA())
+    translation1.setZero();
+  return Sophus::SE3f(initialPose.rotationMatrix(), translation1);
 }
 
 #ifdef REGISTER_LOOP
