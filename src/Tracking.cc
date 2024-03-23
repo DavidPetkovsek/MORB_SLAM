@@ -1405,7 +1405,7 @@ void Tracking::Track() {
 
     if(mpLocalMapper->getIsDoneVIBA()) {
       Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation();
-      mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), translation_print+mBaseTranslation);
+      mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), mCurrentFrame.GetPose().rotationMatrix()*(translation_print+mBaseTranslation));
     } else {
       Eigen::Vector3f zero;
       zero.setZero();
