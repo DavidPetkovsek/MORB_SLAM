@@ -664,7 +664,7 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && (mReturnPose.matrix() != Eigen::Matrix4f::Identity()))
     return StereoPacket(mReturnPose, imGrayLeft, imGrayRight);
     // return StereoPacket(mCurrentFrame.GetPose(), imGrayLeft, imGrayRight);
     
