@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 
         viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
-        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().transpose()*sophusPose.pose->translation();
+        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
         // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
         imu_points.clear();
     }

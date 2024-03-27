@@ -835,6 +835,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
         if (!pFrame->mpCamera2) {
           // Monocular observation
           if (pFrame->mvuRight[i] < 0) {
+            if(Nleft == -1) continue;
             nInitialCorrespondences++;
             pFrame->mvbOutlier[i] = false;
 
@@ -4475,7 +4476,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
 
         // Left monocular observation
         if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft) {
-          // if(Nleft == -1) continue;
+          if(Nleft == -1) continue;
           if (i < Nleft)  // pair left-right
             kpUn = pFrame->mvKeys[i];
           else
@@ -4573,7 +4574,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
   
   nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
   // std::cout << "KeyFrame: " << nInitialMonoCorrespondences << ", " << nInitialStereoCorrespondences << std::endl;
-  // if(nInitialCorrespondences < 10) {
+  // if(nInitialCorrespondences < 5) {
   //   vpEdgesMono.clear();
   //   vpEdgesStereo.clear();
   //   vnIndexEdgeMono.clear();
@@ -4858,7 +4859,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
         cv::KeyPoint kpUn;
         // Left monocular observation
         if ((!bRight && pFrame->mvuRight[i] < 0) || i < Nleft) {
-          // if(Nleft == -1) continue;
+          if(Nleft == -1) continue;
           if (i < Nleft)  // pair left-right
             kpUn = pFrame->mvKeys[i];
           else
@@ -4956,7 +4957,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
 
   nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
   // std::cout << "Frame: " << nInitialMonoCorrespondences << ", " << nInitialStereoCorrespondences << std::endl;
-  // if(nInitialCorrespondences < 50) {
+  // if(nInitialCorrespondences < 5) {
   //   vpEdgesMono.clear();
   //   vpEdgesStereo.clear();
   //   vnIndexEdgeMono.clear();
