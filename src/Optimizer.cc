@@ -835,7 +835,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
         if (!pFrame->mpCamera2) {
           // Monocular observation
           if (pFrame->mvuRight[i] < 0) {
-            if(Nleft == -1) continue;
+            continue;
             nInitialCorrespondences++;
             pFrame->mvbOutlier[i] = false;
 
