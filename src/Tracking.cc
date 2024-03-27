@@ -962,9 +962,7 @@ void Tracking::Track() {
   if (mState != TrackingState::NO_IMAGES_YET) {
     if (mLastFrame.mTimeStamp > mCurrentFrame.mTimeStamp) {
       mForcedLost = false;
-      std::cerr
-          << "ERROR: Frame with a timestamp older than previous frame detected!"
-          << std::endl;
+      std::cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << std::endl;
       std::scoped_lock<std::mutex> lock(mMutexImuQueue);
       mlQueueImuData.clear();
       CreateMapInAtlas();
@@ -1023,8 +1021,7 @@ void Tracking::Track() {
 
     // mpFrameDrawer->Update(this);
 
-    if (mState != TrackingState::OK)  // If rightly initialized, mState=OK
-    {
+    if (mState != TrackingState::OK) {  // If rightly initialized, mState=OK
       mLastFrame = Frame(mCurrentFrame);
       mForcedLost = false;
       return;
@@ -1049,7 +1046,7 @@ void Tracking::Track() {
       // Local Mapping is activated. This is the normal behaviour, unless
       // you explicitly activate the "only tracking" mode.
       //TK6
-      if (mState == TrackingState::OK && !mForcedLost) {
+      if (mState == TrackingState::OK) {
         //TK6A
         // Local Mapping might have changed some MapPoints tracked in last frame
         CheckReplacedInLastFrame();
@@ -1114,7 +1111,7 @@ void Tracking::Track() {
           }
         }
         //TK8 (I don't think a Track() loop can start with the state set to LOST, unless thru non-stereoinertial runs?)
-      } else if (mState == TrackingState::LOST || mForcedLost) {
+      } else if (mState == TrackingState::LOST) {
         if(mForcedLost) {
           std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
           mForcedLost = false;
@@ -1236,8 +1233,7 @@ void Tracking::Track() {
       mState = TrackingState::OK;
     else if (mState == TrackingState::OK) {
       if (mSensor.isInertial()) {
-        Verbose::PrintMess("Track lost for less than one second...",
-                           Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
         //TK11
         if (!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2()) {
           std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
@@ -1404,7 +1400,7 @@ void Tracking::Track() {
     }
 
     if(mpLocalMapper->getIsDoneVIBA()) {
-      Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation();
+      Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
       mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), mCurrentFrame.GetPose().rotationMatrix()*(translation_print+mBaseTranslation));
     } else {
       Eigen::Vector3f zero;
@@ -2068,6 +2064,12 @@ bool Tracking::TrackLocalMap() {
   // Decide if the tracking was succesful
   // More restrictive if there was a relocalization recently
   mpLocalMapper->mnMatchesInliers = mnMatchesInliers;
+
+  if(mForcedLost) {
+    std::cout << "BONK queued for the next frame" << std::endl;
+    return false;
+  }
+
   if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames) return mnMatchesInliers >= 50;
 
   if (mState == TrackingState::RECENTLY_LOST) return mnMatchesInliers >= 150;
