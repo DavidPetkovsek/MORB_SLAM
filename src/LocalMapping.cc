@@ -236,7 +236,7 @@ void LocalMapping::Run() {
                 if ((mTinit < 50.0f) && mbInertial) {
                     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
                         if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()) {
-                            if (mTinit > 3.0f) {
+                            if (mTinit > 5.0f) {
                                 mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 1" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
@@ -245,7 +245,7 @@ void LocalMapping::Run() {
                                 std::cout << "end VIBA 1" << std::endl;
                             }
                         } else if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if (mTinit > 6.0f) {
+                            if (mTinit > 10.0f) {
                                 mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 2" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();

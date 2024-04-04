@@ -54,7 +54,9 @@ Frame::Frame()
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
       mbIsSet(false),
-      mbImuPreintegrated(false) {
+      mbImuPreintegrated(false),
+      mpLastKeyFrame(nullptr),
+      isPartiallyConstructed(true) {
 #ifdef REGISTER_TIMES
   mTimeStereoMatch = 0;
   mTimeORB_Ext = 0;
@@ -153,7 +155,8 @@ Frame::Frame(const Frame &frame)
 Frame::Frame(const Frame &frame, const bool copyExternalMapViewer)
     : mTcw(frame.mTcw),
       mnId(frame.mnId),
-      mpReferenceKF(frame.mpReferenceKF){}
+      mpReferenceKF(frame.mpReferenceKF),
+      isPartiallyConstructed{true}{}
 
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
@@ -182,7 +185,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
-      mpCamera2(nullptr) {
+      mpCamera2(nullptr),
+      mpLastKeyFrame(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -224,12 +228,12 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 
     mbInitialComputations = false;
   }
-
+  mb = mbf / fx;
   N = mvKeys.size();
   if (mvKeys.empty()) return;
 
   UndistortKeyPoints();
-
+  
 #ifdef REGISTER_TIMES
   std::chrono::steady_clock::time_point time_StartStereoMatches = std::chrono::steady_clock::now();
 #endif
@@ -243,8 +247,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   mvbOutlier = std::vector<bool>(N, false);
   mmProjectPoints.clear();
   mmMatchedInImage.clear();
-
-  mb = mbf / fx;
 
   if (pPrevF) {
     if (pPrevF->HasVelocity()) SetVelocity(pPrevF->GetVelocity());
@@ -292,7 +294,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mbImuPreintegrated(false),
       camera{cam}, 
       mpCamera(pCamera),
-      mpCamera2(nullptr) {
+      mpCamera2(nullptr),
+      mpLastKeyFrame(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -332,7 +335,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 
     mbInitialComputations = false;
   }
-
+  mb = mbf / fx;
   N = mvKeys.size();
   if (mvKeys.empty()) return;
 
@@ -346,8 +349,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
   mmMatchedInImage.clear();
 
   mvbOutlier = std::vector<bool>(N, false);
-
-  mb = mbf / fx;
 
   if (pPrevF) {
     if (pPrevF->HasVelocity()) SetVelocity(pPrevF->GetVelocity());
@@ -394,7 +395,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mbImuPreintegrated(false),
       camera{cam},
       mpCamera(pCamera),
-      mpCamera2(nullptr) {
+      mpCamera2(nullptr),
+      mpLastKeyFrame(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -436,7 +438,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
 
     mbInitialComputations = false;
   }
-
+  mb = mbf / fx;
   N = mvKeys.size();
   if (mvKeys.empty()) return;
 
@@ -454,8 +456,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
   mmMatchedInImage.clear();
 
   mvbOutlier = std::vector<bool>(N, false);
-
-  mb = mbf / fx;
 
   // Set no stereo fisheye information
   Nleft = -1;
@@ -505,9 +505,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mbImuPreintegrated(false),
       camera{cam},
       mpCamera(pCamera),
-      mpCamera2(pCamera2)
-
-{
+      mpCamera2(pCamera2),
+      mpLastKeyFrame(nullptr) {
   imgLeft = imLeft.clone();
   imgRight = imRight.clone();
 
@@ -565,14 +564,12 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 
     mbInitialComputations = false;
   }
-
+  mb = mbf / fx;
   Nleft = mvKeys.size();
   Nright = mvKeysRight.size();
   N = Nleft + Nright;
 
   if (N == 0) return;
-
-  mb = mbf / fx;
 
   // Sophus/Eigen
   mTlr = Tlr;

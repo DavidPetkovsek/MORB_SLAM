@@ -86,7 +86,8 @@ KeyFrame::KeyFrame()
       mbToBeErased(false),
       mbBad(false),
       NLeft(0),
-      NRight(0) {}
+      NRight(0),
+      isPartiallyConstructed(true) {}
 
 KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, KeyFrameDatabase *pKFDB)
     : bImu(pMap->isImuInitialized()),

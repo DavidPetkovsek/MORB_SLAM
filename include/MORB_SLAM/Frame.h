@@ -193,7 +193,7 @@ private:
     bool mbHasVelocity;
 
 public:
-    
+    bool isPartiallyConstructed{false};
 
     // Vocabulary used for relocalization.
     ORBVocabulary* mpORBvocabulary;

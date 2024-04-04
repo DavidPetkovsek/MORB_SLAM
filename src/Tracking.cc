@@ -755,7 +755,7 @@ void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
 
 void Tracking::PreintegrateIMU() {
   //PRIMU1
-  if (!mCurrentFrame.mpPrevFrame) {
+  if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
     Verbose::PrintMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
     mCurrentFrame.setIntegrated();
     return;
@@ -786,7 +786,7 @@ void Tracking::PreintegrateIMU() {
 
   //PRIMU3
   // Fails if there's 0 or 1 measurement
-  const int n = frameIMUDataList.size() - 1;
+  const int n = static_cast<int>(frameIMUDataList.size()) - 1;
   if (n <= 0) { // 0 or 1 measurement
     std::cout << "Empty IMU measurements vector!!!\n";
     mCurrentFrame.setIntegrated();
@@ -859,7 +859,7 @@ void Tracking::PreintegrateIMU() {
 
 bool Tracking::PredictStateIMU() {
   //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
-  if (!mCurrentFrame.mpPrevFrame) {
+  if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
     Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
     return false;
   }
@@ -1530,9 +1530,7 @@ void Tracking::StereoInitialization() {
     }
   }
 
-  Verbose::PrintMess("New Map created with " +
-                          std::to_string(mpAtlas->MapPointsInMap()) + " points",
-                      Verbose::VERBOSITY_QUIET);
+  Verbose::PrintMess("New Map created with " + std::to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
 
   // std::cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << std::endl;
 
@@ -2480,12 +2478,12 @@ void Tracking::UpdateLocalKeyFrames() {
   }
 
   // Add 20 last temporal KFs (mainly for IMU)
-  if (mSensor.isInertial() && mvpLocalKeyFrames.size() < 80) {
+  if (mSensor.isInertial() && mvpLocalKeyFrames.size() < 80 && !mCurrentFrame.isPartiallyConstructed) {
     KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
     const int Nd = 20;
     for (int i = 0; i < Nd; i++) {
-      if (!tempKeyFrame) break;
+      if (!tempKeyFrame || tempKeyFrame->isPartiallyConstructed) break;
       if (tempKeyFrame->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
         mvpLocalKeyFrames.push_back(tempKeyFrame);
         tempKeyFrame->mnTrackReferenceForFrame = mCurrentFrame.mnId;

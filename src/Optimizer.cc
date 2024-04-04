@@ -3102,8 +3102,10 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (!pKFi->mpImuPreintegrated)
+      if (!pKFi->mpImuPreintegrated) {
         std::cout << "Not preintegrated measurement" << std::endl;
+        continue;
+      }
 
       pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
@@ -4977,6 +4979,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
 
   // Set Previous Frame Vertex
   Frame* pFp = pFrame->mpPrevFrame;
+  if(!pFp || pFp->isPartiallyConstructed) {
+    std::cout << "no prev frame in PIOLF" << std::endl;
+    return 0;
+  }
 
   VertexPose* VPk = new VertexPose(pFp);
   VPk->setId(4);

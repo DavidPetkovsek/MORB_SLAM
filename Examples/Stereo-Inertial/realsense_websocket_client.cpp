@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     int portNumber = 9002;
 
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    // auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
     // auto externalViewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, hostAddress, portNumber);
 
     float imageScale = SLAM->GetImageScale();
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        // viewer->update(sophusPose);
+        viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
         // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
         // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
