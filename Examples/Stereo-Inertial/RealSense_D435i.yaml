@@ -26,7 +26,7 @@ Camera.width: 848
 Camera.height: 480
 
 # Camera frames per second
-Camera.fps: 30
+Camera.fps: 15
 
 # Close/Far threshold. Baseline times.
 Stereo.ThDepth: 40.0
