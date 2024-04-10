@@ -76,6 +76,9 @@ void LocalMapping::SetTracker(Tracking* pTracker) { mpTracker = pTracker; }
 void LocalMapping::Run() {
     mbFinished = false;
 
+    const float timerVIBA2 = 10;//mpTracker->fastIMUInitEnabled() ? 10 : 15;
+    const float accelTimeout = 7.5;//mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
+
     while (1) {
     // Tracking will see that Local Mapping is busy
     SetAcceptKeyFrames(false);
@@ -154,10 +157,10 @@ void LocalMapping::Run() {
                         float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                             (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
-                        if (mpTracker->fastIMUInitEnabled() || dist > 0.05)
+                        if (true || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if (!mpTracker->fastIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if ((mTinit < 10.f) && (dist < 0.02)) {
+                        if (false && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
+                            if ((mTinit < accelTimeout) && (dist < 0.02)) {
                                 std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
                                 std::scoped_lock<std::mutex> lock(mMutexReset);
                                 mbResetRequestedActiveMap = true;
@@ -165,13 +168,15 @@ void LocalMapping::Run() {
                                 mbBadImu = true;
                             }
                         }
-
+                        std::cout << "LocalInertialBA Start" << std::endl;
                         bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
                                         ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // if (mpTracker->mState == TrackingState::OK)
                             Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
                                                         num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
                                                         !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                        std::cout << "LocalInertialBA End" << std::endl;
+                            
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
 #endif
@@ -245,7 +250,7 @@ void LocalMapping::Run() {
                                 std::cout << "end VIBA 1" << std::endl;
                             }
                         } else if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if (mTinit > 10.0f) {
+                            if (mTinit > timerVIBA2) {
                                 mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 2" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
@@ -931,7 +936,7 @@ void LocalMapping::KeyFrameCulling() {
             if (nObs > thObs)
                 nRedundantObservations++;
         }
-        std::cout << longTimeNotMoving << " " << nRedundantObservations << " > " << redundant_th * nMPs << std::endl;
+        // std::cout << longTimeNotMoving << " " << nRedundantObservations << " > " << redundant_th * nMPs << std::endl;
         if (nRedundantObservations > redundant_th * nMPs) { // David comment: if the number of redundant map points are above the threshold and other requirements (mark for memory leak?) and do not do more than 100 or 20 maybe 
             if (mbInertial) {
                 pKF->mNextKF->mpImuPreintegrated->MergePrevious(pKF->mpImuPreintegrated);
@@ -950,7 +955,7 @@ void LocalMapping::KeyFrameCulling() {
         }
     }
     // std::cout << "Analyzed " << count << "/" << numChecked << " Checked KeyFrames" << std::endl;
-    std::cout << "___________________________________" << std::endl;
+    // std::cout << "___________________________________" << std::endl;
 }
 
 void LocalMapping::RequestReset() {

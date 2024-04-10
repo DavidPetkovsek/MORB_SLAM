@@ -947,6 +947,7 @@ void Tracking::Track() {
     mpSystem->ResetActiveMap();
     return;
   }
+  // std::cout << "TK1" << std::endl;
 
   //TK2
   std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap(mpSystem);
@@ -957,6 +958,7 @@ void Tracking::Track() {
     mForcedLost = false;
     return;
   }
+  // std::cout << "TK2" << std::endl;
 
   //TK3
   if (mState != TrackingState::NO_IMAGES_YET) {
@@ -969,6 +971,7 @@ void Tracking::Track() {
       return;
     }
   }
+  // std::cout << "TK3" << std::endl;
 
   
   if (mSensor.isInertial() && mpLastKeyFrame) {
@@ -988,6 +991,7 @@ void Tracking::Track() {
 #endif
     //TK4
     PreintegrateIMU();
+    // std::cout << "TK4" << std::endl;
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_EndPreIMU =
         std::chrono::steady_clock::now();
@@ -1033,6 +1037,7 @@ void Tracking::Track() {
   } else {
     // System is initialized. Track Frame.
     bool bOK = false;
+    // std::cout << "TK5" << std::endl;
 
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartPosePred =
@@ -1054,13 +1059,20 @@ void Tracking::Track() {
         // If the state is not LOST and wasn't reset on the previous frame, use the motion model
         if((imuMotionModelPrepedAfterRecentlyLostTracking || pCurrentMap->isImuInitialized()) && mCurrentFrame.mnId > mnLastRelocFrameId + 1){
           //TK6B
+          // std::cout << "Pre-TK6B" << std::endl;
           bOK = TrackWithMotionModel();
+          // std::cout << "Post-TK6B" << std::endl;
+
         }
+        // std::cout << "Pre-Pre-TK6C" << std::endl;
         // If the state was lost/reset on the previous Frame, or of TrackWithMotionModel() failed, use the KF
         if (!bOK) {
+          // std::cout << "Pre-TK6C" << std::endl;
           //TK6C
           bOK = TrackReferenceKeyFrame();
+          // std::cout << "Post-TK6C" << std::endl;
         }
+        // std::cout << "Post-Post-TK6C" << std::endl;
 
         //TK6D
         // If both Track helper functions failed, we are lost
@@ -1227,7 +1239,6 @@ void Tracking::Track() {
       // local map again.
       if (bOK && !notEnoughMatchPoints_trackOnlyMode) bOK = TrackLocalMap();
     }
-
     //TK10
     if (bOK)
       mState = TrackingState::OK;
@@ -1453,8 +1464,7 @@ void Tracking::StereoInitialization() {
       return;
     }
 
-    if (!fastIMUInitEnabled() && (mCurrentFrame.mpImuPreintegratedFrame->avgA -
-          mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+    if (false && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
       std::cout << "not enough acceleration" << std::endl;
       return;
     }
@@ -2686,6 +2696,8 @@ void Tracking::Reset(bool bLocMap) {
   mpLastKeyFrame = nullptr;
   mvIniMatches.clear();
 
+  imuMotionModelPrepedAfterRecentlyLostTracking = false;
+
   Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
@@ -2695,8 +2707,7 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   std::shared_ptr<Map> pMap = mpAtlas->GetCurrentMap();
 
   if (!bLocMap) {
-    Verbose::PrintMess("Reseting Local Mapper...",
-                       Verbose::VERBOSITY_VERY_VERBOSE);
+    Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_VERY_VERBOSE);
     mpLocalMapper->RequestResetActiveMap(pMap);
     Verbose::PrintMess("done", Verbose::VERBOSITY_VERY_VERBOSE);
   }
