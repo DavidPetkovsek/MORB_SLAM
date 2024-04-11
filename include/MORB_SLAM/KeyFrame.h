@@ -267,7 +267,7 @@ class KeyFrame {
   void SetErase();
 
   // Set/check bad flag
-  void SetBadFlag();
+  bool SetBadFlag();
   bool isBad();
 
   // Compute Scene Depth (q=2 median). Used in monocular.

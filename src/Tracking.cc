@@ -2063,6 +2063,7 @@ bool Tracking::TrackLocalMap() {
             mnMatchesInliers++;
         } else
           mnMatchesInliers++;
+      // SUS why only stereo? No stereo_inertial
       } else if (mSensor == CameraType::STEREO)
         mCurrentFrame.mvpMapPoints[i] = nullptr;
     }
@@ -2782,20 +2783,23 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurr
   // unsigned int index = mnFirstFrameId; // UNUSED
   std::list<MORB_SLAM::KeyFrame*>::iterator lRit = mlpReferences.begin();
   std::list<bool>::iterator lbL = mlbLost.begin();
-  for (auto lit = mlRelativeFramePoses.begin(), lend = mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lbL++) {
-    if (*lbL) continue;
 
-    KeyFrame* pKF = *lRit;
+  if(s != 1.0f) {
+    for (auto lit = mlRelativeFramePoses.begin(), lend = mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lbL++) {
+      if (*lbL) continue;
 
-    while (pKF->isBad()) {
-      pKF = pKF->GetParent();
-    }
+      KeyFrame* pKF = *lRit;
 
-    if (pKF->GetMap() == pMap) {
-      (*lit).translation() *= s;
+      while (pKF && pKF->isBad()) {
+        pKF = pKF->GetParent();
+      }
+
+      if(pKF == nullptr) continue;
+      if (pKF->GetMap() == pMap) {
+        (*lit).translation() *= s;
+      }
     }
   }
-
   //mLastBias = b;
 
   mpLastKeyFrame = pCurrentKeyFrame;

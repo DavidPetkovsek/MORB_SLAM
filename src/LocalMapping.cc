@@ -31,6 +31,8 @@
 #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/G2oTypes.h"
 
+#include "MORB_SLAM/Exceptions.hpp"
+
 #include <math.h> 
 namespace MORB_SLAM {
 
@@ -80,10 +82,11 @@ void LocalMapping::Run() {
     const float accelTimeout = 7.5;//mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
     while (1) {
-    // Tracking will see that Local Mapping is busy
-    SetAcceptKeyFrames(false);
+        try {
+        // Tracking will see that Local Mapping is busy
+        SetAcceptKeyFrames(false);
 
-    // Check if there are keyframes in the queue
+        // Check if there are keyframes in the queue
         if (CheckNewKeyFrames() && !mbBadImu) {
 #ifdef REGISTER_TIMES
       double timeLBA_ms = 0;
@@ -303,6 +306,9 @@ void LocalMapping::Run() {
         if (CheckFinish()) break;
 
         usleep(3000);
+        } catch(const ResetActiveMapSignal & e) {
+            mpSystem->ResetActiveMap();
+        }
     }
 
     SetFinish();

@@ -604,14 +604,14 @@ void KeyFrame::SetErase() {
   }
 }
 
-void KeyFrame::SetBadFlag() {
+bool KeyFrame::SetBadFlag() {
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     if (mnId == mpMap->GetInitKFid()) {
-      return;
+      return false;
     } else if (mbNotErase) {
       mbToBeErased = true;
-      return;
+      return false;
     }
   }
 
@@ -686,6 +686,7 @@ void KeyFrame::SetBadFlag() {
 
   mpMap->EraseKeyFrame(this);
   mpKeyFrameDB->erase(this);
+  return true;
 }
 
 bool KeyFrame::isBad() {

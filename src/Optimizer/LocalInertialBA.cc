@@ -39,18 +39,17 @@
 #include "g2o/solvers/linear_solver_eigen.h"
 #include "g2o/types/types_six_dof_expmap.h"
 
+#include "MORB_SLAM/Exceptions.hpp"
+
 namespace MORB_SLAM {
 void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap,
                                 int& num_fixedKF, int& num_OptKF, int& num_MPs,
                                 int& num_edges, bool bLarge, bool bRecInit) {
   std::shared_ptr<Map> pCurrentMap = pKF->GetMap();
 
-  int maxOpt = 10;
-  int opt_it = 10;
-  if (bLarge) {
-    maxOpt = 25;
-    opt_it = 4;
-  }
+  const int maxOpt = bLarge ? 25 : 10;
+  const int opt_it = bLarge ? 4 : 10;
+
   const int Nd = std::min((int)pCurrentMap->KeyFramesInMap() - 2, maxOpt);
   const unsigned long maxKFid = pKF->mnId;
 
@@ -490,13 +489,28 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
 
   // std::cout << "Total map points: " << lLocalMapPoints.size() << std::endl;
   bool isBad = false;
-  for (auto mit = mVisEdges.begin(), mend = mVisEdges.end();
-       mit != mend; mit++) {
+  for (auto mit = mVisEdges.begin(), mend = mVisEdges.end(); mit != mend; mit++) {
     // assert(mit->second.first >= 3);
     if(mit->second.first < 3){
       KeyFrame *pKFi = mit->second.second;
       if(pKFi){
-        pKFi->SetBadFlag();
+        std::cout << "KF " << pKFi->mnId << " is bad, deleting" << std::endl;
+        if(pKFi->mnId != pKF->mnId) {
+          if(pKFi->SetBadFlag()){
+            if(pKFi->mNextKF) {
+              if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated)
+                pKFi->mNextKF->mpImuPreintegrated->MergePrevious(pKFi->mpImuPreintegrated);
+              pKFi->mNextKF->mPrevKF = pKFi->mPrevKF;
+            }
+            if(pKFi->mPrevKF) { 
+              pKFi->mPrevKF->mNextKF = pKFi->mNextKF;
+            }
+            pKFi->mNextKF = nullptr;
+            pKFi->mPrevKF = nullptr;
+          } else if (pKFi->mnId == pKFi->GetMap()->GetInitKFid()){
+            throw ResetActiveMapSignal();
+          }
+        }
         isBad = true;
       }
     }
