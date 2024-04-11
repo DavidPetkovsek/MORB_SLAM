@@ -76,7 +76,10 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
     vpOptimizableCovKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
     vpOptimizableKFs.back()->mPrevKF->mnBALocalForKF = pCurrKF->mnId;
   } else {
+    // vpOptimizableKFs.back()->mnBALocalForKF = 0;
+    // vpOptimizableKFs.back()->mnBAFixedForKF = pKF->mnId;
     vpOptimizableCovKFs.push_back(vpOptimizableKFs.back());
+    vpOptimizableKFs.back()->mPrevKF->mnBALocalForKF = pCurrKF->mnId;
     vpOptimizableKFs.pop_back();
   }
 
@@ -108,16 +111,15 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
   if (pMergeKF->mNextKF) {
     vpOptimizableKFs.push_back(pMergeKF->mNextKF);
     vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
-  }
 
-  while (vpOptimizableKFs.size() < (2 * Nd)) {
-    if (vpOptimizableKFs.back()->mNextKF) {
-      vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mNextKF);
-      vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
-    } else
-      break;
+    while (vpOptimizableKFs.size() < (2 * Nd)) {
+      if (vpOptimizableKFs.back()->mNextKF) {
+        vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mNextKF);
+        vpOptimizableKFs.back()->mnBALocalForKF = pCurrKF->mnId;
+      } else
+        break;
+    }
   }
-
   int N = vpOptimizableKFs.size();
 
   // Optimizable points seen by optimizable keyframes
@@ -191,12 +193,10 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
 
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
-
   // Set Local KeyFrame vertices
   N = vpOptimizableKFs.size();
   for (int i = 0; i < N; i++) {
     KeyFrame* pKFi = vpOptimizableKFs[i];
-
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
     VP->setFixed(false);
@@ -217,12 +217,10 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
       optimizer.addVertex(VA);
     }
   }
-
   // Set Local cov keyframes vertices
   int Ncov = vpOptimizableCovKFs.size();
   for (int i = 0; i < Ncov; i++) {
     KeyFrame* pKFi = vpOptimizableCovKFs[i];
-
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
     VP->setFixed(false);
@@ -243,7 +241,6 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF,
       optimizer.addVertex(VA);
     }
   }
-
   // Set Fixed KeyFrame vertices
   for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(),
                                  lend = lFixedKeyFrames.end();

@@ -168,14 +168,12 @@ void LocalMapping::Run() {
                                 mbBadImu = true;
                             }
                         }
-                        std::cout << "LocalInertialBA Start" << std::endl;
                         bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
                                         ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // if (mpTracker->mState == TrackingState::OK)
                             Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
                                                         num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
                                                         !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
-                        std::cout << "LocalInertialBA End" << std::endl;
                             
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
