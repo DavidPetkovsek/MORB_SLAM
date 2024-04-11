@@ -130,6 +130,7 @@ void LoopClosing::Run() {
                 mnMergeNumCoincidences = 0;
                 mvpMergeMatchedMPs.clear();
                 mvpMergeMPs.clear();
+                mvpMergeConnectedKFs.clear();
                 mnMergeNumNotFound = 0;
                 mbMergeDetected = false;
                 Verbose::PrintMess("scale bad estimated. Abort merging",
@@ -199,6 +200,7 @@ void LoopClosing::Run() {
           mnMergeNumCoincidences = 0;
           mvpMergeMatchedMPs.clear();
           mvpMergeMPs.clear();
+          mvpMergeConnectedKFs.clear();
           mnMergeNumNotFound = 0;
           mbMergeDetected = false;
 
@@ -440,6 +442,7 @@ bool LoopClosing::NewDetectCommonRegions() {
         mnMergeNumCoincidences = 0;
         mvpMergeMatchedMPs.clear();
         mvpMergeMPs.clear();
+        mvpMergeConnectedKFs.clear();
         mnMergeNumNotFound = 0;
       }
     }

@@ -53,7 +53,6 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
   }
   const int Nd = std::min((int)pCurrentMap->KeyFramesInMap() - 2, maxOpt);
   const unsigned long maxKFid = pKF->mnId;
-  std::cout << "MaxKFID: " << maxKFid << std::endl;
 
   std::vector<KeyFrame*> vpOptimizableKFs;
   const std::vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
@@ -169,12 +168,10 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     solver->setUserLambdaInit(1e0);
     optimizer.setAlgorithm(solver);
   }
-  std::cout << "Local temporal" << std::endl;
   // Set Local temporal KeyFrame vertices
   N = vpOptimizableKFs.size();
   for (int i = 0; i < N; i++) {
     KeyFrame* pKFi = vpOptimizableKFs[i];
-    std::cout << pKFi->mnId << " " << (maxKFid + 3 * (pKFi->mnId) + 1) << std::endl;
 
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
@@ -196,27 +193,23 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       optimizer.addVertex(VA);
     }
   }
-  std::cout << "Local visual" << std::endl;
   // Set Local visual KeyFrame vertices
   for (std::list<KeyFrame*>::iterator it = lpOptVisKFs.begin(),
                                  itEnd = lpOptVisKFs.end();
        it != itEnd; it++) {
     KeyFrame* pKFi = *it;
     VertexPose* VP = new VertexPose(pKFi);
-    std::cout << pKFi->mnId << " " << (maxKFid + 3 * (pKFi->mnId) + 1) << std::endl;
     VP->setId(pKFi->mnId);
     VP->setFixed(false);
     optimizer.addVertex(VP);
   }
 
-  std::cout << "Fixed" << std::endl;
   // Set Fixed KeyFrame vertices
   for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(),
                                  lend = lFixedKeyFrames.end();
        lit != lend; lit++) {
     KeyFrame* pKFi = *lit;
     VertexPose* VP = new VertexPose(pKFi);
-    std::cout << pKFi->mnId << " " << (maxKFid + 3 * (pKFi->mnId) + 1) << std::endl;
     VP->setId(pKFi->mnId);
     VP->setFixed(true);
     optimizer.addVertex(VP);
