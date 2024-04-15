@@ -153,7 +153,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     mpLocalMapper->setIsDoneVIBA(true);
   }
 
-  mptLocalMapping = new std::thread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
+  mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
   // if (settings)
   mpLocalMapper->mThFarPoints = settings->thFarPoints();
   // else
@@ -170,7 +170,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   mpLoopCloser =
       new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary,
                       mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
-  mptLoopClosing = new std::thread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
+  mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -449,16 +449,15 @@ System::~System() {
   }*/
 
   if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile,
-                       Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     SaveAtlas(FileType::BINARY_FILE);
   }
-  // if (mptLocalMapping->joinable()) {
-  //   mptLocalMapping->join();
-  // }
-  // if (mptLoopClosing->joinable()) {
-  //   mptLoopClosing->join();
-  // }
+  if (mptLocalMapping.joinable()) {
+    mptLocalMapping.join();
+  }
+  if (mptLoopClosing.joinable()) {
+    mptLoopClosing.join();
+  }
 
 #ifdef REGISTER_TIMES
   mpTracker->PrintTimeStats();
@@ -544,8 +543,7 @@ void System::SaveAtlas(int type) {
 
     std::cout << "About to Calculate \n";
 
-    std::string strVocabularyChecksum =
-        CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
 
     std::cout << "Vocab checksum`" << strVocabularyChecksum << std::endl;
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");

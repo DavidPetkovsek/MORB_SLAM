@@ -27,7 +27,7 @@ class ExternalMapViewer {
         void pushValues(float x, float y, float z);
 
     private:
-        std::thread threadEMV;
+        std::jthread threadEMV;
         System_ptr mpSystem;
         // Tracking_ptr mpTracker;
         

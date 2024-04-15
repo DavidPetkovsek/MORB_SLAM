@@ -60,7 +60,7 @@ class Viewer {
   FrameDrawer mpFrameDrawer;
   MapDrawer mpMapDrawer;
   Tracking_ptr mpTracker;
-  std::thread mptViewer;
+  std::jthread mptViewer;
   bool both;
 
   // 1/fps in ms

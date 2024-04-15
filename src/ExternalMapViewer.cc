@@ -23,7 +23,7 @@ ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::strin
     serverAddress(_serverAddress),
     serverPort(_serverPort),
     valuesPushed(false) {
-        threadEMV = std::thread(&ExternalMapViewer::run, this);
+        threadEMV = std::jthread(&ExternalMapViewer::run, this);
     }
 
 ExternalMapViewer::~ExternalMapViewer() {

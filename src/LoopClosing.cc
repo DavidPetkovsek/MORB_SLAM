@@ -63,7 +63,6 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
       mbRunningGBA(false),
       mbFinishedGBA(true),
       mbStopGBA(false),
-      mpThreadGBA(nullptr),
       mbFixScale(bFixScale),
       mnFullBAIdx(0),
       mstrFolderSubTraj("SubTrajectories/"),
@@ -987,10 +986,10 @@ void LoopClosing::CorrectLoop() {
 
     mnFullBAIdx++;
 
-    if (mpThreadGBA) {
-      mpThreadGBA->detach();
-      delete mpThreadGBA;
-    }
+    // if (mpThreadGBA) {
+    //   mpThreadGBA->detach();
+    //   delete mpThreadGBA;
+    // }
     std::cout << "  Done!!" << std::endl;
   }
 
@@ -1227,7 +1226,7 @@ void LoopClosing::CorrectLoop() {
     mbStopGBA = false;
     mnCorrectionGBA = mnNumCorrection;
 
-    mpThreadGBA = new std::thread(&LoopClosing::RunGlobalBundleAdjustment, this,
+    mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this,
                              pLoopMap, mpCurrentKF->mnId);
   }
 
@@ -1261,10 +1260,10 @@ void LoopClosing::MergeLocal() {
 
     mnFullBAIdx++;
 
-    if (mpThreadGBA) {
-      mpThreadGBA->detach();
-      delete mpThreadGBA;
-    }
+    // if (mpThreadGBA) {
+    //   mpThreadGBA->detach();
+    //   delete mpThreadGBA;
+    // }
     bRelaunchBA = true;
   }
 
@@ -1792,7 +1791,7 @@ void LoopClosing::MergeLocal() {
     mbRunningGBA = true;
     mbFinishedGBA = false;
     mbStopGBA = false;
-    mpThreadGBA = new std::thread(&LoopClosing::RunGlobalBundleAdjustment, this,
+    mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this,
                              pMergeMap, mpCurrentKF->mnId);
   }
 
@@ -1836,10 +1835,10 @@ void LoopClosing::MergeLocal2() {
 
     mnFullBAIdx++;
 
-    if (mpThreadGBA) {
-      mpThreadGBA->detach();
-      delete mpThreadGBA;
-    }
+    // if (mpThreadGBA) {
+    //   mpThreadGBA->detach();
+    //   delete mpThreadGBA;
+    // }
     // bRelaunchBA = true; // UNUSED
   }
 

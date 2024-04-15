@@ -222,7 +222,7 @@ protected:
     bool mbFinishedGBA;
     bool mbStopGBA;
     std::mutex mMutexGBA;
-    std::thread* mpThreadGBA;
+    std::jthread mpThreadGBA;
 
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
