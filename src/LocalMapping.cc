@@ -162,15 +162,15 @@ void LocalMapping::Run() {
 
                         if (mpTracker->stationaryIMUInitEnabled() || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if (!mpTracker->stationaryIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if ((mTinit < accelTimeout) && (dist < 0.02)) {
-                                std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
-                                std::scoped_lock<std::mutex> lock(mMutexReset);
-                                mbResetRequestedActiveMap = true;
-                                mpMapToReset = mpCurrentKeyFrame->GetMap();
-                                mbBadImu = true;
-                            }
-                        }
+                        // if (!mpTracker->stationaryIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
+                        //     if ((mTinit < accelTimeout) && (dist < 0.02)) {
+                        //         std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
+                        //         std::scoped_lock<std::mutex> lock(mMutexReset);
+                        //         mbResetRequestedActiveMap = true;
+                        //         mpMapToReset = mpCurrentKeyFrame->GetMap();
+                        //         mbBadImu = true;
+                        //     }
+                        // }
                         bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
                                         ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // if (mpTracker->mState == TrackingState::OK)

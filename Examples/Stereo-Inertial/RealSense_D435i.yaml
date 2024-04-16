@@ -4,8 +4,8 @@
 # System Parameters
 #--------------------------------------------------------------------------------------------
 
-System.FastIMUInit: "OFF"
-System.StationaryIMUInit: "ON"
+System.FastIMUInit: "ON"
+System.StationaryIMUInit: "OFF"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters (calibration and biases vary from camera to camera)

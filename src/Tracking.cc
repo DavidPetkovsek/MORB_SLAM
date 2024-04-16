@@ -1457,7 +1457,7 @@ void Tracking::StereoInitialization() {
       return;
     }
 
-    if (!stationaryIMUInitEnabled() && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+    if (!stationaryIMUInitEnabled() && (mpAtlas->CountMaps() <= 1) && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
       std::cout << "not enough acceleration" << std::endl;
       return;
     }
