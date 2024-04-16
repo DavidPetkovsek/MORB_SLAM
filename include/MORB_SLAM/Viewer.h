@@ -56,10 +56,10 @@ class Viewer {
  private:
   bool Stop();
 
-  System_ptr mpSystem;
   FrameDrawer mpFrameDrawer;
   MapDrawer mpMapDrawer;
   Tracking_ptr mpTracker;
+  Atlas_ptr mpAtlas;
   std::jthread mptViewer;
   bool both;
 

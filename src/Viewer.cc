@@ -37,7 +37,7 @@
 namespace MORB_SLAM {
 
 Viewer::Viewer(const System_ptr &pSystem)
-    : mpSystem(pSystem),
+    : mpAtlas(pSystem->mpAtlas),
       mpFrameDrawer(pSystem->mpAtlas),
       mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
@@ -224,7 +224,7 @@ void Viewer::Run() {
       s_cam.Follow(Twc);
     }
 
-    if (menuTopView && mpSystem->mpAtlas->isImuInitialized()) {
+    if (menuTopView && mpAtlas->isImuInitialized()) {
       menuTopView = false;
       bCameraView = false;
       s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, 3000, 3000, 512, 389, 0.1, 10000));
@@ -233,10 +233,10 @@ void Viewer::Run() {
     }
 
     if (menuLocalizationMode && !bLocalizationMode) {
-      mpSystem->ActivateLocalizationMode();
+      mpTracker->ActivateLocalizationMode();
       bLocalizationMode = true;
     } else if (!menuLocalizationMode && bLocalizationMode) {
-      mpSystem->DeactivateLocalizationMode();
+      mpTracker->DeactivateLocalizationMode();
       bLocalizationMode = false;
     }
 
@@ -275,7 +275,7 @@ void Viewer::Run() {
       menuShowKeyFrames = true;
       menuShowPoints = true;
       menuLocalizationMode = false;
-      if (bLocalizationMode) mpSystem->DeactivateLocalizationMode();
+      if (bLocalizationMode) mpTracker->DeactivateLocalizationMode();
       bLocalizationMode = false;
       bFollow = true;
       menuFollowCamera = true;

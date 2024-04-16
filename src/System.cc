@@ -51,8 +51,6 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
-      mbActivateLocalizationMode(false),
-      mbDeactivateLocalizationMode(false),
       mTrackingState(TrackingState::SYSTEM_NOT_READY) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
@@ -201,32 +199,9 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   }
 
   // Check mode change
-  {
-    std::scoped_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  if (mpTracker->ResetRequested()) {
-    mpTracker->Reset();
-  } else if (mpTracker->ResetActiveMapRequested()) {
-    mpTracker->ResetActiveMap();
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_STEREO)
     mpTracker->GrabImuData(vImuMeas);
@@ -266,32 +241,9 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   }
 
   // Check mode change
-  {
-    std::unique_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  if (mpTracker->ResetRequested()) {
-    mpTracker->Reset();
-  } else if (mpTracker->ResetActiveMapRequested()) {
-    mpTracker->ResetActiveMap();
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_RGBD)
     mpTracker->GrabImuData(vImuMeas);
@@ -320,32 +272,9 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std
   }
 
   // Check mode change
-  {
-    std::unique_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  if (mpTracker->ResetRequested()) {
-    mpTracker->Reset();
-  } else if (mpTracker->ResetActiveMapRequested()) {
-    mpTracker->ResetActiveMap();
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_MONOCULAR)
     mpTracker->GrabImuData(vImuMeas);
@@ -358,16 +287,6 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std
   mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
 
   return Tcw;
-}
-
-void System::ActivateLocalizationMode() {
-  std::unique_lock<std::mutex> lock(mMutexMode);
-  mbActivateLocalizationMode = true;
-}
-
-void System::DeactivateLocalizationMode() {
-  std::unique_lock<std::mutex> lock(mMutexMode);
-  mbDeactivateLocalizationMode = true;
 }
 
 bool System::MapChanged() {

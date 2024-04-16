@@ -133,18 +133,31 @@ protected:
   bool mStationaryInit;
 
   Sophus::SE3f mStereoInitDefaultPose;
+
+  // Change mode flags
+  std::mutex mMutexMode;
+  bool mbActivateLocalizationMode;
+  bool mbDeactivateLocalizationMode;
+
 public:
 
   // True if local mapping is deactivated and we are performing only localization
   bool mbOnlyTracking;
 
+  void CheckTrackingModeChanged();
+  // This stops local mapping thread (map building) and performs only camera tracking.
+  void ActivateLocalizationMode();
+  // This resumes local mapping thread and performs SLAM again.
+  void DeactivateLocalizationMode();
+
   // Reset the system (clear Atlas or the active map)
+  void CheckTrackingReset();
   void RequestReset();
-  bool ResetRequested();
-  void Reset(bool bLocMap = false);
+  // bool ResetRequested();
+  // void Reset(bool bLocMap = false);
   void RequestResetActiveMap();
-  bool ResetActiveMapRequested();
-  void ResetActiveMap(bool bLocMap = false);
+  // bool ResetActiveMapRequested();
+  // void ResetActiveMap(bool bLocMap = false);
 
   bool fastIMUInitEnabled() const { return mFastInit; }
   bool stationaryIMUInitEnabled() const { return mStationaryInit; }
@@ -204,6 +217,9 @@ public:
   void ResetFrameIMU();
 
   Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
+
+  void Reset(bool bLocMap = false);
+  void ResetActiveMap(bool bLocMap = false);
 
   bool mbMapUpdated;
 

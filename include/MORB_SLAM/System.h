@@ -109,12 +109,6 @@ public:
     // Returns the camera pose (empty if tracking fails).
     MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
-
-    // This stops local mapping thread (map building) and performs only camera tracking.
-    void ActivateLocalizationMode();
-    // This resumes local mapping thread and performs SLAM again.
-    void DeactivateLocalizationMode();
-
     // Returns true if there have been a big map change (loop closure, global BA)
     // since last call to this function
     bool MapChanged();
@@ -196,11 +190,6 @@ private:
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::jthread mptLocalMapping;
     std::jthread mptLoopClosing;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool mbActivateLocalizationMode;
-    bool mbDeactivateLocalizationMode;
 
     // Tracking state
     TrackingState mTrackingState;

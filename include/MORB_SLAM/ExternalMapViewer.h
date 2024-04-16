@@ -28,8 +28,7 @@ class ExternalMapViewer {
 
     private:
         std::jthread threadEMV;
-        System_ptr mpSystem;
-        // Tracking_ptr mpTracker;
+        Tracking_ptr mpTracker;
         
         // Websocket host address
         const std::string serverAddress;

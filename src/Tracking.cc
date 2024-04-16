@@ -64,7 +64,9 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mLockPreTeleportTranslation(false),
       mStereoInitDefaultPose(Sophus::SE3f()),
       mbReset(false),
-      mbResetActiveMap(false) {
+      mbResetActiveMap(false),
+      mbActivateLocalizationMode(false),
+      mbDeactivateLocalizationMode(false) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -72,8 +74,7 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
   lastID = 0;
 
   std::vector<std::shared_ptr<const GeometricCamera>> vpCams = mpAtlas->GetAllCameras();
-  std::cout << "There are " << vpCams.size() << " cameras in the atlas"
-            << std::endl;
+  std::cout << "There are " << vpCams.size() << " camera(s) in the atlas" << std::endl;
   for (std::shared_ptr<const GeometricCamera> pCam : vpCams) {
     std::cout << "Camera " << pCam->GetId();
     if (pCam->GetType() == GeometricCamera::CAM_PINHOLE) {
@@ -2827,14 +2828,56 @@ void Tracking::RequestResetActiveMap() {
   mbResetActiveMap = true;
 }
 
-bool Tracking::ResetRequested() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  return mbReset;
+// bool Tracking::ResetRequested() {
+//   std::unique_lock<std::mutex> lock(mMutexReset);
+//   return mbReset;
+// }
+
+// bool Tracking::ResetActiveMapRequested() {
+//   std::unique_lock<std::mutex> lock(mMutexReset);
+//   return mbResetActiveMap;
+// }
+
+void Tracking::ActivateLocalizationMode() {
+  std::unique_lock<std::mutex> lock(mMutexMode);
+  mbActivateLocalizationMode = true;
 }
 
-bool Tracking::ResetActiveMapRequested() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  return mbResetActiveMap;
+void Tracking::DeactivateLocalizationMode() {
+  std::unique_lock<std::mutex> lock(mMutexMode);
+  mbDeactivateLocalizationMode = true;
+}
+
+void Tracking::CheckTrackingModeChanged() {
+  std::unique_lock<std::mutex> lock(mMutexMode);
+  if (mbActivateLocalizationMode) {
+    mpLocalMapper->RequestStop();
+
+    // Wait until Local Mapping has effectively stopped
+    while (!mpLocalMapper->isStopped()) {
+      usleep(1000);
+    }
+
+    InformOnlyTracking(true);
+    mbActivateLocalizationMode = false;
+  }
+  if (mbDeactivateLocalizationMode) {
+    InformOnlyTracking(false);
+    mpLocalMapper->Release();
+    mbDeactivateLocalizationMode = false;
+  }
+}
+
+void Tracking::CheckTrackingReset() {
+  std::scoped_lock<std::mutex> lock(mMutexReset);
+  if (mbReset) {
+    Reset();
+    mbReset = false;
+    mbResetActiveMap = false;
+  } else if (mbResetActiveMap) {
+    ResetActiveMap();
+    mbResetActiveMap = false;
+  }
 }
 
 #ifdef REGISTER_LOOP
