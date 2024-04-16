@@ -226,7 +226,7 @@ void LocalMapping::Run() {
                     mpTracker->mTeleported = true;
                 }
                 // Check redundant local Keyframes
-                if(mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
+                if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
 
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point time_EndKFCulling =
@@ -834,12 +834,13 @@ void LocalMapping::KeyFrameCulling() {
     mpCurrentKeyFrame->UpdateBestCovisibles();
 
     if(mpAtlas->KeyFramesInMap() <= Nd) return;
+    const bool mapVIBA2 = mpCurrentKeyFrame->GetMap()->GetIniertialBA2(); // called here to not lock/unlock the mutex multiple times in the for loops
+    if(!mapVIBA2 && mpTracker->stationaryIMUInitEnabled()) return;
 
     std::vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
     float redundant_th = (!mbInertial || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threashold
 
-    const bool atlasImuInitialized = mpAtlas->isImuInitialized(); // called here to not lock/unlock the mutex multiple times in the for loops
     int count = 0;
     int numChecked = 0;
 
@@ -863,22 +864,19 @@ void LocalMapping::KeyFrameCulling() {
 
         bool longTimeNotMoving = false;
         float t = pKF->mNextKF->mTimeStamp - pKF->mPrevKF->mTimeStamp;
-        if(t < 0.5) {
+        if(t < 0.5 && mapVIBA2) {
             count++;
-        } else if(atlasImuInitialized && (pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame)) {
-            if(t >= 3) {
+        } else if(pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) {
+            if(t >= 3 || !mapVIBA2) {
                 if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) || 
                         ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)) continue;
-                // redundant_th = 0.95;
                 longTimeNotMoving = true;
             }
             count++;
-        } else {
-            continue;
-        }
+        }else continue;
 
 
-        // if((atlasImuInitialized && (pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) && t < 3.) || (t < 0.5)) {
+        // if((mapVIBA2 && (pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) && t < 3.) || (t < 0.5)) {
         //     count++;
         // } else if((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() < 0.02 && ) {
         //     if(t >= 3) {
@@ -948,7 +946,6 @@ void LocalMapping::KeyFrameCulling() {
                 pKF->mPrevKF->mNextKF = pKF->mNextKF;
                 pKF->mNextKF = nullptr;
                 pKF->mPrevKF = nullptr;
-                if(redundant_th == 0.95f) std::cout << "95% Matched KF Deleted" << std::endl;
             }
             pKF->SetBadFlag();
         }
