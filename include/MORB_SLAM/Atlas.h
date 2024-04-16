@@ -112,7 +112,7 @@ class Atlas {
 
   void clearAtlas();
 
-  std::shared_ptr<Map> GetCurrentMap(System* sys = nullptr);
+  std::shared_ptr<Map> GetCurrentMap(bool waitForGoodMap = true);
 
   void SetMapBad(std::shared_ptr<Map> pMap);
   void RemoveBadMaps();
@@ -136,6 +136,9 @@ class Atlas {
 
   long unsigned int GetNumLivedMP();
 
+  bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
+  void setUseGravityDirectionFromLastMap(bool is_true);
+
  protected:
   std::set<std::shared_ptr<Map>> mspMaps;
   std::set<std::shared_ptr<Map>> mspBadMaps;
@@ -154,7 +157,9 @@ class Atlas {
   std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
   // Mutex
-  std::mutex mMutexAtlas;
+  std::recursive_mutex mMutexAtlas;
+
+  bool mUseGravityDirectionFromLastMap;
 
 };  // class Atlas
 typedef std::shared_ptr<Atlas> Atlas_ptr;

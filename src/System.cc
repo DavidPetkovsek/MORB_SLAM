@@ -51,13 +51,9 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
-      mbReset(false),
-      mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
       mbDeactivateLocalizationMode(false),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY),
-      mStereoInitDefaultPose(Sophus::SE3f()),
-      mUseGravityDirectionFromLastMap(false) {
+      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -138,8 +134,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
-  mpTracker = std::make_shared<Tracking>(this, mpVocabulary, mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings);
-  mpLocalMapper = std::make_shared<LocalMapping>(this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
+  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
@@ -181,9 +177,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
-StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
-                                 double timestamp,
-                                 const std::vector<IMU::Point>& vImuMeas) {
+StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
     std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
@@ -228,16 +222,10 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   }
 
   // Check reset
-  {
-    std::scoped_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
+  if (mpTracker->ResetRequested()) {
+    mpTracker->Reset();
+  } else if (mpTracker->ResetActiveMapRequested()) {
+    mpTracker->ResetActiveMap();
   }
 
   if (mSensor == CameraType::IMU_STEREO)
@@ -299,16 +287,10 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   }
 
   // Check reset
-  {
-    std::unique_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
+  if (mpTracker->ResetRequested()) {
+    mpTracker->Reset();
+  } else if (mpTracker->ResetActiveMapRequested()) {
+    mpTracker->ResetActiveMap();
   }
 
   if (mSensor == CameraType::IMU_RGBD)
@@ -323,12 +305,7 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   return Tcw;
 }
 
-MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
-                                    const std::vector<IMU::Point>& vImuMeas) {
-  // {
-  //   std::unique_lock<std::mutex> lock(mMutexReset);
-  //   if (mbShutDown) return Sophus::SE3f();
-  // }
+MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
     std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
@@ -364,17 +341,10 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   }
 
   // Check reset
-  {
-    std::unique_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      std::cout << "SYSTEM-> Reseting active map in monocular case" << std::endl;
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
+  if (mpTracker->ResetRequested()) {
+    mpTracker->Reset();
+  } else if (mpTracker->ResetActiveMapRequested()) {
+    mpTracker->ResetActiveMap();
   }
 
   if (mSensor == CameraType::IMU_MONOCULAR)
@@ -410,20 +380,8 @@ bool System::MapChanged() {
     return false;
 }
 
-void System::Reset() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  mbReset = true;
-}
-
-void System::ResetActiveMap() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  mbResetActiveMap = true;
-}
-
 System::~System() {
   std::cout << "Shutdown" << std::endl;
-
-  std::unique_lock<std::mutex> lock(mMutexReset);
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -485,15 +443,7 @@ double System::GetTimeFromIMUInit() {
 }
 
 bool System::isLost() {
-  if (!mpAtlas->isImuInitialized())
-    return false;
-  else {
-    if ((mpTracker->mState ==
-         TrackingState::LOST))  //||(mpTracker->mState==TrackingState::RECENTLY_LOST))
-      return true;
-    else
-      return false;
-  }
+  return (mpAtlas->isImuInitialized() && (mpTracker->mState == TrackingState::LOST/* || (mpTracker->mState==TrackingState::RECENTLY_LOST)*/));
 }
 
 bool System::isFinished() { return (GetTimeFromIMUInit() > 0.1); }
@@ -685,7 +635,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   return checksum;
 }
 
-// Don't use, the setter could be ignored depending on where in Track() you are
+// DONT USE, the setter could be ignored depending on where in Track() you are
 void System::setTrackingState(TrackingState state) {
   mpTracker->mState = state;
 }
@@ -700,13 +650,6 @@ bool System::getIsDoneVIBA() {
 
 std::shared_ptr<Settings> System::getSettings() const { return settings; }
 
-void System::setStereoInitDefaultPose(const Sophus::SE3f default_pose) {
-  mStereoInitDefaultPose = default_pose;
-}
-
-void System::setUseGravityDirectionFromLastMap(bool is_true) {
-  mUseGravityDirectionFromLastMap = is_true;
-}
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }

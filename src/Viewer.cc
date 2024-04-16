@@ -279,8 +279,8 @@ void Viewer::Run() {
       bLocalizationMode = false;
       bFollow = true;
       menuFollowCamera = true;
-      // mpSystem->ResetActiveMap();
-      mpSystem->Reset();
+      // mpTracker->RequestResetActiveMap();
+      mpTracker->RequestReset();
       menuReset = false;
     }
 

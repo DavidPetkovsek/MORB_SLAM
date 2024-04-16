@@ -36,7 +36,7 @@
 #include <math.h> 
 namespace MORB_SLAM {
 
-LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial)
+LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial)
     : mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
       mInitSect(0),
@@ -49,7 +49,6 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       nLBA_exec(0),
       nLBA_abort(0),
 #endif
-      mpSystem(pSys),
       mbMonocular(bMonocular),
       mbInertial(bInertial),
       mbResetRequested(false),
@@ -307,7 +306,7 @@ void LocalMapping::Run() {
 
         usleep(3000);
         } catch(const ResetActiveMapSignal & e) {
-            mpSystem->ResetActiveMap();
+            mpTracker->RequestResetActiveMap();
         }
     }
 
@@ -1036,7 +1035,7 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequestedActiveMap = false;
 
             mPoseReverseAxisFlip = Sophus::SE3f();
-            mpSystem->setUseGravityDirectionFromLastMap(false);
+            mpAtlas->setUseGravityDirectionFromLastMap(false);
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }
@@ -1108,7 +1107,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     IMU::Bias b(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
-    if (!mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+    if (!mpAtlas->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -1149,7 +1148,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
         mPoseReverseAxisFlip = Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-    } else if(mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+    } else if(mpAtlas->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
             if (!(*itKF)->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
@@ -1215,7 +1214,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     } else {
         Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                     mpCurrentKeyFrame->mnId, nullptr, false);
-        mpSystem->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
+        mpAtlas->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
         mPoseReverseAxisFlip = mpCurrentKeyFrame->GetPose();
     }  
     // }
@@ -1307,7 +1306,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         }
     }
 
-    // if (mpSystem->UseGravityDirectionFromLastMap()) {
+    // if (mpAtlas->UseGravityDirectionFromLastMap()) {
     //     mpCurrentKeyFrame->GetMap()->SetImuInitialized();
     //     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
     //     mpCurrentKeyFrame->GetMap()->SetIniertialBA2();

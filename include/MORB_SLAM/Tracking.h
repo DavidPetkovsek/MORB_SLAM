@@ -47,18 +47,13 @@ namespace MORB_SLAM {
 class Tracking {
  public:
   
-  Tracking(System* pSys, std::shared_ptr<ORBVocabulary> pVoc,
-           const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB,
-           const std::string& strSettingPath, const CameraType sensor, std::shared_ptr<Settings> settings);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<Settings> settings);
 
   ~Tracking();
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
-  StereoPacket GrabImageStereo(const cv::Mat& imRectLeft,
-                               const cv::Mat& imRectRight,
-                               const double& timestamp,
-                               const Camera_ptr &cam);
+  StereoPacket GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam);
   RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
   MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
 
@@ -85,6 +80,9 @@ class Tracking {
   int GetMatchesInliers();
 
   float GetImageScale();
+
+  Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
+  void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
 
 #ifdef REGISTER_LOOP
   void RequestStop();
@@ -133,12 +131,19 @@ protected:
 
   bool mFastInit;
   bool mStationaryInit;
+
+  Sophus::SE3f mStereoInitDefaultPose;
 public:
 
   // True if local mapping is deactivated and we are performing only localization
   bool mbOnlyTracking;
 
+  // Reset the system (clear Atlas or the active map)
+  void RequestReset();
+  bool ResetRequested();
   void Reset(bool bLocMap = false);
+  void RequestResetActiveMap();
+  bool ResetActiveMapRequested();
   void ResetActiveMap(bool bLocMap = false);
 
   bool fastIMUInitEnabled() const { return mFastInit; }
@@ -246,9 +251,6 @@ public:
   std::vector<KeyFrame*> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
 
-  // System
-  System* mpSystem;
-
   // Atlas
   Atlas_ptr mpAtlas;
 
@@ -309,6 +311,11 @@ public:
   void newParameterLoader(Settings& settings);
 
   bool mForcedLost;
+
+  // Reset flag
+  std::mutex mMutexReset;
+  bool mbReset;
+  bool mbResetActiveMap;
 
 #ifdef REGISTER_LOOP
   bool Stop();

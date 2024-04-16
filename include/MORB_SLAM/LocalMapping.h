@@ -41,7 +41,7 @@ typedef std::shared_ptr<Tracking> Tracking_ptr;
 class LocalMapping {
  public:
   
-  LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
 
   void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
@@ -128,8 +128,6 @@ class LocalMapping {
   void MapPointCulling();
   void SearchInNeighbors();
   void KeyFrameCulling();
-
-  System* mpSystem;
 
   bool mbMonocular;
   bool mbInertial;

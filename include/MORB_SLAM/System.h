@@ -119,10 +119,6 @@ public:
     // since last call to this function
     bool MapChanged();
 
-    // Reset the system (clear Atlas or the active map)
-    void Reset();
-    void ResetActiveMap();
-
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
@@ -145,12 +141,6 @@ public:
 
     float GetImageScale();
 
-    Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
-    void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
-
-    bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
-    void setUseGravityDirectionFromLastMap(bool is_true);
-
     void ForceLost();
 
 #ifdef REGISTER_TIMES
@@ -166,10 +156,6 @@ public:
     bool getIsDoneVIBA();
 
     void setTrackingState(TrackingState state);
-
-    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
-    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-    std::shared_ptr<LoopClosing> mpLoopCloser;
 
     std::shared_ptr<Settings> getSettings() const;
 
@@ -202,15 +188,14 @@ private:
     // Local Mapper. It manages the local map and performs local bundle adjustment.
     std::shared_ptr<LocalMapping> mpLocalMapper;
 
+    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
+    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
+    std::shared_ptr<LoopClosing> mpLoopCloser;
+
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::jthread mptLocalMapping;
     std::jthread mptLoopClosing;
-
-    // Reset flag
-    std::mutex mMutexReset;
-    bool mbReset;
-    bool mbResetActiveMap;
 
     // Change mode flags
     std::mutex mMutexMode;
@@ -231,8 +216,6 @@ private:
 
     std::shared_ptr<Settings> settings;
 
-    Sophus::SE3f mStereoInitDefaultPose;
-    bool mUseGravityDirectionFromLastMap;
 };
 typedef std::shared_ptr<System> System_ptr;
 typedef std::weak_ptr<System> System_wptr;
