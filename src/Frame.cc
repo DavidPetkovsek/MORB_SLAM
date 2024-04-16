@@ -67,7 +67,7 @@ Frame::Frame()
 
 Frame::~Frame(){}
 
-// Copy Constructor
+// Copy Constructor.
 Frame::Frame(const Frame &frame)
     : mpcpi(frame.mpcpi),
       mTcw(frame.mTcw),
@@ -152,12 +152,14 @@ Frame::Frame(const Frame &frame)
 #endif
 }
 
+// Copy for ExternalMapViewer.
 Frame::Frame(const Frame &frame, const bool copyExternalMapViewer)
     : mTcw(frame.mTcw),
       mnId(frame.mnId),
       mpReferenceKF(frame.mpReferenceKF),
       isPartiallyConstructed{true}{}
 
+// Constructor for rectified stereo cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
@@ -268,6 +270,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   AssignFeaturesToGrid();
 }
 
+// Constructor for RGB-D cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDepth,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
@@ -370,6 +373,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
   AssignFeaturesToGrid();
 }
 
+// Constructor for monocular cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, ORBVocabulary *voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
@@ -479,6 +483,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
   mpMutexImu = std::make_shared<std::mutex>();
 }
 
+// Constructor for non-rectified stereo cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
              const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
