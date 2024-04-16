@@ -120,7 +120,7 @@ class Atlas {
   void SetImuInitialized();
   bool isImuInitialized();
 
-  // Function for garantee the correction of serialization of this object
+  // Function for guarantee the correction of serialization of this object
   void PreSave();
   void PostLoad();
 
