@@ -497,6 +497,9 @@ void Settings::readOtherParameters(cv::FileStorage& fSettings) {
   activeLoopClosing_ = readParameter<bool>(fSettings, "System.activeLoopClosing", found, false);
   if (!found) activeLoopClosing_ = true;
   fastIMUInit_ = readParameter<bool>(fSettings, "System.FastIMUInit", found, false);
+  if (!found) fastIMUInit_ = false;
+  stationaryIMUInit_ = readParameter<bool>(fSettings, "System.StationaryIMUInit", found, false);
+  if (!found) stationaryIMUInit_ = false;
 }
 
 void Settings::precomputeRectificationMaps() {

@@ -132,6 +132,7 @@ protected:
   std::list<bool> mlbLost;
 
   bool mFastInit;
+  bool mStationaryInit;
 public:
 
   // True if local mapping is deactivated and we are performing only localization
@@ -141,6 +142,7 @@ public:
   void ResetActiveMap(bool bLocMap = false);
 
   bool fastIMUInitEnabled() const { return mFastInit; }
+  bool stationaryIMUInitEnabled() const { return mStationaryInit; }
 
   void setForcedLost(bool forceLost);
 

@@ -78,8 +78,8 @@ void LocalMapping::SetTracker(Tracking* pTracker) { mpTracker = pTracker; }
 void LocalMapping::Run() {
     mbFinished = false;
 
-    const float timerVIBA2 = 10;//mpTracker->fastIMUInitEnabled() ? 10 : 15;
-    const float accelTimeout = 7.5;//mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
+    const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
+    const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
     while (1) {
         try {
@@ -160,9 +160,9 @@ void LocalMapping::Run() {
                         float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                             (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
-                        if (true || dist > 0.05)
+                        if (mpTracker->stationaryIMUInitEnabled() || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if (false && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
+                        if (!mpTracker->stationaryIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
                             if ((mTinit < accelTimeout) && (dist < 0.02)) {
                                 std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
                                 std::scoped_lock<std::mutex> lock(mMutexReset);

@@ -587,6 +587,7 @@ void Tracking::newParameterLoader(Settings& settings) {
                                          fIniThFAST, fMinThFAST);
 
   mFastInit = settings.fastIMUInit();
+  mStationaryInit = settings.stationaryIMUInit();
 
   // IMU parameters
   Sophus::SE3f Tbc = settings.Tbc();
@@ -1464,7 +1465,7 @@ void Tracking::StereoInitialization() {
       return;
     }
 
-    if (false && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+    if (!stationaryIMUInitEnabled() && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
       std::cout << "not enough acceleration" << std::endl;
       return;
     }

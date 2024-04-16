@@ -1225,7 +1225,7 @@ void LoopClosing::CorrectLoop() {
     mbFinishedGBA = false;
     mbStopGBA = false;
     mnCorrectionGBA = mnNumCorrection;
-
+    std::cout << "Creating Thread in LoopClosing::CorrectLoop()" << std::endl;
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this,
                              pLoopMap, mpCurrentKF->mnId);
   }
@@ -1791,6 +1791,7 @@ void LoopClosing::MergeLocal() {
     mbRunningGBA = true;
     mbFinishedGBA = false;
     mbStopGBA = false;
+    std::cout << "Creating Thread in LoopClosing::MergeLocal()" << std::endl;
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this,
                              pMergeMap, mpCurrentKF->mnId);
   }

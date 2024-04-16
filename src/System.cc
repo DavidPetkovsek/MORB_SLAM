@@ -137,40 +137,29 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
 
   // Initialize the Tracking thread
-  //(it will live in the main thread of execution, the one that called this
-  // constructor)
-  mpTracker = new Tracking(this, mpVocabulary,
-                           mpAtlas, mpKeyFrameDatabase, strSettingsFile,
-                           mSensor, settings);
-
-  // Initialize the Local Mapping thread and launch
-  mpLocalMapper = new LocalMapping(
-      this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR,
-      mSensor.isInertial());
+  //(it will live in the main thread of execution, the one that called this constructor)
+  mpTracker = new Tracking(this, mpVocabulary, mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings);
+  mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
     mpLocalMapper->setIsDoneVIBA(true);
   }
 
-  mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
   // if (settings)
   mpLocalMapper->mThFarPoints = settings->thFarPoints();
   // else
   //   mpLocalMapper->mThFarPoints = settings-> fsSettings["thFarPoints"];
   if (mpLocalMapper->mThFarPoints != 0) {
-    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints
-         << " m from current camera" << std::endl;
+    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
     mpLocalMapper->mbFarPoints = true;
-  } else
+  } else {
     mpLocalMapper->mbFarPoints = false;
+  }
 
   // Initialize the Loop Closing thread and launch
   // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-  mpLoopCloser =
-      new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary,
-                      mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
-  mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
+  mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -181,6 +170,12 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+  std::cout << "Creating LocalMapping Thread in System" << std::endl;
+  mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
+
+  std::cout << "Creating LoopClosing Thread in System" << std::endl;
+  mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
 
   // Fix verbosity
   Verbose::SetTh(Verbose::VERBOSITY_QUIET);
