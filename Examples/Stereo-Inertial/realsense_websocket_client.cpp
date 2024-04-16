@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
         imu_points.clear();
     }
     std::cout << "Stopping WebSocket" << std::endl;
-    webSocket.close();
+    webSocket.stop();
     std::cout << "Stopping Viewer" << std::endl;
     viewer.reset();
     std::cout << "Stopping SLAM" << std::endl;
