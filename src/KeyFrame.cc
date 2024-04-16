@@ -89,7 +89,7 @@ KeyFrame::KeyFrame()
       NRight(0),
       isPartiallyConstructed(true) {}
 
-KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, KeyFrameDatabase *pKFDB)
+KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB)
     : bImu(pMap->isImuInitialized()),
       mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
@@ -1119,11 +1119,11 @@ Eigen::Vector3f KeyFrame::GetRightTranslation() {
   return (mTrl * mTcw).translation();
 }
 
-void KeyFrame::SetORBVocabulary(ORBVocabulary *pORBVoc) {
+void KeyFrame::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
   mpORBvocabulary = pORBVoc;
 }
 
-void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase *pKFDB) {
+void KeyFrame::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 

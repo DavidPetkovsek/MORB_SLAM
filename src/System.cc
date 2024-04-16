@@ -94,7 +94,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // Load ORB Vocabulary
     std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
-    mpVocabulary = new ORBVocabulary();
+    mpVocabulary = std::make_shared<ORBVocabulary>();
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if (!bVocLoad) {
       std::cerr << "Wrong path to vocabulary. " << std::endl;
@@ -104,7 +104,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     std::cout << "Vocabulary loaded!" << std::endl << std::endl;
 
     // Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
     std::cout << "Initialization of Atlas from scratch " << std::endl;
@@ -119,7 +119,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
       std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
-    // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    // mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
     // std::cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " <<
     // mpKeyFrameDatabase->mnNumWords << std::endl;
@@ -139,7 +139,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
   mpTracker = std::make_shared<Tracking>(this, mpVocabulary, mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings);
-  mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
+  mpLocalMapper = std::make_shared<LocalMapping>(this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
@@ -159,7 +159,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   // Initialize the Loop Closing thread and launch
   // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-  mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);

@@ -366,7 +366,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   }
 }
 
-void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc /*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/,
+void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc /*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/,
     std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
 
   if(this != sharedMap.get()){

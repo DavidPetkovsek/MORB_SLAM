@@ -43,7 +43,7 @@ class LocalMapping {
   
   LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
 
-  void SetLoopCloser(LoopClosing* pLoopCloser);
+  void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
   void SetTracker(Tracking_ptr pTracker);
 
@@ -148,7 +148,7 @@ class LocalMapping {
 
   Atlas_ptr mpAtlas;
 
-  LoopClosing* mpLoopCloser;
+  std::shared_ptr<LoopClosing> mpLoopCloser;
   Tracking_ptr mpTracker;
 
   std::list<KeyFrame*> mlNewKeyFrames;

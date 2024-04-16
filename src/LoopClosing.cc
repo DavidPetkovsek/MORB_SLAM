@@ -33,8 +33,8 @@
 
 namespace MORB_SLAM {
 
-LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
-                         ORBVocabulary* pVoc, const bool bFixScale,
+LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB,
+                         std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale,
                          const bool bActiveLC, bool bInertial)
     : 
 #ifdef REGISTER_TIMES
@@ -75,7 +75,7 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
 
 void LoopClosing::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 
-void LoopClosing::SetLocalMapper(LocalMapping* pLocalMapper) { mpLocalMapper = pLocalMapper; }
+void LoopClosing::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) { mpLocalMapper = pLocalMapper; }
 
 void LoopClosing::Run() {
   mbFinished = false;

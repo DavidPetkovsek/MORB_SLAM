@@ -40,8 +40,8 @@
 
 namespace MORB_SLAM {
 
-Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, const Atlas_ptr &pAtlas,
-                   KeyFrameDatabase* pKFDB, const std::string& strSettingPath,
+Tracking::Tracking(System* pSys, std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
+                   std::shared_ptr<KeyFrameDatabase> pKFDB, const std::string& strSettingPath,
                    const CameraType sensor, std::shared_ptr<Settings> settings)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
@@ -605,11 +605,11 @@ void Tracking::newParameterLoader(Settings& settings) {
   mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
 }
 
-void Tracking::SetLocalMapper(LocalMapping* pLocalMapper) {
+void Tracking::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) {
   mpLocalMapper = pLocalMapper;
 }
 
-void Tracking::SetLoopClosing(LoopClosing* pLoopClosing) {
+void Tracking::SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing) {
   mpLoopClosing = pLoopClosing;
 }
 

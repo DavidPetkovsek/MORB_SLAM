@@ -267,17 +267,17 @@ void Atlas::PostLoad() {
   mvpBackupMaps.clear();
 }
 
-void Atlas::SetKeyFrameDababase(KeyFrameDatabase* pKFDB) {
+void Atlas::SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 
-KeyFrameDatabase* Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
+std::shared_ptr<KeyFrameDatabase> Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
 
-void Atlas::SetORBVocabulary(ORBVocabulary* pORBVoc) {
+void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
   mpORBVocabulary = pORBVoc;
 }
 
-ORBVocabulary* Atlas::GetORBVocabulary() { return mpORBVocabulary; }
+std::shared_ptr<ORBVocabulary> Atlas::GetORBVocabulary() { return mpORBVocabulary; }
 
 long unsigned int Atlas::GetNumLivedKF() {
   std::unique_lock<std::mutex> lock(mMutexAtlas);

@@ -162,7 +162,7 @@ Frame::Frame(const Frame &frame, const bool copyExternalMapViewer)
 // Constructor for rectified stereo cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
-             const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
+             const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
@@ -273,7 +273,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 // Constructor for RGB-D cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDepth,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
-             ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
+             std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
@@ -375,7 +375,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 
 // Constructor for monocular cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
-             const std::shared_ptr<ORBextractor> &extractor, ORBVocabulary *voc,
+             const std::shared_ptr<ORBextractor> &extractor, std::shared_ptr<ORBVocabulary> voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
              const float &thDepth, Frame *pPrevF, const IMU::Calib &ImuCalib)
     : mpcpi(nullptr),
@@ -483,7 +483,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
 // Constructor for non-rectified stereo cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
-             const std::shared_ptr<ORBextractor> &extractorRight, ORBVocabulary *voc, cv::Mat &K,
+             const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
              Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)

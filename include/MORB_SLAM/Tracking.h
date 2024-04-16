@@ -47,8 +47,8 @@ namespace MORB_SLAM {
 class Tracking {
  public:
   
-  Tracking(System* pSys, ORBVocabulary* pVoc,
-           const Atlas_ptr &pAtlas, KeyFrameDatabase* pKFDB,
+  Tracking(System* pSys, std::shared_ptr<ORBVocabulary> pVoc,
+           const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB,
            const std::string& strSettingPath, const CameraType sensor, std::shared_ptr<Settings> settings);
 
   ~Tracking();
@@ -64,8 +64,8 @@ class Tracking {
 
   void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
 
-  void SetLocalMapper(LocalMapping* pLocalMapper);
-  void SetLoopClosing(LoopClosing* pLoopClosing);
+  void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
+  void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
 
   // Load new settings
   // The focal lenght should be similar or scale prediction will fail when
@@ -226,8 +226,8 @@ public:
   bool notEnoughMatchPoints_trackOnlyMode;
 
   // Other Thread Pointers
-  LocalMapping* mpLocalMapper;
-  LoopClosing* mpLoopClosing;
+  std::shared_ptr<LocalMapping> mpLocalMapper;
+  std::shared_ptr<LoopClosing> mpLoopClosing;
 
   // ORB
   std::shared_ptr<ORBextractor> mpORBextractorLeft;
@@ -235,8 +235,8 @@ public:
   std::shared_ptr<ORBextractor> mpIniORBextractor;
 
   // BoW
-  ORBVocabulary* mpORBVocabulary;
-  KeyFrameDatabase* mpKeyFrameDB;
+  std::shared_ptr<ORBVocabulary> mpORBVocabulary;
+  std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
 
   // Initalization (only for monocular)
   bool mbReadyToInitialize;

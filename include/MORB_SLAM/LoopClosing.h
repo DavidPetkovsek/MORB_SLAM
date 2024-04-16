@@ -62,11 +62,11 @@ public:
 
     bool loopClosed = false;
 
-    LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
+    LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
 
     void SetTracker(Tracking_ptr pTracker);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
+    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
 
     // Main function
     void Run();
@@ -167,10 +167,10 @@ protected:
     Atlas_ptr mpAtlas;
     Tracking_ptr mpTracker;
 
-    KeyFrameDatabase* mpKeyFrameDB;
-    ORBVocabulary* mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
-    LocalMapping *mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
 
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 

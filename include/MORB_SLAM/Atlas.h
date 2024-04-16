@@ -126,11 +126,11 @@ class Atlas {
 
   std::map<long unsigned int, KeyFrame*> GetAtlasKeyframes();
 
-  void SetKeyFrameDababase(KeyFrameDatabase* pKFDB);
-  KeyFrameDatabase* GetKeyFrameDatabase();
+  void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
+  std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();
 
-  void SetORBVocabulary(ORBVocabulary* pORBVoc);
-  ORBVocabulary* GetORBVocabulary();
+  void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
+  std::shared_ptr<ORBVocabulary> GetORBVocabulary();
 
   long unsigned int GetNumLivedKF();
 
@@ -150,8 +150,8 @@ class Atlas {
   unsigned long int mnLastInitKFidMap;
 
   // Class references for the map reconstruction from the save file
-  KeyFrameDatabase* mpKeyFrameDB;
-  ORBVocabulary* mpORBVocabulary;
+  std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+  std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
   // Mutex
   std::mutex mMutexAtlas;

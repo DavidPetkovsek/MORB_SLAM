@@ -169,7 +169,7 @@ public:
 
     // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-    LoopClosing* mpLoopCloser;
+    std::shared_ptr<LoopClosing> mpLoopCloser;
 
     std::shared_ptr<Settings> getSettings() const;
 
@@ -185,10 +185,10 @@ private:
     std::vector<Camera_ptr> cameras;
 
     // ORB vocabulary used for place recognition and feature matching.
-    ORBVocabulary* mpVocabulary;
+    std::shared_ptr<ORBVocabulary> mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
-    KeyFrameDatabase* mpKeyFrameDatabase;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     //Map* mpMap;
@@ -200,7 +200,7 @@ private:
     Tracking_ptr mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
-    LocalMapping* mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.

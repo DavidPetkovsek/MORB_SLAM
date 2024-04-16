@@ -69,7 +69,7 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       mPoseReverseAxisFlip(Sophus::SE3f()) {
 }
 
-void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser) {
+void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) {
   mpLoopCloser = pLoopCloser;
 }
 
