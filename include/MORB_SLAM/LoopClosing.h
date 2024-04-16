@@ -45,6 +45,7 @@ class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
 class Map;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 
 class LoopClosing
@@ -63,7 +64,7 @@ public:
 
     LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
 
-    void SetTracker(Tracking* pTracker);
+    void SetTracker(Tracking_ptr pTracker);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
 
@@ -164,7 +165,7 @@ protected:
     std::mutex mMutexFinish;
 
     Atlas_ptr mpAtlas;
-    Tracking* mpTracker;
+    Tracking_ptr mpTracker;
 
     KeyFrameDatabase* mpKeyFrameDB;
     ORBVocabulary* mpORBVocabulary;

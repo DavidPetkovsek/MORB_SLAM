@@ -76,6 +76,7 @@ class Tracking;
 class LocalMapping;
 class LoopClosing;
 class Settings;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class System
 {
@@ -196,7 +197,7 @@ private:
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
-    Tracking* mpTracker;
+    Tracking_ptr mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
     LocalMapping* mpLocalMapper;

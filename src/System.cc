@@ -138,7 +138,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
-  mpTracker = new Tracking(this, mpVocabulary, mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings);
+  mpTracker = std::make_shared<Tracking>(this, mpVocabulary, mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings);
   mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
@@ -443,16 +443,18 @@ System::~System() {
     usleep(5000);
   }*/
 
-  if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
-    SaveAtlas(FileType::BINARY_FILE);
-  }
   if (mptLocalMapping.joinable()) {
     mptLocalMapping.join();
   }
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
+
+  if (!mStrSaveAtlasToFile.empty()) {
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
+    SaveAtlas(FileType::BINARY_FILE);
+  }
+  
 
 #ifdef REGISTER_TIMES
   mpTracker->PrintTimeStats();

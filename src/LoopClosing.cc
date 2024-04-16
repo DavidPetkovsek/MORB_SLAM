@@ -73,7 +73,7 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB,
 
 }
 
-void LoopClosing::SetTracker(Tracking* pTracker) { mpTracker = pTracker; }
+void LoopClosing::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 
 void LoopClosing::SetLocalMapper(LocalMapping* pLocalMapper) { mpLocalMapper = pLocalMapper; }
 
@@ -141,12 +141,10 @@ void LoopClosing::Run() {
                    mpTracker->mSensor == CameraType::IMU_STEREO ||
                    mpTracker->mSensor == CameraType::IMU_RGBD) &&
                   mpCurrentKF->GetMap()->GetIniertialBA1()) {
-                Eigen::Vector3d phi =
-                    LogSO3(mSold_new.rotation().toRotationMatrix());
+                Eigen::Vector3d phi = LogSO3(mSold_new.rotation().toRotationMatrix());
                 phi(0) = 0;
                 phi(1) = 0;
-                mSold_new =
-                    g2o::Sim3(ExpSO3(phi), mSold_new.translation(), 1.0);
+                mSold_new = g2o::Sim3(ExpSO3(phi), mSold_new.translation(), 1.0);
               }
             }
 

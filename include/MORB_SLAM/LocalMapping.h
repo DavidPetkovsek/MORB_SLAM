@@ -36,6 +36,7 @@ class System;
 class Tracking;
 class LoopClosing;
 class Atlas;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class LocalMapping {
  public:
@@ -44,7 +45,7 @@ class LocalMapping {
 
   void SetLoopCloser(LoopClosing* pLoopCloser);
 
-  void SetTracker(Tracking* pTracker);
+  void SetTracker(Tracking_ptr pTracker);
 
   // Main function
   void Run();
@@ -148,7 +149,7 @@ class LocalMapping {
   Atlas_ptr mpAtlas;
 
   LoopClosing* mpLoopCloser;
-  Tracking* mpTracker;
+  Tracking_ptr mpTracker;
 
   std::list<KeyFrame*> mlNewKeyFrames;
 
