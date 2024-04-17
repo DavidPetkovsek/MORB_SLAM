@@ -571,7 +571,7 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
     }
     output << " ]" << std::endl;
   }
-  std::cout << "bout to start camera 2 stuff\n";
+  std::cout << "bout to start camera 2 stuff" << std::endl;
   if (settings.sensor_ == MORB_SLAM::CameraType::STEREO ||
       settings.sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
     output << "\t-Camera 2 parameters (";

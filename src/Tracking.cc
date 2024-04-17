@@ -783,7 +783,7 @@ void Tracking::PreintegrateIMU() {
   // Fails if there's 0 or 1 measurement
   const int n = static_cast<int>(frameIMUDataList.size()) - 1;
   if (n <= 0) { // 0 or 1 measurement
-    std::cout << "Empty IMU measurements vector!!!\n";
+    std::cout << "Empty IMU measurements vector!!!" << std::endl;
     mCurrentFrame.setIntegrated();
     return;
   }
@@ -1813,7 +1813,7 @@ bool Tracking::TrackReferenceKeyFrame() {
   int nmatches = matcher.SearchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
 
   if (nmatches < 15) {
-    std::cout << "TRACK_REF_KF: Less than 15 matches!!\n";
+    std::cout << "TRACK_REF_KF: Less than 15 matches!!" << std::endl;
     return false;
   }
 

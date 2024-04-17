@@ -385,14 +385,14 @@ void System::InsertTrackTime(double& time) {
 
 void System::SaveAtlas(int type) {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl;
-  std::cout << "trying to save \n";
+  std::cout << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
-    std::cout << "not empty\n";
+    std::cout << "not empty" << std::endl;
     // clock_t start = clock();
 
     // Save the current session
     mpAtlas->PreSave();
-    std::cout << "presaved\n";
+    std::cout << "presaved" << std::endl;
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
     // Create the folder if it does not exist
@@ -407,7 +407,7 @@ void System::SaveAtlas(int type) {
     std::string str_time = std::ctime(&time_time);
     pathSaveFileName = pathSaveFileName.append(".osa");
 
-    std::cout << "About to Calculate \n";
+    std::cout << "About to Calculate " << std::endl;
 
     std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
 
@@ -436,17 +436,17 @@ void System::SaveAtlas(int type) {
       std::cerr << errno << std::endl;
       std::cout << "remove's output is: " << rval << std::endl;
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
-      std::cout << "big boostin' time\n";
+      std::cout << "big boostin' time" << std::endl;
       boost::archive::binary_oarchive oa(ofs);
-      std::cout << "streaming\n";
+      std::cout << "streaming" << std::endl;
       oa << strVocabularyName;
-      std::cout << "streamed name\n";
+      std::cout << "streamed name" << std::endl;
       oa << strVocabularyChecksum;
-      std::cout << "streamed checksum\n";
+      std::cout << "streamed checksum" << std::endl;
       oa << *mpAtlas;
       std::cout << "End to write save binary file" << std::endl;
     } else {
-      std::cout << "no file to be saved I guess lul\n";
+      std::cout << "no file to be saved I guess lul" << std::endl;
     }
   }
 }
@@ -518,7 +518,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   if (type == BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
-  std::cout << "inside\n";
+  std::cout << "inside" << std::endl;
 
   std::ifstream f(filename.c_str(), flags);
   if (!f.is_open()) {
@@ -530,16 +530,16 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   MD5_CTX md5Context;
   char buffer[1024];
 
-  std::cout << "buffer generated\n";
+  std::cout << "buffer generated" << std::endl;
 
   MD5_Init(&md5Context);
 
-  std::cout << "just initialized MD5\n";
+  std::cout << "just initialized MD5" << std::endl;
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     MD5_Update(&md5Context, buffer, count);
     // std::cout << buffer;
   }
-  std::cout << "about to close\n";
+  std::cout << "about to close" << std::endl;
 
   f.close();
 

@@ -1275,7 +1275,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pKF->SetVelocity(pKF->mVwbGBA);
             pKF->SetNewBias(pKF->mBiasGBA);
         } else {
-            std::cout << "KF " << pKF->mnId << " not set to inertial!! \n";
+            std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
         }
 
         lpKFtoCheck.pop_front();
