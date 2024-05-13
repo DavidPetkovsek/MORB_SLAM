@@ -813,10 +813,7 @@ static void computeDescriptors(const Mat& image, std::vector<KeyPoint>& keypoint
                          descriptors.ptr((int)i));
 }
 
-int ORBextractor::operator()(InputArray _image, InputArray _mask,
-                             std::vector<KeyPoint>& _keypoints,
-                             OutputArray _descriptors,
-                             std::vector<int>& vLappingArea) {
+int ORBextractor::operator()(InputArray _image, std::vector<KeyPoint>& _keypoints, OutputArray _descriptors, std::vector<int>& vLappingArea) {
   // std::cout << "[ORBextractor]: Max Features: " << nfeatures << std::endl;
   if (_image.empty()) return -1;
 
