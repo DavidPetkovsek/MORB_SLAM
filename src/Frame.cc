@@ -636,9 +636,9 @@ void Frame::AssignFeaturesToGrid() {
 void Frame::ExtractORB(bool isLeft, const cv::Mat &im, const int x0, const int x1) {
   std::vector<int> vLapping = {x0, x1};
   if (isLeft)
-    monoLeft = (*mpORBextractorLeft)(im, cv::Mat(), mvKeys, mDescriptors, vLapping);
+    monoLeft = (*mpORBextractorLeft)(im, mvKeys, mDescriptors, vLapping);
   else
-    monoRight = (*mpORBextractorRight)(im, cv::Mat(), mvKeysRight, mDescriptorsRight, vLapping);
+    monoRight = (*mpORBextractorRight)(im, mvKeysRight, mDescriptorsRight, vLapping);
 }
 
 bool Frame::isSet() const { return mbIsSet; }
