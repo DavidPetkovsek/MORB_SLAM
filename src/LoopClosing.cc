@@ -319,8 +319,7 @@ bool LoopClosing::NewDetectCommonRegions() {
   // bool bCheckSpatial = false; // UNUSED
 
 #ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartEstSim3_1 =
-      std::chrono::steady_clock::now();
+  std::chrono::steady_clock::time_point time_StartEstSim3_1 = std::chrono::steady_clock::now();
 #endif
   if (mnLoopNumCoincidences > 0) {
     // bCheckSpatial = true; // UNUSED
