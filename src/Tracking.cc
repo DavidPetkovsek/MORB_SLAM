@@ -2339,11 +2339,9 @@ void Tracking::UpdateLocalPoints() {
 
   for (KeyFrame* pKF : mvpLocalKeyFrames) {
     for (MapPoint* pMP : pKF->GetMapPointMatches()) {
-      if (!pMP || pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId) continue;
-      if (!pMP->isBad()) {
-        mvpLocalMapPoints.push_back(pMP);
-        pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
-      }
+      if (!pMP || pMP->isBad() || pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId) continue;
+      mvpLocalMapPoints.push_back(pMP);
+      pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
   }
 }
