@@ -207,8 +207,14 @@ void LoopClosing::Run() {
 
             Eigen::Vector3d phi = LogSO3(g2oSww_new.rotation().toRotationMatrix());
             std::cout << "phi = " << phi.transpose() << std::endl;
-            if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f && fabs(phi(2)) < 0.349f) {
-                // If inertial, force only yaw
+              // OG SLAM conditions
+            // if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f && fabs(phi(2)) < 0.349f) {
+              // Less Strict conditions
+            if (fabs(phi(0)) < 0.032f && fabs(phi(1)) < 0.032f) {
+              // Experimental (use only when setting mbLoopDetected in DetectNewCommonRegions() to mnLoopNumCoincidences >= 10 instead of the default 3)
+            // if (true) {
+
+              // If inertial, force only yaw (pitch+roll are aligned by gravity, forcing them to change would cause SLAM to fly off)
               if (mpCurrentKF->GetMap()->GetIniertialBA2()) {
                 phi(0) = 0;
                 phi(1) = 0;
@@ -339,6 +345,7 @@ bool LoopClosing::NewDetectCommonRegions() {
       mg2oLoopSlw = gScw;
       mvpLoopMatchedMPs = vpMatchedMPs;
 
+      // default to >= 3, change to >= 10 for experimental mode
       mbLoopDetected = mnLoopNumCoincidences >= 3;
       mnLoopNumNotFound = 0;
 
