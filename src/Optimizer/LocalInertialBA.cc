@@ -53,7 +53,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
 
   std::vector<KeyFrame*> vpOptimizableKFs;
   // const std::vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
-  std::list<KeyFrame*> lpOptVisKFs;
+  // std::list<KeyFrame*> lpOptVisKFs;
 
   vpOptimizableKFs.reserve(Nd);
   vpOptimizableKFs.push_back(pKF);
@@ -75,7 +75,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     std::vector<MapPoint*> vpMPs = vpOptimizableKFs[i]->GetMapPointMatches();
     for (std::vector<MapPoint*>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
       MapPoint* pMP = *vit;
-      if (pMP && !pMP->isBad() && pMP->mnBALocalForKF != pKF->mnId) {
+      if (pMP && !pMP->isBad() && pMP->mnBALocalForKF != pKF->mnId && pMP->Observations() >= 3) {
         lLocalMapPoints.push_back(pMP);
         pMP->mnBALocalForKF = pKF->mnId;
       }
@@ -180,14 +180,15 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       optimizer.addVertex(VA);
     }
   }
-  // Set Local visual KeyFrame vertices
-  for (std::list<KeyFrame*>::iterator it = lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it != itEnd; it++) {
-    KeyFrame* pKFi = *it;
-    VertexPose* VP = new VertexPose(pKFi);
-    VP->setId(pKFi->mnId);
-    VP->setFixed(false);
-    optimizer.addVertex(VP);
-  }
+  // UNUSED
+  // // Set Local visual KeyFrame vertices
+  // for (std::list<KeyFrame*>::iterator it = lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it != itEnd; it++) {
+  //   KeyFrame* pKFi = *it;
+  //   VertexPose* VP = new VertexPose(pKFi);
+  //   VP->setId(pKFi->mnId);
+  //   VP->setFixed(false);
+  //   optimizer.addVertex(VP);
+  // }
 
   // Set Fixed KeyFrame vertices
   for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(), lend = lFixedKeyFrames.end(); lit != lend; lit++) {
@@ -311,7 +312,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
   const float thHuberStereo = sqrt(7.815);
   const float chi2Stereo2 = 7.815;
 
-  const unsigned long iniMPid = maxKFid * 5;
+  const unsigned long iniMPid = 5*maxKFid;
 
   std::map<int, std::pair<int, KeyFrame*>> mVisEdges;
   for (int i = 0; i < N; i++) {
@@ -345,7 +346,9 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
         cv::KeyPoint kpUn;
 
         // Monocular left observation
-        if (leftIndex != -1 && pKFi->mvuRight[leftIndex] < 0) {
+        if(leftIndex != -1 && pKFi->mvuRight[leftIndex] < 0) {
+          std::cout << "MONO LEFT OBSERVATION" << std::endl;
+
           mVisEdges[pKFi->mnId].first++;
 
           kpUn = pKFi->mvKeysUn[leftIndex];
@@ -422,7 +425,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
             e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
             e->setMeasurement(obs);
 
-            // Add here uncerteinty
+            // Add here uncertainty
             const float unc2 = pKFi->mpCamera->uncertainty2(obs);
 
             const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave] / unc2;
@@ -446,30 +449,35 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
   bool isBad = false;
   for (auto mit = mVisEdges.begin(), mend = mVisEdges.end(); mit != mend; mit++) {
     // assert(mit->second.first >= 3);
-    if(mit->second.first < 3){
+
+    // If the KF has few visual matches, delete that KF and do not optimize
+    if(mit->second.first < 3) {
       KeyFrame *pKFi = mit->second.second;
-      if(pKFi){
-        std::cout << "KF " << pKFi->mnId << " is bad, deleting" << std::endl;
-        if(pKFi->mnId != pKF->mnId) {
-          if(pKFi->SetBadFlag()){
-            if(pKFi->mNextKF) {
-              if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated)
-                pKFi->mNextKF->mpImuPreintegrated->MergePrevious(pKFi->mpImuPreintegrated);
-              pKFi->mNextKF->mPrevKF = pKFi->mPrevKF;
-            }
-            if(pKFi->mPrevKF) { 
-              pKFi->mPrevKF->mNextKF = pKFi->mNextKF;
-            }
-            pKFi->mNextKF = nullptr;
-            pKFi->mPrevKF = nullptr;
-          } else if (pKFi->mnId == pKFi->GetMap()->GetInitKFid()) {
-            throw ResetActiveMapSignal();
+      KeyFrame *pKFLastOpt = vpOptimizableKFs.back();
+      if(!pKFi || (pKFLastOpt && pKFi->mnId == pKFLastOpt->mnId) || (pKFLastOpt->mPrevKF && pKFi->mnId == pKFLastOpt->mPrevKF->mnId)) continue;
+      
+      if(pKFi->mnId != pKF->mnId) {
+        std::cout << "KF " << pKFi->mnId << " doesn't have sufficient visual data, deleting" << std::endl;
+        if(pKFi->SetBadFlag()) {
+          if(pKFi->mNextKF) {
+            if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated)
+              pKFi->mNextKF->mpImuPreintegrated->MergePrevious(pKFi->mpImuPreintegrated);
+            pKFi->mNextKF->mPrevKF = pKFi->mPrevKF;
           }
+          if(pKFi->mPrevKF) { 
+            pKFi->mPrevKF->mNextKF = pKFi->mNextKF;
+          }
+          pKFi->mNextKF = nullptr;
+          pKFi->mPrevKF = nullptr;
+        } else if (pKFi->mnId == pKFi->GetMap()->GetInitKFid()) {
+          std::cout << "Trying to delete the origin KF. Throw Error" << std::endl;
+          throw ResetActiveMapSignal();
         }
-        isBad = true;
       }
+      isBad = true;
     }
   }
+
   if(isBad){
     std::cout << "Found bad keyframes: skipping LocalInertialBA..." << std::endl;
     return;
@@ -557,14 +565,15 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     }
   }
 
-  // Local visual KeyFrame
-  for (std::list<KeyFrame*>::iterator it = lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it != itEnd; it++) {
-    KeyFrame* pKFi = *it;
-    VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
-    Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
-    pKFi->SetPose(Tcw);
-    pKFi->mnBALocalForKF = 0;
-  }
+  // UNUSED
+  // // Local visual KeyFrame
+  // for (std::list<KeyFrame*>::iterator it = lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it != itEnd; it++) {
+  //   KeyFrame* pKFi = *it;
+  //   VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
+  //   Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
+  //   pKFi->SetPose(Tcw);
+  //   pKFi->mnBALocalForKF = 0;
+  // }
 
   // Points
   for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
