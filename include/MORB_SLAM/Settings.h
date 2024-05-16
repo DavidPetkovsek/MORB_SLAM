@@ -62,7 +62,7 @@ class Settings {
   /*
    * Getter methods
    */
-  CameraModelType cameraType() const { return cameraType_; }
+  CameraModelType cameraModelType() const { return cameraModelType_; }
   std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
   std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
   cv::Mat camera1DistortionCoef() {
@@ -167,7 +167,7 @@ class Settings {
   void precomputeRectificationMaps();
 
   CameraType sensor_;
-  CameraModelType cameraType_;  // Camera type
+  CameraModelType cameraModelType_;
 
   /*
    * Visual stuff

@@ -217,7 +217,7 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
 
   std::vector<float> vCalibration;
   if (cameraModel == "PinHole") {
-    cameraType_ = PinHole;
+    cameraModelType_ = PinHole;
 
     // Read intrinsic parameters
     float fx = readParameter<float>(fSettings, "Camera1.fx", found);
@@ -251,7 +251,7 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
       bNeedToUndistort_ = true;
     }
   } else if (cameraModel == "Rectified") {
-    cameraType_ = Rectified;
+    cameraModelType_ = Rectified;
 
     // Read intrinsic parameters
     float fx = readParameter<float>(fSettings, "Camera1.fx", found);
@@ -265,7 +265,7 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
 
     // Rectified images are assumed to be ideal PinHole images (no distortion)
   } else if (cameraModel == "KannalaBrandt8") {
-    cameraType_ = KannalaBrandt;
+    cameraModelType_ = KannalaBrandt;
 
     // Read intrinsic parameters
     float fx = readParameter<float>(fSettings, "Camera1.fx", found);
@@ -300,7 +300,7 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
 void Settings::readCamera2(cv::FileStorage& fSettings) {
   bool found;
   std::vector<float> vCalibration;
-  if (cameraType_ == PinHole) {
+  if (cameraModelType_ == PinHole) {
     bNeedToRectify_ = true;
 
     // Read intrinsic parameters
@@ -329,7 +329,7 @@ void Settings::readCamera2(cv::FileStorage& fSettings) {
       vPinHoleDistorsion2_[2] = readParameter<float>(fSettings, "Camera2.p1", found);
       vPinHoleDistorsion2_[3] = readParameter<float>(fSettings, "Camera2.p2", found);
     }
-  } else if (cameraType_ == KannalaBrandt) {
+  } else if (cameraModelType_ == KannalaBrandt) {
     // Read intrinsic parameters
     float fx = readParameter<float>(fSettings, "Camera2.fx", found);
     float fy = readParameter<float>(fSettings, "Camera2.fy", found);
@@ -351,7 +351,7 @@ void Settings::readCamera2(cv::FileStorage& fSettings) {
   }
 
   // Load stereo extrinsic calibration
-  if (cameraType_ == Rectified) {
+  if (cameraModelType_ == Rectified) {
     b_ = readParameter<float>(fSettings, "Stereo.b", found);
     bf_ = b_ * calibration1_->getParameter(0);
   } else {
@@ -391,7 +391,7 @@ void Settings::readImageInfo(cv::FileStorage& fSettings) {
           calibration1_->getParameter(3) * scaleRowFactor, 3);
 
       if ((sensor_ == MORB_SLAM::CameraType::STEREO || sensor_ == MORB_SLAM::CameraType::IMU_STEREO) &&
-          cameraType_ != Rectified) {
+          cameraModelType_ != Rectified) {
         calibration2_->setParameter(
             calibration2_->getParameter(1) * scaleRowFactor, 1);
         calibration2_->setParameter(
@@ -414,11 +414,11 @@ void Settings::readImageInfo(cv::FileStorage& fSettings) {
       calibration1_->setParameter(
           calibration1_->getParameter(2) * scaleColFactor, 2);
 
-      if ((sensor_ == MORB_SLAM::CameraType::STEREO || sensor_ == MORB_SLAM::CameraType::IMU_STEREO) && cameraType_ != Rectified) {
+      if ((sensor_ == MORB_SLAM::CameraType::STEREO || sensor_ == MORB_SLAM::CameraType::IMU_STEREO) && cameraModelType_ != Rectified) {
         calibration2_->setParameter(calibration2_->getParameter(0) * scaleColFactor, 0);
         calibration2_->setParameter(calibration2_->getParameter(2) * scaleColFactor, 2);
 
-        if (cameraType_ == KannalaBrandt) {
+        if (cameraModelType_ == KannalaBrandt) {
           std::static_pointer_cast<KannalaBrandt8>(calibration1_)->scaleLappingArea(scaleColFactor);
           std::static_pointer_cast<KannalaBrandt8>(calibration2_)->scaleLappingArea(scaleColFactor);
         }
@@ -551,8 +551,8 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
   output << "SLAM settings: " << std::endl;
 
   output << "\t-Camera 1 parameters (";
-  if (settings.cameraType_ == Settings::PinHole ||
-      settings.cameraType_ == Settings::Rectified) {
+  if (settings.cameraModelType_ == Settings::PinHole ||
+      settings.cameraModelType_ == Settings::Rectified) {
     output << "Pinhole";
   } else {
     output << "Kannala-Brandt";
@@ -575,8 +575,8 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
   if (settings.sensor_ == MORB_SLAM::CameraType::STEREO ||
       settings.sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
     output << "\t-Camera 2 parameters (";
-    if (settings.cameraType_ == Settings::PinHole ||
-        settings.cameraType_ == Settings::Rectified) {
+    if (settings.cameraModelType_ == Settings::PinHole ||
+        settings.cameraModelType_ == Settings::Rectified) {
       output << "Pinhole";
     } else {
       output << "Kannala-Brandt";
@@ -617,7 +617,7 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
 
     if ((settings.sensor_ == MORB_SLAM::CameraType::STEREO ||
          settings.sensor_ == MORB_SLAM::CameraType::IMU_STEREO) &&
-        settings.cameraType_ == Settings::KannalaBrandt) {
+        settings.cameraModelType_ == Settings::KannalaBrandt) {
       output << "\t-Camera 2 parameters after resize: [ ";
       for (size_t i = 0; i < settings.calibration2_->size(); i++) {
         output << " " << settings.calibration2_->getParameter(i);
@@ -634,7 +634,7 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
     output << "\t-Stereo baseline: " << settings.b_ << std::endl;
     output << "\t-Stereo depth threshold : " << settings.thDepth_ << std::endl;
 
-    if (settings.cameraType_ == Settings::KannalaBrandt) {
+    if (settings.cameraModelType_ == Settings::KannalaBrandt) {
       auto vOverlapping1 = std::static_pointer_cast<KannalaBrandt8>(settings.calibration1_)->getLappingArea();
       auto vOverlapping2 = std::static_pointer_cast<KannalaBrandt8>(settings.calibration2_)->getLappingArea();
       output << "\t-Camera 1 overlapping area: [ " << vOverlapping1[0] << " , "

@@ -545,7 +545,7 @@ void Tracking::newParameterLoader(Settings& settings) {
   mK_(1, 2) = mpCamera->getParameter(3);
 
   if (mSensor.hasMulticam() &&
-      settings.cameraType() == Settings::KannalaBrandt) {
+      settings.cameraModelType() == Settings::KannalaBrandt) {
     mpCamera2 = settings.camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
@@ -2292,9 +2292,6 @@ void Tracking::SearchLocalPoints() {
     if (mCurrentFrame.isInFrustum(pMP, 0.5)) {
       pMP->IncreaseVisible();
       nToMatch++;
-    }
-    if (pMP->mbTrackInView) {
-      mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
     }
   }
 

@@ -143,9 +143,6 @@ Frame::Frame(const Frame &frame)
     SetVelocity(frame.GetVelocity());
   }
 
-  mmProjectPoints = frame.mmProjectPoints;
-  mmMatchedInImage = frame.mmMatchedInImage;
-
 #ifdef REGISTER_TIMES
   mTimeStereoMatch = frame.mTimeStereoMatch;
   mTimeORB_Ext = frame.mTimeORB_Ext;
@@ -247,11 +244,9 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 
   mvpMapPoints = std::vector<MapPoint *>(N, nullptr);
   mvbOutlier = std::vector<bool>(N, false);
-  mmProjectPoints.clear();
-  mmMatchedInImage.clear();
 
-  if (pPrevF) {
-    if (pPrevF->HasVelocity()) SetVelocity(pPrevF->GetVelocity());
+  if (pPrevF && pPrevF->HasVelocity()) {
+    SetVelocity(pPrevF->GetVelocity());
   } else {
     mVw.setZero();
   }
@@ -347,9 +342,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
   ComputeStereoFromRGBD(imDepth);
 
   mvpMapPoints = std::vector<MapPoint *>(N, nullptr);
-
-  mmProjectPoints.clear();
-  mmMatchedInImage.clear();
 
   mvbOutlier = std::vector<bool>(N, false);
 
@@ -453,8 +445,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
 
   mvpMapPoints = std::vector<MapPoint *>(N, nullptr);
   //           = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(nullptr));
-  mmProjectPoints.clear();  
-  mmMatchedInImage.clear();
 
   mvbOutlier = std::vector<bool>(N, false);
 
