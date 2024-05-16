@@ -310,6 +310,9 @@ class KeyFrame {
 
   bool isPartiallyConstructed{false};
   
+  // Only used in the new LocalInertialBA
+  bool mbUseForLocalInertialBA{false};
+  
   static long unsigned int nNextId;
   long unsigned int mnId;
   const long unsigned int mnFrameId;
