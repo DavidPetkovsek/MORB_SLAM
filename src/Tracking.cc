@@ -2293,9 +2293,6 @@ void Tracking::SearchLocalPoints() {
       pMP->IncreaseVisible();
       nToMatch++;
     }
-    if (pMP->mbTrackInView) {
-      mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
-    }
   }
 
   if (nToMatch > 0) {

@@ -302,8 +302,6 @@ public:
 
     static bool mbInitialComputations;
 
-    std::map<long unsigned int, cv::Point2f> mmProjectPoints;
-    std::map<long unsigned int, cv::Point2f> mmMatchedInImage;
 
 #ifdef REGISTER_TIMES
     double mTimeORB_Ext;
