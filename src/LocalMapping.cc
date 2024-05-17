@@ -170,8 +170,7 @@ void LocalMapping::Run() {
                         //         mbBadImu = true;
                         //     }
                         // }
-                        bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
-                                        ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
+                        bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) || ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // if (mpTracker->mState == TrackingState::OK)
                             Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
                                                         num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
@@ -181,9 +180,8 @@ void LocalMapping::Run() {
             b_doneLBA = true;
 #endif
                     } else {
-                        Optimizer::LocalBundleAdjustment(
-                            mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
-                            num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, mbInertial);
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
+                                                        num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, mbInertial);
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
 #endif
@@ -388,10 +386,9 @@ void LocalMapping::MapPointCulling() {
 }
 
 void LocalMapping::CreateNewMapPoints() {
+    
+    int nn = mbMonocular ? 30 : 10;
     // Retrieve neighbor keyframes in covisibility graph
-    int nn = 10;
-    // For stereo inertial case
-    if (mbMonocular) nn = 30;
     std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     if (mbInertial) {
@@ -433,8 +430,7 @@ void LocalMapping::CreateNewMapPoints() {
 
         KeyFrame* pKF2 = vpNeighKFs[i];
 
-        std::shared_ptr<const GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera,
-                                         pCamera2 = pKF2->mpCamera;
+        std::shared_ptr<const GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera, pCamera2 = pKF2->mpCamera;
 
         Sophus::SE3<float> sophTcw2 = pKF2->GetPose();
 

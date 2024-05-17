@@ -211,9 +211,11 @@ void MapPoint::AddObservation(KeyFrame* pKF, int idx) {
     std::get<0>(indexes) = idx;
   }
 
+  if(!pKF->mpCamera2 && pKF->mvuRight[idx] < 0) return;
+
   mObservations[pKF] = indexes;
 
-  if (!pKF->mpCamera2 && pKF->mvuRight[idx] >= 0)
+  if (!pKF->mpCamera2)
     nObs += 2;
   else
     nObs++;

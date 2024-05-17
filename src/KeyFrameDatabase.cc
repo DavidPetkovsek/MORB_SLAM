@@ -622,7 +622,7 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame* pKF,
 
   int minCommonWords = maxCommonWords * 0.8f;
 
-  std::list<std::pair<float, KeyFrame*> > lScoreAndMatch;
+  std::list<std::pair<float, KeyFrame*>> lScoreAndMatch;
 
   int nscores = 0;
 

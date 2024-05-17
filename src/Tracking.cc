@@ -1255,21 +1255,17 @@ void Tracking::Track() {
 
     /* MEMORY LEAK????? WHY?????
     // Save frame if recent relocalization, since they are used for IMU reset
-    // (as we are making copy, it shluld be once mCurrFrame is completely
-    // modified)
+    // (as we are making copy, it shluld be once mCurrFrame is completely modified)
     if ((mCurrentFrame.mnId < (mnLastRelocFrameId + mnFramesToResetIMU)) &&
         (static_cast<int>(mCurrentFrame.mnId) > mnFramesToResetIMU) &&
-        mSensor.isInertial() &&
-        pCurrentMap->isImuInitialized()) {
+        mSensor.isInertial() && pCurrentMap->isImuInitialized()) {
       // TODO check this situation
-      Verbose::PrintMess("Saving pointer to frame. imu needs reset...",
-                         Verbose::VERBOSITY_NORMAL);
+      Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
       Frame* pF = new Frame(mCurrentFrame);
       pF->mpPrevFrame = new Frame(mLastFrame);
 
       // Load preintegration
-      pF->mpImuPreintegratedFrame =
-          new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
+      pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
     }
     */
 
@@ -2339,11 +2335,9 @@ void Tracking::UpdateLocalPoints() {
 
   for (KeyFrame* pKF : mvpLocalKeyFrames) {
     for (MapPoint* pMP : pKF->GetMapPointMatches()) {
-      if (!pMP || pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId) continue;
-      if (!pMP->isBad()) {
-        mvpLocalMapPoints.push_back(pMP);
-        pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
-      }
+      if (!pMP || pMP->isBad() || pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId) continue;
+      mvpLocalMapPoints.push_back(pMP);
+      pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
   }
 }
