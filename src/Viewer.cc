@@ -72,7 +72,7 @@ void Viewer::newParameterLoader(const Settings &settings) {
 
   if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO ||
         mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) &&
-        settings.cameraType() == Settings::KannalaBrandt){
+        settings.cameraModelType() == Settings::KannalaBrandt){
     both = true;
     mpFrameDrawer.both = true;
   }

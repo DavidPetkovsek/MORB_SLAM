@@ -545,7 +545,7 @@ void Tracking::newParameterLoader(Settings& settings) {
   mK_(1, 2) = mpCamera->getParameter(3);
 
   if (mSensor.hasMulticam() &&
-      settings.cameraType() == Settings::KannalaBrandt) {
+      settings.cameraModelType() == Settings::KannalaBrandt) {
     mpCamera2 = settings.camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
