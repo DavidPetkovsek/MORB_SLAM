@@ -262,7 +262,7 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   B.block<3, 3>(0, 0) = dRi.rightJ * dt;
 
   // Update covariance, which represents the uncertainty in the estimated state
-  // Nga is a 6x6 diagonal matricex with the first 3 values being gyro_noise^2, last 3 being gyro_noise^2
+  // Nga is a 6x6 diagonal matrix with the first 3 values being gyro_noise^2, last 3 being accel_noise^2
   C.block<9, 9>(0, 0) = A * C.block<9, 9>(0, 0) * A.transpose() + B * Nga * B.transpose();
   // same as Nga but with the walk noises
   C.block<6, 6>(9, 9) += NgaWalk;
