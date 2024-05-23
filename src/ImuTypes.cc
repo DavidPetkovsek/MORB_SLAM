@@ -270,6 +270,7 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   // Update rotation jacobian wrt bias correction
   // ∂θ/∂bg = -(deltaR*JRg + rightJ*dt)
   JRg = dRi.deltaR.transpose() * JRg - dRi.rightJ * dt;
+  // Note: there is no JRa because the rotation is constant wrt. a change in accelerometer bias. If we had one, it would always just be 0
 
   // Total integrated time
   dT += dt;
