@@ -198,7 +198,7 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   // ∂θ/∂v = ∂θ/∂p = ∂v/∂p = 0 (Null Matrix)
   A.setIdentity();
 
-  // B is the Jacobian Matrix of the the state variables wrt the noise vars (noise_accel * 3, noise_gyro * 3)
+  // B is the Jacobian Matrix of the the state variables wrt the noise vars (noise_gyro * 3, noise_accel * 3)
   /* (each term is a 3x3 block)
   B = | ∂θ/∂ng   ∂θ/∂na |
       | ∂v/∂ng   ∂v/∂na |
@@ -216,7 +216,7 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   //   the acceleration vector a rotated by the current heading rotation matrix dR
   avgA = (dT * avgA + dt * dR * a) / (dT + dt);
   // similarly, the real displacement is dR*d
-  // uses previous value for dV
+  // note: this uses the previous value of dV
   dP = dP + dV * dt + dR * (0.5f * a * dt * dt);
   // the real velocity is dR*v
   dV = dV + dR * (a * dt);
@@ -257,7 +257,7 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   // ∂θ/∂θ (the transpose of a rotation matrix is its inverse)
   A.block<3, 3>(0, 0) = dRi.deltaR.transpose();
 
-  // dRi.rightJ is the right Jacobian associated with deltaR, which represents how the robot's rotation changes with  small change in the angular velo.
+  // dRi.rightJ is the right Jacobian associated with deltaR, which represents how the robot's rotation changes with a small change in the angular velo.
   // ∂θ/∂ng = rightJ*dt, since a small change in angular velo changes the robot's heading by a factor of rightJ*dt
   B.block<3, 3>(0, 0) = dRi.rightJ * dt;
 
