@@ -527,8 +527,6 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
 
         // Monocular left observation
         if(leftIndex != -1 && pKFi->mvuRight[leftIndex] < 0) {
-          std::cout << "MONO LEFT OBSERVATION" << std::endl;
-
           // mVisEdges[pKFi->mnId].first++;
 
           kpUn = pKFi->mvKeysUn[leftIndex];
