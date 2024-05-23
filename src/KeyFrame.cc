@@ -86,9 +86,10 @@ KeyFrame::KeyFrame()
       mbToBeErased(false),
       mbBad(false),
       NLeft(0),
-      NRight(0) {}
+      NRight(0),
+      isPartiallyConstructed(true) {}
 
-KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, KeyFrameDatabase *pKFDB)
+KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB)
     : bImu(pMap->isImuInitialized()),
       mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
@@ -603,14 +604,14 @@ void KeyFrame::SetErase() {
   }
 }
 
-void KeyFrame::SetBadFlag() {
+bool KeyFrame::SetBadFlag() {
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     if (mnId == mpMap->GetInitKFid()) {
-      return;
+      return false;
     } else if (mbNotErase) {
       mbToBeErased = true;
-      return;
+      return false;
     }
   }
 
@@ -685,6 +686,7 @@ void KeyFrame::SetBadFlag() {
 
   mpMap->EraseKeyFrame(this);
   mpKeyFrameDB->erase(this);
+  return true;
 }
 
 bool KeyFrame::isBad() {
@@ -1117,11 +1119,11 @@ Eigen::Vector3f KeyFrame::GetRightTranslation() {
   return (mTrl * mTcw).translation();
 }
 
-void KeyFrame::SetORBVocabulary(ORBVocabulary *pORBVoc) {
+void KeyFrame::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
   mpORBvocabulary = pORBVoc;
 }
 
-void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase *pKFDB) {
+void KeyFrame::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 

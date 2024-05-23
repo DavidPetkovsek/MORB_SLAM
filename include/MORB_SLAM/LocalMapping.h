@@ -36,15 +36,16 @@ class System;
 class Tracking;
 class LoopClosing;
 class Atlas;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class LocalMapping {
  public:
   
-  LocalMapping(System* pSys, const Atlas_ptr &pAtlas, const float bMonocular, bool bInertial);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
 
-  void SetLoopCloser(LoopClosing* pLoopCloser);
+  void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
-  void SetTracker(Tracking* pTracker);
+  void SetTracker(Tracking_ptr pTracker);
 
   // Main function
   void Run();
@@ -77,6 +78,8 @@ class LocalMapping {
   bool IsInitializing();
   double GetCurrKFTime();
   KeyFrame* GetCurrKF();
+
+  Sophus::SE3f GetPoseReverseAxisFlip();
 
   std::mutex mMutexImuInit;
 
@@ -126,8 +129,6 @@ class LocalMapping {
   void SearchInNeighbors();
   void KeyFrameCulling();
 
-  System* mpSystem;
-
   bool mbMonocular;
   bool mbInertial;
 
@@ -145,8 +146,8 @@ class LocalMapping {
 
   Atlas_ptr mpAtlas;
 
-  LoopClosing* mpLoopCloser;
-  Tracking* mpTracker;
+  std::shared_ptr<LoopClosing> mpLoopCloser;
+  Tracking_ptr mpTracker;
 
   std::list<KeyFrame*> mlNewKeyFrames;
 
@@ -176,6 +177,9 @@ class LocalMapping {
   float mTinit;
 
   bool isDoneVIBA;
+
+  // used when returning from TrackStereo to undo the Axis Flip bug
+  Sophus::SE3f mPoseReverseAxisFlip;
 };
 
 }  // namespace MORB_SLAM

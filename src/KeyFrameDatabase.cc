@@ -30,8 +30,8 @@
 
 namespace MORB_SLAM {
 
-KeyFrameDatabase::KeyFrameDatabase(const ORBVocabulary& voc) : mpVoc(&voc) {
-  mvInvertedFile.resize(voc.size());
+KeyFrameDatabase::KeyFrameDatabase(std::shared_ptr<ORBVocabulary> voc) : mpVoc(std::move(voc)) {
+  mvInvertedFile.resize(mpVoc->size());
 }
 
 void KeyFrameDatabase::add(KeyFrame* pKF) {
@@ -498,7 +498,7 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame* pKF,
 
   int minCommonWords = maxCommonWords * 0.8f;
 
-  std::list<std::pair<float, KeyFrame*> > lScoreAndMatch;
+  std::list<std::pair<float, KeyFrame*>> lScoreAndMatch;
 
   int nscores = 0;
 
@@ -671,10 +671,8 @@ std::vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame* F
   return vpRelocCandidates;
 }
 
-void KeyFrameDatabase::SetORBVocabulary(ORBVocabulary* pORBVoc) {
-  ORBVocabulary** ptr;
-  ptr = (ORBVocabulary**)(&mpVoc);
-  *ptr = pORBVoc;
+void KeyFrameDatabase::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
+  mpVoc = std::move(pORBVoc);
 
   mvInvertedFile.clear();
   mvInvertedFile.resize(mpVoc->size());

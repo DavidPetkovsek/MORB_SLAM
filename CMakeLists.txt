@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if( NOT CMAKE_BUILD_TYPE )
     set(CMAKE_BUILD_TYPE Release)
 ENDIF()
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-4")
 # https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_GENERATOR STREQUAL "Ninja")
@@ -80,10 +80,13 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization regex)
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(ixwebsocket QUIET) # only needed for getting realsense data through a websocket
 
 file(GLOB CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+file(GLOB CPP_OPTIMIZER_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cc)
 file(GLOB CPP_CAMERA_MODELS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/CameraModels/*.cpp)
 list(APPEND CPP_FILES ${CPP_CAMERA_MODELS_FILES})
+list(APPEND CPP_FILES ${CPP_OPTIMIZER_FILES})
 
 file(GLOB headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.h)
 file(GLOB camera_model_headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.hpp)
@@ -104,6 +107,7 @@ target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
 target_link_libraries( ${TARGET_NAME} PRIVATE OpenSSL::SSL )
 target_link_libraries( ${TARGET_NAME} PRIVATE ${Pangolin_LIBRARIES} )
+target_link_libraries( ${TARGET_NAME} PUBLIC ixwebsocket::ixwebsocket ) 
 
 
 # https://cmake.org/cmake/help/latest/guide/importing-exporting/index.html#creating-a-package-version-file
@@ -158,6 +162,23 @@ if(realsense2_FOUND)
   target_link_libraries(stereo_inertial_realsense_D435i PRIVATE ${PROJECT_NAME})
 else()
   message(STATUS "** Stereo inertial realsense D435i example will not compile because librealsense2 was not found")
+endif()
+
+if(ixwebsocket_FOUND)
+    set(TARGET_NAME realsense_websocket_client)
+    add_executable(${TARGET_NAME} Examples/Stereo-Inertial/realsense_websocket_client.cpp)
+    target_link_libraries( ${TARGET_NAME} PUBLIC ixwebsocket::ixwebsocket ) 
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::${PROJECT_NAME} )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::DBoW2 )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::g2o )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::sophus )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Threads::Threads )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Eigen3::Eigen )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${Pangolin_LIBRARIES} )
+else()
+    message(STATUS "** Realsense websocket client will not compile because ixwebsocket was not found")
 endif()
 
 

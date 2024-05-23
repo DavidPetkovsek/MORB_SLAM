@@ -70,11 +70,13 @@ public:
 };
 
 class Viewer;
+class ExternalMapViewer;
 class Atlas;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
 class Settings;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class System
 {
@@ -94,32 +96,22 @@ public:
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
-
-
-    // This stops local mapping thread (map building) and performs only camera tracking.
-    void ActivateLocalizationMode();
-    // This resumes local mapping thread and performs SLAM again.
-    void DeactivateLocalizationMode();
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
     // Returns true if there have been a big map change (loop closure, global BA)
     // since last call to this function
     bool MapChanged();
-
-    // Reset the system (clear Atlas or the active map)
-    void Reset();
-    void ResetActiveMap();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
@@ -143,6 +135,8 @@ public:
 
     float GetImageScale();
 
+    void ForceLost();
+
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);
     void InsertResizeTime(double& time);
@@ -150,15 +144,12 @@ public:
 #endif
 
     friend Viewer;
+    friend ExternalMapViewer;
 
     bool getHasMergedLocalMap();
     bool getIsDoneVIBA();
 
     void setTrackingState(TrackingState state);
-
-    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
-    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-    LoopClosing* mpLoopCloser;
 
     std::shared_ptr<Settings> getSettings() const;
 
@@ -174,10 +165,10 @@ private:
     std::vector<Camera_ptr> cameras;
 
     // ORB vocabulary used for place recognition and feature matching.
-    ORBVocabulary* mpVocabulary;
+    std::shared_ptr<ORBVocabulary> mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
-    KeyFrameDatabase* mpKeyFrameDatabase;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     //Map* mpMap;
@@ -186,25 +177,19 @@ private:
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
-    Tracking* mpTracker;
+    Tracking_ptr mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
-    LocalMapping* mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
+
+    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
+    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
+    std::shared_ptr<LoopClosing> mpLoopCloser;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
-    std::thread* mptLocalMapping;
-    std::thread* mptLoopClosing;
-
-    // Reset flag
-    std::mutex mMutexReset;
-    bool mbReset;
-    bool mbResetActiveMap;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool mbActivateLocalizationMode;
-    bool mbDeactivateLocalizationMode;
+    std::jthread mptLocalMapping;
+    std::jthread mptLoopClosing;
 
     // Tracking state
     TrackingState mTrackingState;
@@ -219,6 +204,7 @@ private:
     std::string mStrVocabularyFilePath;
 
     std::shared_ptr<Settings> settings;
+
 };
 typedef std::shared_ptr<System> System_ptr;
 typedef std::weak_ptr<System> System_wptr;

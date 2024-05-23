@@ -1,26 +1,33 @@
 %YAML:1.0
 
 #--------------------------------------------------------------------------------------------
-# Camera Parameters. Adjust them!
+# System Parameters
+#--------------------------------------------------------------------------------------------
+
+System.FastIMUInit: "ON"
+System.StationaryIMUInit: "OFF"
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters (calibration and biases vary from camera to camera)
 #--------------------------------------------------------------------------------------------
 File.version: "1.0"
 
 Camera.type: "Rectified"
 
 # Rectified Camera calibration (OpenCV)
-Camera1.fx: 382.613
-Camera1.fy: 382.613
-Camera1.cx: 320.183
-Camera1.cy: 236.455
+Camera1.fx: 421.524
+Camera1.fy: 421.524
+Camera1.cx: 424.973
+Camera1.cy: 239.928
 
 Stereo.b: 0.0499585
 
 # Camera resolution
-Camera.width: 640
+Camera.width: 848
 Camera.height: 480
 
 # Camera frames per second
-Camera.fps: 30
+Camera.fps: 15
 
 # Close/Far threshold. Baseline times.
 Stereo.ThDepth: 40.0
@@ -36,7 +43,7 @@ IMU.T_b_c1: !!opencv-matrix
           0.0, 0.0, 0.0, 1.0]
 
 # Do not insert KFs when recently lost
-IMU.InsertKFsWhenLost: 0
+IMU.InsertKFsWhenLost: "false"
 
 # IMU noise (Use those from VINS-mono)
 IMU.NoiseGyro:  0.008449 # 1e-3 # rad/s^0.5 # 1e-3 2.44e-4
@@ -78,11 +85,13 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -3.5
 Viewer.ViewpointF: 500.0
 
+#--------------------------------------------------------------------------------------------
+# Map/Atlas IO
+#--------------------------------------------------------------------------------------------
+
 # Save/load Map
 # System.LoadAtlasFromFile: "/home/landson/MORB_SLAM/trial"
 # System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
 # System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
-System.SaveAtlasToFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"
+System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/expos"
 # System.LoadAtlasFromFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"
-
-

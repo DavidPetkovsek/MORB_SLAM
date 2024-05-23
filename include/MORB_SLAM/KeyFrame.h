@@ -191,7 +191,7 @@ class KeyFrame {
  public:
   
   KeyFrame();
-  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, KeyFrameDatabase* pKFDB);
+  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
 
   // Pose functions
   void SetPose(const Sophus::SE3f& Tcw);
@@ -267,7 +267,7 @@ class KeyFrame {
   void SetErase();
 
   // Set/check bad flag
-  void SetBadFlag();
+  bool SetBadFlag();
   bool isBad();
 
   // Compute Scene Depth (q=2 median). Used in monocular.
@@ -299,14 +299,20 @@ class KeyFrame {
                 std::map<long unsigned int, MapPoint*>& mpMPid,
                 std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
 
-  void SetORBVocabulary(ORBVocabulary* pORBVoc);
-  void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
+  void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
+  void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
 
   bool bImu;
 
   // The following variables are accesed from only 1 thread or never change (no
   // mutex needed).
  public:
+
+  bool isPartiallyConstructed{false};
+  
+  // Only used in the new LocalInertialBA
+  bool mbVerifyLocalInertialBA{false};
+  
   static long unsigned int nNextId;
   long unsigned int mnId;
   const long unsigned int mnFrameId;
@@ -441,8 +447,8 @@ class KeyFrame {
   std::vector<long long int> mvBackupMapPointsId;
 
   // BoW
-  KeyFrameDatabase* mpKeyFrameDB;
-  ORBVocabulary* mpORBvocabulary;
+  std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+  std::shared_ptr<ORBVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
   std::vector<std::vector<std::vector<size_t> > > mGrid;

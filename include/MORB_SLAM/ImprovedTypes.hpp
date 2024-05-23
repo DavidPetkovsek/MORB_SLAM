@@ -24,6 +24,8 @@ public:
 
   bool operator==(const TrackingState &other) const { return id == other.id; }
   bool operator!=(const TrackingState& other) const { return !(*this == other); }
+  
+  const int getID() const { return id; }
 };
 inline std::ostream &operator<<(std::ostream &os, const TrackingState &t){
     os << t.toString;

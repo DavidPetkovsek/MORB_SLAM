@@ -47,28 +47,20 @@ namespace MORB_SLAM {
 class Tracking {
  public:
   
-  Tracking(System* pSys, ORBVocabulary* pVoc,
-           const Atlas_ptr &pAtlas, KeyFrameDatabase* pKFDB,
-           const std::string& strSettingPath, const CameraType sensor, std::shared_ptr<Settings> settings);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<Settings> settings);
 
   ~Tracking();
 
   // Preprocess the input and call Track(). Extract features and performs stereo
   // matching.
-  StereoPacket GrabImageStereo(const cv::Mat& imRectLeft,
-                               const cv::Mat& imRectRight,
-                               const double& timestamp, const std::string &filename,
-                               const Camera_ptr &cam);
-  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
-                             const double& timestamp, const std::string &filename,
-                             const Camera_ptr &cam);
-  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp,
-                                  const std::string &filename, const Camera_ptr &cam);
+  StereoPacket GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam);
+  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
+  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
 
   void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
 
-  void SetLocalMapper(LocalMapping* pLocalMapper);
-  void SetLoopClosing(LoopClosing* pLoopClosing);
+  void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
+  void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
 
   // Load new settings
   // The focal lenght should be similar or scale prediction will fail when
@@ -88,6 +80,9 @@ class Tracking {
   int GetMatchesInliers();
 
   float GetImageScale();
+
+  Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
+  void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
 
 #ifdef REGISTER_LOOP
   void RequestStop();
@@ -115,6 +110,17 @@ class Tracking {
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
+  // The sum of all the changes in translation (teleportations) caused by InitializeIMU(), Loop Closing, and Map Merging
+  Eigen::Vector3f mBaseTranslation;
+  // Stores the current KeyFrame's translation before each teleportation 
+  Eigen::Vector3f mPreTeleportTranslation;
+  // Set to true after teleportation occurs
+  bool mTeleported;
+  // Set to true right before a teleportation occurs, prevents mPreTeleportTranslation from being changed
+  bool mLockPreTeleportTranslation;
+
+  Sophus::SE3f mReturnPose;
+
   // Lists used to recover the full camera trajectory at the end of the
   // execution. Basically we store the reference keyframe for each frame and its
   // relative transformation
@@ -122,17 +128,41 @@ protected:
   std::list<Sophus::SE3f> mlRelativeFramePoses;
   std::list<KeyFrame*> mlpReferences;
   std::list<bool> mlbLost;
+
+  bool mFastInit;
+  bool mStationaryInit;
+
+  Sophus::SE3f mStereoInitDefaultPose;
+
+  // Change mode flags
+  std::mutex mMutexMode;
+  bool mbActivateLocalizationMode;
+  bool mbDeactivateLocalizationMode;
+
 public:
 
   // True if local mapping is deactivated and we are performing only localization
   bool mbOnlyTracking;
 
-  void Reset(bool bLocMap = false);
-  void ResetActiveMap(bool bLocMap = false);
+  void CheckTrackingModeChanged();
+  // This stops local mapping thread (map building) and performs only camera tracking.
+  void ActivateLocalizationMode();
+  // This resumes local mapping thread and performs SLAM again.
+  void DeactivateLocalizationMode();
 
- protected:
-  bool mFastInit = false;
- public:
+  // Reset the system (clear Atlas or the active map)
+  void CheckTrackingReset();
+  void RequestReset();
+  // bool ResetRequested();
+  // void Reset(bool bLocMap = false);
+  void RequestResetActiveMap();
+  // bool ResetActiveMapRequested();
+  // void ResetActiveMap(bool bLocMap = false);
+
+  bool fastIMUInitEnabled() const { return mFastInit; }
+  bool stationaryIMUInitEnabled() const { return mStationaryInit; }
+
+  void setForcedLost(bool forceLost);
 
 #ifdef REGISTER_TIMES
   void LocalMapStats2File();
@@ -186,6 +216,11 @@ public:
   // Reset IMU biases and compute frame velocity
   void ResetFrameIMU();
 
+  Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
+
+  void Reset(bool bLocMap = false);
+  void ResetActiveMap(bool bLocMap = false);
+
   bool mbMapUpdated;
 
   // Imu preintegration from last frame
@@ -202,7 +237,7 @@ public:
   std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // Last Bias Estimation (at keyframe creation)
-  IMU::Bias mLastBias;
+  //IMU::Bias mLastBias;
 
   // In case of performing only localization, this flag is true when there are
   // no matches to points in the map. Still tracking will continue if there are
@@ -212,8 +247,8 @@ public:
   bool notEnoughMatchPoints_trackOnlyMode;
 
   // Other Thread Pointers
-  LocalMapping* mpLocalMapper;
-  LoopClosing* mpLoopClosing;
+  std::shared_ptr<LocalMapping> mpLocalMapper;
+  std::shared_ptr<LoopClosing> mpLoopClosing;
 
   // ORB
   std::shared_ptr<ORBextractor> mpORBextractorLeft;
@@ -221,20 +256,16 @@ public:
   std::shared_ptr<ORBextractor> mpIniORBextractor;
 
   // BoW
-  ORBVocabulary* mpORBVocabulary;
-  KeyFrameDatabase* mpKeyFrameDB;
+  std::shared_ptr<ORBVocabulary> mpORBVocabulary;
+  std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
 
   // Initalization (only for monocular)
   bool mbReadyToInitialize;
-  bool mbSetInit;
 
   // Local Map
   KeyFrame* mpReferenceKF;
   std::vector<KeyFrame*> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
-
-  // System
-  System* mpSystem;
 
   // Atlas
   Atlas_ptr mpAtlas;
@@ -247,14 +278,12 @@ public:
   float mImageScale;
 
   float mImuFreq;
-  double mImuPer;
   bool mInsertKFsLost;
 
   // New KeyFrame rules (according to fps)
   int mMinFrames;
   int mMaxFrames;
 
-  int mnFirstImuFrameId;
   int mnFramesToResetIMU;
 
   // Threshold close/far points
@@ -279,7 +308,6 @@ public:
 
   unsigned int mnFirstFrameId;
   unsigned int mnInitialFrameId;
-  unsigned int mnLastInitFrameId;
 
   bool mbCreatedMap;
 
@@ -297,6 +325,13 @@ public:
   Sophus::SE3f mTlr;
 
   void newParameterLoader(Settings& settings);
+
+  bool mForcedLost;
+
+  // Reset flag
+  std::mutex mMutexReset;
+  bool mbReset;
+  bool mbResetActiveMap;
 
 #ifdef REGISTER_LOOP
   bool Stop();

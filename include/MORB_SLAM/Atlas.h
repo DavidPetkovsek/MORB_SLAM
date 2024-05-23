@@ -112,31 +112,32 @@ class Atlas {
 
   void clearAtlas();
 
-  std::shared_ptr<Map> GetCurrentMap(System* sys = nullptr);
+  std::shared_ptr<Map> GetCurrentMap(bool waitForGoodMap = true);
 
   void SetMapBad(std::shared_ptr<Map> pMap);
   void RemoveBadMaps();
 
-  bool isInertial();
-  void SetInertialSensor();
   void SetImuInitialized();
   bool isImuInitialized();
 
-  // Function for garantee the correction of serialization of this object
+  // Function for guarantee the correction of serialization of this object
   void PreSave();
   void PostLoad();
 
   std::map<long unsigned int, KeyFrame*> GetAtlasKeyframes();
 
-  void SetKeyFrameDababase(KeyFrameDatabase* pKFDB);
-  KeyFrameDatabase* GetKeyFrameDatabase();
+  void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
+  std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();
 
-  void SetORBVocabulary(ORBVocabulary* pORBVoc);
-  ORBVocabulary* GetORBVocabulary();
+  void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
+  std::shared_ptr<ORBVocabulary> GetORBVocabulary();
 
   long unsigned int GetNumLivedKF();
 
   long unsigned int GetNumLivedMP();
+
+  bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
+  void setUseGravityDirectionFromLastMap(bool is_true);
 
  protected:
   std::set<std::shared_ptr<Map>> mspMaps;
@@ -152,11 +153,13 @@ class Atlas {
   unsigned long int mnLastInitKFidMap;
 
   // Class references for the map reconstruction from the save file
-  KeyFrameDatabase* mpKeyFrameDB;
-  ORBVocabulary* mpORBVocabulary;
+  std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+  std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
   // Mutex
-  std::mutex mMutexAtlas;
+  std::recursive_mutex mMutexAtlas;
+
+  bool mUseGravityDirectionFromLastMap;
 
 };  // class Atlas
 typedef std::shared_ptr<Atlas> Atlas_ptr;

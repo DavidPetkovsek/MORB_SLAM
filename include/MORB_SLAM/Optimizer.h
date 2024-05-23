@@ -64,13 +64,12 @@ class Optimizer {
 
   void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
                                     int &num_fixedKF, int &num_OptKF,
-                                    int &num_MPs, int &num_edges);
+                                    int &num_MPs, int &num_edges, bool bInertial);
 
   int static PoseOptimization(Frame *pFrame);
-  int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame,
-                                                  bool bRecInit = false);
-  int static PoseInertialOptimizationLastFrame(Frame *pFrame,
-                                               bool bRecInit = false);
+  int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit = false);
+  int static PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit = false);
+  void static SkipPoseOptimization(Frame* pFrame);
 
   // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise
   // (mono)

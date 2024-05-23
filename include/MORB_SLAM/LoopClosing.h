@@ -45,6 +45,7 @@ class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
 class Map;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 
 class LoopClosing
@@ -61,11 +62,11 @@ public:
 
     bool loopClosed = false;
 
-    LoopClosing(const Atlas_ptr &pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale, const bool bActiveLC);
+    LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
 
-    void SetTracker(Tracking* pTracker);
+    void SetTracker(Tracking_ptr pTracker);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
+    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
 
     // Main function
     void Run();
@@ -164,12 +165,12 @@ protected:
     std::mutex mMutexFinish;
 
     Atlas_ptr mpAtlas;
-    Tracking* mpTracker;
+    Tracking_ptr mpTracker;
 
-    KeyFrameDatabase* mpKeyFrameDB;
-    ORBVocabulary* mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
-    LocalMapping *mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
 
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
@@ -222,7 +223,7 @@ protected:
     bool mbFinishedGBA;
     bool mbStopGBA;
     std::mutex mMutexGBA;
-    std::thread* mpThreadGBA;
+    std::jthread mpThreadGBA;
 
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
@@ -244,6 +245,8 @@ protected:
 
     // To (de)activate LC
     bool mbActiveLC = true;
+
+    bool mbInertial;
 
 #ifdef REGISTER_LOOP
     std::string mstrFolderLoop;

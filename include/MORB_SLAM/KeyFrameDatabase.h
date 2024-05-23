@@ -53,7 +53,7 @@ class KeyFrameDatabase {
   
 
   KeyFrameDatabase() {}
-  KeyFrameDatabase(const ORBVocabulary& voc);
+  KeyFrameDatabase(std::shared_ptr<ORBVocabulary> voc);
 
   void add(KeyFrame* pKF);
 
@@ -77,11 +77,11 @@ class KeyFrameDatabase {
 
   void PreSave();
   void PostLoad(std::map<long unsigned int, KeyFrame*> mpKFid);
-  void SetORBVocabulary(ORBVocabulary* pORBVoc);
+  void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
 
  protected:
   // Associated vocabulary
-  const ORBVocabulary* mpVoc;
+  std::shared_ptr<ORBVocabulary> mpVoc;
 
   // Inverted file
   std::vector<std::list<KeyFrame*> > mvInvertedFile;

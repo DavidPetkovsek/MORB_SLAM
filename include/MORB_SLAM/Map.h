@@ -65,7 +65,6 @@ class Map
         ar & mnBackupKFlowerID;
 
         ar & mbImuInitialized;
-        ar & mbIsInertial;
         ar & mbIMU_BA1;
         ar & mbIMU_BA2;
     }
@@ -99,11 +98,7 @@ public:
 
     KeyFrame* GetOriginKF();
 
-    void SetCurrentMap();
-    void SetStoredMap();
-
     bool HasThumbnail();
-    bool IsInUse();
 
     void SetBad();
     bool IsBad();
@@ -120,8 +115,6 @@ public:
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
-    void SetInertialSensor();
-    bool IsInertial();
     void SetIniertialBA1();
     void SetIniertialBA2();
     bool GetIniertialBA1();
@@ -134,7 +127,7 @@ public:
     unsigned int GetLowerKFID();
 
     void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
+    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc/*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
 
     void printReprojectionError(std::list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, std::string &name, std::string &name_folder);
 
@@ -188,12 +181,9 @@ protected:
     // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
 
-
-    bool mIsInUse;
     bool mHasTumbnail;
     bool mbBad = false;
 
-    bool mbIsInertial;
     bool mbIMU_BA1;
     bool mbIMU_BA2;
 

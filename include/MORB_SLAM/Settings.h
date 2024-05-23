@@ -62,7 +62,7 @@ class Settings {
   /*
    * Getter methods
    */
-  CameraModelType cameraType() const { return cameraType_; }
+  CameraModelType cameraModelType() const { return cameraModelType_; }
   std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
   std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
   cv::Mat camera1DistortionCoef() {
@@ -125,6 +125,8 @@ class Settings {
 
   float thFarPoints() const { return thFarPoints_; }
   bool activeLoopClosing() const { return activeLoopClosing_; }
+  bool fastIMUInit() const { return fastIMUInit_; }
+  bool stationaryIMUInit() const { return stationaryIMUInit_; }
 
   const cv::Mat &M1l() const { return M1l_; }
   const cv::Mat &M2l() const { return M2l_; }
@@ -165,7 +167,7 @@ class Settings {
   void precomputeRectificationMaps();
 
   CameraType sensor_;
-  CameraModelType cameraType_;  // Camera type
+  CameraModelType cameraModelType_;
 
   /*
    * Visual stuff
@@ -234,6 +236,8 @@ class Settings {
    */
   float thFarPoints_;
   bool activeLoopClosing_;
+  bool fastIMUInit_;
+  bool stationaryIMUInit_;
 };
 }  // namespace MORB_SLAM
 

@@ -96,6 +96,7 @@ IntegratedRotation::IntegratedRotation(const Eigen::Vector3f &angVel,
     deltaR = Eigen::Matrix3f::Identity() + W;
     rightJ = Eigen::Matrix3f::Identity();
   } else {
+    // Rodrigues' rotation formula
     deltaR = Eigen::Matrix3f::Identity() + W * sin(d) / d +
              W * W * (1.0f - cos(d)) / d2;
     rightJ = Eigen::Matrix3f::Identity() - W * (1.0f - cos(d)) / d2 +
@@ -186,60 +187,90 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
                                             const float &dt) {
   mvMeasurements.push_back(integrable(acceleration, angVel, dt));
 
-  // Position is updated firstly, as it depends on previously computed velocity
-  // and rotation. Velocity is updated secondly, as it depends on previously
-  // computed rotation. Rotation is the last to be updated.
-
-  // Matrices to compute covariance
+  // A is the Jacobian Matrix of the the robot state variables wrt each other (θ_x, θ_y, θ_z, v_x, v_y, v_z, p_x, p_y, p_z)
+  /* (each term is a 3x3 block)
+  A = | ∂θ/∂θ   ∂θ/∂v   ∂θ/∂p |
+      | ∂v/∂θ   ∂v/∂v   ∂v/∂p |
+      | ∂p/∂θ   ∂p/∂v   ∂p/∂p |
+  */
   Eigen::Matrix<float, 9, 9> A;
+  // ∂v/∂v = ∂p/∂p = I (Identity Matrix), since dx/dx = 1, dx/dy = 0, etc.
+  // ∂θ/∂v = ∂θ/∂p = ∂v/∂p = 0 (Null Matrix)
   A.setIdentity();
+
+  // B is the Jacobian Matrix of the the state variables wrt the noise vars (noise_gyro * 3, noise_accel * 3)
+  /* (each term is a 3x3 block)
+  B = | ∂θ/∂ng   ∂θ/∂na |
+      | ∂v/∂ng   ∂v/∂na |
+      | ∂v/∂ng   ∂p/∂na |
+  */
   Eigen::Matrix<float, 9, 6> B;
+  // ∂θ/∂na = ∂v/∂ng = ∂v/∂ng = 0 (Null Matrix)
   B.setZero();
 
-  Eigen::Vector3f acc, accW;
-  acc << acceleration(0) - b.bax, acceleration(1) - b.bay,
-      acceleration(2) - b.baz;
-  accW << angVel(0) - b.bwx, angVel(1) - b.bwy, angVel(2) - b.bwz;
+  Eigen::Vector3f a, w;
+  a << acceleration(0) - b.bax, acceleration(1) - b.bay, acceleration(2) - b.baz;
+  w << angVel(0) - b.bwx, angVel(1) - b.bwy, angVel(2) - b.bwz;
 
-  avgA = (dT * avgA + dR * acc * dt) / (dT + dt);
-  avgW = (dT * avgW + accW * dt) / (dT + dt);
+  // the robot can only move in the direction it's facing, therefore the acceleration relative to the origin is
+  //   the acceleration vector a rotated by the current heading rotation matrix dR
+  avgA = (dT * avgA + dt * dR * a) / (dT + dt);
+  // similarly, the real displacement is dR*d
+  // note: this uses the previous value of dV
+  dP = dP + dV * dt + dR * (0.5f * a * dt * dt);
+  // the real velocity is dR*v
+  dV = dV + dR * (a * dt);
 
-  // Update delta position dP and velocity dV (rely on no-updated delta
-  // rotation)
-  dP = dP + dV * dt + 0.5f * dR * acc * dt * dt;
-  dV = dV + dR * acc * dt;
+  avgW = (dT * avgW + dt * w) / (dT + dt);
 
-  // Compute velocity and position parts of matrices A and B (rely on
-  // non-updated delta rotation)
-  Eigen::Matrix<float, 3, 3> Wacc = Sophus::SO3f::hat(acc);
+  // a_hat is effectively a matrix representation of a, allowing for matrix multiplication
+  Eigen::Matrix<float, 3, 3> a_hat = Sophus::SO3f::hat(a);
 
-  A.block<3, 3>(3, 0) = -dR * dt * Wacc;
-  A.block<3, 3>(6, 0) = -0.5f * dR * dt * dt * Wacc;
+  // the ∂/∂θ blocks are the variable's Jacobian wrt to the origin's rotation, not to the robot
+  // dR_inverse = -dR is the heading of the origin relative to the robot
+  // therefore the robot's velocity changes wrt the origin's rotation at -dR*(a_hat*dt)
+  // ∂v/∂θ
+  A.block<3, 3>(3, 0) = -dR * (a_hat * dt);
+  // ∂p/∂θ
+  A.block<3, 3>(6, 0) = -dR * (0.5f * a_hat * dt * dt);
+  // ∂p/∂v(x = v_x*dt -> ∂x/∂v_x = dt, ...)
   A.block<3, 3>(6, 3) = Eigen::DiagonalMatrix<float, 3>(dt, dt, dt);
+
+  // B represents how the state variables change with a small change in accel or angular velo.
+  // ∂v/∂na = dR*dt, since a small change in acceleration changes velocity by a factor of dt
   B.block<3, 3>(3, 3) = dR * dt;
-  B.block<3, 3>(6, 3) = 0.5f * dR * dt * dt;
+  // ∂v/∂na
+  B.block<3, 3>(6, 3) = dR * 0.5f * dt * dt;
 
   // Update position and velocity jacobians wrt bias correction
-  JPa = JPa + JVa * dt - 0.5f * dR * dt * dt;
-  JPg = JPg + JVg * dt - 0.5f * dR * dt * dt * Wacc * JRg;
+  JPa = JPa + JVa * dt - dR * (0.5f * dt * dt);
+  JPg = JPg + JVg * dt - dR * a_hat * JRg * (0.5f * dt * dt);
   JVa = JVa - dR * dt;
-  JVg = JVg - dR * dt * Wacc * JRg;
+  JVg = JVg - dR * a_hat * JRg * dt;
 
-  // Update delta rotation
+  // dRi.deltaR is a rotation matrix resulting from Rodrigues' Rotation Formula, which represents a change in rotation with angVel and dt
   IntegratedRotation dRi(angVel, b, dt);
+  // update the robot's heading. NormalizeRotation strips any rounding errors from the update step (ensures the result's a valid rotation matrix) 
   dR = NormalizeRotation(dR * dRi.deltaR);
 
-  // Compute rotation parts of matrices A and B
+  // the change in the robot's heading wrt a change in the origin's heading is the inverse of how the robot's heading changes
+  // ∂θ/∂θ (the transpose of a rotation matrix is its inverse)
   A.block<3, 3>(0, 0) = dRi.deltaR.transpose();
+
+  // dRi.rightJ is the right Jacobian associated with deltaR, which represents how the robot's rotation changes with a small change in the angular velo.
+  // ∂θ/∂ng = rightJ*dt, since a small change in angular velo changes the robot's heading by a factor of rightJ*dt
   B.block<3, 3>(0, 0) = dRi.rightJ * dt;
 
-  // Update covariance
-  C.block<9, 9>(0, 0) =
-      A * C.block<9, 9>(0, 0) * A.transpose() + B * Nga * B.transpose();
+  // Update covariance, which represents the uncertainty in the estimated state
+  // Nga is a 6x6 diagonal matrix with the first 3 values being gyro_noise^2, last 3 being accel_noise^2
+  C.block<9, 9>(0, 0) = A * C.block<9, 9>(0, 0) * A.transpose() + B * Nga * B.transpose();
+  // same as Nga but with the walk noises
   C.block<6, 6>(9, 9) += NgaWalk;
 
   // Update rotation jacobian wrt bias correction
+  // ∂θ/∂bg = -(deltaR*JRg + rightJ*dt)
   JRg = dRi.deltaR.transpose() * JRg - dRi.rightJ * dt;
+  // Note: there is no JRa because the rotation is constant wrt. a change in accelerometer bias. If we had one, it would always just be 0
 
   // Total integrated time
   dT += dt;
@@ -383,6 +414,7 @@ std::ostream &operator<<(std::ostream &out, const Bias &b) {
 void Calib::Set(const Sophus::SE3<float> &sophTbc, const float &ng,
                 const float &na, const float &ngw, const float &naw) {
   mbIsSet = true;
+  // ng = Gyro Noise, na = Accel. Noise, ngw = Gyro Walk Noise, naw = Accel. Walk Noise
   const float ng2 = ng * ng;
   const float na2 = na * na;
   const float ngw2 = ngw * ngw;

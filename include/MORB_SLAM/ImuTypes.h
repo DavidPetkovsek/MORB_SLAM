@@ -209,11 +209,11 @@ class Preintegrated {
   Bias GetUpdatedBias();
 
   void printMeasurements() const {
-    std::cout << "pint meas:\n";
+    std::cout << "pint meas:" << std::endl;
     for (size_t i = 0; i < mvMeasurements.size(); i++) {
       std::cout << "meas " << mvMeasurements[i].t << std::endl;
     }
-    std::cout << "end pint meas:\n";
+    std::cout << "end pint meas:" << std::endl;
   }
 
  public:
