@@ -1210,7 +1210,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
   // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now(); // UNUSED
-  Verbose::PrintMess("Global Bundle Adjustment started", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
     // if FullInertialBA isn't called, SLAM instantly gets lost
     // also bFIBA is always true
     // if (bFIBA) {
@@ -1227,7 +1227,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
   // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now(); // UNUSED
 
-    Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("end Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
 
     // Get Map Mutex
     std::scoped_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
