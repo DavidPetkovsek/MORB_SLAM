@@ -101,8 +101,8 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     N--;
   }
   // don't delete the last optimizable KF (there's a chance that it only shares MPs with its previous KFs, and therefore doesn't deserve to be deleted)
-  vpOptimizableKFs.back()->mbUseForLocalInertialBA = true;
-  lFixedKeyFrames.back()->mbUseForLocalInertialBA = true;
+  vpOptimizableKFs.back()->mbVerifyLocalInertialBA = true;
+  lFixedKeyFrames.back()->mbVerifyLocalInertialBA = true;
   
 
   {
@@ -181,24 +181,24 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       KeyFrame* pKFi = mit->first;
 
       // this flag is true if KFi has been confirmed to observe 3 or more Local MPs 
-      if (pKFi->mbUseForLocalInertialBA) continue;
+      if (pKFi->mbVerifyLocalInertialBA) continue;
 
       // CASE 1: it's the first time checking a non-optimizable KF, so we add it to the Fixed KeyFrames list
-      if (pKFi->mnBALocalForKF != pKF->mnId && pKFi->mnBAFixedForKF != pKF->mnId) {
+      //          don't add new KFs if there's already [maxFixKF] KeyFrames
+      if (lFixedKeyFrames.size() < maxFixKF && pKFi->mnBALocalForKF != pKF->mnId && pKFi->mnBAFixedForKF != pKF->mnId) {
         pKFi->mnBAFixedForKF = pKF->mnId;
         if (!pKFi->isBad()) {
-          // lFixedKeyFrames.push_back(pKFi); // TODO: don't add to list until 3 observations
           // keep track of the local MP that KFi observed
           fixedKFsVisibleMPs[pKFi] = std::pair<MapPoint*, MapPoint*>((*lit), nullptr);
         } else {
-          pKFi->mbUseForLocalInertialBA = true;
+          pKFi->mbVerifyLocalInertialBA = true;
         }
 
       // CASE 2: KFi is in the Optimizable KeyFrames vector
       } else if(pKFi->mnBALocalForKF == pKF->mnId) {
         // if this is the 3rd MP that KFi has observed, KFi is a good KeyFrame
         if(optimizableKFsCounter[pKFi] >= 2) {
-          pKFi->mbUseForLocalInertialBA = true;
+          pKFi->mbVerifyLocalInertialBA = true;
           // remove KFi from the counter, since it's already verified
           optimizableKFsCounter.erase(pKFi);
         } else {
@@ -209,7 +209,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       } else if(pKFi->mnBAFixedForKF == pKF->mnId) {
         // if this is the 3rd MP that KFi has observed, KFi is a good KeyFrame
         if(fixedKFsVisibleMPs[pKFi].second) {
-          pKFi->mbUseForLocalInertialBA = true;
+          pKFi->mbVerifyLocalInertialBA = true;
           lFixedKeyFrames.push_back(pKFi);
           // remove KFi from the counter, since it's already verified
           fixedKFsVisibleMPs.erase(pKFi);
@@ -221,19 +221,18 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
         }
       }
     }
-    // TODO: this is bad, will delete good MPs if there's still unchecked Local MPs and return early
-    if(lFixedKeyFrames.size() >= maxFixKF) break;
+    if(lFixedKeyFrames.size() >= maxFixKF && optimizableKFsCounter.size() == 0 && fixedKFsVisibleMPs.size() == 0) break;
   }
 
-  // Reset the KFs booleans back to False (they're only used to speed up the previous step)
+  // Reset the KFs booleans back to false (they're only used to speed up the previous step)
   for (int i = 0; i < N; i++) {
-    vpOptimizableKFs[i]->mbUseForLocalInertialBA = false;
+    vpOptimizableKFs[i]->mbVerifyLocalInertialBA = false;
   }
   for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(), lend = lFixedKeyFrames.end(); lit != lend; lit++) {
-    (*lit)->mbUseForLocalInertialBA = false;
+    (*lit)->mbVerifyLocalInertialBA = false;
   }
   for (auto mit = fixedKFsVisibleMPs.begin(); mit != fixedKFsVisibleMPs.end(); mit++) {
-    mit->first->mbUseForLocalInertialBA = false;
+    mit->first->mbVerifyLocalInertialBA = false;
   }
 
   bool badCurrentFrame = false;
@@ -248,7 +247,7 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       break;
     }
 
-    // don't check the first or last KF
+    // Remove pKFi from vpOptimizableKFs
     for(int i = 1; i < N-1; i++) {
       if(vpOptimizableKFs[i] == pKFi) {
         vpOptimizableKFs.erase(vpOptimizableKFs.begin() + i);
@@ -257,11 +256,13 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       }
     }
     
+    // Delete KFi by merging its previous and next KFs (code taken from LocalMapping's KeyFrameCulling function)
     if(pKFi->SetBadFlag()) {
       std::cout << "LocalInertialBA: Deleting KeyFrame " << pKFi->mnId << std::endl;
       if(pKFi->mNextKF) {
-        if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated)
+        if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated) {
           pKFi->mNextKF->mpImuPreintegrated->MergePrevious(pKFi->mpImuPreintegrated);
+        }
         pKFi->mNextKF->mPrevKF = pKFi->mPrevKF;
       }
       if(pKFi->mPrevKF) { 
@@ -299,12 +300,16 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
       lLocalMapPoints.remove(pMP2);
     }
 
-    std::cout << "LocalInertialBA: Do not optimize using KeyFrame " << pKFi->mnId << std::endl;
-    // lFixedKeyFrames.remove(pKFi);
+    // std::cout << "LocalInertialBA: Do not optimize using KeyFrame " << pKFi->mnId << std::endl;
   }
 
 /*
   _________________________________________________________________________________________________________________________*/
+
+  // std::cout << "num LocalMapPoints: " << lLocalMapPoints.size() << std::endl;
+  // std::cout << "num OptimizableKFs: " << vpOptimizableKFs.size() << std::endl;
+  // std::cout << "num FixedKFs: " << lFixedKeyFrames.size() << std::endl;
+  // std::cout << "____________________________" << std::endl;
 
   // bool bNonFixed = (lFixedKeyFrames.size() == 0); // UNUSED
 
@@ -718,8 +723,9 @@ void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr
     }
   }
 
-  for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(), lend = lFixedKeyFrames.end(); lit != lend; lit++)
-    (*lit)->mnBAFixedForKF = 0;
+  // REDUNDANT (we never perform LocalBundle)
+  // for (std::list<KeyFrame*>::iterator lit = lFixedKeyFrames.begin(), lend = lFixedKeyFrames.end(); lit != lend; lit++)
+  //   (*lit)->mnBAFixedForKF = 0;
 
   // Recover optimized data
   // Optimizable Keyframes
