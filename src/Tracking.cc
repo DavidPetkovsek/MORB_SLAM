@@ -2863,14 +2863,10 @@ void Tracking::CheckTrackingModeChanged() {
 }
 
 void Tracking::CheckTrackingReset() {
-  std::scoped_lock<std::mutex> lock(mMutexReset);
-  if (mbReset) {
+  if(mbReset) {
     Reset();
-    mbReset = false;
-    mbResetActiveMap = false;
-  } else if (mbResetActiveMap) {
+  } else if(mbResetActiveMap) {
     ResetActiveMap();
-    mbResetActiveMap = false;
   }
 }
 
