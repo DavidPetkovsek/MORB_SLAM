@@ -18,12 +18,12 @@
 namespace MORB_SLAM {
 
 ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::string& _serverAddress, const int _serverPort):
-    mpSystem(pSystem),
-    // mpTracker(pSystem->mpTracker),
+    mpTracker(pSystem->mpTracker),
     serverAddress(_serverAddress),
     serverPort(_serverPort),
     valuesPushed(false) {
-        threadEMV = std::thread(&ExternalMapViewer::run, this);
+        std::cout << "Creating Thread in ExternalMapViewer" << std::endl;
+        threadEMV = std::jthread(&ExternalMapViewer::run, this);
     }
 
 ExternalMapViewer::~ExternalMapViewer() {
@@ -38,11 +38,9 @@ void ExternalMapViewer::pushValues(float x, float y, float z) {
 void ExternalMapViewer::run() {
     ix::WebSocketServer server(serverPort, serverAddress);
 
-    Tracking_ptr trackpointpointtracking(mpSystem->mpTracker);
-
     std::cout << "ExternalMapViewer Started" << std::endl;
 
-    server.setOnClientMessageCallback([&trackpointpointtracking, this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
+    server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
             Frame currentFrame;
             long unsigned int prevFrameID = 0;
@@ -54,10 +52,10 @@ void ExternalMapViewer::run() {
             // size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool);
             // std::vector<uint8_t> binaryOutput(outputSize);
             while(true) {
-                if(prevFrameID != trackpointpointtracking->mLastFrame.mnId) {
-                    currentFrame = Frame(trackpointpointtracking->mLastFrame, true);
+                if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
+                    currentFrame = Frame(this->mpTracker->mLastFrame, true);
                     prevFrameID = currentFrame.mnId;
-                    state = trackpointpointtracking->mState.getID();
+                    state = this->mpTracker->mState.getID();
 
                     if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
                         isKF = true;

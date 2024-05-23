@@ -5,6 +5,7 @@
 #--------------------------------------------------------------------------------------------
 
 System.FastIMUInit: "ON"
+System.StationaryIMUInit: "OFF"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters (calibration and biases vary from camera to camera)
@@ -26,7 +27,7 @@ Camera.width: 848
 Camera.height: 480
 
 # Camera frames per second
-Camera.fps: 30
+Camera.fps: 15
 
 # Close/Far threshold. Baseline times.
 Stereo.ThDepth: 40.0
@@ -92,5 +93,5 @@ Viewer.ViewpointF: 500.0
 # System.LoadAtlasFromFile: "/home/landson/MORB_SLAM/trial"
 # System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
 # System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
-# System.SaveAtlasToFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"
+System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/expos"
 # System.LoadAtlasFromFile: "/xavier_ssd/MORB_SLAM/atlases/Oman"

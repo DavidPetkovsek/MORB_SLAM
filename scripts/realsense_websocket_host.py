@@ -10,9 +10,13 @@ def init_cams():
     pipeline = rs.pipeline()
     config = rs.config()
 
-    config.enable_stream(rs.stream.infrared, stream_index=1, width=848, height=480, format=rs.format.y8, framerate=30)
-    config.enable_stream(rs.stream.infrared, stream_index=2, width=848, height=480, format=rs.format.y8, framerate=30)
-    pipeline.start(config)
+    config.enable_stream(rs.stream.infrared, stream_index=1, width=848, height=480, format=rs.format.y8, framerate=15)
+    config.enable_stream(rs.stream.infrared, stream_index=2, width=848, height=480, format=rs.format.y8, framerate=15)
+    pipeline_profile = pipeline.start(config)
+    depth_sensor = pipeline_profile.get_device().query_sensors()[0]
+    laser_range = depth_sensor.get_option_range(rs.option.laser_power)
+    depth_sensor.set_option(rs.option.laser_power, laser_range.min)
+
     return pipeline
 
 def init_accel():
@@ -75,9 +79,7 @@ async def do_polling(websocket):
                 if send_accel and send_gyro:
                     timestamp = struct.pack('<d', ((real_accel.timestamp+real_gyro.timestamp)/2-t0)/1000)
                     a = parse_data(real_accel[0].as_motion_frame().get_motion_data())
-                    #a = np.asarray([0,0,-9.81], dtype=np.float32).tobytes()
                     w = parse_data(real_gyro[0].as_motion_frame().get_motion_data())
-                    #w = np.asarray([0,0,0], dtype=np.float32).tobytes()
                     await websocket.send(bytes([2])+timestamp+a+w)
                     send_accel = False
                     send_gyro = False
@@ -85,10 +87,10 @@ async def do_polling(websocket):
         finally:
             cams_pipeline.stop()
             accel_pipeline.stop()
-            accel_pipeline.stop()
+            gyro_pipeline.stop()
 
 
 async def main():
-   async with serve(do_polling, "0.0.0.0", 8765):
+   async with serve(do_polling, "0.0.0.0", 8765, ping_interval=None):
        await asyncio.Future()
 asyncio.run(main())

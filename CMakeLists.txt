@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if( NOT CMAKE_BUILD_TYPE )
     set(CMAKE_BUILD_TYPE Release)
 ENDIF()
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gdwarf-4")
 # https://eigen.tuxfamily.org/dox/group__TopicStructHavingEigenMembers.html
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_GENERATOR STREQUAL "Ninja")
@@ -83,8 +83,10 @@ find_package(OpenSSL REQUIRED)
 find_package(ixwebsocket QUIET) # only needed for getting realsense data through a websocket
 
 file(GLOB CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+file(GLOB CPP_OPTIMIZER_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cc)
 file(GLOB CPP_CAMERA_MODELS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/CameraModels/*.cpp)
 list(APPEND CPP_FILES ${CPP_CAMERA_MODELS_FILES})
+list(APPEND CPP_FILES ${CPP_OPTIMIZER_FILES})
 
 file(GLOB headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.h)
 file(GLOB camera_model_headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.hpp)

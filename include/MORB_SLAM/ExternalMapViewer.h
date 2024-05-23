@@ -27,9 +27,8 @@ class ExternalMapViewer {
         void pushValues(float x, float y, float z);
 
     private:
-        std::thread threadEMV;
-        System_ptr mpSystem;
-        // Tracking_ptr mpTracker;
+        std::jthread threadEMV;
+        Tracking_ptr mpTracker;
         
         // Websocket host address
         const std::string serverAddress;

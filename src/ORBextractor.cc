@@ -429,9 +429,7 @@ ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels, int
 
   mnFeaturesPerLevel.resize(nlevels);
   float factor = 1.0f / scaleFactor;
-  float nDesiredFeaturesPerScale =
-      nfeatures * (1 - factor) /
-      (1 - (float)pow((double)factor, (double)nlevels));
+  float nDesiredFeaturesPerScale = nfeatures * (1 - factor) / (1 - (float)pow((double)factor, (double)nlevels));
 
   int sumFeatures = 0;
   for (int level = 0; level < nlevels - 1; level++) {
@@ -519,10 +517,7 @@ static bool compareNodes(std::pair<int, ExtractorNode*>& e1, std::pair<int, Extr
   return (e1.first < e2.first) || (e1.first == e2.first && e1.second->UL.x < e2.second->UL.x);
 }
 
-std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
-    const std::vector<cv::KeyPoint>& vToDistributeKeys, const int& minX,
-    const int& maxX, const int& minY, const int& maxY, const int& N,
-    const int& level) {
+std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const std::vector<cv::KeyPoint>& vToDistributeKeys, const int& minX, const int& maxX, const int& minY, const int& maxY, const int& N, const int& level) {
   // Compute how many initial nodes
   const int nIni = round(static_cast<float>(maxX - minX) / (maxY - minY));
 
@@ -565,7 +560,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
 
   int iteration = 0;
 
-  std::vector<std::pair<int, ExtractorNode*> > vSizeAndPointerToNode;
+  std::vector<std::pair<int, ExtractorNode*>> vSizeAndPointerToNode;
   vSizeAndPointerToNode.reserve(lNodes.size() * 4);
 
   while (!bFinish) {
@@ -594,8 +589,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
           lNodes.push_front(n1);
           if (n1.vKeys.size() > 1) {
             nToExpand++;
-            vSizeAndPointerToNode.emplace_back(
-                n1.vKeys.size(), &lNodes.front());
+            vSizeAndPointerToNode.emplace_back(n1.vKeys.size(), &lNodes.front());
             lNodes.front().lit = lNodes.begin();
           }
         }
@@ -603,8 +597,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
           lNodes.push_front(n2);
           if (n2.vKeys.size() > 1) {
             nToExpand++;
-            vSizeAndPointerToNode.emplace_back(
-                n2.vKeys.size(), &lNodes.front());
+            vSizeAndPointerToNode.emplace_back(n2.vKeys.size(), &lNodes.front());
             lNodes.front().lit = lNodes.begin();
           }
         }
@@ -612,8 +605,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
           lNodes.push_front(n3);
           if (n3.vKeys.size() > 1) {
             nToExpand++;
-            vSizeAndPointerToNode.emplace_back(
-                n3.vKeys.size(), &lNodes.front());
+            vSizeAndPointerToNode.emplace_back(n3.vKeys.size(), &lNodes.front());
             lNodes.front().lit = lNodes.begin();
           }
         }
@@ -621,8 +613,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
           lNodes.push_front(n4);
           if (n4.vKeys.size() > 1) {
             nToExpand++;
-            vSizeAndPointerToNode.emplace_back(
-                n4.vKeys.size(), &lNodes.front());
+            vSizeAndPointerToNode.emplace_back(n4.vKeys.size(), &lNodes.front());
             lNodes.front().lit = lNodes.begin();
           }
         }
@@ -640,12 +631,10 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
       while (!bFinish) {
         prevSize = lNodes.size();
 
-        std::vector<std::pair<int, ExtractorNode*> > vPrevSizeAndPointerToNode =
-            vSizeAndPointerToNode;
+        std::vector<std::pair<int, ExtractorNode*>> vPrevSizeAndPointerToNode = vSizeAndPointerToNode;
         vSizeAndPointerToNode.clear();
 
-        sort(vPrevSizeAndPointerToNode.begin(), vPrevSizeAndPointerToNode.end(),
-             compareNodes);
+        sort(vPrevSizeAndPointerToNode.begin(), vPrevSizeAndPointerToNode.end(), compareNodes);
         for (int j = vPrevSizeAndPointerToNode.size() - 1; j >= 0; j--) {
           ExtractorNode n1, n2, n3, n4;
           vPrevSizeAndPointerToNode[j].second->DivideNode(n1, n2, n3, n4);
@@ -654,8 +643,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
           if (n1.vKeys.size() > 0) {
             lNodes.push_front(n1);
             if (n1.vKeys.size() > 1) {
-              vSizeAndPointerToNode.emplace_back(
-                  n1.vKeys.size(), &lNodes.front());
+              vSizeAndPointerToNode.emplace_back(n1.vKeys.size(), &lNodes.front());
               lNodes.front().lit = lNodes.begin();
             }
           }
@@ -716,8 +704,7 @@ std::vector<cv::KeyPoint> ORBextractor::DistributeOctTree(
   return vResultKeys;
 }
 
-void ORBextractor::ComputeKeyPointsOctTree(
-    std::vector<std::vector<KeyPoint> >& allKeypoints) {
+void ORBextractor::ComputeKeyPointsOctTree(std::vector<std::vector<KeyPoint> >& allKeypoints) {
   allKeypoints.resize(nlevels);
 
   const float W = 35;
@@ -754,8 +741,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
 
         std::vector<cv::KeyPoint> vKeysCell;
 
-        FAST(mvImagePyramid[level].rowRange(iniY, maxY).colRange(iniX, maxX),
-             vKeysCell, iniThFAST, true);
+        FAST(mvImagePyramid[level].rowRange(iniY, maxY).colRange(iniX, maxX), vKeysCell, iniThFAST, true);
 
         /*if(bRight && j <= 13){
             FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
@@ -771,8 +757,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
         }*/
 
         if (vKeysCell.empty()) {
-          FAST(mvImagePyramid[level].rowRange(iniY, maxY).colRange(iniX, maxX),
-               vKeysCell, minThFAST, true);
+          FAST(mvImagePyramid[level].rowRange(iniY, maxY).colRange(iniX, maxX), vKeysCell, minThFAST, true);
           /*if(bRight && j <= 13){
               FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
                    vKeysCell,5,true);
@@ -788,8 +773,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
         }
 
         if (!vKeysCell.empty()) {
-          for (std::vector<cv::KeyPoint>::iterator vit = vKeysCell.begin();
-               vit != vKeysCell.end(); vit++) {
+          for (std::vector<cv::KeyPoint>::iterator vit = vKeysCell.begin(); vit != vKeysCell.end(); vit++) {
             (*vit).pt.x += j * wCell;
             (*vit).pt.y += i * hCell;
             vToDistributeKeys.push_back(*vit);
@@ -801,9 +785,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
     std::vector<KeyPoint>& keypoints = allKeypoints[level];
     keypoints.reserve(nfeatures);
 
-    keypoints =
-        DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX, minBorderY,
-                          maxBorderY, mnFeaturesPerLevel[level], level);
+    keypoints = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX, minBorderY, maxBorderY, mnFeaturesPerLevel[level], level);
 
     const int scaledPatchSize = PATCH_SIZE * mvScaleFactor[level];
 
@@ -831,22 +813,19 @@ static void computeDescriptors(const Mat& image, std::vector<KeyPoint>& keypoint
                          descriptors.ptr((int)i));
 }
 
-int ORBextractor::operator()(InputArray _image, InputArray _mask,
-                             std::vector<KeyPoint>& _keypoints,
-                             OutputArray _descriptors,
-                             std::vector<int>& vLappingArea) {
+int ORBextractor::operator()(InputArray _image, std::vector<KeyPoint>& _keypoints, OutputArray _descriptors, std::vector<int>& vLappingArea) {
   // std::cout << "[ORBextractor]: Max Features: " << nfeatures << std::endl;
   if (_image.empty()) return -1;
 
   Mat image = _image.getMat();
+  // add if statement, not just an assert?
   assert(image.type() == CV_8UC1);
 
   // Pre-compute the scale pyramid
   ComputePyramid(image);
 
-  std::vector<std::vector<KeyPoint> > allKeypoints;
+  std::vector<std::vector<KeyPoint>> allKeypoints;
   ComputeKeyPointsOctTree(allKeypoints);
-
 
   int nkeypoints = 0;
   for (int level = 0; level < nlevels; ++level)
@@ -910,28 +889,22 @@ int ORBextractor::operator()(InputArray _image, InputArray _mask,
   return monoIndex;
 }
 
+
+// the Border stuff here does ABSOLUTEY NOTHING cheers -- test
 void ORBextractor::ComputePyramid(cv::Mat image) {
   for (int level = 0; level < nlevels; ++level) {
     float scale = mvInvScaleFactor[level];
-    Size sz(cvRound((float)image.cols * scale),
-            cvRound((float)image.rows * scale));
-    Size wholeSize(sz.width + EDGE_THRESHOLD * 2,
-                   sz.height + EDGE_THRESHOLD * 2);
+    Size sz(cvRound((float)image.cols * scale), cvRound((float)image.rows * scale));
+    Size wholeSize(sz.width + EDGE_THRESHOLD * 2, sz.height + EDGE_THRESHOLD * 2);
     Mat temp(wholeSize, image.type());
-    mvImagePyramid[level] =
-        temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
+    mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
 
     // Compute the resized image
     if (level != 0) {
-      resize(mvImagePyramid[level - 1], mvImagePyramid[level], sz, 0, 0,
-             INTER_LINEAR);
-
-      copyMakeBorder(mvImagePyramid[level], temp, EDGE_THRESHOLD,
-                     EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                     BORDER_REFLECT_101 + BORDER_ISOLATED);
+      resize(mvImagePyramid[level - 1], mvImagePyramid[level], sz, 0, 0, INTER_LINEAR);
+      copyMakeBorder(mvImagePyramid[level], temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, BORDER_REFLECT_101 + BORDER_ISOLATED);
     } else {
-      copyMakeBorder(image, temp, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                     EDGE_THRESHOLD, EDGE_THRESHOLD, BORDER_REFLECT_101);
+      copyMakeBorder(image, temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, BORDER_REFLECT_101);
     }
   }
 }

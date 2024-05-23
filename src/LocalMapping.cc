@@ -29,11 +29,14 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/G2oTypes.h"
+
+#include "MORB_SLAM/Exceptions.hpp"
 
 #include <math.h> 
 namespace MORB_SLAM {
 
-LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial)
+LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial)
     : mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
       mInitSect(0),
@@ -46,7 +49,6 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       nLBA_exec(0),
       nLBA_abort(0),
 #endif
-      mpSystem(pSys),
       mbMonocular(bMonocular),
       mbInertial(bInertial),
       mbResetRequested(false),
@@ -66,20 +68,24 @@ LocalMapping::LocalMapping(System* pSys, const Atlas_ptr &pAtlas, bool bMonocula
       mPoseReverseAxisFlip(Sophus::SE3f()) {
 }
 
-void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser) {
+void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) {
   mpLoopCloser = pLoopCloser;
 }
 
-void LocalMapping::SetTracker(Tracking* pTracker) { mpTracker = pTracker; }
+void LocalMapping::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 
 void LocalMapping::Run() {
     mbFinished = false;
 
-    while (1) {
-    // Tracking will see that Local Mapping is busy
-    SetAcceptKeyFrames(false);
+    const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
+    const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
-    // Check if there are keyframes in the queue
+    while (1) {
+        try {
+        // Tracking will see that Local Mapping is busy
+        SetAcceptKeyFrames(false);
+
+        // Check if there are keyframes in the queue
         if (CheckNewKeyFrames() && !mbBadImu) {
 #ifdef REGISTER_TIMES
       double timeLBA_ms = 0;
@@ -88,7 +94,10 @@ void LocalMapping::Run() {
       std::chrono::steady_clock::time_point time_StartProcessKF =
           std::chrono::steady_clock::now();
 #endif
+            // std::cout << "_______________________________________" << std::endl;
+            // std::chrono::steady_clock::time_point time_StartProcessKF = std::chrono::steady_clock::now();
             // BoW conversion and insertion in Map
+            // std::cout << "Call ProcessNewKeyFrame" << std::endl;
             ProcessNewKeyFrame();
 #ifdef REGISTER_TIMES
       std::chrono::steady_clock::time_point time_EndProcessKF =
@@ -100,6 +109,9 @@ void LocalMapping::Run() {
               .count();
       vdKFInsert_ms.push_back(timeProcessKF);
 #endif
+
+            // std::chrono::steady_clock::time_point time_EndProcessKF = std::chrono::steady_clock::now();
+            // std::cout << "ms = " << std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(time_EndProcessKF - time_StartProcessKF).count() << std::endl;
 
             // Check recent MapPoints
             MapPointCulling();
@@ -113,7 +125,6 @@ void LocalMapping::Run() {
               .count();
       vdMPCulling_ms.push_back(timeMPCulling);
 #endif
-
             // Triangulate new MapPoints
             CreateNewMapPoints();
 
@@ -142,36 +153,35 @@ void LocalMapping::Run() {
             int num_edges_BA = 0;
 
             if (!CheckNewKeyFrames() && !stopRequested()) {
+                // std::cout << "No New KeyFrames to Process" << std::endl;
                 if (mpAtlas->KeyFramesInMap() > 2) {
                     if (mbInertial && mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
                         float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                             (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
-                        if (mpTracker->fastIMUInitEnabled() || dist > 0.05)
+                        if (mpTracker->stationaryIMUInitEnabled() || dist > 0.05)
                             mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if (!mpTracker->fastIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if ((mTinit < 10.f) && (dist < 0.02)) {
-                                std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
-                                std::scoped_lock<std::mutex> lock(mMutexReset);
-                                mbResetRequestedActiveMap = true;
-                                mpMapToReset = mpCurrentKeyFrame->GetMap();
-                                mbBadImu = true;
-                            }
-                        }
-
-                        bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) ||
-                                        ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
+                        // if (!mpTracker->stationaryIMUInitEnabled() && !mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
+                        //     if ((mTinit < accelTimeout) && (dist < 0.02)) {
+                        //         std::cout << "Not enough motion for initializing. Reseting..." << std::endl;
+                        //         std::scoped_lock<std::mutex> lock(mMutexReset);
+                        //         mbResetRequestedActiveMap = true;
+                        //         mpMapToReset = mpCurrentKeyFrame->GetMap();
+                        //         mbBadImu = true;
+                        //     }
+                        // }
+                        bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) || ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // if (mpTracker->mState == TrackingState::OK)
                             Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
                                                         num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, bLarge,
                                                         !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                            
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
 #endif
                     } else {
-                        Optimizer::LocalBundleAdjustment(
-                            mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
-                            num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, mbInertial);
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),
+                                                        num_FixedKF_BA, num_OptKF_BA, num_MPs_BA, num_edges_BA, mbInertial);
 #ifdef REGISTER_TIMES
             b_doneLBA = true;
 #endif
@@ -213,7 +223,7 @@ void LocalMapping::Run() {
                     mpTracker->mTeleported = true;
                 }
                 // Check redundant local Keyframes
-                if(mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
+                if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) KeyFrameCulling();
 
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point time_EndKFCulling =
@@ -238,7 +248,7 @@ void LocalMapping::Run() {
                                 std::cout << "end VIBA 1" << std::endl;
                             }
                         } else if (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()) {
-                            if (mTinit > 15.0f) {
+                            if (mTinit > timerVIBA2) {
                                 mpTracker->mLockPreTeleportTranslation = true;
                                 std::cout << "start VIBA 2" << std::endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
@@ -293,6 +303,9 @@ void LocalMapping::Run() {
         if (CheckFinish()) break;
 
         usleep(3000);
+        } catch(const ResetActiveMapSignal & e) {
+            mpTracker->RequestResetActiveMap();
+        }
     }
 
     SetFinish();
@@ -349,44 +362,33 @@ void LocalMapping::EmptyQueue() {
 
 void LocalMapping::MapPointCulling() {
     // Check Recent Added MapPoints
-  std::list<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
+    std::list<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
     const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
-
-    int nThObs;
-    if (mbMonocular)
-        nThObs = 2;
-    else
-        nThObs = 3;
-    const int cnThObs = nThObs;
-
-    int borrar = mlpRecentAddedMapPoints.size();
+    const int cnThObs = mbMonocular ? 2 : 3;
 
     while (lit != mlpRecentAddedMapPoints.end()) {
-    MapPoint* pMP = *lit;
+        MapPoint* pMP = *lit;
 
-        if (pMP->isBad())
+        if (pMP->isBad()) {
             lit = mlpRecentAddedMapPoints.erase(lit);
-        else if (pMP->GetFoundRatio() < 0.25f) {
+        } else if (pMP->GetFoundRatio() < 0.25f) {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
-        } else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 2 &&
-                   pMP->Observations() <= cnThObs) {
+        } else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 2 && pMP->Observations() <= cnThObs) {
             pMP->SetBadFlag();
             lit = mlpRecentAddedMapPoints.erase(lit);
-        } else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 3)
+        } else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 3) {
             lit = mlpRecentAddedMapPoints.erase(lit);
-        else {
+        } else {
             lit++;
-            borrar--;
         }
     }
 }
 
 void LocalMapping::CreateNewMapPoints() {
+    
+    int nn = mbMonocular ? 30 : 10;
     // Retrieve neighbor keyframes in covisibility graph
-    int nn = 10;
-    // For stereo inertial case
-    if (mbMonocular) nn = 30;
     std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     if (mbInertial) {
@@ -428,16 +430,20 @@ void LocalMapping::CreateNewMapPoints() {
 
         KeyFrame* pKF2 = vpNeighKFs[i];
 
-        std::shared_ptr<const GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera,
-                                         pCamera2 = pKF2->mpCamera;
+        std::shared_ptr<const GeometricCamera> pCamera1 = mpCurrentKeyFrame->mpCamera, pCamera2 = pKF2->mpCamera;
+
+        Sophus::SE3<float> sophTcw2 = pKF2->GetPose();
 
         // Check first that baseline is not too short
         Eigen::Vector3f Ow2 = pKF2->GetCameraCenter();
         Eigen::Vector3f vBaseline = Ow2 - Ow1;
         const float baseline = vBaseline.norm();
 
+        Eigen::Vector3d phi = LogSO3((Rcw1*sophTcw2.rotationMatrix().transpose()).cast<double>());
+        const double angleBaseline = phi.norm();
+
         if (!mbMonocular) {
-            if (baseline < pKF2->mb) continue;
+            if (baseline < pKF2->mb && angleBaseline < 0.1) continue;
         } else {
             const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
             const float ratioBaselineDepth = baseline / medianDepthKF2;
@@ -451,7 +457,6 @@ void LocalMapping::CreateNewMapPoints() {
 
         matcher.SearchForTriangulation(mpCurrentKeyFrame, pKF2, vMatchedIndices, false, bCoarse);
 
-        Sophus::SE3<float> sophTcw2 = pKF2->GetPose();
         Eigen::Matrix<float, 3, 4> eigTcw2 = sophTcw2.matrix3x4();
         Eigen::Matrix<float, 3, 3> Rcw2 = eigTcw2.block<3, 3>(0, 0);
         Eigen::Matrix<float, 3, 3> Rwc2 = Rcw2.transpose();
@@ -602,8 +607,7 @@ void LocalMapping::CreateNewMapPoints() {
                 float errX1 = u1 - kp1.pt.x;
                 float errY1 = v1 - kp1.pt.y;
                 float errX1_r = u1_r - kp1_ur;
-                if ((errX1 * errX1 + errY1 * errY1 + errX1_r * errX1_r) > 7.8 * sigmaSquare1)
-                    continue;
+                if ((errX1 * errX1 + errY1 * errY1 + errX1_r * errX1_r) > 7.8 * sigmaSquare1) continue;
             }
 
             // Check reprojection error in second keyframe
@@ -623,8 +627,7 @@ void LocalMapping::CreateNewMapPoints() {
                 float errX2 = u2 - kp2.pt.x;
                 float errY2 = v2 - kp2.pt.y;
                 float errX2_r = u2_r - kp2_ur;
-                if ((errX2 * errX2 + errY2 * errY2 + errX2_r * errX2_r) > 7.8 * sigmaSquare2)
-                    continue;
+                if ((errX2 * errX2 + errY2 * errY2 + errX2_r * errX2_r) > 7.8 * sigmaSquare2) continue;
             }
 
             // Check scale consistency
@@ -636,14 +639,12 @@ void LocalMapping::CreateNewMapPoints() {
 
             if (dist1 == 0 || dist2 == 0) continue;
 
-            if (mbFarPoints && (dist1 >= mThFarPoints || dist2 >= mThFarPoints))  // MODIFICATION
-                continue;
+            if (mbFarPoints && (dist1 >= mThFarPoints || dist2 >= mThFarPoints)) continue; // MODIFICATION
 
             const float ratioDist = dist2 / dist1;
             const float ratioOctave = mpCurrentKeyFrame->mvScaleFactors[kp1.octave] / pKF2->mvScaleFactors[kp2.octave];
 
-            if (ratioDist * ratioFactor < ratioOctave || ratioDist > ratioOctave * ratioFactor)
-                continue;
+            if (ratioDist * ratioFactor < ratioOctave || ratioDist > ratioOctave * ratioFactor) continue;
 
             // Triangulation is succesfull
             MapPoint* pMP = new MapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
@@ -826,12 +827,17 @@ void LocalMapping::KeyFrameCulling() {
     // consider close stereo points.
     const int Nd = 21;
     mpCurrentKeyFrame->UpdateBestCovisibles();
+
+    if(mpAtlas->KeyFramesInMap() <= Nd) return;
+    const bool mapVIBA2 = mpCurrentKeyFrame->GetMap()->GetIniertialBA2(); // called here to not lock/unlock the mutex multiple times in the for loops
+    if(!mapVIBA2 && mpTracker->stationaryIMUInitEnabled()) return;
+
     std::vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
     float redundant_th = (!mbInertial || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threashold
 
-    const bool atlasImuInitialized = mpAtlas->isImuInitialized(); // called here to not lock/unlock the mutex multiple times in the for loops
     int count = 0;
+    int numChecked = 0;
 
     // Compute last KF from optimizable window:
     unsigned int id_keyframe_upto_Nd_older_than_currentKeyFrame = 0; // normally was left unset, however, it produces a warning of id_keyframe_upto_Nd_older_than_currentKeyFrame potentially being uninitialized lower down even though the logic says otherwise
@@ -845,31 +851,61 @@ void LocalMapping::KeyFrameCulling() {
         id_keyframe_upto_Nd_older_than_currentKeyFrame = aux_KF->mnId;
     }
 
+    // std::cout << vpLocalKeyFrames.size() << " Total KeyFrames" << std::endl;
     for (KeyFrame* pKF : vpLocalKeyFrames) {
-        count++;
+        numChecked++;
+        // dont cull KF if it: is the first KF in the map, isBad, has no prev/next KF, or it is the most recent KF before the current KF
+        if ((pKF->mnId == pKF->GetMap()->GetInitKFid()) || pKF->isBad() || !pKF->mPrevKF || !pKF->mNextKF || (pKF->mnId > (mpCurrentKeyFrame->mnId - 2))) continue;
 
-        if ((pKF->mnId == pKF->GetMap()->GetInitKFid()) || pKF->isBad())
-            continue;
+        bool longTimeNotMoving = false;
+        float t = pKF->mNextKF->mTimeStamp - pKF->mPrevKF->mTimeStamp;
+        if(t < 0.5 && mapVIBA2) {
+            count++;
+        } else if(pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) {
+            if(t >= 3 || !mapVIBA2) {
+                if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) || 
+                        ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)) continue;
+                longTimeNotMoving = true;
+            }
+            count++;
+        }else continue;
+
+
+        // if((mapVIBA2 && (pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) && t < 3.) || (t < 0.5)) {
+        //     count++;
+        // } else if((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() < 0.02 && ) {
+        //     if(t >= 3) {
+        //         redundant_th = 0.95;
+        //         std::cout << "NEW SECTION" << std::endl;
+        //     }
+        //     count++;
+        // } else {
+        //     continue;
+        // }
         const std::vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
 
-        int nObs = 3;
-        const int thObs = nObs;
+        const int thObs = 3;
         int nRedundantObservations = 0;
         int nMPs = 0;
         for (size_t i = 0, iend = vpMapPoints.size(); i < iend; i++) { // David comment: get the number of redundant observations for the keyframe (put in nRedundantObservations)
             MapPoint* pMP = vpMapPoints[i];
-            if (!pMP || pMP->isBad() || (!mbMonocular && (pKF->mvDepth[i] > pKF->mThDepth || pKF->mvDepth[i] < 0)))
-                continue;
+            if (!pMP || pMP->isBad() || (!mbMonocular && ((!longTimeNotMoving && pKF->mvDepth[i] > pKF->mThDepth) || pKF->mvDepth[i] < 0))) continue;
 
             nMPs++;
 
+            if(longTimeNotMoving) {
+                if(pMP->Observations() > thObs*2) nRedundantObservations++;
+                continue;
+            }
+            
             if(pMP->Observations() <= thObs) continue;
 
             const int& scaleLevel = (pKF->NLeft == -1) ? pKF->mvKeysUn[i].octave :
                     ((static_cast<int>(i) < pKF->NLeft) ? pKF->mvKeys[i].octave : pKF->mvKeysRight[i].octave);
             const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
             int nObs = 0;
-             for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) { // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
+            int nnObs = 0;
+            for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) { // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
                 KeyFrame* pKFi = mit->first;
                 if (pKFi == pKF) continue;
                 std::tuple<int, int> indexes = mit->second;
@@ -889,39 +925,33 @@ void LocalMapping::KeyFrameCulling() {
                 if (scaleLeveli <= scaleLevel + 1) {
                     nObs++;
                     if (nObs > thObs) break;
+                } else {
+                    nnObs++;
                 }
             }
+            // std::cout << (nnObs+nObs) << ", " << observations.size() << std::endl;
             if (nObs > thObs)
                 nRedundantObservations++;
         }
-
+        // std::cout << longTimeNotMoving << " " << nRedundantObservations << " > " << redundant_th * nMPs << std::endl;
         if (nRedundantObservations > redundant_th * nMPs) { // David comment: if the number of redundant map points are above the threshold and other requirements (mark for memory leak?) and do not do more than 100 or 20 maybe 
             if (mbInertial) {
-                if (mpAtlas->KeyFramesInMap() <= Nd) continue;
-                if (pKF->mnId > (mpCurrentKeyFrame->mnId - 2)) continue;
-
-                if (pKF->mPrevKF && pKF->mNextKF) {
-                    const float t = pKF->mNextKF->mTimeStamp - pKF->mPrevKF->mTimeStamp;
-
-                    if (((atlasImuInitialized && (pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) && t < 3.) || (t < 0.5)) ||
-                        (!mpCurrentKeyFrame->GetMap()->GetIniertialBA2() &&
-                            ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() < 0.02) && (t < 3))) {
-                        pKF->mNextKF->mpImuPreintegrated->MergePrevious(pKF->mpImuPreintegrated);
-                        pKF->mNextKF->mPrevKF = pKF->mPrevKF;
-                        pKF->mPrevKF->mNextKF = pKF->mNextKF;
-                        pKF->mNextKF = nullptr;
-                        pKF->mPrevKF = nullptr;
-                        pKF->SetBadFlag();
-                    }
-                }
-            } else {
-                pKF->SetBadFlag();
+                pKF->mNextKF->mpImuPreintegrated->MergePrevious(pKF->mpImuPreintegrated);
+                pKF->mNextKF->mPrevKF = pKF->mPrevKF;
+                pKF->mPrevKF->mNextKF = pKF->mNextKF;
+                pKF->mNextKF = nullptr;
+                pKF->mPrevKF = nullptr;
             }
+            pKF->SetBadFlag();
         }
 
-        if ((count > 20 && mbAbortBA) || count > 100)
+        if ((mbAbortBA && numChecked > 20) || numChecked > 100 || mpAtlas->KeyFramesInMap() <= Nd) {
+            // std::cout << "Break! " << numChecked << std::endl;
             break;
+        }
     }
+    // std::cout << "Analyzed " << count << "/" << numChecked << " Checked KeyFrames" << std::endl;
+    // std::cout << "___________________________________" << std::endl;
 }
 
 void LocalMapping::RequestReset() {
@@ -1001,7 +1031,7 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequestedActiveMap = false;
 
             mPoseReverseAxisFlip = Sophus::SE3f();
-            mpSystem->setUseGravityDirectionFromLastMap(false);
+            mpAtlas->setUseGravityDirectionFromLastMap(false);
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }
@@ -1073,7 +1103,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     IMU::Bias b(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
-    if (!mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+    if (!mpAtlas->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -1114,7 +1144,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp - mFirstTs;
         mPoseReverseAxisFlip = Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-    } else if(mpSystem->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+    } else if(mpAtlas->UseGravityDirectionFromLastMap() && !mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
         for (std::vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
             if (!(*itKF)->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
@@ -1180,7 +1210,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     } else {
         Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false,
                                     mpCurrentKeyFrame->mnId, nullptr, false);
-        mpSystem->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
+        mpAtlas->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
         mPoseReverseAxisFlip = mpCurrentKeyFrame->GetPose();
     }  
     // }
@@ -1241,7 +1271,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             pKF->SetVelocity(pKF->mVwbGBA);
             pKF->SetNewBias(pKF->mBiasGBA);
         } else {
-            std::cout << "KF " << pKF->mnId << " not set to inertial!! \n";
+            std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
         }
 
         lpKFtoCheck.pop_front();
@@ -1272,7 +1302,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         }
     }
 
-    // if (mpSystem->UseGravityDirectionFromLastMap()) {
+    // if (mpAtlas->UseGravityDirectionFromLastMap()) {
     //     mpCurrentKeyFrame->GetMap()->SetImuInitialized();
     //     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
     //     mpCurrentKeyFrame->GetMap()->SetIniertialBA2();

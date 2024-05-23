@@ -101,6 +101,8 @@ borrar/*
 
 */ExecMean.txt
 
+eigen/
+IXWebSocket/
 Pangolin/
 .vsls.json
 info/

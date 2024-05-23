@@ -76,6 +76,7 @@ class Tracking;
 class LocalMapping;
 class LoopClosing;
 class Settings;
+typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class System
 {
@@ -108,19 +109,9 @@ public:
     // Returns the camera pose (empty if tracking fails).
     MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
-
-    // This stops local mapping thread (map building) and performs only camera tracking.
-    void ActivateLocalizationMode();
-    // This resumes local mapping thread and performs SLAM again.
-    void DeactivateLocalizationMode();
-
     // Returns true if there have been a big map change (loop closure, global BA)
     // since last call to this function
     bool MapChanged();
-
-    // Reset the system (clear Atlas or the active map)
-    void Reset();
-    void ResetActiveMap();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
@@ -144,12 +135,6 @@ public:
 
     float GetImageScale();
 
-    Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
-    void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
-
-    bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
-    void setUseGravityDirectionFromLastMap(bool is_true);
-
     void ForceLost();
 
 #ifdef REGISTER_TIMES
@@ -166,10 +151,6 @@ public:
 
     void setTrackingState(TrackingState state);
 
-    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
-    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-    LoopClosing* mpLoopCloser;
-
     std::shared_ptr<Settings> getSettings() const;
 
 private:
@@ -184,10 +165,10 @@ private:
     std::vector<Camera_ptr> cameras;
 
     // ORB vocabulary used for place recognition and feature matching.
-    ORBVocabulary* mpVocabulary;
+    std::shared_ptr<ORBVocabulary> mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
-    KeyFrameDatabase* mpKeyFrameDatabase;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     //Map* mpMap;
@@ -196,25 +177,19 @@ private:
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
-    Tracking* mpTracker;
+    Tracking_ptr mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
-    LocalMapping* mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
+
+    // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
+    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
+    std::shared_ptr<LoopClosing> mpLoopCloser;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
-    std::thread* mptLocalMapping;
-    std::thread* mptLoopClosing;
-
-    // Reset flag
-    std::mutex mMutexReset;
-    bool mbReset;
-    bool mbResetActiveMap;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool mbActivateLocalizationMode;
-    bool mbDeactivateLocalizationMode;
+    std::jthread mptLocalMapping;
+    std::jthread mptLoopClosing;
 
     // Tracking state
     TrackingState mTrackingState;
@@ -230,8 +205,6 @@ private:
 
     std::shared_ptr<Settings> settings;
 
-    Sophus::SE3f mStereoInitDefaultPose;
-    bool mUseGravityDirectionFromLastMap;
 };
 typedef std::shared_ptr<System> System_ptr;
 typedef std::weak_ptr<System> System_wptr;

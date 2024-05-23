@@ -37,14 +37,15 @@
 namespace MORB_SLAM {
 
 Viewer::Viewer(const System_ptr &pSystem)
-    : mpSystem(pSystem),
+    : mpAtlas(pSystem->mpAtlas),
       mpFrameDrawer(pSystem->mpAtlas),
       mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
       mbClosed(false){
     newParameterLoader(*pSystem->getSettings());
-    mptViewer = std::thread(&Viewer::Run, this);
+    std::cout << "Creating Thread in Viewer" << std::endl;
+    mptViewer = std::jthread(&Viewer::Run, this);
 }
 
 Viewer::~Viewer(){
@@ -71,7 +72,7 @@ void Viewer::newParameterLoader(const Settings &settings) {
 
   if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO ||
         mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) &&
-        settings.cameraType() == Settings::KannalaBrandt){
+        settings.cameraModelType() == Settings::KannalaBrandt){
     both = true;
     mpFrameDrawer.both = true;
   }
@@ -80,8 +81,8 @@ void Viewer::newParameterLoader(const Settings &settings) {
 void Viewer::update(const Packet &pose){
   if(mpTracker->mState != TrackingState::NOT_INITIALIZED){
     mpFrameDrawer.Update(mpTracker, pose);
-    if(pose.pose)
-      mpMapDrawer.SetCurrentCameraPose(*pose.pose);
+    // if(pose.pose)
+    mpMapDrawer.SetCurrentCameraPose(mpTracker->mCurrentFrame.GetPose());
   }
 }
 
@@ -126,9 +127,7 @@ static void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc, float mCameraSize, fl
   glPopMatrix();
 }
 
-static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc,
-                                             pangolin::OpenGlMatrix &M,
-                                             pangolin::OpenGlMatrix &MOw) {
+static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw) {
   for (int i = 0; i < 4; i++) {
     M.m[4 * i] = Twc(0, i);
     M.m[4 * i + 1] = Twc(1, i);
@@ -154,8 +153,7 @@ void Viewer::Run() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0,
-                                          pangolin::Attach::Pix(175));
+  pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
   pangolin::Var<bool> menuCamView("menu.Camera View", true, true);
   pangolin::Var<bool> menuTopView("menu.Top View", false, false);
@@ -163,26 +161,18 @@ void Viewer::Run() {
   pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
   pangolin::Var<bool> menuShowKeyFrames("menu.Show KeyFrames", true, true);
   pangolin::Var<bool> menuShowGraph("menu.Show Graph", true, true);
-  pangolin::Var<bool> menuShowInertialGraph("menu.Show Inertial Graph", true,
-                                            true);
-  pangolin::Var<bool> menuLocalizationMode("menu.Localization Mode", false,
-                                           true);
+  pangolin::Var<bool> menuShowInertialGraph("menu.Show Inertial Graph", true, true);
+  pangolin::Var<bool> menuLocalizationMode("menu.Localization Mode", false, true);
   pangolin::Var<bool> menuReset("menu.Reset", false, false);
   pangolin::Var<bool> menuStop("menu.Stop", false, false);
 
   pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
   // Define Camera Render Object (for view / scene browsing)
-  pangolin::OpenGlRenderState s_cam(
-      pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389,
-                                 0.1, 1000),
-      pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0,
-                                0.0, -1.0, 0.0));
+  pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000),
+      pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
 
   // Add named OpenGL viewport to window and provide 3D Handler
-  pangolin::View &d_cam = pangolin::CreateDisplay()
-                              .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175),
-                                         1.0, -1024.0f / 768.0f)
-                              .SetHandler(new pangolin::Handler3D(s_cam));
+  pangolin::View &d_cam = pangolin::CreateDisplay().SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f).SetHandler(new pangolin::Handler3D(s_cam));
 
   pangolin::OpenGlMatrix Twc, Twr;
   Twc.SetIdentity();
@@ -213,16 +203,12 @@ void Viewer::Run() {
         s_cam.Follow(Ow);
     } else if (menuFollowCamera && !bFollow) {
       if (bCameraView) {
-        s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(
-            1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000));
-        s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(
-            mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
+        s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000));
+        s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
         s_cam.Follow(Twc);
       } else {
-        s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(
-            1024, 768, 3000, 3000, 512, 389, 0.1, 1000));
-        s_cam.SetModelViewMatrix(
-            pangolin::ModelViewLookAt(0, 0.01, 10, 0, 0, 0, 0.0, 0.0, 1.0));
+        s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, 3000, 3000, 512, 389, 0.1, 1000));
+        s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0, 0.01, 10, 0, 0, 0, 0.0, 0.0, 1.0));
         s_cam.Follow(Ow);
       }
       bFollow = true;
@@ -233,38 +219,33 @@ void Viewer::Run() {
     if (menuCamView) {
       menuCamView = false;
       bCameraView = true;
-      s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(
-          1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 10000));
-      s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(
-          mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
+      s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 10000));
+      s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
       s_cam.Follow(Twc);
     }
 
-    if (menuTopView && mpSystem->mpAtlas->isImuInitialized()) {
+    if (menuTopView && mpAtlas->isImuInitialized()) {
       menuTopView = false;
       bCameraView = false;
-      s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(
-          1024, 768, 3000, 3000, 512, 389, 0.1, 10000));
-      s_cam.SetModelViewMatrix(
-          pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 0.0, 1.0));
+      s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, 3000, 3000, 512, 389, 0.1, 10000));
+      s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 0.0, 1.0));
       s_cam.Follow(Ow);
     }
 
     if (menuLocalizationMode && !bLocalizationMode) {
-      mpSystem->ActivateLocalizationMode();
+      mpTracker->ActivateLocalizationMode();
       bLocalizationMode = true;
     } else if (!menuLocalizationMode && bLocalizationMode) {
-      mpSystem->DeactivateLocalizationMode();
+      mpTracker->DeactivateLocalizationMode();
       bLocalizationMode = false;
     }
 
     d_cam.Activate(s_cam);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     DrawCurrentCamera(Twc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
-    if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph ||
-        menuShowOptLba)
-      mpMapDrawer.DrawKeyFrames(menuShowKeyFrames, menuShowGraph,
-                                 menuShowInertialGraph, menuShowOptLba);
+    if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph || menuShowOptLba)
+      mpMapDrawer.DrawKeyFrames(menuShowKeyFrames, menuShowGraph, menuShowInertialGraph, menuShowOptLba);
+    
     if (menuShowPoints) mpMapDrawer.DrawMapPoints();
 
     pangolin::FinishFrame();
@@ -294,11 +275,12 @@ void Viewer::Run() {
       menuShowKeyFrames = true;
       menuShowPoints = true;
       menuLocalizationMode = false;
-      if (bLocalizationMode) mpSystem->DeactivateLocalizationMode();
+      if (bLocalizationMode) mpTracker->DeactivateLocalizationMode();
       bLocalizationMode = false;
       bFollow = true;
       menuFollowCamera = true;
-      mpSystem->ResetActiveMap();
+      // mpTracker->RequestResetActiveMap();
+      mpTracker->RequestReset();
       menuReset = false;
     }
 

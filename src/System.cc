@@ -51,13 +51,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
-      mbReset(false),
-      mbResetActiveMap(false),
-      mbActivateLocalizationMode(false),
-      mbDeactivateLocalizationMode(false),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY),
-      mStereoInitDefaultPose(Sophus::SE3f()),
-      mUseGravityDirectionFromLastMap(false) {
+      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -94,7 +88,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     // Load ORB Vocabulary
     std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
-    mpVocabulary = new ORBVocabulary();
+    mpVocabulary = std::make_shared<ORBVocabulary>();
     bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
     if (!bVocLoad) {
       std::cerr << "Wrong path to vocabulary. " << std::endl;
@@ -104,7 +98,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     std::cout << "Vocabulary loaded!" << std::endl << std::endl;
 
     // Create KeyFrame Database
-    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
     std::cout << "Initialization of Atlas from scratch " << std::endl;
@@ -119,7 +113,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
       std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
-    // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+    // mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
     // std::cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " <<
     // mpKeyFrameDatabase->mnNumWords << std::endl;
@@ -137,40 +131,29 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
 
   // Initialize the Tracking thread
-  //(it will live in the main thread of execution, the one that called this
-  // constructor)
-  mpTracker = new Tracking(this, mpVocabulary,
-                           mpAtlas, mpKeyFrameDatabase, strSettingsFile,
-                           mSensor, settings);
-
-  // Initialize the Local Mapping thread and launch
-  mpLocalMapper = new LocalMapping(
-      this, mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR,
-      mSensor.isInertial());
+  //(it will live in the main thread of execution, the one that called this constructor)
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
+  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
     mpLocalMapper->setIsDoneVIBA(true);
   }
 
-  mptLocalMapping = new std::thread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
   // if (settings)
   mpLocalMapper->mThFarPoints = settings->thFarPoints();
   // else
   //   mpLocalMapper->mThFarPoints = settings-> fsSettings["thFarPoints"];
   if (mpLocalMapper->mThFarPoints != 0) {
-    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints
-         << " m from current camera" << std::endl;
+    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
     mpLocalMapper->mbFarPoints = true;
-  } else
+  } else {
     mpLocalMapper->mbFarPoints = false;
+  }
 
   // Initialize the Loop Closing thread and launch
   // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-  mpLoopCloser =
-      new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary,
-                      mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
-  mptLoopClosing = new std::thread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -182,13 +165,17 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
+  std::cout << "Creating LocalMapping Thread in System" << std::endl;
+  mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
+
+  std::cout << "Creating LoopClosing Thread in System" << std::endl;
+  mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
+
   // Fix verbosity
   Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
-StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
-                                 double timestamp,
-                                 const std::vector<IMU::Point>& vImuMeas) {
+StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
     std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
@@ -212,38 +199,9 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight,
   }
 
   // Check mode change
-  {
-    std::scoped_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  {
-    std::scoped_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_STEREO)
     mpTracker->GrabImuData(vImuMeas);
@@ -283,38 +241,9 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   }
 
   // Check mode change
-  {
-    std::unique_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  {
-    std::unique_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_RGBD)
     mpTracker->GrabImuData(vImuMeas);
@@ -328,12 +257,7 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
   return Tcw;
 }
 
-MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
-                                    const std::vector<IMU::Point>& vImuMeas) {
-  // {
-  //   std::unique_lock<std::mutex> lock(mMutexReset);
-  //   if (mbShutDown) return Sophus::SE3f();
-  // }
+MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
     std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
@@ -348,39 +272,9 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   }
 
   // Check mode change
-  {
-    std::unique_lock<std::mutex> lock(mMutexMode);
-    if (mbActivateLocalizationMode) {
-      mpLocalMapper->RequestStop();
-
-      // Wait until Local Mapping has effectively stopped
-      while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
-      }
-
-      mpTracker->InformOnlyTracking(true);
-      mbActivateLocalizationMode = false;
-    }
-    if (mbDeactivateLocalizationMode) {
-      mpTracker->InformOnlyTracking(false);
-      mpLocalMapper->Release();
-      mbDeactivateLocalizationMode = false;
-    }
-  }
-
+  mpTracker->CheckTrackingModeChanged();
   // Check reset
-  {
-    std::unique_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
-      mpTracker->Reset();
-      mbReset = false;
-      mbResetActiveMap = false;
-    } else if (mbResetActiveMap) {
-      std::cout << "SYSTEM-> Reseting active map in monocular case" << std::endl;
-      mpTracker->ResetActiveMap();
-      mbResetActiveMap = false;
-    }
-  }
+  mpTracker->CheckTrackingReset();
 
   if (mSensor == CameraType::IMU_MONOCULAR)
     mpTracker->GrabImuData(vImuMeas);
@@ -395,16 +289,6 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp,
   return Tcw;
 }
 
-void System::ActivateLocalizationMode() {
-  std::unique_lock<std::mutex> lock(mMutexMode);
-  mbActivateLocalizationMode = true;
-}
-
-void System::DeactivateLocalizationMode() {
-  std::unique_lock<std::mutex> lock(mMutexMode);
-  mbDeactivateLocalizationMode = true;
-}
-
 bool System::MapChanged() {
   static int n = 0;
   int curn = mpAtlas->GetLastBigChangeIdx();
@@ -415,20 +299,8 @@ bool System::MapChanged() {
     return false;
 }
 
-void System::Reset() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  mbReset = true;
-}
-
-void System::ResetActiveMap() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  mbResetActiveMap = true;
-}
-
 System::~System() {
   std::cout << "Shutdown" << std::endl;
-
-  std::unique_lock<std::mutex> lock(mMutexReset);
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -448,17 +320,18 @@ System::~System() {
     usleep(5000);
   }*/
 
+  if (mptLocalMapping.joinable()) {
+    mptLocalMapping.join();
+  }
+  if (mptLoopClosing.joinable()) {
+    mptLoopClosing.join();
+  }
+
   if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile,
-                       Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     SaveAtlas(FileType::BINARY_FILE);
   }
-  // if (mptLocalMapping->joinable()) {
-  //   mptLocalMapping->join();
-  // }
-  // if (mptLoopClosing->joinable()) {
-  //   mptLoopClosing->join();
-  // }
+  
 
 #ifdef REGISTER_TIMES
   mpTracker->PrintTimeStats();
@@ -489,15 +362,7 @@ double System::GetTimeFromIMUInit() {
 }
 
 bool System::isLost() {
-  if (!mpAtlas->isImuInitialized())
-    return false;
-  else {
-    if ((mpTracker->mState ==
-         TrackingState::LOST))  //||(mpTracker->mState==TrackingState::RECENTLY_LOST))
-      return true;
-    else
-      return false;
-  }
+  return (mpAtlas->isImuInitialized() && (mpTracker->mState == TrackingState::LOST/* || (mpTracker->mState==TrackingState::RECENTLY_LOST)*/));
 }
 
 bool System::isFinished() { return (GetTimeFromIMUInit() > 0.1); }
@@ -520,14 +385,14 @@ void System::InsertTrackTime(double& time) {
 
 void System::SaveAtlas(int type) {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl;
-  std::cout << "trying to save \n";
+  std::cout << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
-    std::cout << "not empty\n";
+    std::cout << "not empty" << std::endl;
     // clock_t start = clock();
 
     // Save the current session
     mpAtlas->PreSave();
-    std::cout << "presaved\n";
+    std::cout << "presaved" << std::endl;
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
     // Create the folder if it does not exist
@@ -542,10 +407,9 @@ void System::SaveAtlas(int type) {
     std::string str_time = std::ctime(&time_time);
     pathSaveFileName = pathSaveFileName.append(".osa");
 
-    std::cout << "About to Calculate \n";
+    std::cout << "About to Calculate " << std::endl;
 
-    std::string strVocabularyChecksum =
-        CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
 
     std::cout << "Vocab checksum`" << strVocabularyChecksum << std::endl;
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
@@ -572,17 +436,17 @@ void System::SaveAtlas(int type) {
       std::cerr << errno << std::endl;
       std::cout << "remove's output is: " << rval << std::endl;
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
-      std::cout << "big boostin' time\n";
+      std::cout << "big boostin' time" << std::endl;
       boost::archive::binary_oarchive oa(ofs);
-      std::cout << "streaming\n";
+      std::cout << "streaming" << std::endl;
       oa << strVocabularyName;
-      std::cout << "streamed name\n";
+      std::cout << "streamed name" << std::endl;
       oa << strVocabularyChecksum;
-      std::cout << "streamed checksum\n";
+      std::cout << "streamed checksum" << std::endl;
       oa << *mpAtlas;
       std::cout << "End to write save binary file" << std::endl;
     } else {
-      std::cout << "no file to be saved I guess lul\n";
+      std::cout << "no file to be saved I guess lul" << std::endl;
     }
   }
 }
@@ -654,7 +518,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   if (type == BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
-  std::cout << "inside\n";
+  std::cout << "inside" << std::endl;
 
   std::ifstream f(filename.c_str(), flags);
   if (!f.is_open()) {
@@ -666,16 +530,16 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   MD5_CTX md5Context;
   char buffer[1024];
 
-  std::cout << "buffer generated\n";
+  std::cout << "buffer generated" << std::endl;
 
   MD5_Init(&md5Context);
 
-  std::cout << "just initialized MD5\n";
+  std::cout << "just initialized MD5" << std::endl;
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     MD5_Update(&md5Context, buffer, count);
     // std::cout << buffer;
   }
-  std::cout << "about to close\n";
+  std::cout << "about to close" << std::endl;
 
   f.close();
 
@@ -690,7 +554,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   return checksum;
 }
 
-// Don't use, the setter could be ignored depending on where in Track() you are
+// DONT USE, the setter could be ignored depending on where in Track() you are
 void System::setTrackingState(TrackingState state) {
   mpTracker->mState = state;
 }
@@ -705,13 +569,6 @@ bool System::getIsDoneVIBA() {
 
 std::shared_ptr<Settings> System::getSettings() const { return settings; }
 
-void System::setStereoInitDefaultPose(const Sophus::SE3f default_pose) {
-  mStereoInitDefaultPose = default_pose;
-}
-
-void System::setUseGravityDirectionFromLastMap(bool is_true) {
-  mUseGravityDirectionFromLastMap = is_true;
-}
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }

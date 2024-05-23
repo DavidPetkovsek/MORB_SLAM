@@ -11,7 +11,21 @@
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalMapViewer.h>
 
+#include <csignal>
+
+bool exitSLAM = false;
+
+void sigHandler(int sigNum) {
+    std::cout << "\nClosing SLAM w/ CTRL+C" << std::endl;
+    exitSLAM = true;
+    // exit(sigNum);
+}
+
 int main(int argc, char **argv) {
+    signal(SIGINT, sigHandler);
+
+    {
+
     ix::initNetSystem();
     ix::WebSocket webSocket;
     //set to the address of the websocket host sending the IMU data
@@ -96,11 +110,11 @@ int main(int argc, char **argv) {
 
     webSocket.start();
 
-    while(!connected) {
+    while(!exitSLAM && !connected) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
-    while(true) {
+    while(!exitSLAM) {
         {
             std::unique_lock<std::mutex> lk(imu_mutex);
             while(!new_img)
@@ -153,22 +167,23 @@ int main(int argc, char **argv) {
 
         viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
-        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().transpose()*sophusPose.pose->translation();
+        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
         // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
         imu_points.clear();
     }
+    std::cout << "Stopping WebSocket" << std::endl;
+    webSocket.stop();
+    std::cout << "Stopping Viewer" << std::endl;
+    viewer.reset();
+    std::cout << "Stopping SLAM" << std::endl;
+    SLAM.reset();
+    std::cout << "Done ( :" << std::endl;
+    
+    
+    }
 
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    // while(true) {
-    //     cv::imshow("LEFT", left_img);
-    //     cv::imshow("RIGHT", right_img);
-    //     std::cout << accel[0] << ", " << accel[1] << ", " << accel[2] << std::endl;
-    //     char key = cv::waitKey(15);
-    //     if(key == 'q') {
-    //         webSocket.close();
-    //         break;
-    //     }
-    // }
+
+    std::cout << "Done 2 ( :" << std::endl;
 
     return 0;
 }

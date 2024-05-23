@@ -56,11 +56,11 @@ class Viewer {
  private:
   bool Stop();
 
-  System_ptr mpSystem;
   FrameDrawer mpFrameDrawer;
   MapDrawer mpMapDrawer;
   Tracking_ptr mpTracker;
-  std::thread mptViewer;
+  Atlas_ptr mpAtlas;
+  std::jthread mptViewer;
   bool both;
 
   // 1/fps in ms

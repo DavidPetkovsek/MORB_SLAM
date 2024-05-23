@@ -31,7 +31,7 @@ namespace MORB_SLAM {
 
 Atlas::Atlas() { mpCurrentMap = nullptr; }
 
-Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid) {
+Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid), mUseGravityDirectionFromLastMap(false) {
   mpCurrentMap = nullptr;
   CreateNewMap();
 }
@@ -39,7 +39,7 @@ Atlas::Atlas(int initKFid) : mnLastInitKFidMap(initKFid) {
 Atlas::~Atlas() {}
 
 void Atlas::CreateNewMap() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   std::cout << "Creation of new std::map with id: " << Map::nNextId << std::endl;
   if (mpCurrentMap) {
     //If it's not a new Atlas, and there aren't 0 KFs in the current map
@@ -56,13 +56,13 @@ void Atlas::CreateNewMap() {
 }
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   std::cout << "Change to std::map with id: " << pMap->GetId() << std::endl;
   mpCurrentMap = pMap;
 }
 
 unsigned long int Atlas::GetLastInitKFid() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mnLastInitKFidMap;
 }
 
@@ -110,47 +110,47 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
 std::vector<std::shared_ptr<const GeometricCamera>> Atlas::GetAllCameras() { return mvpCameras; }
 
 void Atlas::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   mpCurrentMap->SetReferenceMapPoints(vpMPs);
 }
 
 void Atlas::InformNewBigChange() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   mpCurrentMap->InformNewBigChange();
 }
 
 int Atlas::GetLastBigChangeIdx() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetLastBigChangeIdx();
 }
 
 long unsigned int Atlas::MapPointsInMap() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->MapPointsInMap();
 }
 
 long unsigned Atlas::KeyFramesInMap() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->KeyFramesInMap();
 }
 
 std::vector<KeyFrame*> Atlas::GetAllKeyFrames() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllKeyFrames();
 }
 
 std::vector<MapPoint*> Atlas::GetAllMapPoints() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllMapPoints();
 }
 
 std::vector<MapPoint*> Atlas::GetReferenceMapPoints() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetReferenceMapPoints();
 }
 
 std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   struct compFunctor {
     inline bool operator()(std::shared_ptr<Map> elem1, std::shared_ptr<Map> elem2) {
       return elem1->GetId() < elem2->GetId();
@@ -162,17 +162,17 @@ std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
 }
 
 int Atlas::CountMaps() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mspMaps.size();
 }
 
 void Atlas::clearMap() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   mpCurrentMap->clear();
 }
 
 void Atlas::clearAtlas() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   /*for(std::set<Map*>::iterator it=mspMaps.begin(), send=mspMaps.end();
   it!=send; it++)
   {
@@ -184,11 +184,11 @@ void Atlas::clearAtlas() {
   mnLastInitKFidMap = 0;
 }
 
-std::shared_ptr<Map> Atlas::GetCurrentMap(System* sys) {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+std::shared_ptr<Map> Atlas::GetCurrentMap(bool waitForGoodMap) {
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   if (!mpCurrentMap) CreateNewMap();
   while (mpCurrentMap->IsBad()) {
-    if (sys != nullptr) return nullptr;
+    if (!waitForGoodMap) return nullptr;
   }
 
   return mpCurrentMap;
@@ -212,21 +212,18 @@ void Atlas::RemoveBadMaps() {
 
 
 void Atlas::SetImuInitialized() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   mpCurrentMap->SetImuInitialized();
 }
 
 bool Atlas::isImuInitialized() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->isImuInitialized();
 }
 
 void Atlas::PreSave() {
-  if (mpCurrentMap) {
-    if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() +
-                          1;  // The init KF is the next of current maximum
-  }
+  if (mpCurrentMap && !mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
+      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  // The init KF is the next of current maximum
 
   struct compFunctor {
     inline bool operator()(std::shared_ptr<Map> elem1, std::shared_ptr<Map> elem2) {
@@ -267,20 +264,20 @@ void Atlas::PostLoad() {
   mvpBackupMaps.clear();
 }
 
-void Atlas::SetKeyFrameDababase(KeyFrameDatabase* pKFDB) {
+void Atlas::SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 
-KeyFrameDatabase* Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
+std::shared_ptr<KeyFrameDatabase> Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
 
-void Atlas::SetORBVocabulary(ORBVocabulary* pORBVoc) {
+void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
   mpORBVocabulary = pORBVoc;
 }
 
-ORBVocabulary* Atlas::GetORBVocabulary() { return mpORBVocabulary; }
+std::shared_ptr<ORBVocabulary> Atlas::GetORBVocabulary() { return mpORBVocabulary; }
 
 long unsigned int Atlas::GetNumLivedKF() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   long unsigned int num = 0;
   for (std::shared_ptr<Map> pMap_i : mspMaps) {
     num += pMap_i->GetAllKeyFrames().size();
@@ -290,7 +287,7 @@ long unsigned int Atlas::GetNumLivedKF() {
 }
 
 long unsigned int Atlas::GetNumLivedMP() {
-  std::unique_lock<std::mutex> lock(mMutexAtlas);
+  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   long unsigned int num = 0;
   for (std::shared_ptr<Map> pMap_i : mspMaps) {
     num += pMap_i->GetAllMapPoints().size();
@@ -310,6 +307,10 @@ std::map<long unsigned int, KeyFrame*> Atlas::GetAtlasKeyframes() {
   }
 
   return mpIdKFs;
+}
+
+void Atlas::setUseGravityDirectionFromLastMap(bool is_true) {
+  mUseGravityDirectionFromLastMap = is_true;
 }
 
 }  // namespace MORB_SLAM
