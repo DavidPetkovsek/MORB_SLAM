@@ -40,16 +40,16 @@ Atlas::~Atlas() {}
 
 void Atlas::CreateNewMap() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Creation of new std::map with id: " << Map::nNextId << std::endl;
+  std::cout << "Creation of new Map with id: " << Map::nNextId << std::endl;
   if (mpCurrentMap) {
     //If it's not a new Atlas, and there aren't 0 KFs in the current map
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
       // The map's init KF ID is one after the current map's maximum KF ID
       mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  
 
-    std::cout << "Stored std::map with ID: " << mpCurrentMap->GetId() << std::endl;
+    std::cout << "Stored Map with ID: " << mpCurrentMap->GetId() << std::endl;
   }
-  std::cout << "Creation of new std::map with last KF id: " << mnLastInitKFidMap << std::endl;
+  std::cout << "Creation of new Map with last KF id: " << mnLastInitKFidMap << std::endl;
 
   mpCurrentMap = std::make_shared<Map>(mnLastInitKFidMap);
   mspMaps.insert(mpCurrentMap);
@@ -57,7 +57,7 @@ void Atlas::CreateNewMap() {
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Change to std::map with id: " << pMap->GetId() << std::endl;
+  std::cout << "Change to Map with id: " << pMap->GetId() << std::endl;
   mpCurrentMap = pMap;
 }
 

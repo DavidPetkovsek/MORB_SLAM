@@ -165,10 +165,10 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-  std::cout << "Creating LocalMapping Thread in System" << std::endl;
+  std::cout << "Creating LocalMapping thread" << std::endl;
   mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
 
-  std::cout << "Creating LoopClosing Thread in System" << std::endl;
+  std::cout << "Creating LoopClosing thread" << std::endl;
   mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
 
   // Fix verbosity
@@ -206,9 +206,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   if (mSensor == CameraType::IMU_STEREO)
     mpTracker->GrabImuData(vImuMeas);
 
-  // std::cout << "start GrabImageStereo" << std::endl;
-  StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed,
-                                                timestamp, cameras[0]); // for now we know cameras[0] is providing the image
+  StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   // Eigen::Vector3f vel = mpTracker->mCurrentFrame.GetVelocity();
 

@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
                 }
             }
             else if(msg->type == ix::WebSocketMessageType::Open) {
-                std::cout << "Connection established" << std::endl;
+                std::cout << "Connected to the Realsense websocket" << std::endl;
                 connected = true;
                 webSocket.send("gimme");
             }

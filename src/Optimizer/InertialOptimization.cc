@@ -49,7 +49,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
                                      bool bFixedVel, bool bGauss, 
                                      ImuInitializater::ImuInitType priorG,
                                      ImuInitializater::ImuInitType priorA) {
-  Verbose::PrintMess("inertial optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Starting inertial optimization", Verbose::VERBOSITY_NORMAL);
   int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
@@ -222,6 +222,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
     } else
       pKFi->SetNewBias(b);
   }
+  Verbose::PrintMess("Inertial optimization complete", Verbose::VERBOSITY_NORMAL);
 }
 
 // used in LoopClosing

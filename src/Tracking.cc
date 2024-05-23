@@ -654,7 +654,7 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
 
   Track();
 
-  if(mState != TrackingState::OK)
+  if(mState != TrackingState::OK && mState != TrackingState::NOT_INITIALIZED)
     std::cout << "Current state on Frame " << mCurrentFrame.mnId << ": " << mState << std::endl;
   
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
@@ -751,7 +751,7 @@ void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
 void Tracking::PreintegrateIMU() {
   //PRIMU1
   if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
-    Verbose::PrintMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
     mCurrentFrame.setIntegrated();
     return;
   }
@@ -1082,7 +1082,7 @@ void Tracking::Track() {
         }
         //TK7
       } else if (mState == TrackingState::RECENTLY_LOST) {
-        Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
+        // Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
 
         bOK = true;
         if (mSensor.isInertial()) { // tried setting to false, still goes to inf
@@ -1235,7 +1235,7 @@ void Tracking::Track() {
       mState = TrackingState::OK;
     else if (mState == TrackingState::OK) {
       if (mSensor.isInertial()) {
-        Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
+        // Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
         //TK11
         if (!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2()) {
           std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
@@ -1442,16 +1442,19 @@ void Tracking::Track() {
 void Tracking::StereoInitialization() {
   //SI1
   // If there aren't enough keypoints, can't initialize and return
-  if (mCurrentFrame.N <= 500) return;
+  if (mCurrentFrame.N <= 500) {
+    std::cout << "There aren't enough KeyPoints in the Frame to initialize the Map" << std::endl;
+    return;
+  }
 
   if (mSensor.isInertial()) {
     if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated) {
-      std::cout << "not IMU meas" << std::endl;
+      // std::cout << "There's no IMU measurements in the previous Frame" << std::endl;
       return;
     }
 
     if (!stationaryIMUInitEnabled() && (mpAtlas->CountMaps() <= 1) && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
-      std::cout << "not enough acceleration" << std::endl;
+      std::cout << "More acceleration is required to initialize the Map" << std::endl;
       return;
     }
 
@@ -1526,7 +1529,7 @@ void Tracking::StereoInitialization() {
     }
   }
 
-  Verbose::PrintMess("New Map created with " + std::to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
+  Verbose::PrintMess("New Map created with " + std::to_string(mpAtlas->MapPointsInMap()) + " MapPoints", Verbose::VERBOSITY_QUIET);
 
   // std::cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << std::endl;
 
@@ -1999,7 +2002,7 @@ bool Tracking::TrackLocalMap() {
 
   //TLM2
   if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mnFramesToResetIMU) {
-    Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
+    // Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
     Optimizer::PoseOptimization(&mCurrentFrame);
   } else if(mbMapUpdated) {
     Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);

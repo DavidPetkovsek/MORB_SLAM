@@ -212,7 +212,6 @@ void LocalMapping::Run() {
 
                 // Initialize IMU here
                 if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial) {
-                    
                     isDoneVIBA = false;
                     mpTracker->mLockPreTeleportTranslation = true;
                     if (mbMonocular) {
@@ -304,6 +303,7 @@ void LocalMapping::Run() {
 
         usleep(3000);
         } catch(const ResetActiveMapSignal & e) {
+            std::cout << "ERROR, ResetActiveMap!!" << std::endl;
             mpTracker->RequestResetActiveMap();
         }
     }
@@ -1068,8 +1068,13 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     float minTime = mbMonocular ? 2.0 : 1.0;
     size_t nMinKF = 10;
 
-    if (mpAtlas->KeyFramesInMap() < nMinKF) {
-        std::cout << "cannot initialize, not enough frames in map" << std::endl;
+    int numMoreFramesNeeded = nMinKF - mpAtlas->KeyFramesInMap();
+    if (numMoreFramesNeeded > 0) {
+        // std::cout << "cannot initialize, not enough frames in map" << std::endl;
+        if(numMoreFramesNeeded == 1)
+            std::cout << "Waiting for 1 more KeyFrame before IMU initialization" << std::endl;
+        else
+            std::cout << "Waiting for " << numMoreFramesNeeded << " more KeyFrames before IMU initialization" << std::endl;
         return;
     }
 
@@ -1087,6 +1092,10 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
         return; // condition could be here too
     }
+
+    if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
+        std::cout << "start IMU initialization" << std::endl;
+
 
     mFirstTs = vpKF.front()->mTimeStamp;
     if (mpCurrentKeyFrame->mTimeStamp - mFirstTs < minTime) return;
@@ -1125,9 +1134,9 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
             (*itKF)->mPrevKF->SetVelocity(_vel);
         }
 
-        std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
+        // std::cout << "dirGBeforeNorm------------------------------------------------------: " << dirG << std::endl;
         dirG = dirG / dirG.norm();
-        std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
+        // std::cout << "dirGAfterNorm------------------------------------------------------: " << dirG << std::endl;
         Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
@@ -1135,9 +1144,9 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
 
-        std::cout << "v------------------------------------------------------: " << v << std::endl;
-        std::cout << "ang------------------------------------------------------: " << ang << std::endl;
-        std::cout << "nv------------------------------------------------------: " << nv << std::endl;
+        // std::cout << "v------------------------------------------------------: " << v << std::endl;
+        // std::cout << "ang------------------------------------------------------: " << ang << std::endl;
+        // std::cout << "nv------------------------------------------------------: " << nv << std::endl;
 
         Eigen::Vector3f vzg = v * ang / nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
@@ -1201,6 +1210,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     }
 
   // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now(); // UNUSED
+  Verbose::PrintMess("Global Bundle Adjustment started", Verbose::VERBOSITY_NORMAL);
     // if FullInertialBA isn't called, SLAM instantly gets lost
     // also bFIBA is always true
     // if (bFIBA) {
@@ -1217,8 +1227,7 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
 
   // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now(); // UNUSED
 
-    Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...",
-                       Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);
 
     // Get Map Mutex
     std::scoped_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
@@ -1325,6 +1334,9 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
     bInitializing = false;
 
     mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
+
+    if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1())
+        std::cout << "end IMU initialization" << std::endl;
 
 }
 

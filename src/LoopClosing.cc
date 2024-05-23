@@ -765,9 +765,9 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*>& vpBowCand, 
     g2oScw = g2oBestScw;
     vpMPs = vpBestMapPoints;
     vpMatchedMPs = vpBestMatchedMapPoints;
-    if(nNumCoincidences >= 3){
-      std::cout << "Number of matches: " << nBestMatchesReproj << std::endl;
-    }
+    // if(nNumCoincidences >= 3){
+    //   std::cout << "Number of matches: " << nBestMatchesReproj << std::endl;
+    // }
 
     return nNumCoincidences >= 3;
   /* Everything down here does not change any state and is UNUSED
@@ -1046,7 +1046,7 @@ void LoopClosing::CorrectLoop() {
     mbFinishedGBA = false;
     mbStopGBA = false;
     mnCorrectionGBA = mnNumCorrection;
-    std::cout << "Creating Thread in LoopClosing::CorrectLoop()" << std::endl;
+    std::cout << "Creating CorrectLoop thread" << std::endl;
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this, pLoopMap, mpCurrentKF->mnId);
   }
 
@@ -1535,7 +1535,7 @@ void LoopClosing::MergeLocal() {
     mbRunningGBA = true;
     mbFinishedGBA = false;
     mbStopGBA = false;
-    std::cout << "Creating Thread in LoopClosing::MergeLocal()" << std::endl;
+    std::cout << "Creating MergeLocal thread" << std::endl;
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this, pMergeMap, mpCurrentKF->mnId);
   }
 

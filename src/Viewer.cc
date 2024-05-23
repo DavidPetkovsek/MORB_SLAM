@@ -44,7 +44,7 @@ Viewer::Viewer(const System_ptr &pSystem)
       both(false),
       mbClosed(false){
     newParameterLoader(*pSystem->getSettings());
-    std::cout << "Creating Thread in Viewer" << std::endl;
+    std::cout << "Creating Viewer thread" << std::endl;
     mptViewer = std::jthread(&Viewer::Run, this);
 }
 
