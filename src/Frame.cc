@@ -53,7 +53,6 @@ Frame::Frame()
       mpPrevFrame(nullptr),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       mpLastKeyFrame(nullptr),
       isPartiallyConstructed(true) {
@@ -116,7 +115,6 @@ Frame::Frame(const Frame &frame)
       mvInvScaleFactors(frame.mvInvScaleFactors),
       mvLevelSigma2(frame.mvLevelSigma2),
       mvInvLevelSigma2(frame.mvInvLevelSigma2),
-      mbIsSet(frame.mbIsSet),
       mbImuPreintegrated(frame.mbImuPreintegrated),
       mpMutexImu(frame.mpMutexImu),
       camera{frame.camera},
@@ -180,7 +178,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
@@ -288,7 +285,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam), 
       mpCamera(pCamera),
@@ -387,7 +383,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
@@ -631,13 +626,10 @@ void Frame::ExtractORB(bool isLeft, const cv::Mat &im, const int x0, const int x
     monoRight = (*mpORBextractorRight)(im, mvKeysRight, mDescriptorsRight, vLapping);
 }
 
-bool Frame::isSet() const { return mbIsSet; }
-
 void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
   mTcw = Tcw;
 
   UpdatePoseMatrices();
-  mbIsSet = true;
   mbHasPose = true;
 }
 
@@ -663,7 +655,6 @@ void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f
   mTcw = mImuCalib.mTcb * Tbw;
 
   UpdatePoseMatrices();
-  mbIsSet = true;
   mbHasPose = true;
 }
 

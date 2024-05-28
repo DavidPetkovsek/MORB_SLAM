@@ -1296,7 +1296,7 @@ void Tracking::Track() {
     if (bOK || mState == TrackingState::RECENTLY_LOST) {
       //TK12
       // Update motion model
-      if (mLastFrame.isSet() && mCurrentFrame.isSet()) {
+      if (mLastFrame.HasPose() && mCurrentFrame.HasPose()) {
         Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
         mVelocity = mCurrentFrame.GetPose() * LastTwc;
         imuMotionModelPrepedAfterRecentlyLostTracking = true;
@@ -1412,7 +1412,7 @@ void Tracking::Track() {
   if (mState == TrackingState::OK || mState == TrackingState::RECENTLY_LOST) {
     // Store frame pose information to retrieve the complete camera trajectory
     // afterwards.
-    if (mCurrentFrame.isSet()) {
+    if (mCurrentFrame.HasPose()) {
       Sophus::SE3f Tcr_ = mCurrentFrame.GetPose() *
                           mCurrentFrame.mpReferenceKF->GetPoseInverse();
       mlRelativeFramePoses.push_back(Tcr_);

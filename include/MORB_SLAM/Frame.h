@@ -134,8 +134,6 @@ public:
     bool imuIsPreintegrated();
     void setIntegrated();
 
-    bool isSet() const;
-
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();
 
@@ -320,8 +318,6 @@ private:
 
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();
-
-    bool mbIsSet;
 
     bool mbImuPreintegrated;
 

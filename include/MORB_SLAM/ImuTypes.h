@@ -118,19 +118,21 @@ class Calib {
   }
 
   Calib(const Calib &calib);
-  Calib() { mbIsSet = false; }
+  Calib(): mbIsSet{false} {}
 
   // void Set(const cv::Mat &cvTbc, const float &ng, const float &na, const
   // float &ngw, const float &naw);
   void Set(const Sophus::SE3<float> &sophTbc, const float &ng, const float &na,
            const float &ngw, const float &naw);
 
+  bool mbIsSet;
  public:
   // Sophus/Eigen implementation
   Sophus::SE3<float> mTcb;
   Sophus::SE3<float> mTbc;
   Eigen::DiagonalMatrix<float, 6> Cov, CovWalk;
-  bool mbIsSet;
+
+  bool isSet() const { return mbIsSet; }
 };
 
 // Integration of 1 gyro measurement
