@@ -25,7 +25,7 @@
 
 namespace MORB_SLAM {
 
-Eigen::Matrix3f GeometricTools::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2) {
+Eigen::Matrix3f GeometricTools::ComputeF12(std::shared_ptr<KeyFrame>&pKF1, std::shared_ptr<KeyFrame>&pKF2) {
   Sophus::SE3<float> Tc1w = pKF1->GetPose();
   Sophus::Matrix3<float> Rc1w = Tc1w.rotationMatrix();
   Sophus::SE3<float>::TranslationMember tc1w = Tc1w.translation();

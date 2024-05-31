@@ -75,9 +75,9 @@ class ImuCamPose
 public:
     
     ImuCamPose(){}
-    ImuCamPose(KeyFrame* pKF);
+    ImuCamPose(std::shared_ptr<KeyFrame> pKF);
     ImuCamPose(Frame* pF);
-    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame* pKF);
+    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, std::shared_ptr<KeyFrame> pKF);
 
     void SetParam(const std::vector<Eigen::Matrix3d> &_Rcw, const std::vector<Eigen::Vector3d> &_tcw, const std::vector<Eigen::Matrix3d> &_Rbc,
                   const std::vector<Eigen::Vector3d> &_tbc, const double &_bf);
@@ -113,7 +113,7 @@ class InvDepthPoint
 public:
     
     InvDepthPoint(){}
-    InvDepthPoint(double _rho, double _u, double _v, KeyFrame* pHostKF);
+    InvDepthPoint(double _rho, double _u, double _v, std::shared_ptr<KeyFrame> pHostKF);
 
     void Update(const double *pu);
 
@@ -131,7 +131,7 @@ class VertexPose : public g2o::BaseVertex<6,ImuCamPose>
 public:
     
     VertexPose(){}
-    VertexPose(KeyFrame* pKF){
+    VertexPose(std::shared_ptr<KeyFrame> pKF){
         setEstimate(ImuCamPose(pKF));
     }
     VertexPose(Frame* pF){
@@ -157,13 +157,13 @@ class VertexPose4DoF : public g2o::BaseVertex<4,ImuCamPose>
 public:
     
     VertexPose4DoF(){}
-    VertexPose4DoF(KeyFrame* pKF){
+    VertexPose4DoF(std::shared_ptr<KeyFrame> pKF){
         setEstimate(ImuCamPose(pKF));
     }
     VertexPose4DoF(Frame* pF){
         setEstimate(ImuCamPose(pF));
     }
-    VertexPose4DoF(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame* pKF){
+    VertexPose4DoF(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, std::shared_ptr<KeyFrame> pKF){
 
         setEstimate(ImuCamPose(_Rwc, _twc, pKF));
     }
@@ -192,7 +192,7 @@ class VertexVelocity : public g2o::BaseVertex<3,Eigen::Vector3d>
 public:
     
     VertexVelocity(){}
-    VertexVelocity(KeyFrame* pKF);
+    VertexVelocity(std::shared_ptr<KeyFrame> pKF);
     VertexVelocity(Frame* pF);
 
     virtual bool read(std::istream& is){return false;}
@@ -213,7 +213,7 @@ class VertexGyroBias : public g2o::BaseVertex<3,Eigen::Vector3d>
 public:
     
     VertexGyroBias(){}
-    VertexGyroBias(KeyFrame* pKF);
+    VertexGyroBias(std::shared_ptr<KeyFrame> pKF);
     VertexGyroBias(Frame* pF);
 
     virtual bool read(std::istream& is){return false;}
@@ -235,7 +235,7 @@ class VertexAccBias : public g2o::BaseVertex<3,Eigen::Vector3d>
 public:
     
     VertexAccBias(){}
-    VertexAccBias(KeyFrame* pKF);
+    VertexAccBias(std::shared_ptr<KeyFrame> pKF);
     VertexAccBias(Frame* pF);
 
     virtual bool read(std::istream& is){return false;}
@@ -322,7 +322,7 @@ class VertexInvDepth : public g2o::BaseVertex<1,InvDepthPoint>
 public:
     
     VertexInvDepth(){}
-    VertexInvDepth(double invDepth, double u, double v, KeyFrame* pHostKF){
+    VertexInvDepth(double invDepth, double u, double v, std::shared_ptr<KeyFrame> pHostKF){
         setEstimate(InvDepthPoint(invDepth, u, v, pHostKF));
     }
 

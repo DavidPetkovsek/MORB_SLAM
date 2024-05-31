@@ -45,12 +45,12 @@ void Optimizer::GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIteration
                                        bool* pbStopFlag,
                                        const unsigned long nLoopKF,
                                        const bool bRobust) {
-  std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
   std::vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
   BundleAdjustment(vpKFs, vpMP, nIterations, pbStopFlag, nLoopKF, bRobust);
 }
 
-void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
+void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& vpKFs,
                                  const std::vector<MapPoint*>& vpMP, int nIterations,
                                  bool* pbStopFlag, const unsigned long nLoopKF,
                                  const bool bRobust) {
@@ -84,10 +84,10 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
   std::vector<MORB_SLAM::EdgeSE3ProjectXYZToBody*> vpEdgesBody;
   vpEdgesBody.reserve(nExpectedSize);
 
-  std::vector<KeyFrame*> vpEdgeKFMono;
+  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFMono;
   vpEdgeKFMono.reserve(nExpectedSize);
 
-  std::vector<KeyFrame*> vpEdgeKFBody;
+  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFBody;
   vpEdgeKFBody.reserve(nExpectedSize);
 
   std::vector<MapPoint*> vpMapPointEdgeMono;
@@ -99,7 +99,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
   std::vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
   vpEdgesStereo.reserve(nExpectedSize);
 
-  std::vector<KeyFrame*> vpEdgeKFStereo;
+  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFStereo;
   vpEdgeKFStereo.reserve(nExpectedSize);
 
   std::vector<MapPoint*> vpMapPointEdgeStereo;
@@ -108,7 +108,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
   // Set KeyFrame vertices
 
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKF = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKF = vpKFs[i];
     if (pKF->isBad()) continue;
     g2o::VertexSE3Expmap* vSE3 = new g2o::VertexSE3Expmap();
     Sophus::SE3<float> Tcw = pKF->GetPose();
@@ -134,14 +134,14 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
     vPoint->setMarginalized(true);
     optimizer.addVertex(vPoint);
 
-    const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
+    const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
 
     int nEdges = 0;
     // SET EDGES
-    for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator mit =
+    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator mit =
              observations.begin();
          mit != observations.end(); mit++) {
-      KeyFrame* pKF = mit->first;
+      std::shared_ptr<KeyFrame> pKF = mit->first;
       if (pKF->isBad() || pKF->mnId > maxKFid) continue;
       if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKF->mnId) == nullptr)
         continue;
@@ -273,7 +273,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
   // Recover optimized data
   // Keyframes
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKF = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKF = vpKFs[i];
     if (pKF->isBad()) continue;
     g2o::VertexSE3Expmap* vSE3 =
         static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
@@ -299,7 +299,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
         for (size_t i2 = 0, iend = vpEdgesMono.size(); i2 < iend; i2++) {
           MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i2];
           MapPoint* pMP = vpMapPointEdgeMono[i2];
-          KeyFrame* pKFedge = vpEdgeKFMono[i2];
+          std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i2];
 
           if (pKF != pKFedge) {
             continue;
@@ -319,7 +319,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& vpKFs,
         for (size_t i2 = 0, iend = vpEdgesStereo.size(); i2 < iend; i2++) {
           g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i2];
           MapPoint* pMP = vpMapPointEdgeStereo[i2];
-          KeyFrame* pKFedge = vpEdgeKFMono[i2];
+          std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i2];
 
           if (pKF != pKFedge) {
             continue;

@@ -50,7 +50,7 @@ class LocalMapping {
   // Main function
   void Run();
 
-  void InsertKeyFrame(KeyFrame* pKF);
+  void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
   void EmptyQueue();
 
   // Thread Synch
@@ -77,7 +77,7 @@ class LocalMapping {
 
   bool IsInitializing();
   double GetCurrKFTime();
-  KeyFrame* GetCurrKF();
+  std::shared_ptr<KeyFrame> GetCurrKF();
 
   Sophus::SE3f GetPoseReverseAxisFlip();
 
@@ -149,9 +149,9 @@ class LocalMapping {
   std::shared_ptr<LoopClosing> mpLoopCloser;
   Tracking_ptr mpTracker;
 
-  std::list<KeyFrame*> mlNewKeyFrames;
+  std::list<std::shared_ptr<KeyFrame>> mlNewKeyFrames;
 
-  KeyFrame* mpCurrentKeyFrame;
+  std::shared_ptr<KeyFrame> mpCurrentKeyFrame;
 
   std::list<MapPoint*> mlpRecentAddedMapPoints;
 

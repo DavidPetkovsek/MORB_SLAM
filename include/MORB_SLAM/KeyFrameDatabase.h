@@ -55,28 +55,28 @@ class KeyFrameDatabase {
   KeyFrameDatabase() {}
   KeyFrameDatabase(std::shared_ptr<ORBVocabulary> voc);
 
-  void add(KeyFrame* pKF);
+  void add(std::shared_ptr<KeyFrame> pKF);
 
-  void erase(KeyFrame* pKF);
+  void erase(std::shared_ptr<KeyFrame> pKF);
 
   void clear();
   void clearMap(std::shared_ptr<Map> pMap);
 
   // Loop and Merge Detection
-  void DetectCandidates(KeyFrame* pKF, float minScore,
-                        std::vector<KeyFrame*>& vpLoopCand,
-                        std::vector<KeyFrame*>& vpMergeCand);
-  void DetectBestCandidates(KeyFrame* pKF, std::vector<KeyFrame*>& vpLoopCand,
-                            std::vector<KeyFrame*>& vpMergeCand, int nMinWords);
-  void DetectNBestCandidates(KeyFrame* pKF, std::vector<KeyFrame*>& vpLoopCand,
-                             std::vector<KeyFrame*>& vpMergeCand,
+  void DetectCandidates(std::shared_ptr<KeyFrame> pKF, float minScore,
+                        std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand,
+                        std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand);
+  void DetectBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand,
+                            std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand, int nMinWords);
+  void DetectNBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand,
+                             std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand,
                              int nNumCandidates);
 
   // Relocalization
-  std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F, std::shared_ptr<Map> pMap);
+  std::vector<std::shared_ptr<KeyFrame>> DetectRelocalizationCandidates(Frame* F, std::shared_ptr<Map> pMap);
 
   void PreSave();
-  void PostLoad(std::map<long unsigned int, KeyFrame*> mpKFid);
+  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpKFid);
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
 
  protected:
@@ -84,7 +84,7 @@ class KeyFrameDatabase {
   std::shared_ptr<ORBVocabulary> mpVoc;
 
   // Inverted file
-  std::vector<std::list<KeyFrame*> > mvInvertedFile;
+  std::vector<std::list<std::shared_ptr<KeyFrame>> > mvInvertedFile;
 
   // For save relation without pointer, this is necessary for save/load function
   std::vector<std::list<long unsigned int> > mvBackupInvertedFileId;

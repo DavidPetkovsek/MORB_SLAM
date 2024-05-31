@@ -1477,7 +1477,7 @@ void Tracking::StereoInitialization() {
     // mCurrentFrame.SetPose(Sophus::SE3f());
 
   // Create KeyFrame
-  KeyFrame* pKFini = new KeyFrame(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
   // Insert KeyFrame in the map
   // Why is this an Atlas function?
@@ -1621,10 +1621,8 @@ void Tracking::MonocularInitialization() {
 
 void Tracking::CreateInitialMapMonocular() {
   // Create KeyFrames
-  KeyFrame* pKFini =
-      new KeyFrame(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
-  KeyFrame* pKFcur =
-      new KeyFrame(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
   if (mSensor == CameraType::IMU_MONOCULAR)
     pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(nullptr);
@@ -1727,7 +1725,7 @@ void Tracking::CreateInitialMapMonocular() {
   mCurrentFrame.mpReferenceKF = pKFcur;
 
   // Compute here initial velocity
-  std::vector<KeyFrame*> vKFs = mpAtlas->GetAllKeyFrames();
+  std::vector<std::shared_ptr<KeyFrame>> vKFs = mpAtlas->GetAllKeyFrames();
 
   Sophus::SE3f deltaT = vKFs.back()->GetPose() * vKFs.front()->GetPoseInverse();
   imuMotionModelPrepedAfterRecentlyLostTracking = false;
@@ -2171,7 +2169,7 @@ void Tracking::CreateNewKeyFrame() {
 
   if (!mpLocalMapper->SetNotStop(true)) return;
 
-  KeyFrame* pKF = new KeyFrame(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  std::shared_ptr<KeyFrame> pKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
   if (mpAtlas->isImuInitialized())  //  || mpLocalMapper->IsInitializing())
     pKF->bImu = true;
@@ -2333,7 +2331,7 @@ void Tracking::UpdateLocalMap() {
 void Tracking::UpdateLocalPoints() {
   mvpLocalMapPoints.clear();
 
-  for (KeyFrame* pKF : mvpLocalKeyFrames) {
+  for (std::shared_ptr<KeyFrame> pKF : mvpLocalKeyFrames) {
     for (MapPoint* pMP : pKF->GetMapPointMatches()) {
       if (!pMP || pMP->isBad() || pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId) continue;
       mvpLocalMapPoints.push_back(pMP);
@@ -2344,14 +2342,14 @@ void Tracking::UpdateLocalPoints() {
 
 void Tracking::UpdateLocalKeyFrames() {
   // Each map point vote for the keyframes in which it has been observed
-  std::map<KeyFrame*, int> keyframeCounter;
+  std::map<std::shared_ptr<KeyFrame>, int> keyframeCounter;
   if (!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId < mnLastRelocFrameId + 2)) {
     for (int i = 0; i < mCurrentFrame.N; i++) {
       MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP) {
         if (!pMP->isBad()) {
-          const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
-          for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
+          const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
+          for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
             keyframeCounter[it->first]++;
         } else {
           mCurrentFrame.mvpMapPoints[i] = nullptr;
@@ -2365,8 +2363,8 @@ void Tracking::UpdateLocalKeyFrames() {
         MapPoint* pMP = mLastFrame.mvpMapPoints[i];
         if (!pMP) continue;
         if (!pMP->isBad()) {
-          const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
-          for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
+          const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
+          for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
             keyframeCounter[it->first]++;
         } else {
           // MODIFICATION
@@ -2377,7 +2375,7 @@ void Tracking::UpdateLocalKeyFrames() {
   }
 
   int max = 0;
-  KeyFrame* pKFmax = nullptr;
+  std::shared_ptr<KeyFrame> pKFmax = nullptr;
 
   mvpLocalKeyFrames.clear();
   mvpLocalKeyFrames.reserve(3 * keyframeCounter.size());
@@ -2385,7 +2383,7 @@ void Tracking::UpdateLocalKeyFrames() {
   // All keyframes that observe a map point are included in the local map. Also
   // check which keyframe shares most points
   for (auto &pair : keyframeCounter) {
-    KeyFrame* pKF = pair.first;
+    std::shared_ptr<KeyFrame> pKF = pair.first;
 
     if (pKF->isBad()) continue;
 
@@ -2400,11 +2398,11 @@ void Tracking::UpdateLocalKeyFrames() {
 
   // Include also some not-already-included keyframes that are neighbors to
   // already-included keyframes
-  for (KeyFrame* pKF : mvpLocalKeyFrames) {
+  for (std::shared_ptr<KeyFrame> pKF : mvpLocalKeyFrames) {
     // Limit the number of keyframes
     if (mvpLocalKeyFrames.size() > 80) break;
 
-    for (KeyFrame* pNeighKF : pKF->GetBestCovisibilityKeyFrames(10)) {
+    for (std::shared_ptr<KeyFrame> pNeighKF : pKF->GetBestCovisibilityKeyFrames(10)) {
       if (!pNeighKF->isBad()) {
         if (pNeighKF->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
           mvpLocalKeyFrames.push_back(pNeighKF);
@@ -2414,7 +2412,7 @@ void Tracking::UpdateLocalKeyFrames() {
       }
     }
 
-    for (KeyFrame* pChildKF : pKF->GetChilds()) {
+    for (std::shared_ptr<KeyFrame> pChildKF : pKF->GetChilds()) {
       if (pChildKF && !pChildKF->isBad()) {
         if (pChildKF->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
           mvpLocalKeyFrames.push_back(pChildKF);
@@ -2424,7 +2422,7 @@ void Tracking::UpdateLocalKeyFrames() {
       }
     }
 
-    KeyFrame* pParent = pKF->GetParent();
+    std::shared_ptr<KeyFrame> pParent = pKF->GetParent();
     if (pParent) {
       if (pParent->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
         mvpLocalKeyFrames.push_back(pParent);
@@ -2436,7 +2434,7 @@ void Tracking::UpdateLocalKeyFrames() {
 
   // Add 20 last temporal KFs (mainly for IMU)
   if (mSensor.isInertial() && mvpLocalKeyFrames.size() < 80 && !mCurrentFrame.isPartiallyConstructed) {
-    KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
+    std::shared_ptr<KeyFrame> tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
     const int Nd = 20;
     for (int i = 0; i < Nd; i++) {
@@ -2463,7 +2461,7 @@ bool Tracking::Relocalization() {
   // Relocalization is performed when tracking is lost
   // Track Lost: Query KeyFrame Database for keyframe candidates for
   // relocalisation
-  std::vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
+  std::vector<std::shared_ptr<KeyFrame>> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
 
   if (vpCandidateKFs.empty()) {
     Verbose::PrintMess("There are not candidates", Verbose::VERBOSITY_NORMAL);
@@ -2488,7 +2486,7 @@ bool Tracking::Relocalization() {
   int nCandidates = 0;
 
   for (int i = 0; i < nKFs; i++) {
-    KeyFrame* pKF = vpCandidateKFs[i];
+    std::shared_ptr<KeyFrame> pKF = vpCandidateKFs[i];
     if (pKF->isBad())
       vbDiscarded[i] = true;
     else {
@@ -2731,17 +2729,17 @@ void Tracking::ResetActiveMap(bool bLocMap) {
 
 void Tracking::InformOnlyTracking(const bool& flag) { mbOnlyTracking = flag; }
 
-void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurrentKeyFrame) {
+void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
   std::shared_ptr<Map> pMap = pCurrentKeyFrame->GetMap();
   // unsigned int index = mnFirstFrameId; // UNUSED
-  std::list<MORB_SLAM::KeyFrame*>::iterator lRit = mlpReferences.begin();
+  std::list<std::shared_ptr<KeyFrame>>::iterator lRit = mlpReferences.begin();
   std::list<bool>::iterator lbL = mlbLost.begin();
 
   if(s != 1.0f) {
     for (auto lit = mlRelativeFramePoses.begin(), lend = mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lbL++) {
       if (*lbL) continue;
 
-      KeyFrame* pKF = *lRit;
+      std::shared_ptr<KeyFrame> pKF = *lRit;
 
       while (pKF && pKF->isBad()) {
         pKF = pKF->GetParent();

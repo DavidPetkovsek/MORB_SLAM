@@ -52,32 +52,32 @@ class ORBmatcher {
 
   // Project MapPoints seen in KeyFrame into the Frame and search matches.
   // Used in relocalisation (Tracking)
-  int SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF,
+  int SearchByProjection(Frame &CurrentFrame, std::shared_ptr<KeyFrame>pKF,
                          const std::set<MapPoint *> &sAlreadyFound,
                          const float th, const int ORBdist);
 
   // Project MapPoints using a Similarity Transformation and search matches.
   // Used in loop detection (Loop Closing)
-  int SearchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw,
+  int SearchByProjection(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3<float> &Scw,
                          const std::vector<MapPoint *> &vpPoints,
                          std::vector<MapPoint *> &vpMatched, int th,
                          float ratioHamming = 1.0);
 
   // Project MapPoints using a Similarity Transformation and search matches.
   // Used in Place Recognition (Loop Closing and Merging)
-  int SearchByProjection(KeyFrame *pKF, Sophus::Sim3<float> &Scw,
+  int SearchByProjection(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3<float> &Scw,
                          const std::vector<MapPoint *> &vpPoints,
-                         const std::vector<KeyFrame *> &vpPointsKFs,
+                         const std::vector<std::shared_ptr<KeyFrame>> &vpPointsKFs,
                          std::vector<MapPoint *> &vpMatched,
-                         std::vector<KeyFrame *> &vpMatchedKF, int th,
+                         std::vector<std::shared_ptr<KeyFrame>> &vpMatchedKF, int th,
                          float ratioHamming = 1.0);
 
   // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
   // Brute force constrained to ORB that belong to the same vocabulary node (at
   // a certain level) Used in Relocalisation and Loop Detection
-  int SearchByBoW(KeyFrame *pKF, Frame &F,
+  int SearchByBoW(std::shared_ptr<KeyFrame>pKF, Frame &F,
                   std::vector<MapPoint *> &vpMapPointMatches);
-  int SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2,
+  int SearchByBoW(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
                   std::vector<MapPoint *> &vpMatches12);
 
   // Matching for the Map Initialization (only used in the monocular case)
@@ -87,27 +87,27 @@ class ORBmatcher {
                               int windowSize = 10);
 
   // Matching to triangulate new MapPoints. Check Epipolar Constraint.
-  int SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
+  int SearchForTriangulation(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
                              std::vector<std::pair<size_t, size_t> > &vMatchedPairs,
                              const bool bOnlyStereo,
                              const bool bCoarse = false);
 
   // Search matches between MapPoints seen in KF1 and KF2 transforming by a Sim3
   // [s12*R12|t12] In the stereo and RGB-D case, s12=1 int
-  // SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *>
+  // SearchBySim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, std::vector<MapPoint *>
   // &vpMatches12, const float &s12, const cv::Mat &R12, const cv::Mat &t12,
   // const float th);
-  int SearchBySim3(KeyFrame *pKF1, KeyFrame *pKF2,
+  int SearchBySim3(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
                    std::vector<MapPoint *> &vpMatches12,
                    const Sophus::Sim3f &S12, const float th);
 
   // Project MapPoints into KeyFrame and search for duplicated MapPoints.
-  int Fuse(KeyFrame *pKF, const std::vector<MapPoint *> &vpMapPoints,
+  int Fuse(std::shared_ptr<KeyFrame>pKF, const std::vector<MapPoint *> &vpMapPoints,
            const float th = 3.0, const bool bRight = false);
 
   // Project MapPoints into KeyFrame using a given Sim3 and search for
   // duplicated MapPoints.
-  int Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw,
+  int Fuse(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3f &Scw,
            const std::vector<MapPoint *> &vpPoints, float th,
            std::vector<MapPoint *> &vpReplacePoint);
 

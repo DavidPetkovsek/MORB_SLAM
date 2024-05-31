@@ -61,7 +61,7 @@ public:
     float getCameraSize() const;
     float getCameraLineWidth() const;
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
-    void SetReferenceKeyFrame(KeyFrame *pKF);
+    void SetReferenceKeyFrame(std::shared_ptr<KeyFrame>pKF);
     Eigen::Matrix4f getCameraPose();
 
 };

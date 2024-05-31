@@ -33,7 +33,7 @@ class GeometricTools {
  public:
   
   // Compute the Fundamental matrix between KF1 and KF2
-  static Eigen::Matrix3f ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
+  static Eigen::Matrix3f ComputeF12(std::shared_ptr<KeyFrame>&pKF1, std::shared_ptr<KeyFrame>&pKF2);
 
   // Triangulate point with KF1 and KF2
   static bool Triangulate(Eigen::Vector3f &x_c1, Eigen::Vector3f &x_c2,

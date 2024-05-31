@@ -335,7 +335,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
   return nInitialCorrespondences - nBad;
 }
 
-int Optimizer::OptimizeSim3(KeyFrame* pKF1, KeyFrame* pKF2,
+int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2,
                             std::vector<MapPoint*>& vpMatches1, g2o::Sim3& g2oS12,
                             const float th2, const bool bFixScale,
                             Eigen::Matrix<double, 7, 7>& mAcumHessian,

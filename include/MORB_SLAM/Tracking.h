@@ -70,8 +70,8 @@ class Tracking {
   // to localize the camera.
   void InformOnlyTracking(const bool& flag);
 
-  void UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurrentKeyFrame);
-  KeyFrame* GetLastKeyFrame() { return mpLastKeyFrame; }
+  void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+  std::shared_ptr<KeyFrame> GetLastKeyFrame() { return mpLastKeyFrame; }
 
   void CreateMapInAtlas();
   // std::mutex mMutexTracks;
@@ -126,7 +126,7 @@ class Tracking {
   // relative transformation
 protected:
   std::list<Sophus::SE3f> mlRelativeFramePoses;
-  std::list<KeyFrame*> mlpReferences;
+  std::list<std::shared_ptr<KeyFrame>> mlpReferences;
   std::list<bool> mlbLost;
 
   bool mFastInit;
@@ -263,8 +263,8 @@ public:
   bool mbReadyToInitialize;
 
   // Local Map
-  KeyFrame* mpReferenceKF;
-  std::vector<KeyFrame*> mvpLocalKeyFrames;
+  std::shared_ptr<KeyFrame> mpReferenceKF;
+  std::vector<std::shared_ptr<KeyFrame>> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
 
   // Atlas
@@ -300,7 +300,7 @@ public:
   int mnMatchesInliers;
 
   // Last Frame, KeyFrame and Relocalisation Info
-  KeyFrame* mpLastKeyFrame;
+  std::shared_ptr<KeyFrame> mpLastKeyFrame;
   unsigned int mnLastKeyFrameId;
   unsigned int mnLastRelocFrameId;
   double mTimeStampLost;

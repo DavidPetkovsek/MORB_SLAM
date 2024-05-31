@@ -25,7 +25,7 @@
 #include "MORB_SLAM/ImuTypes.h"
 namespace MORB_SLAM {
 
-ImuCamPose::ImuCamPose(KeyFrame* pKF) : its(0) {
+ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
   // Load IMU pose
   twb = pKF->GetImuPosition().cast<double>();
   Rwb = pKF->GetImuRotation().cast<double>();
@@ -118,7 +118,7 @@ ImuCamPose::ImuCamPose(Frame* pF) : its(0) {
 }
 
 ImuCamPose::ImuCamPose(Eigen::Matrix3d& _Rwc, Eigen::Vector3d& _twc,
-                       KeyFrame* pKF)
+                       std::shared_ptr<KeyFrame> pKF)
     : its(0) {
   // This is only for posegrpah, we do not care about multicamera
   tcw.resize(1);
@@ -248,7 +248,7 @@ void ImuCamPose::UpdateW(const double* pu) {
 }
 
 InvDepthPoint::InvDepthPoint(double _rho, double _u, double _v,
-                             KeyFrame* pHostKF)
+                             std::shared_ptr<KeyFrame> pHostKF)
     : rho(_rho),
       u(_u),
       v(_v),
@@ -441,7 +441,7 @@ void EdgeStereoOnlyPose::linearizeOplus() {
   _jacobianOplusXi = proj_jac * Rcb * SE3deriv;
 }
 
-VertexVelocity::VertexVelocity(KeyFrame* pKF) {
+VertexVelocity::VertexVelocity(std::shared_ptr<KeyFrame> pKF) {
   setEstimate(pKF->GetVelocity().cast<double>());
 }
 
@@ -449,7 +449,7 @@ VertexVelocity::VertexVelocity(Frame* pF) {
   setEstimate(pF->GetVelocity().cast<double>());
 }
 
-VertexGyroBias::VertexGyroBias(KeyFrame* pKF) {
+VertexGyroBias::VertexGyroBias(std::shared_ptr<KeyFrame> pKF) {
   setEstimate(pKF->GetGyroBias().cast<double>());
 }
 
@@ -459,7 +459,7 @@ VertexGyroBias::VertexGyroBias(Frame* pF) {
   setEstimate(bg);
 }
 
-VertexAccBias::VertexAccBias(KeyFrame* pKF) {
+VertexAccBias::VertexAccBias(std::shared_ptr<KeyFrame> pKF) {
   setEstimate(pKF->GetAccBias().cast<double>());
 }
 

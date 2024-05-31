@@ -83,10 +83,10 @@ class Atlas {
   unsigned long int GetLastInitKFid();
 
   // Method for change components in the current map
-  void AddKeyFrame(KeyFrame* pKF);
+  void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
   void AddMapPoint(MapPoint* pMP);
   // void EraseMapPoint(MapPoint* pMP);
-  // void EraseKeyFrame(KeyFrame* pKF);
+  // void EraseKeyFrame(std::shared_ptr<KeyFrame> pKF);
 
   std::shared_ptr<const GeometricCamera> AddCamera(const std::shared_ptr<const GeometricCamera> &pCam);
   std::vector<std::shared_ptr<const GeometricCamera>> GetAllCameras();
@@ -100,7 +100,7 @@ class Atlas {
   long unsigned KeyFramesInMap();
 
   // Method for get data in current map
-  std::vector<KeyFrame*> GetAllKeyFrames();
+  std::vector<std::shared_ptr<KeyFrame>> GetAllKeyFrames();
   std::vector<MapPoint*> GetAllMapPoints();
   std::vector<MapPoint*> GetReferenceMapPoints();
 
@@ -124,7 +124,7 @@ class Atlas {
   void PreSave();
   void PostLoad();
 
-  std::map<long unsigned int, KeyFrame*> GetAtlasKeyframes();
+  std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
 
   void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
   std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();

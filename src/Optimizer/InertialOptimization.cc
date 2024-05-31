@@ -52,7 +52,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   Verbose::PrintMess("start inertial optimization", Verbose::VERBOSITY_NORMAL);
   int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
-  const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
   // Setup optimizer
   g2o::SparseOptimizer optimizer;
@@ -72,7 +72,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 
   // Set KeyFrame vertices (fixed poses and optimizable velocities)
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
@@ -134,12 +134,12 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   // IMU links with gravity and scale
   std::vector<EdgeInertialGS*> vpei;
   vpei.reserve(vpKFs.size());
-  std::vector<std::pair<KeyFrame*, KeyFrame*>> vppUsedKF;
+  std::vector<std::pair<std::shared_ptr<KeyFrame>, std::shared_ptr<KeyFrame>>> vppUsedKF;
   vppUsedKF.reserve(vpKFs.size());
   // std::cout << "build optimization graph" << std::endl;
 
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
@@ -208,7 +208,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   // Keyframes velocities and biases
   const size_t N = vpKFs.size();
   for (size_t i = 0; i < N; i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
 
     VertexVelocity* VV = static_cast<VertexVelocity*>(
@@ -231,7 +231,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
                                      ImuInitializater::ImuInitType priorA) {
   int its = 200;  // Check number of iterations
   long unsigned int maxKFid = pMap->GetMaxKFid();
-  const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
   // Setup optimizer
   g2o::SparseOptimizer optimizer;
@@ -250,7 +250,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
 
   // Set KeyFrame vertices (fixed poses and optimizable velocities)
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
@@ -304,11 +304,11 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
   // IMU links with gravity and scale
   std::vector<EdgeInertialGS*> vpei;
   vpei.reserve(vpKFs.size());
-  std::vector<std::pair<KeyFrame*, KeyFrame*>> vppUsedKF;
+  std::vector<std::pair<std::shared_ptr<KeyFrame>, std::shared_ptr<KeyFrame>>> vppUsedKF;
   vppUsedKF.reserve(vpKFs.size());
 
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
@@ -367,7 +367,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
   // Keyframes velocities and biases
   const size_t N = vpKFs.size();
   for (size_t i = 0; i < N; i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
 
     VertexVelocity* VV = static_cast<VertexVelocity*>(
@@ -388,7 +388,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
                                      double& scale) {
   int its = 10;
   long unsigned int maxKFid = pMap->GetMaxKFid();
-  const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
   // Setup optimizer
   g2o::SparseOptimizer optimizer;
@@ -405,7 +405,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 
   // Set KeyFrame vertices (all variables are fixed)
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
@@ -441,7 +441,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
   // Graph edges
   int count_edges = 0;
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
@@ -677,7 +677,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
   // }
 
   // Set KeyFrame Vertex
-  KeyFrame* pKF = pFrame->mpLastKeyFrame;
+  std::shared_ptr<KeyFrame> pKF = pFrame->mpLastKeyFrame;
 
   VertexPose* VPk = new VertexPose(pKF);
   VPk->setId(4);

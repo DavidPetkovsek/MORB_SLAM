@@ -47,7 +47,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
                                ImuInitializater::ImuInitType priorA, Eigen::VectorXd* vSingVal,
                                bool* bHess) {
   long unsigned int maxKFid = pMap->GetMaxKFid();
-  const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
   const std::vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
   // Setup optimizer
@@ -70,9 +70,9 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   int nNonFixed = 0;
 
   // Set KeyFrame vertices
-  KeyFrame* pIncKF = nullptr;
+  std::shared_ptr<KeyFrame> pIncKF = nullptr;
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = new VertexPose(pKFi);
     VP->setId(pKFi->mnId);
@@ -121,7 +121,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
   // IMU links
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (!pKFi->mPrevKF) {
       if(pMap->GetOriginKF() != pKFi)
@@ -247,16 +247,16 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     vPoint->setMarginalized(true);
     optimizer.addVertex(vPoint);
 
-    const std::map<KeyFrame*, std::tuple<int, int>> observations = pMP->GetObservations();
+    const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
 
     bool bAllFixed = true;
 
     // Set edges
-    for (std::map<KeyFrame*, std::tuple<int, int>>::const_iterator
+    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator
              mit = observations.begin(),
              mend = observations.end();
          mit != mend; mit++) {
-      KeyFrame* pKFi = mit->first;
+      std::shared_ptr<KeyFrame> pKFi = mit->first;
 
       if (pKFi->mnId > maxKFid){
         continue;
@@ -372,7 +372,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   // Recover optimized data
   // Keyframes
   for (size_t i = 0; i < vpKFs.size(); i++) {
-    KeyFrame* pKFi = vpKFs[i];
+    std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
     if (nLoopId == 0) {

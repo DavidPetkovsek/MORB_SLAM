@@ -70,7 +70,7 @@ Map::~Map() {
   mvpKeyFrameOrigins.clear();
 }
 
-void Map::AddKeyFrame(KeyFrame* pKF) {
+void Map::AddKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lock(mMutexMap);
   if (mspKeyFrames.empty()) {
     std::cout << "First KF:" << pKF->mnId << "; Map init KF:" << mnInitKFid << std::endl;
@@ -110,13 +110,13 @@ void Map::EraseMapPoint(MapPoint* pMP) {
   // Delete the MapPoint
 }
 
-void Map::EraseKeyFrame(KeyFrame* pKF) {
+void Map::EraseKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mspKeyFrames.erase(pKF);
   if (mspKeyFrames.size() > 0) {
     if (pKF->mnId == mpKFlowerID->mnId) {
-      std::vector<KeyFrame*> vpKFs =
-          std::vector<KeyFrame*>(mspKeyFrames.begin(), mspKeyFrames.end());
+      std::vector<std::shared_ptr<KeyFrame>> vpKFs =
+          std::vector<std::shared_ptr<KeyFrame>>(mspKeyFrames.begin(), mspKeyFrames.end());
       sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
       mpKFlowerID = vpKFs[0];
     }
@@ -143,10 +143,10 @@ int Map::GetLastBigChangeIdx() {
   return mnBigChangeIdx;
 }
 
-std::vector<KeyFrame*> Map::GetAllKeyFrames() {
+std::vector<std::shared_ptr<KeyFrame>> Map::GetAllKeyFrames() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   // std::cout << "Size of mspKeyFrames: " << mspKeyFrames.size() << std::endl;
-  return std::vector<KeyFrame*>(mspKeyFrames.begin(), mspKeyFrames.end());
+  return std::vector<std::shared_ptr<KeyFrame>>(mspKeyFrames.begin(), mspKeyFrames.end());
 }
 
 std::vector<MapPoint*> Map::GetAllMapPoints() {
@@ -186,7 +186,7 @@ long unsigned int Map::GetMaxKFid() {
   return mnMaxKFid;
 }
 
-KeyFrame* Map::GetOriginKF() { return mpKFinitial; }
+std::shared_ptr<KeyFrame> Map::GetOriginKF() { return mpKFinitial; }
 
 void Map::clear() {
   std::scoped_lock<std::mutex> lock(mMutexMap);
@@ -194,8 +194,8 @@ void Map::clear() {
   //    send=mspMapPoints.end(); sit!=send; sit++)
   //        delete *sit;
 
-  for (std::set<KeyFrame*>::iterator sit = mspKeyFrames.begin(), send = mspKeyFrames.end(); sit != send; sit++) {
-    KeyFrame* pKF = *sit;
+  for (std::set<std::shared_ptr<KeyFrame>>::iterator sit = mspKeyFrames.begin(), send = mspKeyFrames.end(); sit != send; sit++) {
+    std::shared_ptr<KeyFrame> pKF = *sit;
     pKF->UpdateMap(nullptr);
     //        delete *sit;
   }
@@ -221,8 +221,8 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
   Sophus::SE3f Tyw = T;
   Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
   Eigen::Vector3f tyw = Tyw.translation();
-  for (std::set<KeyFrame*>::iterator sit = mspKeyFrames.begin(); sit != mspKeyFrames.end(); sit++) {
-    KeyFrame* pKF = *sit;
+  for (std::set<std::shared_ptr<KeyFrame>>::iterator sit = mspKeyFrames.begin(); sit != mspKeyFrames.end(); sit++) {
+    std::shared_ptr<KeyFrame> pKF = *sit;
     Sophus::SE3f Twc = pKF->GetPoseInverse();
     Twc.translation() *= s;
     Sophus::SE3f Tyc = Tyw * Twc;
@@ -312,9 +312,9 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
     if (pMPi->GetObservations().size() == 0) {
       nMPWithoutObs++;
     }
-    std::map<KeyFrame*, std::tuple<int, int>> mpObs = pMPi->GetObservations();
+    std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> mpObs = pMPi->GetObservations();
     // std::cout << "getting observations" << std::endl;
-    for (std::map<KeyFrame*, std::tuple<int, int>>::iterator it = mpObs.begin(), end = mpObs.end(); it != end; ++it) {
+    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator it = mpObs.begin(), end = mpObs.end(); it != end; ++it) {
       if ((it->first->GetMap() != sharedMap) || it->first->isBad()) {
         pMPi->EraseObservation(it->first);
       }
@@ -332,7 +332,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   mvpBackupMapPoints.clear();
   tmp_mspMapPoints.clear();
 
-  std::set<KeyFrame*> tmp_mspKFs;
+  std::set<std::shared_ptr<KeyFrame>> tmp_mspKFs;
   {
     std::scoped_lock<std::mutex> lock(mMutexMap);
     tmp_mspMapPoints.insert(mspMapPoints.begin(), mspMapPoints.end());
@@ -348,7 +348,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
 
   // Backup of KeyFrames
   mvpBackupKeyFrames.clear();
-  for (KeyFrame* pKFi : tmp_mspKFs) {
+  for (std::shared_ptr<KeyFrame> pKFi : tmp_mspKFs) {
     if (!pKFi || pKFi->isBad()) continue;
 
     mvpBackupKeyFrames.push_back(pKFi);
@@ -366,7 +366,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   }
 }
 
-void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc /*, std::map<long unsigned int, KeyFrame*>& mpKeyFrameId*/,
+void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc /*, std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKeyFrameId*/,
     std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
 
   if(this != sharedMap.get()){
@@ -386,8 +386,8 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
     mpMapPointId[pMPi->mnId] = pMPi;
   }
 
-  std::map<long unsigned int, KeyFrame*> mpKeyFrameId;
-  for (KeyFrame* pKFi : mspKeyFrames) {
+  std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpKeyFrameId;
+  for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
     if (!pKFi || pKFi->isBad()) continue;
 
     pKFi->UpdateMap(sharedMap);
@@ -403,7 +403,7 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
     pMPi->PostLoad(mpKeyFrameId, mpMapPointId);
   }
 
-  for (KeyFrame* pKFi : mspKeyFrames) {
+  for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
     if (!pKFi || pKFi->isBad()) continue;
 
     pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams);
