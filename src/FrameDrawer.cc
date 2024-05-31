@@ -327,7 +327,7 @@ void FrameDrawer::Update(const Tracking_ptr &pTracker, const Packet &pose) {
     mvIniMatches = pTracker->mvIniMatches;
   } else if (pTracker->mLastProcessedState == TrackingState::OK) {
     for (int i = 0; i < N; i++) {
-      MapPoint *pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
+      std::shared_ptr<MapPoint>pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
       if (pMP) {
         if (!pTracker->mCurrentFrame.mvbOutlier[i]) {
           if (pMP->Observations() > 0)

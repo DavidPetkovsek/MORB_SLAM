@@ -72,11 +72,11 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   int N = vpOptimizableKFs.size();
 
   // the Local MapPoints list stores every MapPoint viewable from one of the Optimizable KeyFrames
-  std::list<MapPoint*> lLocalMapPoints;
+  std::list<std::shared_ptr<MapPoint>> lLocalMapPoints;
   for (int i = 0; i < N; i++) {
-    std::vector<MapPoint*> vpMPs = vpOptimizableKFs[i]->GetMapPointMatches();
-    for (std::vector<MapPoint*>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
-      MapPoint* pMP = *vit;
+    std::vector<std::shared_ptr<MapPoint>> vpMPs = vpOptimizableKFs[i]->GetMapPointMatches();
+    for (std::vector<std::shared_ptr<MapPoint>>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
+      std::shared_ptr<MapPoint> pMP = *vit;
       // check if the MP exists, is not already in the list, and if more than 1 KF is observing it (note: stereo observations count for 2)
       if (pMP && !pMP->isBad() && pMP->mnBALocalForKF != pKF->mnId && pMP->Observations() >= 4) {
         lLocalMapPoints.push_back(pMP);
@@ -118,9 +118,9 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
     //   if (!pKFi->isBad() && pKFi->GetMap() == pCurrentMap) {
     //     lpOptVisKFs.push_back(pKFi);
 
-    //     std::vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-    //     for (std::vector<MapPoint*>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
-    //       MapPoint* pMP = *vit;
+    //     std::vector<std::shared_ptr<MapPoint>> vpMPs = pKFi->GetMapPointMatches();
+    //     for (std::vector<std::shared_ptr<MapPoint>>::iterator vit = vpMPs.begin(), vend = vpMPs.end(); vit != vend; vit++) {
+    //       std::shared_ptr<MapPoint> pMP = *vit;
     //       if (pMP && !pMP->isBad() && pMP->mnBALocalForKF != pKF->mnId) {
     //         lLocalMapPoints.push_back(pMP);
     //         pMP->mnBALocalForKF = pKF->mnId;
@@ -135,7 +135,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
   {
     // OLD STUFF
-    // for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
+    // for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
     //   std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = (*lit)->GetObservations();
     //   for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
     //     std::shared_ptr<KeyFrame> pKFi = mit->first;
@@ -163,7 +163,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   std::map<std::shared_ptr<KeyFrame>, int> optimizableKFsCounter;
 
   // map that keeps track of which Local MapPoints each Fixed KeyFrame can see
-  std::map<std::shared_ptr<KeyFrame>, std::pair<MapPoint*, MapPoint*>> fixedKFsVisibleMPs;
+  std::map<std::shared_ptr<KeyFrame>, std::pair<std::shared_ptr<MapPoint>, std::shared_ptr<MapPoint>>> fixedKFsVisibleMPs;
 
   // initialize the counter
   for (int i = 0; i < N-1; i++) {
@@ -173,7 +173,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
 
   // iterate through all Local MapPoints
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
     // get a list of each KF that observes this loop iteration's MP
     std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = (*lit)->GetObservations();
     // iterate through each of these KFs
@@ -189,7 +189,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
         pKFi->mnBAFixedForKF = pKF->mnId;
         if (!pKFi->isBad()) {
           // keep track of the local MP that KFi observed
-          fixedKFsVisibleMPs[pKFi] = std::pair<MapPoint*, MapPoint*>((*lit), nullptr);
+          fixedKFsVisibleMPs[pKFi] = std::pair<std::shared_ptr<MapPoint>, std::shared_ptr<MapPoint>>((*lit), nullptr);
         } else {
           pKFi->mbVerifyLocalInertialBA = true;
         }
@@ -287,8 +287,8 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   for (auto mit = fixedKFsVisibleMPs.begin(); mit != fixedKFsVisibleMPs.end(); mit++) {
     std::shared_ptr<KeyFrame>pKFi = mit->first;
 
-    MapPoint *pMP1 = mit->second.first;
-    MapPoint *pMP2 = mit->second.second;
+    std::shared_ptr<MapPoint>pMP1 = mit->second.first;
+    std::shared_ptr<MapPoint>pMP2 = mit->second.second;
 
     if(pMP1) {
       if(!pMP1->isBad()) pMP1->SetBadFlag();
@@ -471,7 +471,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFMono;
   // vpEdgeKFMono.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeMono;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeMono;
   // vpMapPointEdgeMono.reserve(nExpectedSize);
 
   // Stereo
@@ -481,7 +481,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFStereo;
   vpEdgeKFStereo.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeStereo;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeStereo;
   vpMapPointEdgeStereo.reserve(nExpectedSize);
 
   const float thHuberMono = sqrt(5.991);
@@ -503,8 +503,8 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   }
 
   // set Local MapPoint vertices, and their edges to the Optimizable+Fixed KFs that observe them
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
-    MapPoint* pMP = *lit;
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
+    std::shared_ptr<MapPoint> pMP = *lit;
     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
     vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
 
@@ -670,14 +670,14 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   float err_end = optimizer.activeRobustChi2();
   if (pbStopFlag) optimizer.setForceStopFlag(pbStopFlag);
 
-  std::vector<std::pair<std::shared_ptr<KeyFrame>, MapPoint*>> vToErase;
+  std::vector<std::pair<std::shared_ptr<KeyFrame>, std::shared_ptr<MapPoint>>> vToErase;
   vToErase.reserve(vpEdgesMono.size() + vpEdgesStereo.size());
 
   // Check inlier observations
   // Mono
   for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
     EdgeMono* e = vpEdgesMono[i];
-    MapPoint* pMP = vpMapPointEdgeMono[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i];
     bool bClose = pMP->mTrackDepth < 10.f;
 
     if (pMP->isBad()) continue;
@@ -691,7 +691,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   // Stereo
   for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
     EdgeStereo* e = vpEdgesStereo[i];
-    MapPoint* pMP = vpMapPointEdgeStereo[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i];
 
     if (pMP->isBad()) continue;
 
@@ -715,7 +715,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   if (!vToErase.empty()) {
     for (size_t i = 0; i < vToErase.size(); i++) {
       std::shared_ptr<KeyFrame> pKFi = vToErase[i].first;
-      MapPoint* pMPi = vToErase[i].second;
+      std::shared_ptr<MapPoint> pMPi = vToErase[i].second;
       pKFi->EraseMapPointMatch(pMPi);
       pMPi->EraseObservation(pKFi);
     }
@@ -759,8 +759,8 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
   }
 
   // Local MapPoints
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
-    MapPoint* pMP = *lit;
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(), lend = lLocalMapPoints.end(); lit != lend; lit++) {
+    std::shared_ptr<MapPoint> pMP = *lit;
     g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId + iniMPid + 1));
     pMP->SetWorldPos(vPoint->estimate().cast<float>());
     pMP->UpdateNormalAndDepth();

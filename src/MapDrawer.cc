@@ -49,10 +49,10 @@ void MapDrawer::DrawMapPoints() {
   std::shared_ptr<Map> pActiveMap = mpAtlas->GetCurrentMap();
   if (!pActiveMap) return;
 
-  const std::vector<MapPoint *> &vpMPs = pActiveMap->GetAllMapPoints();
-  const std::vector<MapPoint *> &vpRefMPs = pActiveMap->GetReferenceMapPoints();
+  const std::vector<std::shared_ptr<MapPoint>> &vpMPs = pActiveMap->GetAllMapPoints();
+  const std::vector<std::shared_ptr<MapPoint>> &vpRefMPs = pActiveMap->GetReferenceMapPoints();
 
-  std::set<MapPoint *> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
+  std::set<std::shared_ptr<MapPoint>> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
   if (vpMPs.empty()) return;
 
@@ -71,7 +71,7 @@ void MapDrawer::DrawMapPoints() {
   glBegin(GL_POINTS);
   glColor3f(1.0, 0.0, 0.0);
 
-  for (std::set<MapPoint *>::iterator sit = spRefMPs.begin(), send = spRefMPs.end();
+  for (std::set<std::shared_ptr<MapPoint>>::iterator sit = spRefMPs.begin(), send = spRefMPs.end();
        sit != send; sit++) {
     if ((*sit)->isBad()) continue;
     Eigen::Matrix<float, 3, 1> pos = (*sit)->GetWorldPos();

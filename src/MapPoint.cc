@@ -279,17 +279,18 @@ void MapPoint::SetBadFlag() {
     }
   }
 
-  // mpMap->EraseMapPoint(this);
+  mpMap->EraseMapPoint(shared_from_this());
 }
 
-MapPoint* MapPoint::GetReplaced() {
+std::shared_ptr<MapPoint> MapPoint::GetReplaced() {
   std::unique_lock<std::mutex> lock1(mMutexFeatures);
   std::unique_lock<std::mutex> lock2(mMutexPos);
   return mpReplaced;
 }
 
-void MapPoint::Replace(MapPoint* pMP) {
-  if (pMP->mnId == this->mnId) return;
+void MapPoint::Replace(std::shared_ptr<MapPoint> pMP) {
+  std::shared_ptr<MapPoint> self = shared_from_this();
+  if (pMP->mnId == self->mnId) return;
 
   int nvisible, nfound;
   std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> obs;
@@ -333,7 +334,7 @@ void MapPoint::Replace(MapPoint* pMP) {
   pMP->IncreaseVisible(nvisible);
   pMP->ComputeDistinctiveDescriptors();
 
-  mpMap->EraseMapPoint(this);
+  mpMap->EraseMapPoint(self);
 }
 
 bool MapPoint::isBad() {
@@ -575,7 +576,7 @@ void MapPoint::UpdateMap(std::shared_ptr<Map> pMap) {
   mpMap = pMap;
 }
 
-void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<MapPoint*>& spMP) {
+void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP) {
   mBackupReplacedId = -1;
 
   if (mpReplaced && spMP.find(mpReplaced) != spMP.end())
@@ -609,7 +610,7 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<MapPo
 }
 
 void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
-                        std::map<long unsigned int, MapPoint*>& mpMPid) {
+                        std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
   mpRefKF = mpKFid[mBackupRefKFId];
   if (!mpRefKF) {
     std::cout << "ERROR: MP without KF reference " << mBackupRefKFId
@@ -617,7 +618,7 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
   }
   mpReplaced = nullptr;
   if (mBackupReplacedId >= 0) {
-    std::map<long unsigned int, MapPoint*>::iterator it =
+    std::map<long unsigned int, std::shared_ptr<MapPoint>>::iterator it =
         mpMPid.find(mBackupReplacedId);
     if (it != mpMPid.end()) mpReplaced = it->second;
   }

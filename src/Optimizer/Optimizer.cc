@@ -90,7 +90,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
     std::unique_lock<std::mutex> lock(MapPoint::mGlobalMutex);
 
     for (int i = 0; i < N; i++) {
-      MapPoint* pMP = pFrame->mvpMapPoints[i];
+      std::shared_ptr<MapPoint> pMP = pFrame->mvpMapPoints[i];
       if (pMP) {
         // Conventional SLAM
         if (!pFrame->mpCamera2) {
@@ -336,7 +336,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
 }
 
 int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2,
-                            std::vector<MapPoint*>& vpMatches1, g2o::Sim3& g2oS12,
+                            std::vector<std::shared_ptr<MapPoint>>& vpMatches1, g2o::Sim3& g2oS12,
                             const float th2, const bool bFixScale,
                             Eigen::Matrix<double, 7, 7>& mAcumHessian,
                             const bool bAllPoints) {
@@ -370,7 +370,7 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
 
   // Set MapPoint vertices
   const int N = vpMatches1.size();
-  const std::vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
+  const std::vector<std::shared_ptr<MapPoint>> vpMapPoints1 = pKF1->GetMapPointMatches();
   std::vector<MORB_SLAM::EdgeSim3ProjectXYZ*> vpEdges12;
   std::vector<MORB_SLAM::EdgeInverseSim3ProjectXYZ*> vpEdges21;
   std::vector<size_t> vnIndexEdge;
@@ -394,8 +394,8 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
   for (int i = 0; i < N; i++) {
     if (!vpMatches1[i]) continue;
 
-    MapPoint* pMP1 = vpMapPoints1[i];
-    MapPoint* pMP2 = vpMatches1[i];
+    std::shared_ptr<MapPoint> pMP1 = vpMapPoints1[i];
+    std::shared_ptr<MapPoint> pMP2 = vpMatches1[i];
 
     const int id1 = 2 * i + 1;
     const int id2 = 2 * (i + 1);

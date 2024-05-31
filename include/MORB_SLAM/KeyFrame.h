@@ -51,7 +51,7 @@ class KeyFrameDatabase;
 
 class GeometricCamera;
 
-class KeyFrame : public std::enable_shared_from_this<KeyFrame>{
+class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   friend class boost::serialization::access;
 
   template <class Archive>
@@ -244,14 +244,14 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame>{
 
   // MapPoint observation functions
   int GetNumberMPs();
-  void AddMapPoint(MapPoint* pMP, const size_t& idx);
+  void AddMapPoint(std::shared_ptr<MapPoint> pMP, const size_t& idx);
   void EraseMapPointMatch(const int& idx);
-  void EraseMapPointMatch(MapPoint* pMP);
-  void ReplaceMapPointMatch(const int& idx, MapPoint* pMP);
-  std::set<MapPoint*> GetMapPoints();
-  std::vector<MapPoint*> GetMapPointMatches();
+  void EraseMapPointMatch(std::shared_ptr<MapPoint> pMP);
+  void ReplaceMapPointMatch(const int& idx, std::shared_ptr<MapPoint> pMP);
+  std::set<std::shared_ptr<MapPoint>> GetMapPoints();
+  std::vector<std::shared_ptr<MapPoint>> GetMapPointMatches();
   int TrackedMapPoints(const int& minObs);
-  MapPoint* GetMapPoint(const size_t& idx);
+  std::shared_ptr<MapPoint> GetMapPoint(const size_t& idx);
 
   // KeyPoint functions
   std::vector<size_t> GetFeaturesInArea(const float& x, const float& y,
@@ -289,14 +289,14 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame>{
 
   IMU::Bias GetImuBias();
 
-  bool ProjectPointDistort(MapPoint* pMP, cv::Point2f& kp, float& u, float& v);
-  bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f& kp, float& u,
+  bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
+  bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u,
                              float& v);
 
-  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<MapPoint*>& spMP,
+  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP,
                std::set<std::shared_ptr<const GeometricCamera>>& spCam);
   void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
-                std::map<long unsigned int, MapPoint*>& mpMPid,
+                std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid,
                 std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
@@ -442,7 +442,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame>{
   IMU::Bias mImuBias;
 
   // MapPoints associated to keypoints
-  std::vector<MapPoint*> mvpMapPoints;
+  std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;
   // For save relation without pointer, this is necessary for save/load function
   std::vector<long long int> mvBackupMapPointsId;
 

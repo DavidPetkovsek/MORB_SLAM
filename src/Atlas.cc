@@ -71,7 +71,7 @@ void Atlas::AddKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   pMapKF->AddKeyFrame(pKF);
 }
 
-void Atlas::AddMapPoint(MapPoint* pMP) {
+void Atlas::AddMapPoint(std::shared_ptr<MapPoint> pMP) {
   std::shared_ptr<Map> pMapMP = pMP->GetMap();
   pMapMP->AddMapPoint(pMP);
 }
@@ -109,7 +109,7 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
 
 std::vector<std::shared_ptr<const GeometricCamera>> Atlas::GetAllCameras() { return mvpCameras; }
 
-void Atlas::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
+void Atlas::SetReferenceMapPoints(const std::vector<std::shared_ptr<MapPoint>>& vpMPs) {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   mpCurrentMap->SetReferenceMapPoints(vpMPs);
 }
@@ -139,12 +139,12 @@ std::vector<std::shared_ptr<KeyFrame>> Atlas::GetAllKeyFrames() {
   return mpCurrentMap->GetAllKeyFrames();
 }
 
-std::vector<MapPoint*> Atlas::GetAllMapPoints() {
+std::vector<std::shared_ptr<MapPoint>> Atlas::GetAllMapPoints() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllMapPoints();
 }
 
-std::vector<MapPoint*> Atlas::GetReferenceMapPoints() {
+std::vector<std::shared_ptr<MapPoint>> Atlas::GetReferenceMapPoints() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetReferenceMapPoints();
 }

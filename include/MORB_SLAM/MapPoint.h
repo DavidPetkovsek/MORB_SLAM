@@ -42,8 +42,7 @@ class KeyFrame;
 class Map;
 class Frame;
 
-class MapPoint
-{
+class MapPoint : public std::enable_shared_from_this<MapPoint> {
 
     friend class boost::serialization::access;
     template<class Archive>
@@ -132,8 +131,8 @@ public:
     void SetBadFlag();
     bool isBad();
 
-    void Replace(MapPoint* pMP);
-    MapPoint* GetReplaced();
+    void Replace(std::shared_ptr<MapPoint> pMP);
+    std::shared_ptr<MapPoint> GetReplaced();
 
     void IncreaseVisible(int n=1);
     void IncreaseFound(int n=1);
@@ -158,8 +157,8 @@ public:
 
     void PrintObservations();
 
-    void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF,std::set<MapPoint*>& spMP);
-    void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid);
+    void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF,std::set<std::shared_ptr<MapPoint>>& spMP);
+    void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid);
 
 public:
     long unsigned int mnId;
@@ -235,7 +234,7 @@ protected:
 
      // Bad flag (we do not currently erase MapPoint from memory)
      bool mbBad;
-     MapPoint* mpReplaced;
+     std::shared_ptr<MapPoint> mpReplaced;
      // For save relation without pointer, this is necessary for save/load function
      long long int mBackupReplacedId;
 

@@ -33,7 +33,7 @@ class Sim3Solver {
   
   Sim3Solver(
       std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-      const std::vector<MapPoint *> &vpMatched12, const bool bFixScale = true,
+      const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale = true,
       const std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>());
 
   void SetRansacParameters(double probability = 0.99, int minInliers = 6,
@@ -74,9 +74,9 @@ class Sim3Solver {
 
   std::vector<Eigen::Vector3f> mvX3Dc1;
   std::vector<Eigen::Vector3f> mvX3Dc2;
-  std::vector<MapPoint *> mvpMapPoints1;
-  std::vector<MapPoint *> mvpMapPoints2;
-  std::vector<MapPoint *> mvpMatches12;
+  std::vector<std::shared_ptr<MapPoint>> mvpMapPoints1;
+  std::vector<std::shared_ptr<MapPoint>> mvpMapPoints2;
+  std::vector<std::shared_ptr<MapPoint>> mvpMatches12;
   std::vector<size_t> mvnIndices1;
   std::vector<size_t> mvSigmaSquare1;
   std::vector<size_t> mvSigmaSquare2;

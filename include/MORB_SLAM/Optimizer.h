@@ -46,7 +46,7 @@ class LoopClosing;
 class Optimizer {
  public:
   void static BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>> &vpKF,
-                               const std::vector<MapPoint *> &vpMP,
+                               const std::vector<std::shared_ptr<MapPoint>> &vpMP,
                                int nIterations = 5, bool *pbStopFlag = nullptr,
                                const unsigned long nLoopKF = 0,
                                const bool bRobust = true);
@@ -83,7 +83,7 @@ class Optimizer {
                                      std::vector<std::shared_ptr<KeyFrame>> &vpFixedKFs,
                                      std::vector<std::shared_ptr<KeyFrame>> &vpFixedCorrectedKFs,
                                      std::vector<std::shared_ptr<KeyFrame>> &vpNonFixedKFs,
-                                     std::vector<MapPoint *> &vpNonCorrectedMPs);
+                                     std::vector<std::shared_ptr<MapPoint>> &vpNonCorrectedMPs);
 
   // For inertial loopclosing
   void static OptimizeEssentialGraph4DoF(
@@ -95,7 +95,7 @@ class Optimizer {
   // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
   // (NEW)
   static int OptimizeSim3(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-                          std::vector<MapPoint *> &vpMatches1,
+                          std::vector<std::shared_ptr<MapPoint>> &vpMatches1,
                           g2o::Sim3 &g2oS12, const float th2,
                           const bool bFixScale,
                           Eigen::Matrix<double, 7, 7> &mAcumHessian,

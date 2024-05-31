@@ -60,7 +60,7 @@ void Optimizer::OptimizeEssentialGraph(
   optimizer.setAlgorithm(solver);
 
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
-  const std::vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
+  const std::vector<std::shared_ptr<MapPoint>> vpMPs = pMap->GetAllMapPoints();
 
   const unsigned int nMaxKFid = pMap->GetMaxKFid();
 
@@ -308,7 +308,7 @@ void Optimizer::OptimizeEssentialGraph(
   // Correct points. Transform to "non-optimized" reference keyframe pose and
   // transform back with optimized pose
   for (size_t i = 0, iend = vpMPs.size(); i < iend; i++) {
-    MapPoint* pMP = vpMPs[i];
+    std::shared_ptr<MapPoint> pMP = vpMPs[i];
 
     if (pMP->isBad()) continue;
 
@@ -339,7 +339,7 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF,
                                        std::vector<std::shared_ptr<KeyFrame>>& vpFixedKFs,
                                        std::vector<std::shared_ptr<KeyFrame>>& vpFixedCorrectedKFs,
                                        std::vector<std::shared_ptr<KeyFrame>>& vpNonFixedKFs,
-                                       std::vector<MapPoint*>& vpNonCorrectedMPs) {
+                                       std::vector<std::shared_ptr<MapPoint>>& vpNonCorrectedMPs) {
   Verbose::PrintMess("Opt_Essential: There are " +
                          std::to_string(vpFixedKFs.size()) +
                          " KFs fixed in the merged map",
@@ -632,7 +632,7 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF,
 
   // Correct points. Transform to "non-optimized" reference keyframe pose and
   // transform back with optimized pose
-  for (MapPoint* pMPi : vpNonCorrectedMPs) {
+  for (std::shared_ptr<MapPoint> pMPi : vpNonCorrectedMPs) {
     if (pMPi->isBad()) continue;
 
     std::shared_ptr<KeyFrame> pRefKF = pMPi->GetReferenceKeyFrame();
@@ -685,7 +685,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(
   optimizer.setAlgorithm(solver);
 
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
-  const std::vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
+  const std::vector<std::shared_ptr<MapPoint>> vpMPs = pMap->GetAllMapPoints();
 
   const unsigned int nMaxKFid = pMap->GetMaxKFid();
 
@@ -954,7 +954,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(
   // Correct points. Transform to "non-optimized" reference keyframe pose and
   // transform back with optimized pose
   for (size_t i = 0, iend = vpMPs.size(); i < iend; i++) {
-    MapPoint* pMP = vpMPs[i];
+    std::shared_ptr<MapPoint> pMP = vpMPs[i];
 
     if (pMP->isBad()) continue;
 

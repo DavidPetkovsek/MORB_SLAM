@@ -62,8 +62,8 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
 
   // Local MapPoints seen in Local KeyFrames
   num_fixedKF = 0;
-  std::list<MapPoint*> lLocalMapPoints;
-  std::set<MapPoint*> sNumObsMP;
+  std::list<std::shared_ptr<MapPoint>> lLocalMapPoints;
+  std::set<std::shared_ptr<MapPoint>> sNumObsMP;
   for (std::list<std::shared_ptr<KeyFrame>>::iterator lit = lLocalKeyFrames.begin(),
                                  lend = lLocalKeyFrames.end();
        lit != lend; lit++) {
@@ -71,10 +71,10 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
     if (pKFi->mnId == pMap->GetInitKFid()) {
       num_fixedKF = 1;
     }
-    std::vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-    for (std::vector<MapPoint*>::iterator vit = vpMPs.begin(), vend = vpMPs.end();
+    std::vector<std::shared_ptr<MapPoint>> vpMPs = pKFi->GetMapPointMatches();
+    for (std::vector<std::shared_ptr<MapPoint>>::iterator vit = vpMPs.begin(), vend = vpMPs.end();
          vit != vend; vit++) {
-      MapPoint* pMP = *vit;
+      std::shared_ptr<MapPoint> pMP = *vit;
       if (pMP)
         if (!pMP->isBad() && pMP->GetMap() == pCurrentMap) {
           if (pMP->mnBALocalForKF != pKF->mnId) {
@@ -88,7 +88,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local
   // Keyframes
   std::list<std::shared_ptr<KeyFrame>> lFixedCameras;
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(),
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(),
                                  lend = lLocalMapPoints.end();
        lit != lend; lit++) {
     std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = (*lit)->GetObservations();
@@ -189,10 +189,10 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFBody;
   vpEdgeKFBody.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeMono;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeMono;
   vpMapPointEdgeMono.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeBody;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeBody;
   vpMapPointEdgeBody.reserve(nExpectedSize);
 
   std::vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
@@ -201,7 +201,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFStereo;
   vpEdgeKFStereo.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeStereo;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeStereo;
   vpMapPointEdgeStereo.reserve(nExpectedSize);
 
   const float thHuberMono = sqrt(5.991);
@@ -211,10 +211,10 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
 
   int nEdges = 0;
 
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(),
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(),
                                  lend = lLocalMapPoints.end();
        lit != lend; lit++) {
-    MapPoint* pMP = *lit;
+    std::shared_ptr<MapPoint> pMP = *lit;
     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
     vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
     int id = pMP->mnId + maxKFid + 1;
@@ -350,14 +350,14 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   optimizer.initializeOptimization();
   optimizer.optimize(10);
 
-  std::vector<std::pair<std::shared_ptr<KeyFrame>, MapPoint*>> vToErase;
+  std::vector<std::pair<std::shared_ptr<KeyFrame>, std::shared_ptr<MapPoint>>> vToErase;
   vToErase.reserve(vpEdgesMono.size() + vpEdgesBody.size() +
                    vpEdgesStereo.size());
 
   // Check inlier observations
   for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
     MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
-    MapPoint* pMP = vpMapPointEdgeMono[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i];
 
     if (pMP->isBad()) continue;
 
@@ -369,7 +369,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
 
   for (size_t i = 0, iend = vpEdgesBody.size(); i < iend; i++) {
     MORB_SLAM::EdgeSE3ProjectXYZToBody* e = vpEdgesBody[i];
-    MapPoint* pMP = vpMapPointEdgeBody[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeBody[i];
 
     if (pMP->isBad()) continue;
 
@@ -381,7 +381,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
 
   for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
     g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-    MapPoint* pMP = vpMapPointEdgeStereo[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i];
 
     if (pMP->isBad()) continue;
 
@@ -397,7 +397,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   if (!vToErase.empty()) {
     for (size_t i = 0; i < vToErase.size(); i++) {
       std::shared_ptr<KeyFrame> pKFi = vToErase[i].first;
-      MapPoint* pMPi = vToErase[i].second;
+      std::shared_ptr<MapPoint> pMPi = vToErase[i].second;
       pKFi->EraseMapPointMatch(pMPi);
       pMPi->EraseObservation(pKFi);
     }
@@ -418,10 +418,10 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   }
 
   // Points
-  for (std::list<MapPoint*>::iterator lit = lLocalMapPoints.begin(),
+  for (std::list<std::shared_ptr<MapPoint>>::iterator lit = lLocalMapPoints.begin(),
                                  lend = lLocalMapPoints.end();
        lit != lend; lit++) {
-    MapPoint* pMP = *lit;
+    std::shared_ptr<MapPoint> pMP = *lit;
     g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(
         optimizer.vertex(pMP->mnId + maxKFid + 1));
     pMP->SetWorldPos(vPoint->estimate().cast<float>());
@@ -437,7 +437,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
                                       bool* pbStopFlag) {
   // bool bShowImages = false; // UNUSED
 
-  std::vector<MapPoint*> vpMPs;
+  std::vector<std::shared_ptr<MapPoint>> vpMPs;
 
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolver_6_3::LinearSolverType* linearSolver;
@@ -480,8 +480,8 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
     optimizer.addVertex(vSE3);
     if (pKFi->mnId > maxKFid) maxKFid = pKFi->mnId;
 
-    std::set<MapPoint*> spViewMPs = pKFi->GetMapPoints();
-    for (MapPoint* pMPi : spViewMPs) {
+    std::set<std::shared_ptr<MapPoint>> spViewMPs = pKFi->GetMapPoints();
+    for (std::shared_ptr<MapPoint> pMPi : spViewMPs) {
       if (pMPi)
         if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
 
@@ -511,8 +511,8 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
     optimizer.addVertex(vSE3);
     if (pKFi->mnId > maxKFid) maxKFid = pKFi->mnId;
 
-    std::set<MapPoint*> spViewMPs = pKFi->GetMapPoints();
-    for (MapPoint* pMPi : spViewMPs) {
+    std::set<std::shared_ptr<MapPoint>> spViewMPs = pKFi->GetMapPoints();
+    for (std::shared_ptr<MapPoint> pMPi : spViewMPs) {
       if (pMPi) {
         if (!pMPi->isBad() && pMPi->GetMap() == pCurrentMap) {
           if (pMPi->mnBALocalForMerge != pMainKF->mnId) {
@@ -536,7 +536,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFMono;
   vpEdgeKFMono.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeMono;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeMono;
   vpMapPointEdgeMono.reserve(nExpectedSize);
 
   std::vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
@@ -545,7 +545,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
   std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFStereo;
   vpEdgeKFStereo.reserve(nExpectedSize);
 
-  std::vector<MapPoint*> vpMapPointEdgeStereo;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeStereo;
   vpMapPointEdgeStereo.reserve(nExpectedSize);
 
   const float thHuber2D = sqrt(5.99);
@@ -554,9 +554,9 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
   // Set MapPoint vertices
   std::map<std::shared_ptr<KeyFrame>, int> mpObsKFs;
   std::map<std::shared_ptr<KeyFrame>, int> mpObsFinalKFs;
-  std::map<MapPoint*, int> mpObsMPs;
+  std::map<std::shared_ptr<MapPoint>, int> mpObsMPs;
   for (unsigned int i = 0; i < vpMPs.size(); ++i) {
-    MapPoint* pMPi = vpMPs[i];
+    std::shared_ptr<MapPoint> pMPi = vpMPs[i];
     if (pMPi->isBad()) continue;
 
     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
@@ -668,7 +668,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
     int badMonoMP = 0, badStereoMP = 0;
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
       MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
-      MapPoint* pMP = vpMapPointEdgeMono[i];
+      std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i];
 
       if (pMP->isBad()) continue;
 
@@ -681,7 +681,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
 
     for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
       g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-      MapPoint* pMP = vpMapPointEdgeStereo[i];
+      std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i];
 
       if (pMP->isBad()) continue;
 
@@ -701,16 +701,16 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
     optimizer.optimize(10);
   }
 
-  std::vector<std::pair<std::shared_ptr<KeyFrame>, MapPoint*>> vToErase;
+  std::vector<std::pair<std::shared_ptr<KeyFrame>, std::shared_ptr<MapPoint>>> vToErase;
   vToErase.reserve(vpEdgesMono.size() + vpEdgesStereo.size());
-  std::set<MapPoint*> spErasedMPs;
+  std::set<std::shared_ptr<MapPoint>> spErasedMPs;
   std::set<std::shared_ptr<KeyFrame>> spErasedKFs;
 
   // Check inlier observations
   int badMonoMP = 0, badStereoMP = 0;
   for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
     MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
-    MapPoint* pMP = vpMapPointEdgeMono[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i];
 
     if (pMP->isBad()) continue;
 
@@ -727,7 +727,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
 
   for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
     g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-    MapPoint* pMP = vpMapPointEdgeStereo[i];
+    std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i];
 
     if (pMP->isBad()) continue;
 
@@ -753,13 +753,13 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
   if (!vToErase.empty()) {
     for (size_t i = 0; i < vToErase.size(); i++) {
       std::shared_ptr<KeyFrame> pKFi = vToErase[i].first;
-      MapPoint* pMPi = vToErase[i].second;
+      std::shared_ptr<MapPoint> pMPi = vToErase[i].second;
       pKFi->EraseMapPointMatch(pMPi);
       pMPi->EraseObservation(pKFi);
     }
   }
   for (unsigned int i = 0; i < vpMPs.size(); ++i) {
-    MapPoint* pMPi = vpMPs[i];
+    std::shared_ptr<MapPoint> pMPi = vpMPs[i];
     if (pMPi->isBad()) continue;
 
     const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations =
@@ -796,12 +796,12 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
 
     int numMonoBadPoints = 0, numMonoOptPoints = 0;
     int numStereoBadPoints = 0, numStereoOptPoints = 0;
-    std::vector<MapPoint*> vpMonoMPsOpt, vpStereoMPsOpt;
-    std::vector<MapPoint*> vpMonoMPsBad, vpStereoMPsBad;
+    std::vector<std::shared_ptr<MapPoint>> vpMonoMPsOpt, vpStereoMPsOpt;
+    std::vector<std::shared_ptr<MapPoint>> vpMonoMPsBad, vpStereoMPsBad;
 
     for (size_t i = 0, iend = vpEdgesMono.size(); i < iend; i++) {
       MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
-      MapPoint* pMP = vpMapPointEdgeMono[i];
+      std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i];
       std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i];
 
       if (pKFi != pKFedge) {
@@ -822,7 +822,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
 
     for (size_t i = 0, iend = vpEdgesStereo.size(); i < iend; i++) {
       g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-      MapPoint* pMP = vpMapPointEdgeStereo[i];
+      std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i];
       std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i];
 
       if (pKFi != pKFedge) {
@@ -844,7 +844,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,
   }
 
   // Points
-  for (MapPoint* pMPi : vpMPs) {
+  for (std::shared_ptr<MapPoint> pMPi : vpMPs) {
     if (pMPi->isBad()) continue;
 
     g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(

@@ -554,7 +554,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
     std::unique_lock<std::mutex> lock(MapPoint::mGlobalMutex);
 
     for (int i = 0; i < N; i++) {
-      MapPoint* pMP = pFrame->mvpMapPoints[i];
+      std::shared_ptr<MapPoint> pMP = pFrame->mvpMapPoints[i];
       if (pMP) {
         cv::KeyPoint kpUn;
 
@@ -938,7 +938,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     std::unique_lock<std::mutex> lock(MapPoint::mGlobalMutex);
 
     for (int i = 0; i < N; i++) {
-      MapPoint* pMP = pFrame->mvpMapPoints[i];
+      std::shared_ptr<MapPoint> pMP = pFrame->mvpMapPoints[i];
       if (pMP) {
         cv::KeyPoint kpUn;
         // Left monocular observation

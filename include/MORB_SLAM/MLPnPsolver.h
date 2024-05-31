@@ -62,7 +62,7 @@ class MLPnPsolver {
  public:
   
 
-  MLPnPsolver(const Frame& F, const std::vector<MapPoint*>& vpMapPointMatches);
+  MLPnPsolver(const Frame& F, const std::vector<std::shared_ptr<MapPoint>>& vpMapPointMatches);
 
   ~MLPnPsolver();
 
@@ -175,7 +175,7 @@ class MLPnPsolver {
   //----------------------------------------------------
   // Fields of the solver
   //----------------------------------------------------
-  std::vector<MapPoint*> mvpMapPointMatches;
+  std::vector<std::shared_ptr<MapPoint>> mvpMapPointMatches;
 
   // 2D Points
   std::vector<cv::Point2f> mvP2D;

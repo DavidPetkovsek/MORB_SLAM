@@ -341,7 +341,7 @@ TrackingState System::GetTrackingState() {
   return mTrackingState;
 }
 
-std::vector<MapPoint*> System::GetTrackedMapPoints() {
+std::vector<std::shared_ptr<MapPoint>> System::GetTrackedMapPoints() {
   std::unique_lock<std::mutex> lock(mMutexState);
   return mTrackedMapPoints;
 }

@@ -265,7 +265,7 @@ public:
   // Local Map
   std::shared_ptr<KeyFrame> mpReferenceKF;
   std::vector<std::shared_ptr<KeyFrame>> mvpLocalKeyFrames;
-  std::vector<MapPoint*> mvpLocalMapPoints;
+  std::vector<std::shared_ptr<MapPoint>> mvpLocalMapPoints;
 
   // Atlas
   Atlas_ptr mpAtlas;
@@ -315,7 +315,7 @@ public:
   bool imuMotionModelPrepedAfterRecentlyLostTracking{false};
   Sophus::SE3f mVelocity;
 
-  std::list<MapPoint*> mlpTemporalPoints;
+  std::list<std::shared_ptr<MapPoint>> mlpTemporalPoints;
 
   std::shared_ptr<const GeometricCamera> mpCamera;
   std::shared_ptr<const GeometricCamera> mpCamera2;

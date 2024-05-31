@@ -48,7 +48,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
                                bool* bHess) {
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
-  const std::vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
+  const std::vector<std::shared_ptr<MapPoint>> vpMPs = pMap->GetAllMapPoints();
 
   // Setup optimizer
   g2o::SparseOptimizer optimizer;
@@ -239,7 +239,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   std::vector<bool> vbNotIncludedMP(vpMPs.size(), false);
 
   for (size_t i = 0; i < vpMPs.size(); i++) {
-    MapPoint* pMP = vpMPs[i];
+    std::shared_ptr<MapPoint> pMP = vpMPs[i];
     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
     vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
     unsigned long id = pMP->mnId + iniMPid + 1;
@@ -420,7 +420,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   for (size_t i = 0; i < vpMPs.size(); i++) {
     if (vbNotIncludedMP[i]) continue;
 
-    MapPoint* pMP = vpMPs[i];
+    std::shared_ptr<MapPoint> pMP = vpMPs[i];
     g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(
         optimizer.vertex(pMP->mnId + iniMPid + 1));
 

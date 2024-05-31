@@ -41,7 +41,7 @@ class ORBmatcher {
 
   // Search matches between Frame keypoints and projected MapPoints. Returns
   // number of matches Used to track the local map (Tracking)
-  int SearchByProjection(Frame &F, const std::vector<MapPoint *> &vpMapPoints,
+  int SearchByProjection(Frame &F, const std::vector<std::shared_ptr<MapPoint>> &vpMapPoints,
                          const float th = 3, const bool bFarPoints = false,
                          const float thFarPoints = 50.0f);
 
@@ -53,22 +53,22 @@ class ORBmatcher {
   // Project MapPoints seen in KeyFrame into the Frame and search matches.
   // Used in relocalisation (Tracking)
   int SearchByProjection(Frame &CurrentFrame, std::shared_ptr<KeyFrame>pKF,
-                         const std::set<MapPoint *> &sAlreadyFound,
+                         const std::set<std::shared_ptr<MapPoint>> &sAlreadyFound,
                          const float th, const int ORBdist);
 
   // Project MapPoints using a Similarity Transformation and search matches.
   // Used in loop detection (Loop Closing)
   int SearchByProjection(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3<float> &Scw,
-                         const std::vector<MapPoint *> &vpPoints,
-                         std::vector<MapPoint *> &vpMatched, int th,
+                         const std::vector<std::shared_ptr<MapPoint>> &vpPoints,
+                         std::vector<std::shared_ptr<MapPoint>> &vpMatched, int th,
                          float ratioHamming = 1.0);
 
   // Project MapPoints using a Similarity Transformation and search matches.
   // Used in Place Recognition (Loop Closing and Merging)
   int SearchByProjection(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3<float> &Scw,
-                         const std::vector<MapPoint *> &vpPoints,
+                         const std::vector<std::shared_ptr<MapPoint>> &vpPoints,
                          const std::vector<std::shared_ptr<KeyFrame>> &vpPointsKFs,
-                         std::vector<MapPoint *> &vpMatched,
+                         std::vector<std::shared_ptr<MapPoint>> &vpMatched,
                          std::vector<std::shared_ptr<KeyFrame>> &vpMatchedKF, int th,
                          float ratioHamming = 1.0);
 
@@ -76,9 +76,9 @@ class ORBmatcher {
   // Brute force constrained to ORB that belong to the same vocabulary node (at
   // a certain level) Used in Relocalisation and Loop Detection
   int SearchByBoW(std::shared_ptr<KeyFrame>pKF, Frame &F,
-                  std::vector<MapPoint *> &vpMapPointMatches);
+                  std::vector<std::shared_ptr<MapPoint>> &vpMapPointMatches);
   int SearchByBoW(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-                  std::vector<MapPoint *> &vpMatches12);
+                  std::vector<std::shared_ptr<MapPoint>> &vpMatches12);
 
   // Matching for the Map Initialization (only used in the monocular case)
   int SearchForInitialization(Frame &F1, Frame &F2,
@@ -94,22 +94,22 @@ class ORBmatcher {
 
   // Search matches between MapPoints seen in KF1 and KF2 transforming by a Sim3
   // [s12*R12|t12] In the stereo and RGB-D case, s12=1 int
-  // SearchBySim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, std::vector<MapPoint *>
+  // SearchBySim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, std::vector<std::shared_ptr<MapPoint>>
   // &vpMatches12, const float &s12, const cv::Mat &R12, const cv::Mat &t12,
   // const float th);
   int SearchBySim3(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-                   std::vector<MapPoint *> &vpMatches12,
+                   std::vector<std::shared_ptr<MapPoint>> &vpMatches12,
                    const Sophus::Sim3f &S12, const float th);
 
   // Project MapPoints into KeyFrame and search for duplicated MapPoints.
-  int Fuse(std::shared_ptr<KeyFrame>pKF, const std::vector<MapPoint *> &vpMapPoints,
+  int Fuse(std::shared_ptr<KeyFrame>pKF, const std::vector<std::shared_ptr<MapPoint>> &vpMapPoints,
            const float th = 3.0, const bool bRight = false);
 
   // Project MapPoints into KeyFrame using a given Sim3 and search for
   // duplicated MapPoints.
   int Fuse(std::shared_ptr<KeyFrame>pKF, Sophus::Sim3f &Scw,
-           const std::vector<MapPoint *> &vpPoints, float th,
-           std::vector<MapPoint *> &vpReplacePoint);
+           const std::vector<std::shared_ptr<MapPoint>> &vpPoints, float th,
+           std::vector<std::shared_ptr<MapPoint>> &vpReplacePoint);
 
  public:
   static const int TH_LOW;

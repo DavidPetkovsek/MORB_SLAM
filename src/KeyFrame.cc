@@ -370,7 +370,7 @@ int KeyFrame::GetNumberMPs() {
   return numberMPs;
 }
 
-void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx) {
+void KeyFrame::AddMapPoint(std::shared_ptr<MapPoint>pMP, const size_t &idx) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   mvpMapPoints[idx] = pMP;
 }
@@ -380,7 +380,7 @@ void KeyFrame::EraseMapPointMatch(const int &idx) {
   mvpMapPoints[idx] = nullptr;
 }
 
-void KeyFrame::EraseMapPointMatch(MapPoint *pMP) {
+void KeyFrame::EraseMapPointMatch(std::shared_ptr<MapPoint>pMP) {
   std::tuple<int, int> indexes = pMP->GetIndexInKeyFrame(shared_from_this());
   int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
   if (leftIndex != -1) mvpMapPoints[leftIndex] = nullptr;
@@ -388,16 +388,16 @@ void KeyFrame::EraseMapPointMatch(MapPoint *pMP) {
     mvpMapPoints[rightIndex] = nullptr;
 }
 
-void KeyFrame::ReplaceMapPointMatch(const int &idx, MapPoint *pMP) {
+void KeyFrame::ReplaceMapPointMatch(const int &idx, std::shared_ptr<MapPoint>pMP) {
   mvpMapPoints[idx] = pMP;
 }
 
-std::set<MapPoint *> KeyFrame::GetMapPoints() {
+std::set<std::shared_ptr<MapPoint>> KeyFrame::GetMapPoints() {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
-  std::set<MapPoint *> s;
+  std::set<std::shared_ptr<MapPoint>> s;
   for (size_t i = 0, iend = mvpMapPoints.size(); i < iend; i++) {
     if (!mvpMapPoints[i]) continue;
-    MapPoint *pMP = mvpMapPoints[i];
+    std::shared_ptr<MapPoint>pMP = mvpMapPoints[i];
     if (!pMP->isBad()) s.insert(pMP);
   }
   return s;
@@ -409,7 +409,7 @@ int KeyFrame::TrackedMapPoints(const int &minObs) {
   int nPoints = 0;
   const bool bCheckObs = minObs > 0;
   for (int i = 0; i < N; i++) {
-    MapPoint *pMP = mvpMapPoints[i];
+    std::shared_ptr<MapPoint>pMP = mvpMapPoints[i];
     if (pMP) {
       if (!pMP->isBad()) {
         if (bCheckObs) {
@@ -423,12 +423,12 @@ int KeyFrame::TrackedMapPoints(const int &minObs) {
   return nPoints;
 }
 
-std::vector<MapPoint *> KeyFrame::GetMapPointMatches() {
+std::vector<std::shared_ptr<MapPoint>> KeyFrame::GetMapPointMatches() {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   return mvpMapPoints;
 }
 
-MapPoint *KeyFrame::GetMapPoint(const size_t &idx) {
+std::shared_ptr<MapPoint>KeyFrame::GetMapPoint(const size_t &idx) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   return mvpMapPoints[idx];
 }
@@ -436,7 +436,7 @@ MapPoint *KeyFrame::GetMapPoint(const size_t &idx) {
 void KeyFrame::UpdateConnections(bool upParent) {
   std::map<std::shared_ptr<KeyFrame>, int> KFcounter;
 
-  std::vector<MapPoint *> vpMP;
+  std::vector<std::shared_ptr<MapPoint>> vpMP;
 
   {
     std::unique_lock<std::mutex> lockMPs(mMutexFeatures);
@@ -445,9 +445,9 @@ void KeyFrame::UpdateConnections(bool upParent) {
 
   // For all map points in keyframe check in which other keyframes are they seen
   // Increase counter for those keyframes
-  for (std::vector<MapPoint *>::iterator vit = vpMP.begin(), vend = vpMP.end();
+  for (std::vector<std::shared_ptr<MapPoint>>::iterator vit = vpMP.begin(), vend = vpMP.end();
        vit != vend; vit++) {
-    MapPoint *pMP = *vit;
+    std::shared_ptr<MapPoint>pMP = *vit;
 
     if (!pMP) continue;
 
@@ -773,7 +773,7 @@ bool KeyFrame::UnprojectStereo(int i, Eigen::Vector3f &x3D) {
 float KeyFrame::ComputeSceneMedianDepth(const int q) {
   if (N == 0) return -1.0;
 
-  std::vector<MapPoint *> vpMapPoints;
+  std::vector<std::shared_ptr<MapPoint>> vpMapPoints;
   Eigen::Matrix3f Rcw;
   Eigen::Vector3f tcw;
   {
@@ -790,7 +790,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   float zcw = tcw(2);
   for (int i = 0; i < N; i++) {
     if (mvpMapPoints[i]) {
-      MapPoint *pMP = mvpMapPoints[i];
+      std::shared_ptr<MapPoint>pMP = mvpMapPoints[i];
       Eigen::Vector3f x3Dw = pMP->GetWorldPos();
       float z = Rcw2.dot(x3Dw) + zcw;
       vDepths.push_back(z);
@@ -833,7 +833,7 @@ void KeyFrame::UpdateMap(std::shared_ptr<Map> pMap) {
   mpMap = pMap;
 }
 
-void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<MapPoint *> &spMP,
+void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::shared_ptr<MapPoint>> &spMP,
                        std::set<std::shared_ptr<const GeometricCamera>> &spCam) {
   // Save the id of each MapPoint in this KF, there can be null
   // pointer in the std::vector
@@ -908,7 +908,7 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<MapPo
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
-                        std::map<long unsigned int, MapPoint *> &mpMPid,
+                        std::map<long unsigned int, std::shared_ptr<MapPoint>> &mpMPid,
                         std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCamId) {
   // Rebuild the empty variables
 
@@ -999,7 +999,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   UpdateBestCovisibles();
 }
 
-bool KeyFrame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u, float &v) {
+bool KeyFrame::ProjectPointDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &kp, float &u, float &v) {
   // 3D in absolute coordinates
   Eigen::Vector3f P = pMP->GetWorldPos();
 
@@ -1056,7 +1056,7 @@ bool KeyFrame::ProjectPointDistort(MapPoint *pMP, cv::Point2f &kp, float &u, flo
   return true;
 }
 
-bool KeyFrame::ProjectPointUnDistort(MapPoint *pMP, cv::Point2f &kp, float &u,
+bool KeyFrame::ProjectPointUnDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &kp, float &u,
                                      float &v) {
   // 3D in absolute coordinates
   Eigen::Vector3f P = pMP->GetWorldPos();
