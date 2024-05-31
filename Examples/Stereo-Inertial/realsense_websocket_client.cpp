@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     ix::initNetSystem();
     ix::WebSocket webSocket;
     //set to the address of the websocket host sending the IMU data
-    std::string url("ws://172.17.112.1:8765");
+    std::string url("ws://172.26.0.1:8765");
     webSocket.setUrl(url);
     std::cout << "Connecting to " << url << std::endl;
 
