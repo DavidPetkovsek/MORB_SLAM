@@ -10,6 +10,7 @@
 .vscode/
 
 bin/*
+bin/
 
 vcpkgLoc.txt
 ./venv/
