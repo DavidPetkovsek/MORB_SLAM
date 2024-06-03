@@ -11,13 +11,20 @@ cd MORB_SLAM
 ```
 > Note 1: You can use control the number of build workers with `-j` just like with normal builds
 > Note 2: After using the toolchain flag for the first time, it will cache the path and use the toolchain each time, that means you only need to use the extra long command for the first build! Even after cleaning with `clean.sh`!
-> Note 3: For users of wsl ensure that this is in the bashrc file `export DISPLAY=:0`. Otherwise you may get an error when being shown the viewer.
 
 ### Use the library in your cmake project
 ```cmake
 find_package(MORB_SLAM REQUIRED COMPONENTS MORB_SLAM DBoW2 g2o sophus)
 add_executable(myprogram ${MY_CPP_FILES})
 target_link_libraries(myprogram MORB_SLAM::MORB_SLAM)
+```
+
+#### Note for wsl users
+You may need to add some lines to your bashrc file to allow the visualizer to work properly
+```bash
+export DISPLAY=:0
+export XDG_RUNTIME_DIR="/tmp/runtime-$USER"
+export RUNLEVEL=3
 ```
 
 ### Install the library dependencies  and build the old fashion way:
