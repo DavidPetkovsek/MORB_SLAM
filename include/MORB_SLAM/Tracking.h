@@ -312,8 +312,8 @@ public:
   bool mbCreatedMap;
 
   // Motion Model
-  bool imuMotionModelPrepedAfterRecentlyLostTracking{false};
-  Sophus::SE3f mVelocity;
+  bool mbHasPrevDeltaFramePose{false};
+  Sophus::SE3f mPrevDeltaFramePose;
 
   std::list<MapPoint*> mlpTemporalPoints;
 

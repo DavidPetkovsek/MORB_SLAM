@@ -1049,7 +1049,7 @@ void Tracking::Track() {
         CheckReplacedInLastFrame();
 
         // If the state is not LOST and wasn't reset on the previous frame, use the motion model
-        if((imuMotionModelPrepedAfterRecentlyLostTracking || pCurrentMap->isImuInitialized()) && mCurrentFrame.mnId > mnLastRelocFrameId + 1){
+        if((mbHasPrevDeltaFramePose || pCurrentMap->isImuInitialized()) && mCurrentFrame.mnId > mnLastRelocFrameId + 1){
           //TK6B
           // std::cout << "Pre-TK6B" << std::endl;
           bOK = TrackWithMotionModel();
@@ -1149,7 +1149,7 @@ void Tracking::Track() {
       } else {
         if (!notEnoughMatchPoints_trackOnlyMode) {
           // In last frame we tracked enough MapPoints in the map
-          if (imuMotionModelPrepedAfterRecentlyLostTracking) {
+          if (mbHasPrevDeltaFramePose) {
             bOK = TrackWithMotionModel();
           } else {
             bOK = TrackReferenceKeyFrame();
@@ -1166,7 +1166,7 @@ void Tracking::Track() {
           std::vector<MapPoint*> vpMPsMM;
           std::vector<bool> vbOutMM;
           Sophus::SE3f TcwMM;
-          if (imuMotionModelPrepedAfterRecentlyLostTracking) {
+          if (mbHasPrevDeltaFramePose) {
             bOKMM = TrackWithMotionModel();
             vpMPsMM = mCurrentFrame.mvpMapPoints;
             vbOutMM = mCurrentFrame.mvbOutlier;
@@ -1298,10 +1298,10 @@ void Tracking::Track() {
       // Update motion model
       if (mLastFrame.HasPose() && mCurrentFrame.HasPose()) {
         Sophus::SE3f LastTwc = mLastFrame.GetPose().inverse();
-        mVelocity = mCurrentFrame.GetPose() * LastTwc;
-        imuMotionModelPrepedAfterRecentlyLostTracking = true;
+        mPrevDeltaFramePose = mCurrentFrame.GetPose() * LastTwc;
+        mbHasPrevDeltaFramePose = true;
       } else {
-        imuMotionModelPrepedAfterRecentlyLostTracking = false;
+        mbHasPrevDeltaFramePose = false;
       }
 
       //TK13
@@ -1565,7 +1565,7 @@ void Tracking::MonocularInitialization() {
       for (size_t i = 0; i < mCurrentFrame.mvKeysUn.size(); i++)
         mvbPrevMatched[i] = mCurrentFrame.mvKeysUn[i].pt;
 
-      fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
+      std::fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
 
       if (mSensor == CameraType::IMU_MONOCULAR) {
         if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
@@ -1730,7 +1730,7 @@ void Tracking::CreateInitialMapMonocular() {
   std::vector<KeyFrame*> vKFs = mpAtlas->GetAllKeyFrames();
 
   Sophus::SE3f deltaT = vKFs.back()->GetPose() * vKFs.front()->GetPoseInverse();
-  imuMotionModelPrepedAfterRecentlyLostTracking = false;
+  mbHasPrevDeltaFramePose = false;
   Eigen::Vector3f phi = deltaT.so3().log();
 
   double aux = (mCurrentFrame.mTimeStamp - mLastFrame.mTimeStamp) / (mCurrentFrame.mTimeStamp - mInitialFrame.mTimeStamp);
@@ -1758,7 +1758,7 @@ void Tracking::CreateMapInAtlas() {
   mState = TrackingState::NO_IMAGES_YET;
 
   // Reset the variables with information about the last KF
-  imuMotionModelPrepedAfterRecentlyLostTracking = false;
+  mbHasPrevDeltaFramePose = false;
   notEnoughMatchPoints_trackOnlyMode = false;
 
   if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
@@ -1851,7 +1851,7 @@ bool Tracking::TrackReferenceKeyFrame() {
 
 void Tracking::UpdateLastFrame() {
   // Update pose according to reference keyframe
-  // For StereoInertial Tracking, these next 2 lines do nothing but add rounding error (I think)
+  // If there was a relocalization then this updates the frame according to the new keyframe location, HOWEVER, in other cases it has no effect
   Sophus::SE3f Tlr = mlRelativeFramePoses.back();
   mLastFrame.SetPose(Tlr * mLastFrame.mpReferenceKF->GetPose());
 
@@ -1918,10 +1918,10 @@ bool Tracking::TrackWithMotionModel() {
   }
   //TWMM3
   //No IMU, so assume the pose changed by the same amount it changed by last Frame
-  mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
+  mCurrentFrame.SetPose(mPrevDeltaFramePose * mLastFrame.GetPose());
 
   //TWMM4
-  fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), nullptr);
+  std::fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), nullptr);
 
   // Project points seen in previous frame
   int th = (mSensor == CameraType::STEREO) ? 7 : 15;
@@ -1933,7 +1933,7 @@ bool Tracking::TrackWithMotionModel() {
   // If few matches, uses a higher-tolerance search
   if (nmatches < 20) {
     Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
-    fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), nullptr);
+    std::fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), nullptr);
 
     nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, 2 * th, !mSensor.hasMulticam());
     Verbose::PrintMess("Matches with wider search: " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
@@ -2645,7 +2645,7 @@ void Tracking::Reset(bool bLocMap) {
   mpLastKeyFrame = nullptr;
   mvIniMatches.clear();
 
-  imuMotionModelPrepedAfterRecentlyLostTracking = false;
+  mbHasPrevDeltaFramePose = false;
   mbReset = false;
   mbResetActiveMap = false;
 
@@ -2723,7 +2723,7 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   mpLastKeyFrame = nullptr;
   mvIniMatches.clear();
 
-  imuMotionModelPrepedAfterRecentlyLostTracking = false;
+  mbHasPrevDeltaFramePose = false;
   mbResetActiveMap = false;
 
   Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);

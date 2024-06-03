@@ -1538,173 +1538,171 @@ int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame,
 
   for (int i = 0; i < LastFrame.N; i++) {
     MapPoint *pMP = LastFrame.mvpMapPoints[i];
-    if (pMP) {
-      if (!LastFrame.mvbOutlier[i]) {
-        // Project
-        Eigen::Vector3f x3Dw = pMP->GetWorldPos();
-        Eigen::Vector3f x3Dc = Tcw * x3Dw;
+    if(!pMP || LastFrame.mvbOutlier[i])
+      continue;
+    // Project
+    Eigen::Vector3f x3Dw = pMP->GetWorldPos();
+    Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
-        // const float xc = x3Dc(0); // UNUSED
-        // const float yc = x3Dc(1); // UNUSED
-        const float invzc = 1.0 / x3Dc(2);
+    // const float xc = x3Dc(0); // UNUSED
+    // const float yc = x3Dc(1); // UNUSED
+    const float invzc = 1.0 / x3Dc(2);
 
-        if (invzc < 0) continue;
+    if (invzc < 0) continue; // If the currentFrame should not be able to see the point, ignore the point
 
-        Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
+    Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dc);
 
-        if (uv(0) < CurrentFrame.mnMinX || uv(0) > CurrentFrame.mnMaxX)
-          continue;
-        if (uv(1) < CurrentFrame.mnMinY || uv(1) > CurrentFrame.mnMaxY)
-          continue;
+    if (uv(0) < CurrentFrame.mnMinX || uv(0) > CurrentFrame.mnMaxX)
+      continue;
+    if (uv(1) < CurrentFrame.mnMinY || uv(1) > CurrentFrame.mnMaxY)
+      continue;
 
-        int nLastOctave =
-            (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
-                ? LastFrame.mvKeys[i].octave
-                : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+    int nLastOctave =
+        (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
+            ? LastFrame.mvKeys[i].octave
+            : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
 
-        // Search in a window. Size depends on scale
-        float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
+    // Search in a window. Size depends on scale
+    float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
 
-        std::vector<size_t> vIndices2;
+    std::vector<size_t> vIndices2;
 
-        if (bForward)
-          vIndices2 =
-              CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave);
-        else if (bBackward)
-          vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0,
-                                                     nLastOctave);
-        else
-          vIndices2 = CurrentFrame.GetFeaturesInArea(
-              uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1);
+    if (bForward)
+      vIndices2 =
+          CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nLastOctave);
+    else if (bBackward)
+      vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0,
+                                                  nLastOctave);
+    else
+      vIndices2 = CurrentFrame.GetFeaturesInArea(
+          uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1);
 
-        if (vIndices2.empty()) continue;
+    if (vIndices2.empty()) continue;
 
-        const cv::Mat dMP = pMP->GetDescriptor();
+    const cv::Mat dMP = pMP->GetDescriptor();
 
-        int bestDist = 256;
-        int bestIdx2 = -1;
+    int bestDist = 256;
+    int bestIdx2 = -1;
 
-        for (std::vector<size_t>::const_iterator vit = vIndices2.begin(),
-                                            vend = vIndices2.end();
-             vit != vend; vit++) {
-          const size_t i2 = *vit;
+    for (std::vector<size_t>::const_iterator vit = vIndices2.begin(),
+                                        vend = vIndices2.end();
+          vit != vend; vit++) {
+      const size_t i2 = *vit;
 
-          if (CurrentFrame.mvpMapPoints[i2])
-            if (CurrentFrame.mvpMapPoints[i2]->Observations() > 0) continue;
+      if (CurrentFrame.mvpMapPoints[i2])
+        if (CurrentFrame.mvpMapPoints[i2]->Observations() > 0) continue;
 
-          if (CurrentFrame.Nleft == -1 && CurrentFrame.mvuRight[i2] > 0) {
-            const float ur = uv(0) - CurrentFrame.mbf * invzc;
-            const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
-            if (er > radius) continue;
-          }
+      if (CurrentFrame.Nleft == -1 && CurrentFrame.mvuRight[i2] > 0) {
+        const float ur = uv(0) - CurrentFrame.mbf * invzc;
+        const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
+        if (er > radius) continue;
+      }
 
-          const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+      const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
 
-          const int dist = DescriptorDistance(dMP, d);
+      const int dist = DescriptorDistance(dMP, d);
 
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestIdx2 = i2;
-          }
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx2 = i2;
+      }
+    }
+
+    if (bestDist <= TH_HIGH) {
+      CurrentFrame.mvpMapPoints[bestIdx2] = pMP;
+      nmatches++;
+
+      if (mbCheckOrientation) {
+        cv::KeyPoint kpLF =
+            (LastFrame.Nleft == -1)
+                ? LastFrame.mvKeysUn[i]
+                : (i < LastFrame.Nleft)
+                      ? LastFrame.mvKeys[i]
+                      : LastFrame.mvKeysRight[i - LastFrame.Nleft];
+
+        cv::KeyPoint kpCF =
+            (CurrentFrame.Nleft == -1)
+                ? CurrentFrame.mvKeysUn[bestIdx2]
+                : (bestIdx2 < CurrentFrame.Nleft)
+                      ? CurrentFrame.mvKeys[bestIdx2]
+                      : CurrentFrame
+                            .mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
+        float rot = kpLF.angle - kpCF.angle;
+        if (rot < 0.0) rot += 360.0f;
+        int bin = round(rot * factor);
+        if (bin == HISTO_LENGTH) bin = 0;
+        assert(bin >= 0 && bin < HISTO_LENGTH);
+        rotHist[bin].push_back(bestIdx2);
+      }
+    }
+    if (CurrentFrame.Nleft != -1) {
+      Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
+      Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
+
+      int nLastOctave =
+          (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
+              ? LastFrame.mvKeys[i].octave
+              : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
+
+      // Search in a window. Size depends on scale
+      float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
+
+      std::vector<size_t> vIndices2;
+
+      if (bForward)
+        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius,
+                                                    nLastOctave, -1, true);
+      else if (bBackward)
+        vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0,
+                                                    nLastOctave, true);
+      else
+        vIndices2 = CurrentFrame.GetFeaturesInArea(
+            uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1, true);
+
+      const cv::Mat dMP = pMP->GetDescriptor();
+
+      int bestDist = 256;
+      int bestIdx2 = -1;
+
+      for (std::vector<size_t>::const_iterator vit = vIndices2.begin(),
+                                          vend = vIndices2.end();
+            vit != vend; vit++) {
+        const size_t i2 = *vit;
+        if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
+          if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]
+                  ->Observations() > 0)
+            continue;
+
+        const cv::Mat &d =
+            CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
+
+        const int dist = DescriptorDistance(dMP, d);
+
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx2 = i2;
         }
+      }
 
-        if (bestDist <= TH_HIGH) {
-          CurrentFrame.mvpMapPoints[bestIdx2] = pMP;
-          nmatches++;
+      if (bestDist <= TH_HIGH) {
+        CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft] = pMP;
+        nmatches++;
+        if (mbCheckOrientation) {
+          cv::KeyPoint kpLF =
+              (LastFrame.Nleft == -1)
+                  ? LastFrame.mvKeysUn[i]
+                  : (i < LastFrame.Nleft)
+                        ? LastFrame.mvKeys[i]
+                        : LastFrame.mvKeysRight[i - LastFrame.Nleft];
 
-          if (mbCheckOrientation) {
-            cv::KeyPoint kpLF =
-                (LastFrame.Nleft == -1)
-                    ? LastFrame.mvKeysUn[i]
-                    : (i < LastFrame.Nleft)
-                          ? LastFrame.mvKeys[i]
-                          : LastFrame.mvKeysRight[i - LastFrame.Nleft];
+          cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
 
-            cv::KeyPoint kpCF =
-                (CurrentFrame.Nleft == -1)
-                    ? CurrentFrame.mvKeysUn[bestIdx2]
-                    : (bestIdx2 < CurrentFrame.Nleft)
-                          ? CurrentFrame.mvKeys[bestIdx2]
-                          : CurrentFrame
-                                .mvKeysRight[bestIdx2 - CurrentFrame.Nleft];
-            float rot = kpLF.angle - kpCF.angle;
-            if (rot < 0.0) rot += 360.0f;
-            int bin = round(rot * factor);
-            if (bin == HISTO_LENGTH) bin = 0;
-            assert(bin >= 0 && bin < HISTO_LENGTH);
-            rotHist[bin].push_back(bestIdx2);
-          }
-        }
-        if (CurrentFrame.Nleft != -1) {
-          Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
-          Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
-
-          int nLastOctave =
-              (LastFrame.Nleft == -1 || i < LastFrame.Nleft)
-                  ? LastFrame.mvKeys[i].octave
-                  : LastFrame.mvKeysRight[i - LastFrame.Nleft].octave;
-
-          // Search in a window. Size depends on scale
-          float radius = th * CurrentFrame.mvScaleFactors[nLastOctave];
-
-          std::vector<size_t> vIndices2;
-
-          if (bForward)
-            vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius,
-                                                       nLastOctave, -1, true);
-          else if (bBackward)
-            vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, 0,
-                                                       nLastOctave, true);
-          else
-            vIndices2 = CurrentFrame.GetFeaturesInArea(
-                uv(0), uv(1), radius, nLastOctave - 1, nLastOctave + 1, true);
-
-          const cv::Mat dMP = pMP->GetDescriptor();
-
-          int bestDist = 256;
-          int bestIdx2 = -1;
-
-          for (std::vector<size_t>::const_iterator vit = vIndices2.begin(),
-                                              vend = vIndices2.end();
-               vit != vend; vit++) {
-            const size_t i2 = *vit;
-            if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
-              if (CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]
-                      ->Observations() > 0)
-                continue;
-
-            const cv::Mat &d =
-                CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
-
-            const int dist = DescriptorDistance(dMP, d);
-
-            if (dist < bestDist) {
-              bestDist = dist;
-              bestIdx2 = i2;
-            }
-          }
-
-          if (bestDist <= TH_HIGH) {
-            CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft] = pMP;
-            nmatches++;
-            if (mbCheckOrientation) {
-              cv::KeyPoint kpLF =
-                  (LastFrame.Nleft == -1)
-                      ? LastFrame.mvKeysUn[i]
-                      : (i < LastFrame.Nleft)
-                            ? LastFrame.mvKeys[i]
-                            : LastFrame.mvKeysRight[i - LastFrame.Nleft];
-
-              cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
-
-              float rot = kpLF.angle - kpCF.angle;
-              if (rot < 0.0) rot += 360.0f;
-              int bin = round(rot * factor);
-              if (bin == HISTO_LENGTH) bin = 0;
-              assert(bin >= 0 && bin < HISTO_LENGTH);
-              rotHist[bin].push_back(bestIdx2 + CurrentFrame.Nleft);
-            }
-          }
+          float rot = kpLF.angle - kpCF.angle;
+          if (rot < 0.0) rot += 360.0f;
+          int bin = round(rot * factor);
+          if (bin == HISTO_LENGTH) bin = 0;
+          assert(bin >= 0 && bin < HISTO_LENGTH);
+          rotHist[bin].push_back(bestIdx2 + CurrentFrame.Nleft);
         }
       }
     }
