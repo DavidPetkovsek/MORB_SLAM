@@ -11,6 +11,7 @@ cd MORB_SLAM
 ```
 > Note 1: You can use control the number of build workers with `-j` just like with normal builds
 > Note 2: After using the toolchain flag for the first time, it will cache the path and use the toolchain each time, that means you only need to use the extra long command for the first build! Even after cleaning with `clean.sh`!
+> Note 3: For users of wsl ensure that this is in the bashrc file `export DISPLAY=:0`. Otherwise you may get an error when being shown the viewer.
 
 ### Use the library in your cmake project
 ```cmake
