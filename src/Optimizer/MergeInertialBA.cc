@@ -152,28 +152,20 @@ void Optimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_p
     pairs.push_back(*itr);
   sort(pairs.begin(), pairs.end(), sortByVal);
 
-  // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local
-  // Keyframes
+  // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
   int i = 0;
-  for (std::vector<std::pair<std::shared_ptr<MapPoint>, int>>::iterator lit = pairs.begin(),
-                                              lend = pairs.end();
-       lit != lend; lit++, i++) {
-    std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations =
-        lit->first->GetObservations();
+  for (std::vector<std::pair<std::shared_ptr<MapPoint>, int>>::iterator lit = pairs.begin(), lend = pairs.end(); lit != lend; lit++, i++) {
     if (i >= maxCovKF) break;
-    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator mit = observations.begin(),
-                                                   mend = observations.end();
-         mit != mend; mit++) {
-      std::shared_ptr<KeyFrame> pKFi = mit->first;
-
-      if (pKFi->mnBALocalForKF != pCurrKF->mnId &&
-          pKFi->mnBAFixedForKF !=
-              pCurrKF->mnId)  // If optimizable or already included...
-      {
-        pKFi->mnBALocalForKF = pCurrKF->mnId;
-        if (!pKFi->isBad()) {
-          vpOptimizableCovKFs.push_back(pKFi);
-          break;
+    std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = lit->first->GetObservations();
+    for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
+      if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
+        // If optimizable or already included...
+        if (pKFi->mnBALocalForKF != pCurrKF->mnId && pKFi->mnBAFixedForKF != pCurrKF->mnId) {
+          pKFi->mnBALocalForKF = pCurrKF->mnId;
+          if (!pKFi->isBad()) {
+            vpOptimizableCovKFs.push_back(pKFi);
+            break;
+          }
         }
       }
     }
@@ -388,76 +380,72 @@ void Optimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_p
     vPoint->setMarginalized(true);
     optimizer.addVertex(vPoint);
 
-    const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
+    const std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = pMP->GetObservations();
 
     // Create visual constraints
-    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator
-             mit = observations.begin(),
-             mend = observations.end();
-         mit != mend; mit++) {
-      std::shared_ptr<KeyFrame> pKFi = mit->first;
+    for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
+      if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
+        if (!pKFi) continue;
 
-      if (!pKFi) continue;
+        if ((pKFi->mnBALocalForKF != pCurrKF->mnId) && (pKFi->mnBAFixedForKF != pCurrKF->mnId))
+          continue;
 
-      if ((pKFi->mnBALocalForKF != pCurrKF->mnId) &&
-          (pKFi->mnBAFixedForKF != pCurrKF->mnId))
-        continue;
+        if (pKFi->mnId > maxKFid)
+          continue;
+        
 
-      if (pKFi->mnId > maxKFid) {
-        continue;
-      }
+        if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKFi->mnId) == nullptr)
+          continue;
 
-      if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKFi->mnId) == nullptr)
-        continue;
+        if (!pKFi->isBad()) {
+          const cv::KeyPoint& kpUn = pKFi->mvKeysUn[std::get<0>(mit->second)];
 
-      if (!pKFi->isBad()) {
-        const cv::KeyPoint& kpUn = pKFi->mvKeysUn[std::get<0>(mit->second)];
+          if (pKFi->mvuRight[std::get<0>(mit->second)] < 0)  // Monocular observation
+          {
+            Eigen::Matrix<double, 2, 1> obs;
+            obs << kpUn.pt.x, kpUn.pt.y;
 
-        if (pKFi->mvuRight[std::get<0>(mit->second)] < 0)  // Monocular observation
-        {
-          Eigen::Matrix<double, 2, 1> obs;
-          obs << kpUn.pt.x, kpUn.pt.y;
+            EdgeMono* e = new EdgeMono();
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
+                                optimizer.vertex(id)));
+            e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
+                                optimizer.vertex(pKFi->mnId)));
+            e->setMeasurement(obs);
+            const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+            e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
-          EdgeMono* e = new EdgeMono();
-          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(id)));
-          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(pKFi->mnId)));
-          e->setMeasurement(obs);
-          const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
-          e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
+            g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+            e->setRobustKernel(rk);
+            rk->setDelta(thHuberMono);
+            optimizer.addEdge(e);
+            vpEdgesMono.push_back(e);
+            vpEdgeKFMono.push_back(pKFi);
+            vpMapPointEdgeMono.push_back(pMP);
+          } else  // stereo observation
+          {
+            const float kp_ur = pKFi->mvuRight[std::get<0>(mit->second)];
+            Eigen::Matrix<double, 3, 1> obs;
+            obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
-          g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-          e->setRobustKernel(rk);
-          rk->setDelta(thHuberMono);
-          optimizer.addEdge(e);
-          vpEdgesMono.push_back(e);
-          vpEdgeKFMono.push_back(pKFi);
-          vpMapPointEdgeMono.push_back(pMP);
-        } else  // stereo observation
-        {
-          const float kp_ur = pKFi->mvuRight[std::get<0>(mit->second)];
-          Eigen::Matrix<double, 3, 1> obs;
-          obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+            EdgeStereo* e = new EdgeStereo();
 
-          EdgeStereo* e = new EdgeStereo();
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
+                                optimizer.vertex(id)));
+            e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
+                                optimizer.vertex(pKFi->mnId)));
+            e->setMeasurement(obs);
+            const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+            e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
 
-          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(id)));
-          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(pKFi->mnId)));
-          e->setMeasurement(obs);
-          const float& invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
-          e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
+            g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+            e->setRobustKernel(rk);
+            rk->setDelta(thHuberStereo);
 
-          g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-          e->setRobustKernel(rk);
-          rk->setDelta(thHuberStereo);
-
-          optimizer.addEdge(e);
-          vpEdgesStereo.push_back(e);
-          vpEdgeKFStereo.push_back(pKFi);
-          vpMapPointEdgeStereo.push_back(pMP);
+            optimizer.addEdge(e);
+            vpEdgesStereo.push_back(e);
+            vpEdgeKFStereo.push_back(pKFi);
+            vpMapPointEdgeStereo.push_back(pMP);
+          }
         }
       }
     }

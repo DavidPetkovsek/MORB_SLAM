@@ -192,6 +192,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   
   KeyFrame();
   KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
+  ~KeyFrame();
 
   // Pose functions
   void SetPose(const Sophus::SE3f& Tcw);
@@ -517,6 +518,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Eigen::Vector3f GetRightCameraCenter();
   Eigen::Matrix<float, 3, 3> GetRightRotation();
   Eigen::Vector3f GetRightTranslation();
+
+   std::vector<std::shared_ptr<MapPoint>> mvAllMPs;
 
 };
 

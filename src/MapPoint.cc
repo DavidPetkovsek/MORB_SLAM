@@ -28,6 +28,7 @@
 namespace MORB_SLAM {
 
 long unsigned int MapPoint::nNextId = 0;
+long unsigned int MapPoint::nMPsInMemory = 0;
 std::mutex MapPoint::mGlobalMutex;
 
 MapPoint::MapPoint()
@@ -46,6 +47,7 @@ MapPoint::MapPoint()
       mnFound(1),
       mbBad(false),
       mpReplaced(nullptr) {
+  nMPsInMemory++;
 }
 
 MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<Map> pMap)
@@ -80,6 +82,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF,
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
+  nMPsInMemory++;
 }
 
 MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<KeyFrame> pRefKF,
@@ -107,7 +110,6 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
   mInvDepth = invDepth;
   mInitU = (double)uv_init.x;
   mInitV = (double)uv_init.y;
-  mpHostKF = pHostKF;
 
   mNormalVector.setZero();
 
@@ -116,10 +118,10 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
+  nMPsInMemory++;
 }
 
-MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame* pFrame,
-                   const int& idxF)
+MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame* pFrame, const int& idxF)
     : mnFirstKFid(-1),
       mnFirstFrame(pFrame->mnId),
       nObs(0),
@@ -132,7 +134,6 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
       mnCorrectedReference(0),
       mnBAGlobalForKF(0),
       mnOriginMapId(pMap->GetId()),
-      mpRefKF(nullptr),
       mnVisible(1),
       mnFound(1),
       mbBad(false),
@@ -172,6 +173,12 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
   // conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
+  nMPsInMemory++;
+}
+
+MapPoint::~MapPoint() {
+  // std::cout << "MapPoint Destroyed" << std::endl;
+  nMPsInMemory--;
 }
 
 void MapPoint::SetWorldPos(const Eigen::Vector3f& Pos) {
@@ -190,17 +197,18 @@ Eigen::Vector3f MapPoint::GetNormal() {
   return mNormalVector;
 }
 
-std::shared_ptr<KeyFrame> MapPoint::GetReferenceKeyFrame() {
+std::weak_ptr<KeyFrame> MapPoint::GetReferenceKeyFrame() {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   return mpRefKF;
 }
 
 void MapPoint::AddObservation(std::shared_ptr<KeyFrame> pKF, int idx) {
+  std::weak_ptr<KeyFrame> wpKF = pKF;
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   std::tuple<int, int> indexes;
 
-  if (mObservations.count(pKF)) {
-    indexes = mObservations[pKF];
+  if (mObservations.count(wpKF)) {
+    indexes = mObservations[wpKF];
   } else {
     indexes = std::tuple<int, int>(-1, -1);
   }
@@ -211,7 +219,8 @@ void MapPoint::AddObservation(std::shared_ptr<KeyFrame> pKF, int idx) {
     std::get<0>(indexes) = idx;
   }
 
-  mObservations[pKF] = indexes;
+  mObservations[wpKF] = indexes;
+  // pKF->mvAllMPs.push_back(shared_from_this());
 
   if (!pKF->mpCamera2 && pKF->mvuRight[idx] >= 0)
     nObs += 2;
@@ -220,11 +229,12 @@ void MapPoint::AddObservation(std::shared_ptr<KeyFrame> pKF, int idx) {
 }
 
 void MapPoint::EraseObservation(std::shared_ptr<KeyFrame> pKF) {
+  std::weak_ptr<KeyFrame> wpKF = pKF;
   bool bBad = false;
   {
     std::unique_lock<std::mutex> lock(mMutexFeatures);
-    if (mObservations.count(pKF)) {
-      std::tuple<int, int> indexes = mObservations[pKF];
+    if (mObservations.count(wpKF)) {
+      std::tuple<int, int> indexes = mObservations[wpKF];
       int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
       if (leftIndex != -1) {
@@ -237,9 +247,9 @@ void MapPoint::EraseObservation(std::shared_ptr<KeyFrame> pKF) {
         nObs--;
       }
 
-      mObservations.erase(pKF);
-
-      if (mpRefKF == pKF) mpRefKF = mObservations.begin()->first;
+      mObservations.erase(wpKF);
+      if(std::shared_ptr<KeyFrame> shared_mpRefKF = mpRefKF.lock())
+        if (shared_mpRefKF == pKF) mpRefKF = mObservations.begin()->first;
 
       // If only 2 observations or less, discard point
       if (nObs <= 2) bBad = true;
@@ -249,7 +259,7 @@ void MapPoint::EraseObservation(std::shared_ptr<KeyFrame> pKF) {
   if (bBad) SetBadFlag();
 }
 
-std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> MapPoint::GetObservations() {
+std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> MapPoint::GetObservations() {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   return mObservations;
 }
@@ -260,22 +270,25 @@ int MapPoint::Observations() {
 }
 
 void MapPoint::SetBadFlag() {
-  std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> obs;
+  std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> obs;
   {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
     std::unique_lock<std::mutex> lock2(mMutexPos);
     mbBad = true;
     obs = mObservations;
     mObservations.clear();
+    // mpRefKF = nullptr;
+    mpReplaced = nullptr;
   }
   for (auto &pair : obs) {
-    std::shared_ptr<KeyFrame> pKF = pair.first;
-    int leftIndex = std::get<0>(pair.second), rightIndex = std::get<1>(pair.second);
-    if (leftIndex != -1) {
-      pKF->EraseMapPointMatch(leftIndex);
-    }
-    if (rightIndex != -1) {
-      pKF->EraseMapPointMatch(rightIndex);
+    if(std::shared_ptr<KeyFrame> pKF = pair.first.lock()) {
+      int leftIndex = std::get<0>(pair.second), rightIndex = std::get<1>(pair.second);
+      if (leftIndex != -1) {
+        pKF->EraseMapPointMatch(leftIndex);
+      }
+      if (rightIndex != -1) {
+        pKF->EraseMapPointMatch(rightIndex);
+      }
     }
   }
 
@@ -293,7 +306,7 @@ void MapPoint::Replace(std::shared_ptr<MapPoint> pMP) {
   if (pMP->mnId == self->mnId) return;
 
   int nvisible, nfound;
-  std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> obs;
+  std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> obs;
   {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
     std::unique_lock<std::mutex> lock2(mMutexPos);
@@ -307,26 +320,26 @@ void MapPoint::Replace(std::shared_ptr<MapPoint> pMP) {
 
   for (auto &pair : obs) {
     // Replace measurement in keyframe
-    std::shared_ptr<KeyFrame> pKF = pair.first;
+    if(std::shared_ptr<KeyFrame> pKF = pair.first.lock()) {
+      std::tuple<int, int> indexes = pair.second;
+      int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
-    std::tuple<int, int> indexes = pair.second;
-    int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
-
-    if (!pMP->IsInKeyFrame(pKF)) {
-      if (leftIndex != -1) {
-        pKF->ReplaceMapPointMatch(leftIndex, pMP);
-        pMP->AddObservation(pKF, leftIndex);
-      }
-      if (rightIndex != -1) {
-        pKF->ReplaceMapPointMatch(rightIndex, pMP);
-        pMP->AddObservation(pKF, rightIndex);
-      }
-    } else {
-      if (leftIndex != -1) {
-        pKF->EraseMapPointMatch(leftIndex);
-      }
-      if (rightIndex != -1) {
-        pKF->EraseMapPointMatch(rightIndex);
+      if (!pMP->IsInKeyFrame(pKF)) {
+        if (leftIndex != -1) {
+          pKF->ReplaceMapPointMatch(leftIndex, pMP);
+          pMP->AddObservation(pKF, leftIndex);
+        }
+        if (rightIndex != -1) {
+          pKF->ReplaceMapPointMatch(rightIndex, pMP);
+          pMP->AddObservation(pKF, rightIndex);
+        }
+      } else {
+        if (leftIndex != -1) {
+          pKF->EraseMapPointMatch(leftIndex);
+        }
+        if (rightIndex != -1) {
+          pKF->EraseMapPointMatch(rightIndex);
+        }
       }
     }
   }
@@ -364,7 +377,7 @@ void MapPoint::ComputeDistinctiveDescriptors() {
   // Retrieve all observed descriptors
   std::vector<cv::Mat> vDescriptors;
 
-  std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations;
+  std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations;
 
   {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
@@ -377,13 +390,13 @@ void MapPoint::ComputeDistinctiveDescriptors() {
   vDescriptors.reserve(observations.size());
 
   for (auto &pair : observations) {
-    std::shared_ptr<KeyFrame> pKF = pair.first;
-
-    if (!pKF->isBad()) {
-      if (std::get<0>(pair.second) != -1)
-        vDescriptors.push_back(pKF->mDescriptors.row(std::get<0>(pair.second)));
-      if (std::get<1>(pair.second) != -1)
-        vDescriptors.push_back(pKF->mDescriptors.row(std::get<1>(pair.second)));
+    if(std::shared_ptr<KeyFrame> pKF = pair.first.lock()) {
+      if (!pKF->isBad()) {
+        if (std::get<0>(pair.second) != -1)
+          vDescriptors.push_back(pKF->mDescriptors.row(std::get<0>(pair.second)));
+        if (std::get<1>(pair.second) != -1)
+          vDescriptors.push_back(pKF->mDescriptors.row(std::get<1>(pair.second)));
+      }
     }
   }
 
@@ -428,22 +441,23 @@ cv::Mat MapPoint::GetDescriptor() {
 }
 
 std::tuple<int, int> MapPoint::GetIndexInKeyFrame(std::shared_ptr<KeyFrame> pKF) {
+  std::weak_ptr<KeyFrame> wpKF = pKF;
   std::unique_lock<std::mutex> lock(mMutexFeatures);
-  if (mObservations.count(pKF))
-    return mObservations[pKF];
+  
+  if (mObservations.count(wpKF))
+    return mObservations[wpKF];
   else
     return std::tuple<int, int>(-1, -1);
 }
 
 bool MapPoint::IsInKeyFrame(std::shared_ptr<KeyFrame> pKF) {
+  std::weak_ptr<KeyFrame> wpKF = pKF;
   std::unique_lock<std::mutex> lock(mMutexFeatures);
-  return (mObservations.count(pKF));
+  return (mObservations.count(wpKF));
 }
 
 void MapPoint::UpdateNormalAndDepth() {
-  if (!mpRefKF) return;
-
-  std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations;
+  std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations;
   std::shared_ptr<KeyFrame> pRefKF;
   Eigen::Vector3f Pos;
   {
@@ -451,7 +465,10 @@ void MapPoint::UpdateNormalAndDepth() {
     std::unique_lock<std::mutex> lock2(mMutexPos);
     if (mbBad) return;
     observations = mObservations;
-    pRefKF = mpRefKF;
+    if(!(pRefKF = mpRefKF.lock())) {
+      mpRefKF = observations.begin()->first;
+      return;
+    }
     Pos = mWorldPos;
   }
 
@@ -461,29 +478,29 @@ void MapPoint::UpdateNormalAndDepth() {
   normal.setZero();
   int n = 0;
   for (auto &pair : observations) {
-    std::shared_ptr<KeyFrame> pKF = pair.first;
+    if(std::shared_ptr<KeyFrame> pKF = pair.first.lock()) {
+      std::tuple<int, int> indexes = pair.second;
+      int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
 
-    std::tuple<int, int> indexes = pair.second;
-    int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
-
-    if (leftIndex != -1) {
-      Eigen::Vector3f Owi = pKF->GetCameraCenter();
-      Eigen::Vector3f normali = Pos - Owi;
-      normal += normali / normali.norm();
-      n++;
-    }
-    if (rightIndex != -1) {
-      Eigen::Vector3f Owi = pKF->GetRightCameraCenter();
-      Eigen::Vector3f normali = Pos - Owi;
-      normal += normali / normali.norm();
-      n++;
+      if (leftIndex != -1) {
+        Eigen::Vector3f Owi = pKF->GetCameraCenter();
+        Eigen::Vector3f normali = Pos - Owi;
+        normal += normali / normali.norm();
+        n++;
+      }
+      if (rightIndex != -1) {
+        Eigen::Vector3f Owi = pKF->GetRightCameraCenter();
+        Eigen::Vector3f normali = Pos - Owi;
+        normal += normali / normali.norm();
+        n++;
+      }
     }
   }
 
   Eigen::Vector3f PC = Pos - pRefKF->GetCameraCenter();
   const float dist = PC.norm();
 
-  std::tuple<int, int> indexes = observations[pRefKF];
+  std::tuple<int, int> indexes = observations[mpRefKF];
   int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
   int level;
   if (pRefKF->NLeft == -1) {
@@ -555,14 +572,12 @@ int MapPoint::PredictScale(const float& currentDist, Frame* pF) {
 
 void MapPoint::PrintObservations() {
   std::cout << "MP_OBS: MP " << mnId << std::endl;
-  for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator mit = mObservations.begin(),
-                                                 mend = mObservations.end();
-       mit != mend; mit++) {
-    std::shared_ptr<KeyFrame> pKFi = mit->first;
-    // std::tuple<int,int> indexes = mit->second; // UNUSED
-    // int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes); // UNUSED
-    std::cout << "--OBS in KF " << pKFi->mnId << " in map "
-         << pKFi->GetMap()->GetId() << std::endl;
+  for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = mObservations.begin(), mend = mObservations.end(); mit != mend; mit++) {
+    if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
+      // std::tuple<int,int> indexes = mit->second; // UNUSED
+      // int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes); // UNUSED
+      std::cout << "--OBS in KF " << pKFi->mnId << " in map " << pKFi->GetMap()->GetId() << std::endl;
+    }
   }
 }
 
@@ -585,36 +600,37 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::
   mBackupObservationsId1.clear();
   mBackupObservationsId2.clear();
 
-  std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> tmp_mObservations;
+  std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> tmp_mObservations;
   tmp_mObservations.insert(mObservations.begin(), mObservations.end());
 
   // Save the id and position in each KF who view it
-  for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator
-           it = tmp_mObservations.begin(),
-           end = tmp_mObservations.end();
-       it != end; ++it) {
-    std::shared_ptr<KeyFrame> pKFi = it->first;
-    if (spKF.find(pKFi) != spKF.end()) {
-      mBackupObservationsId1[it->first->mnId] = std::get<0>(it->second);
-      mBackupObservationsId2[it->first->mnId] = std::get<1>(it->second);
-    } else {
-      EraseObservation(pKFi);  // iterate -- afterwards to pull back once
-      //   it--;
+  for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator it = tmp_mObservations.begin(), end = tmp_mObservations.end(); it != end; ++it) {
+    if(std::shared_ptr<KeyFrame> pKFi = (it->first).lock()) {
+      if (spKF.find(pKFi) != spKF.end()) {
+        mBackupObservationsId1[pKFi->mnId] = std::get<0>(it->second);
+        mBackupObservationsId2[pKFi->mnId] = std::get<1>(it->second);
+      } else {
+        EraseObservation(pKFi);  // iterate -- afterwards to pull back once
+        //   it--;
+      }
     }
   }
 
-  // Save the id of the reference KF
-  if (spKF.find(mpRefKF) != spKF.end()) {
-    mBackupRefKFId = mpRefKF->mnId;
+  if(std::shared_ptr<KeyFrame> shared_mpRefKF = mpRefKF.lock()) {
+    // Save the id of the reference KF
+    if (spKF.find(shared_mpRefKF) != spKF.end()) {
+      mBackupRefKFId = shared_mpRefKF->mnId;
+    }   
   }
+
 }
 
 void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
                         std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
   mpRefKF = mpKFid[mBackupRefKFId];
-  if (!mpRefKF) {
-    std::cout << "ERROR: MP without KF reference " << mBackupRefKFId
-         << "; Num obs: " << nObs << std::endl;
+   
+  if (!mpRefKF.lock()) {
+    std::cout << "ERROR: MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << std::endl;
   }
   mpReplaced = nullptr;
   if (mBackupReplacedId >= 0) {
@@ -625,15 +641,11 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
 
   mObservations.clear();
 
-  for (std::map<long unsigned int, int>::const_iterator
-           it = mBackupObservationsId1.begin(),
-           end = mBackupObservationsId1.end();
-       it != end; ++it) {
-    std::shared_ptr<KeyFrame> pKFi = mpKFid[it->first];
-    std::map<long unsigned int, int>::const_iterator it2 =
-        mBackupObservationsId2.find(it->first);
+  for (std::map<long unsigned int, int>::const_iterator it = mBackupObservationsId1.begin(), end = mBackupObservationsId1.end(); it != end; ++it) {
+    std::weak_ptr<KeyFrame> pKFi = mpKFid[it->first];
+    std::map<long unsigned int, int>::const_iterator it2 = mBackupObservationsId2.find(it->first);
     std::tuple<int, int> indexes = std::tuple<int, int>(it->second, it2->second);
-    if (pKFi) {
+    if (pKFi.lock()) {
       mObservations[pKFi] = indexes;
     }
   }

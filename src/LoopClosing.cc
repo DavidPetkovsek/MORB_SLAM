@@ -1280,24 +1280,30 @@ void LoopClosing::MergeLocal() {
       continue;
     }
 
-    std::shared_ptr<KeyFrame> pKFref = pMPi->GetReferenceKeyFrame();
-    if (vCorrectedSim3.find(pKFref) == vCorrectedSim3.end()) {
+    if(std::shared_ptr<KeyFrame> pKFref = (pMPi->GetReferenceKeyFrame()).lock()) {
+      if (vCorrectedSim3.find(pKFref) == vCorrectedSim3.end()) {
+        itMP = spLocalWindowMPs.erase(itMP);
+        numPointsWithCorrection++;
+        continue;
+      }
+      g2o::Sim3 g2oCorrectedSwi = vCorrectedSim3[pKFref].inverse();
+      g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
+
+      // Project with non-corrected pose and project back with corrected pose
+      Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
+      Eigen::Vector3d eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
+      Eigen::Quaterniond Rcor = g2oCorrectedSwi.rotation() * g2oNonCorrectedSiw.rotation();
+
+      pMPi->mPosMerge = eigCorrectedP3Dw.cast<float>();
+      pMPi->mNormalVectorMerge = Rcor.cast<float>() * pMPi->GetNormal();
+
+      itMP++;
+    } else {
       itMP = spLocalWindowMPs.erase(itMP);
-      numPointsWithCorrection++;
       continue;
     }
-    g2o::Sim3 g2oCorrectedSwi = vCorrectedSim3[pKFref].inverse();
-    g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
 
-    // Project with non-corrected pose and project back with corrected pose
-    Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
-    Eigen::Vector3d eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
-    Eigen::Quaterniond Rcor = g2oCorrectedSwi.rotation() * g2oNonCorrectedSiw.rotation();
 
-    pMPi->mPosMerge = eigCorrectedP3Dw.cast<float>();
-    pMPi->mNormalVectorMerge = Rcor.cast<float>() * pMPi->GetNormal();
-
-    itMP++;
   }
   /*if(numPointsWithCorrection>0) {
     std::cout << "[Merge]: " << std::to_string(numPointsWithCorrection) << " points removed from Ma due to its reference KF is not in welding area" << std::endl;
@@ -1472,16 +1478,17 @@ void LoopClosing::MergeLocal() {
       for (std::shared_ptr<MapPoint> pMPi : vpCurrentMapMPs) {
         if (!pMPi || pMPi->isBad() || pMPi->GetMap() != pCurrentMap) continue;
 
-        std::shared_ptr<KeyFrame> pKFref = pMPi->GetReferenceKeyFrame();
-        g2o::Sim3 g2oCorrectedSwi = vCorrectedSim3[pKFref].inverse();
-        g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
+        if(std::shared_ptr<KeyFrame> pKFref = (pMPi->GetReferenceKeyFrame()).lock()) {
+          g2o::Sim3 g2oCorrectedSwi = vCorrectedSim3[pKFref].inverse();
+          g2o::Sim3 g2oNonCorrectedSiw = vNonCorrectedSim3[pKFref];
 
-        // Project with non-corrected pose and project back with corrected pose
-        Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
-        Eigen::Vector3d eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
-        pMPi->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+          // Project with non-corrected pose and project back with corrected pose
+          Eigen::Vector3d P3Dw = pMPi->GetWorldPos().cast<double>();
+          Eigen::Vector3d eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(P3Dw));
+          pMPi->SetWorldPos(eigCorrectedP3Dw.cast<float>());
 
-        pMPi->UpdateNormalAndDepth();
+          pMPi->UpdateNormalAndDepth();
+        }
       }
     }
 
@@ -1821,9 +1828,10 @@ void LoopClosing::CheckObservations(std::set<std::shared_ptr<KeyFrame>>& spKFsMa
         continue;
       }
 
-      std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> mMPijObs = pMPij->GetObservations();
+      std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> mMPijObs = pMPij->GetObservations();
       for (std::shared_ptr<KeyFrame> pKFi2 : spKFsMap2) {
-        if (mMPijObs.find(pKFi2) != mMPijObs.end()) {
+        std::weak_ptr<KeyFrame> wpKFi2 = pKFi2;
+        if (mMPijObs.find(wpKFi2) != mMPijObs.end()) {
           if (mMatchedMP.find(pKFi2) != mMatchedMP.end()) {
             mMatchedMP[pKFi2] = mMatchedMP[pKFi2] + 1;
           } else {
@@ -2126,9 +2134,8 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
         if (pMP->mnBAGlobalForKF == nLoopKF) {
           // If optimized by Global BA, just update
           pMP->SetWorldPos(pMP->mPosGBA);
-        } else {
-          // Update according to the correction of its reference keyframe
-          std::shared_ptr<KeyFrame> pRefKF = pMP->GetReferenceKeyFrame();
+        // Update according to the correction of its reference keyframe
+        } else if(std::shared_ptr<KeyFrame> pRefKF = (pMP->GetReferenceKeyFrame()).lock()) {
 
           if (pRefKF->mnBAGlobalForKF != nLoopKF) continue;
 

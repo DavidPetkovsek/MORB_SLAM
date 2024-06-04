@@ -315,9 +315,10 @@ void Optimizer::OptimizeEssentialGraph(
     int nIDr;
     if (pMP->mnCorrectedByKF == pCurKF->mnId) {
       nIDr = pMP->mnCorrectedReference;
-    } else {
-      std::shared_ptr<KeyFrame> pRefKF = pMP->GetReferenceKeyFrame();
+    } else if(std::shared_ptr<KeyFrame> pRefKF = (pMP->GetReferenceKeyFrame()).lock()) {
       nIDr = pRefKF->mnId;
+    } else {
+      continue;
     }
 
     g2o::Sim3 Srw = vScw[nIDr];
@@ -635,30 +636,31 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF,
   for (std::shared_ptr<MapPoint> pMPi : vpNonCorrectedMPs) {
     if (pMPi->isBad()) continue;
 
-    std::shared_ptr<KeyFrame> pRefKF = pMPi->GetReferenceKeyFrame();
-    while (pRefKF->isBad()) {
-      if (!pRefKF) {
-        Verbose::PrintMess(
-            "MP " + std::to_string(pMPi->mnId) + " without a valid reference KF",
-            Verbose::VERBOSITY_DEBUG);
-        break;
+    if(std::shared_ptr<KeyFrame> pRefKF = (pMPi->GetReferenceKeyFrame()).lock()) {
+      while (pRefKF->isBad()) {
+        if (!pRefKF) {
+          Verbose::PrintMess("MP " + std::to_string(pMPi->mnId) + " without a valid reference KF", Verbose::VERBOSITY_DEBUG);
+          break;
+        }
+
+        pMPi->EraseObservation(pRefKF);
+        if(!(pRefKF = (pMPi->GetReferenceKeyFrame()).lock())) break;
       }
 
-      pMPi->EraseObservation(pRefKF);
-      pRefKF = pMPi->GetReferenceKeyFrame();
-    }
+      if (vpBadPose[pRefKF->mnId]) {
+        Sophus::SE3f TNonCorrectedwr = pRefKF->mTwcBefMerge;
+        Sophus::SE3f Twr = pRefKF->GetPoseInverse();
 
-    if (vpBadPose[pRefKF->mnId]) {
-      Sophus::SE3f TNonCorrectedwr = pRefKF->mTwcBefMerge;
-      Sophus::SE3f Twr = pRefKF->GetPoseInverse();
+        Eigen::Vector3f eigCorrectedP3Dw =
+            Twr * TNonCorrectedwr.inverse() * pMPi->GetWorldPos();
+        pMPi->SetWorldPos(eigCorrectedP3Dw);
 
-      Eigen::Vector3f eigCorrectedP3Dw =
-          Twr * TNonCorrectedwr.inverse() * pMPi->GetWorldPos();
-      pMPi->SetWorldPos(eigCorrectedP3Dw);
-
-      pMPi->UpdateNormalAndDepth();
+        pMPi->UpdateNormalAndDepth();
+      } else {
+        std::cout << "ERROR: MapPoint has a reference KF from another map" << std::endl;
+      }
     } else {
-      std::cout << "ERROR: MapPoint has a reference KF from another map" << std::endl;
+
     }
   }
 }
@@ -960,18 +962,19 @@ void Optimizer::OptimizeEssentialGraph4DoF(
 
     int nIDr;
 
-    std::shared_ptr<KeyFrame> pRefKF = pMP->GetReferenceKeyFrame();
-    nIDr = pRefKF->mnId;
+    if(std::shared_ptr<KeyFrame> pRefKF = (pMP->GetReferenceKeyFrame()).lock()) {
+      nIDr = pRefKF->mnId;
 
-    g2o::Sim3 Srw = vScw[nIDr];
-    g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
+      g2o::Sim3 Srw = vScw[nIDr];
+      g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
 
-    Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->GetWorldPos().cast<double>();
-    Eigen::Matrix<double, 3, 1> eigCorrectedP3Dw =
-        correctedSwr.map(Srw.map(eigP3Dw));
-    pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
+      Eigen::Matrix<double, 3, 1> eigP3Dw = pMP->GetWorldPos().cast<double>();
+      Eigen::Matrix<double, 3, 1> eigCorrectedP3Dw =
+          correctedSwr.map(Srw.map(eigP3Dw));
+      pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
 
-    pMP->UpdateNormalAndDepth();
+      pMP->UpdateNormalAndDepth();      
+    }
   }
   pMap->IncreaseChangeIndex();
 }

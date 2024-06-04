@@ -191,6 +191,9 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
 
   mnOriginMapId = pMap->GetId();
 }
+KeyFrame::~KeyFrame() {
+  std::cout << "Destructor called for KeyFrame " << mnId << std::endl;
+}
 
 void KeyFrame::ComputeBoW() {
   if (mBowVec.empty() || mFeatVec.empty()) {
@@ -453,15 +456,14 @@ void KeyFrame::UpdateConnections(bool upParent) {
 
     if (pMP->isBad()) continue;
 
-    std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
+    std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = pMP->GetObservations();
 
-    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator mit = observations.begin(),
-                                                    mend = observations.end();
-         mit != mend; mit++) {
-      if (mit->first->mnId == mnId || mit->first->isBad() ||
-          mit->first->GetMap() != mpMap)
-        continue;
-      KFcounter[mit->first]++;
+    for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
+      if(std::shared_ptr<KeyFrame> pKF = (mit->first).lock()){
+        if (pKF->mnId == mnId || pKF->isBad() || pKF->GetMap() != mpMap)
+          continue;
+        KFcounter[pKF]++;
+      }
     }
   }
 
@@ -632,8 +634,18 @@ bool KeyFrame::SetBadFlag() {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
 
+    
+    mPrevKF = nullptr;
+    mNextKF = nullptr;
+    // mpParent;
+
+    mvpLoopCandKFs.clear();
+    mvpMergeCandKFs.clear();
     mConnectedKeyFrameWeights.clear();
     mvpOrderedConnectedKeyFrames.clear();
+    // mspChildrens;
+    mspLoopEdges.clear();
+    mspMergeEdges.clear();
 
     // Update Spanning Tree
     std::set<std::shared_ptr<KeyFrame>> sParentCandidates;
@@ -686,6 +698,7 @@ bool KeyFrame::SetBadFlag() {
     if (mpParent) {
       mpParent->EraseChild(self);
       mTcp = mTcw * mpParent->GetPoseInverse();
+      mpParent = nullptr;
     }
     mbBad = true;
   }

@@ -110,6 +110,7 @@ public:
     MapPoint(const Eigen::Vector3f &Pos, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<Map> pMap);
     MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<KeyFrame> pHostKF, std::shared_ptr<Map> pMap);
     MapPoint(const Eigen::Vector3f &Pos,  std::shared_ptr<Map> pMap, Frame* pFrame, const int &idxF);
+    ~MapPoint();
 
     void SetWorldPos(const Eigen::Vector3f &Pos);
     Eigen::Vector3f GetWorldPos();
@@ -117,9 +118,9 @@ public:
     Eigen::Vector3f GetNormal();
     void SetNormalVector(const Eigen::Vector3f& normal);
 
-    std::shared_ptr<KeyFrame> GetReferenceKeyFrame();
+    std::weak_ptr<KeyFrame> GetReferenceKeyFrame();
 
-    std::map<std::shared_ptr<KeyFrame>,std::tuple<int,int>> GetObservations();
+    std::map<std::weak_ptr<KeyFrame>, std::tuple<int,int>, std::owner_less<>> GetObservations();
     int Observations();
 
     void AddObservation(std::shared_ptr<KeyFrame> pKF,int idx);
@@ -201,11 +202,12 @@ public:
     double mInvDepth;
     double mInitU;
     double mInitV;
-    std::shared_ptr<KeyFrame> mpHostKF;
 
     static std::mutex mGlobalMutex;
 
     unsigned int mnOriginMapId;
+
+    static long unsigned int nMPsInMemory;
 
 protected:
 
@@ -213,7 +215,7 @@ protected:
      Eigen::Vector3f mWorldPos;
 
      // Keyframes observing the point and associated index in keyframe
-     std::map<std::shared_ptr<KeyFrame>,std::tuple<int,int> > mObservations;
+     std::map<std::weak_ptr<KeyFrame>, std::tuple<int,int>, std::owner_less<>> mObservations;
      // For save relation without pointer, this is necessary for save/load function
      std::map<long unsigned int, int> mBackupObservationsId1;
      std::map<long unsigned int, int> mBackupObservationsId2;
@@ -225,7 +227,7 @@ protected:
      cv::Mat mDescriptor;
 
      // Reference KeyFrame
-     std::shared_ptr<KeyFrame> mpRefKF;
+     std::weak_ptr<KeyFrame> mpRefKF;
      long unsigned int mBackupRefKFId;
 
      // Tracking counters

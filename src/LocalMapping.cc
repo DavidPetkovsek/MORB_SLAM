@@ -901,31 +901,33 @@ void LocalMapping::KeyFrameCulling() {
 
             const int& scaleLevel = (pKF->NLeft == -1) ? pKF->mvKeysUn[i].octave :
                     ((static_cast<int>(i) < pKF->NLeft) ? pKF->mvKeys[i].octave : pKF->mvKeysRight[i].octave);
-            const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
+            const std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = pMP->GetObservations();
             int nObs = 0;
             int nnObs = 0;
-            for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) { // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
-                std::shared_ptr<KeyFrame> pKFi = mit->first;
-                if (pKFi == pKF) continue;
-                std::tuple<int, int> indexes = mit->second;
-                int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
-                int scaleLeveli = -1;
-                if (pKFi->NLeft == -1)
-                    scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
-                else {
-                    if (leftIndex != -1)
-                        scaleLeveli = pKFi->mvKeys[leftIndex].octave;
-                    if (rightIndex != -1) {
-                        int rightLevel = pKFi->mvKeysRight[rightIndex - pKFi->NLeft].octave;
-                        scaleLeveli = (scaleLeveli == -1 || scaleLeveli > rightLevel) ? rightLevel : scaleLeveli;
+            // David comment: get the number of observations for this map point that would be considered for redundency (put in nObs)
+            for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
+                if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
+                    if (pKFi == pKF) continue;
+                    std::tuple<int, int> indexes = mit->second;
+                    int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes);
+                    int scaleLeveli = -1;
+                    if (pKFi->NLeft == -1)
+                        scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
+                    else {
+                        if (leftIndex != -1)
+                            scaleLeveli = pKFi->mvKeys[leftIndex].octave;
+                        if (rightIndex != -1) {
+                            int rightLevel = pKFi->mvKeysRight[rightIndex - pKFi->NLeft].octave;
+                            scaleLeveli = (scaleLeveli == -1 || scaleLeveli > rightLevel) ? rightLevel : scaleLeveli;
+                        }
                     }
-                }
 
-                if (scaleLeveli <= scaleLevel + 1) {
-                    nObs++;
-                    if (nObs > thObs) break;
-                } else {
-                    nnObs++;
+                    if (scaleLeveli <= scaleLevel + 1) {
+                        nObs++;
+                        if (nObs > thObs) break;
+                    } else {
+                        nnObs++;
+                    }
                 }
             }
             // std::cout << (nnObs+nObs) << ", " << observations.size() << std::endl;
@@ -942,6 +944,7 @@ void LocalMapping::KeyFrameCulling() {
                 pKF->mPrevKF = nullptr;
             }
             pKF->SetBadFlag();
+            std::cout << "SetBadFlag called, there are now " << pKF.use_count() << " references to the KF" << std::endl;
         }
 
         if ((mbAbortBA && numChecked > 20) || numChecked > 100 || mpAtlas->KeyFramesInMap() <= Nd) {
@@ -1296,10 +1299,8 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         if (pMP->mnBAGlobalForKF == GBAid) {
             // If optimized by Global BA, just update
             pMP->SetWorldPos(pMP->mPosGBA);
-        } else {
-            // Update according to the correction of its reference keyframe
-            std::shared_ptr<KeyFrame> pRefKF = pMP->GetReferenceKeyFrame();
-
+        // Update according to the correction of its reference keyframe
+        } else if(std::shared_ptr<KeyFrame> pRefKF = (pMP->GetReferenceKeyFrame()).lock()) {
             if (pRefKF->mnBAGlobalForKF != GBAid) continue;
 
             // Map to non-corrected camera

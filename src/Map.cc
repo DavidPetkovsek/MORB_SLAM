@@ -312,11 +312,13 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
     if (pMPi->GetObservations().size() == 0) {
       nMPWithoutObs++;
     }
-    std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> mpObs = pMPi->GetObservations();
+    std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> mpObs = pMPi->GetObservations();
     // std::cout << "getting observations" << std::endl;
-    for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::iterator it = mpObs.begin(), end = mpObs.end(); it != end; ++it) {
-      if ((it->first->GetMap() != sharedMap) || it->first->isBad()) {
-        pMPi->EraseObservation(it->first);
+    for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator it = mpObs.begin(), end = mpObs.end(); it != end; ++it) {
+      if(std::shared_ptr<KeyFrame> pKF = (it->first).lock()) {
+        if ((pKF->GetMap() != sharedMap) || pKF->isBad()) {
+          pMPi->EraseObservation(pKF);
+        }
       }
     }
   }

@@ -1427,6 +1427,7 @@ void Tracking::Track() {
     }
   }
 
+  std::cout << "Number of MapPoints in memory: " << MapPoint::nMPsInMemory << std::endl;
 
 #ifdef REGISTER_LOOP
   if (Stop()) {
@@ -2347,9 +2348,12 @@ void Tracking::UpdateLocalKeyFrames() {
       std::shared_ptr<MapPoint> pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP) {
         if (!pMP->isBad()) {
-          const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
-          for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
-            keyframeCounter[it->first]++;
+          const std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = pMP->GetObservations();
+          for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++) {
+            if(std::shared_ptr<KeyFrame> pKF = (it->first).lock()) {
+              keyframeCounter[pKF]++;
+            }
+          }
         } else {
           mCurrentFrame.mvpMapPoints[i] = nullptr;
         }
@@ -2362,9 +2366,12 @@ void Tracking::UpdateLocalKeyFrames() {
         std::shared_ptr<MapPoint> pMP = mLastFrame.mvpMapPoints[i];
         if (!pMP) continue;
         if (!pMP->isBad()) {
-          const std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>> observations = pMP->GetObservations();
-          for (std::map<std::shared_ptr<KeyFrame>, std::tuple<int, int>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++)
-            keyframeCounter[it->first]++;
+          const std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> observations = pMP->GetObservations();
+          for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator it = observations.begin(), itend = observations.end(); it != itend; it++) {
+            if(std::shared_ptr<KeyFrame> pKF = (it->first).lock()) {
+              keyframeCounter[pKF]++;
+            }
+          }
         } else {
           // MODIFICATION
           mLastFrame.mvpMapPoints[i] = nullptr;
