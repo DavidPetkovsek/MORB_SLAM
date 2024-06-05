@@ -944,7 +944,7 @@ void LocalMapping::KeyFrameCulling() {
                 pKF->mPrevKF = nullptr;
             }
             pKF->SetBadFlag();
-            std::cout << "SetBadFlag called, there are now " << pKF.use_count() << " references to the KF" << std::endl;
+            // std::cout << "SetBadFlag called, there are now " << pKF.use_count() << " references to the KF" << std::endl;
         }
 
         if ((mbAbortBA && numChecked > 20) || numChecked > 100 || mpAtlas->KeyFramesInMap() <= Nd) {

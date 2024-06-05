@@ -125,9 +125,10 @@ class Tracking {
   // execution. Basically we store the reference keyframe for each frame and its
   // relative transformation
 protected:
-  std::list<Sophus::SE3f> mlRelativeFramePoses;
-  std::list<std::shared_ptr<KeyFrame>> mlpReferences;
-  std::list<bool> mlbLost;
+  // std::list<Sophus::SE3f> mlRelativeFramePoses;
+  // std::list<std::shared_ptr<KeyFrame>> mlpReferences;
+  // std::list<bool> mlbLost;
+  Sophus::SE3f mRelativeFramePose;
 
   bool mFastInit;
   bool mStationaryInit;

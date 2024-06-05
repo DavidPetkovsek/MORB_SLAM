@@ -28,6 +28,7 @@
 
 namespace MORB_SLAM {
 
+long unsigned int KeyFrame::nKFsInMemory = 0;
 long unsigned int KeyFrame::nNextId = 0;
 
 KeyFrame::KeyFrame()
@@ -87,7 +88,9 @@ KeyFrame::KeyFrame()
       mbBad(false),
       NLeft(0),
       NRight(0),
-      isPartiallyConstructed(true) {}
+      isPartiallyConstructed(true) {
+        nKFsInMemory++;
+      }
 
 KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB)
     : bImu(pMap->isImuInitialized()),
@@ -164,6 +167,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       NLeft(F.Nleft),
       NRight(F.Nright) {
   mnId = nNextId++;
+  nKFsInMemory++;
 
   mGrid.resize(mnGridCols);
   if (F.Nleft != -1) mGridRight.resize(mnGridCols);
@@ -192,7 +196,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
   mnOriginMapId = pMap->GetId();
 }
 KeyFrame::~KeyFrame() {
-  std::cout << "Destructor called for KeyFrame " << mnId << std::endl;
+  nKFsInMemory--;
 }
 
 void KeyFrame::ComputeBoW() {

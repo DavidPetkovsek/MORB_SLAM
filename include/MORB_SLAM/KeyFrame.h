@@ -305,6 +305,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   bool bImu;
 
+  static long unsigned int nKFsInMemory;
+
   // The following variables are accesed from only 1 thread or never change (no
   // mutex needed).
  public:
