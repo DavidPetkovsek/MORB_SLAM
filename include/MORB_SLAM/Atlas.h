@@ -124,7 +124,7 @@ class Atlas {
   void PreSave();
   void PostLoad();
 
-  std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
+  // std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
 
   void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
   std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();

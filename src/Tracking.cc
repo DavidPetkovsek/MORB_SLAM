@@ -2741,6 +2741,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr
   std::list<std::shared_ptr<KeyFrame>>::iterator lRit = mlpReferences.begin();
   std::list<bool>::iterator lbL = mlbLost.begin();
 
+  // This for loop is a warcrime
   if(s != 1.0f) {
     for (auto lit = mlRelativeFramePoses.begin(), lend = mlRelativeFramePoses.end(); lit != lend; lit++, lRit++, lbL++) {
       if (*lbL) continue;

@@ -117,10 +117,9 @@ ImuCamPose::ImuCamPose(Frame* pF) : its(0) {
   DR.setIdentity();
 }
 
-ImuCamPose::ImuCamPose(Eigen::Matrix3d& _Rwc, Eigen::Vector3d& _twc,
-                       std::shared_ptr<KeyFrame> pKF)
+ImuCamPose::ImuCamPose(Eigen::Matrix3d& _Rwc, Eigen::Vector3d& _twc, std::shared_ptr<KeyFrame> pKF)
     : its(0) {
-  // This is only for posegrpah, we do not care about multicamera
+  // This is only for posegraph, we do not care about multicamera
   tcw.resize(1);
   Rcw.resize(1);
   tcb.resize(1);
@@ -247,8 +246,7 @@ void ImuCamPose::UpdateW(const double* pu) {
   }
 }
 
-InvDepthPoint::InvDepthPoint(double _rho, double _u, double _v,
-                             std::shared_ptr<KeyFrame> pHostKF)
+InvDepthPoint::InvDepthPoint(double _rho, double _u, double _v, std::shared_ptr<KeyFrame> pHostKF)
     : rho(_rho),
       u(_u),
       v(_v),

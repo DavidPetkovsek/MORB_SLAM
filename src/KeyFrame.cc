@@ -474,7 +474,7 @@ void KeyFrame::UpdateConnections(bool upParent) {
   // In case no keyframe counter is over threshold add the one with maximum
   // counter
   int nmax = 0;
-  std::shared_ptr<KeyFrame>pKFmax = nullptr;
+  std::shared_ptr<KeyFrame> pKFmax = nullptr;
   int th = 15;
 
   std::vector<std::pair<int, std::shared_ptr<KeyFrame>>> vPairs;
@@ -483,12 +483,9 @@ void KeyFrame::UpdateConnections(bool upParent) {
 
   std::shared_ptr<KeyFrame> self = shared_from_this();
 
-  for (std::map<std::shared_ptr<KeyFrame>, int>::iterator mit = KFcounter.begin(),
-                                      mend = KFcounter.end();
-       mit != mend; mit++) {
+  for (std::map<std::shared_ptr<KeyFrame>, int>::iterator mit = KFcounter.begin(), mend = KFcounter.end(); mit != mend; mit++) {
     if (!upParent)
-      std::cout << "  UPDATE_CONN: KF " << mit->first->mnId
-           << " ; num matches: " << mit->second << std::endl;
+      std::cout << "  UPDATE_CONN: KF " << mit->first->mnId << " ; num matches: " << mit->second << std::endl;
     if (mit->second > nmax) {
       nmax = mit->second;
       pKFmax = mit->first;
@@ -658,8 +655,8 @@ bool KeyFrame::SetBadFlag() {
       bool bContinue = false;
 
       int max = -1;
-      std::shared_ptr<KeyFrame>pC;
-      std::shared_ptr<KeyFrame>pP;
+      std::shared_ptr<KeyFrame> pC;
+      std::shared_ptr<KeyFrame> pP;
 
       for (std::shared_ptr<KeyFrame>pKF : mspChildrens) {
         if (pKF->isBad()) continue;

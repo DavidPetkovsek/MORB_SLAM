@@ -296,19 +296,19 @@ long unsigned int Atlas::GetNumLivedMP() {
   return num;
 }
 
-//tofix
-std::map<long unsigned int, std::shared_ptr<KeyFrame>> Atlas::GetAtlasKeyframes() {
-  std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpIdKFs;
-  for (std::shared_ptr<Map>  pMap_i : mvpBackupMaps) {
-    std::vector<std::shared_ptr<KeyFrame>> vpKFs_Mi = pMap_i->GetAllKeyFrames();
+// UNUSED
+// std::map<long unsigned int, std::shared_ptr<KeyFrame>> Atlas::GetAtlasKeyframes() {
+//   std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpIdKFs;
+//   for (std::shared_ptr<Map>  pMap_i : mvpBackupMaps) {
+//     std::vector<std::shared_ptr<KeyFrame>> vpKFs_Mi = pMap_i->GetAllKeyFrames();
 
-    for (std::shared_ptr<KeyFrame> pKF_j_Mi : vpKFs_Mi) {
-      mpIdKFs[pKF_j_Mi->mnId] = pKF_j_Mi;
-    }
-  }
+//     for (std::shared_ptr<KeyFrame> pKF_j_Mi : vpKFs_Mi) {
+//       mpIdKFs[pKF_j_Mi->mnId] = pKF_j_Mi;
+//     }
+//   }
 
-  return mpIdKFs;
-}
+//   return mpIdKFs;
+// }
 
 void Atlas::setUseGravityDirectionFromLastMap(bool is_true) {
   mUseGravityDirectionFromLastMap = is_true;
