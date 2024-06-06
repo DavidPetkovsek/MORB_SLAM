@@ -496,7 +496,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9,Vector9d>
 public:
     
 
-    EdgeInertial(IMU::Preintegrated* pInt);
+    EdgeInertial(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -537,7 +537,7 @@ public:
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated* mpInt;
+    std::shared_ptr<IMU::Preintegrated> mpInt;
     const double dt;
     Eigen::Vector3d g;
 };
@@ -549,8 +549,8 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9,Vector9d>
 public:
     
 
-    // EdgeInertialGS(IMU::Preintegrated* pInt);
-    EdgeInertialGS(IMU::Preintegrated* pInt);
+    // EdgeInertialGS(std::shared_ptr<IMU::Preintegrated> pInt);
+    EdgeInertialGS(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -560,7 +560,7 @@ public:
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated* mpInt;
+    std::shared_ptr<IMU::Preintegrated> mpInt;
     const double dt;
     Eigen::Vector3d g, gI;
 

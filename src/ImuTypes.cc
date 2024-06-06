@@ -104,14 +104,25 @@ IntegratedRotation::IntegratedRotation(const Eigen::Vector3f &angVel,
   }
 }
 
+unsigned int Preintegrated::NumObjects = 0;
+
 Preintegrated::Preintegrated(const Bias &b_, const Calib &calib) {
   Nga = calib.Cov;
   NgaWalk = calib.CovWalk;
   Initialize(b_);
+  NumObjects++;
+}
+
+Preintegrated::Preintegrated(){
+  NumObjects++;
+}
+
+Preintegrated::~Preintegrated(){
+  NumObjects--;
 }
 
 // Copy constructor
-Preintegrated::Preintegrated(Preintegrated *pImuPre)
+Preintegrated::Preintegrated(std::shared_ptr<Preintegrated> pImuPre)
     : dT(pImuPre->dT),
       C(pImuPre->C),
       Info(pImuPre->Info),
@@ -130,9 +141,9 @@ Preintegrated::Preintegrated(Preintegrated *pImuPre)
       avgW(pImuPre->avgW),
       bu(pImuPre->bu),
       db(pImuPre->db),
-      mvMeasurements(pImuPre->mvMeasurements) {}
+      mvMeasurements(pImuPre->mvMeasurements) {NumObjects++;}
 
-void Preintegrated::CopyFrom(Preintegrated *pImuPre) {
+void Preintegrated::CopyFrom(std::shared_ptr<Preintegrated> pImuPre) {
   dT = pImuPre->dT;
   C = pImuPre->C;
   Info = pImuPre->Info;
@@ -276,8 +287,8 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
   dT += dt;
 }
 
-void Preintegrated::MergePrevious(Preintegrated *pPrev) {
-  if (pPrev == this) return;
+void Preintegrated::MergePrevious(std::shared_ptr<Preintegrated> pPrev) {
+  if (pPrev == shared_from_this()) return;
 
   std::unique_lock<std::mutex> lock1(mMutex);
   std::unique_lock<std::mutex> lock2(pPrev->mMutex);

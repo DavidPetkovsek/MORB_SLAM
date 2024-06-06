@@ -604,7 +604,7 @@ void Tracking::newParameterLoader(Settings& settings) {
   const float sf = sqrt(mImuFreq);
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf, Na * sf, Ngw / sf, Naw / sf);
 
-  mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+  mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
 void Tracking::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) {
@@ -788,7 +788,7 @@ void Tracking::PreintegrateIMU() {
     return;
   }
 
-  IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
+  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
 
   // SUS math is being used here
   // points are not equally distributed and are being interpolated. There may not be any benefit to anything this if statement is doing
@@ -1265,7 +1265,7 @@ void Tracking::Track() {
       pF->mpPrevFrame = new Frame(mLastFrame);
 
       // Load preintegration
-      pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
+      pF->mpImuPreintegratedFrame = std::make_shared<IMU::Preintegrated>(mCurrentFrame.mpImuPreintegratedFrame);
     }
     */
 
@@ -1457,9 +1457,9 @@ void Tracking::StereoInitialization() {
       return;
     }
 
-    if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
+    // if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
 
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   }
   //SI2
@@ -1567,8 +1567,8 @@ void Tracking::MonocularInitialization() {
       fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
 
       if (mSensor == CameraType::IMU_MONOCULAR) {
-        if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
-        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+        // if (mpImuPreintegratedFromLastKF) delete mpImuPreintegratedFromLastKF;
+        mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
         mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
       }
 
@@ -1624,7 +1624,7 @@ void Tracking::CreateInitialMapMonocular() {
   std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
   if (mSensor == CameraType::IMU_MONOCULAR)
-    pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(nullptr);
+    pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
 
   pKFini->ComputeBoW();
   pKFcur->ComputeBoW();
@@ -1705,7 +1705,7 @@ void Tracking::CreateInitialMapMonocular() {
     pKFini->mNextKF = pKFcur;
     pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
   }
 
   mpLocalMapper->InsertKeyFrame(pKFini);
@@ -1759,8 +1759,8 @@ void Tracking::CreateMapInAtlas() {
   notEnoughMatchPoints_trackOnlyMode = false;
 
   if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
-    delete mpImuPreintegratedFromLastKF;
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(), *mpImuCalib);
+    // delete mpImuPreintegratedFromLastKF;
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
   }
 
   if (mpLastKeyFrame) mpLastKeyFrame = nullptr;
@@ -2169,27 +2169,26 @@ void Tracking::CreateNewKeyFrame() {
 
   if (!mpLocalMapper->SetNotStop(true)) return;
 
-  std::shared_ptr<KeyFrame> pKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
   // std::cout << "Number of KeyFrames in memory: " << KeyFrame::nKFsInMemory << std::endl;
   // std::cout << "Number of MapPoints in memory: " << MapPoint::nMPsInMemory << std::endl;
 
   if (mpAtlas->isImuInitialized())  //  || mpLocalMapper->IsInitializing())
-    pKF->bImu = true;
+    mpReferenceKF->bImu = true;
 
-  pKF->SetNewBias(mCurrentFrame.mImuBias);
-  mpReferenceKF = pKF;
-  mCurrentFrame.mpReferenceKF = pKF;
+  mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias);
+  mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
   if (mpLastKeyFrame) {
-    pKF->mPrevKF = mpLastKeyFrame;
-    mpLastKeyFrame->mNextKF = pKF;
+    mpReferenceKF->mPrevKF = mpLastKeyFrame;
+    mpLastKeyFrame->mNextKF = mpReferenceKF;
   } else
     Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
 
   // Reset preintegration from last KF (Create new object)
   if (mSensor.isInertial())
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(), pKF->mImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(mpReferenceKF->GetImuBias(), mpReferenceKF->mImuCalib);
 
   if (mSensor.hasMulticam()){  // TODO check if incluide imu_stereo
     mCurrentFrame.UpdatePoseMatrices();
@@ -2235,18 +2234,18 @@ void Tracking::CreateNewKeyFrame() {
             x3D = mCurrentFrame.UnprojectStereoFishEye(i);
           }
 
-          std::shared_ptr<MapPoint> pNewMP = std::make_shared<MapPoint>(x3D, pKF, mpAtlas->GetCurrentMap());
-          pNewMP->AddObservation(pKF, i);
+          std::shared_ptr<MapPoint> pNewMP = std::make_shared<MapPoint>(x3D, mpReferenceKF, mpAtlas->GetCurrentMap());
+          pNewMP->AddObservation(mpReferenceKF, i);
 
           // Check if it is a stereo observation in order to not
           // duplicate mappoints
           if (mCurrentFrame.Nleft != -1 && mCurrentFrame.mvLeftToRightMatch[i] >= 0) {
             mCurrentFrame.mvpMapPoints[mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]] = pNewMP;
-            pNewMP->AddObservation(pKF, mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
-            pKF->AddMapPoint(pNewMP, mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
+            pNewMP->AddObservation(mpReferenceKF, mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
+            mpReferenceKF->AddMapPoint(pNewMP, mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
           }
 
-          pKF->AddMapPoint(pNewMP, i);
+          mpReferenceKF->AddMapPoint(pNewMP, i);
           pNewMP->ComputeDistinctiveDescriptors();
           pNewMP->UpdateNormalAndDepth();
           mpAtlas->AddMapPoint(pNewMP);
@@ -2264,12 +2263,12 @@ void Tracking::CreateNewKeyFrame() {
     }
   }
 
-  mpLocalMapper->InsertKeyFrame(pKF);
+  mpLocalMapper->InsertKeyFrame(mpReferenceKF);
 
   mpLocalMapper->SetNotStop(false);
 
   mnLastKeyFrameId = mCurrentFrame.mnId;
-  mpLastKeyFrame = pKF;
+  mpLastKeyFrame = mpReferenceKF;
 }
 
 void Tracking::SearchLocalPoints() {

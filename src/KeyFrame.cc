@@ -1002,7 +1002,9 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   if (mBackupNextKFId != -1) {
     mNextKF = mpKFid[mBackupNextKFId];
   }
-  mpImuPreintegrated = &mBackupImuPreintegrated;
+  // mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(mBackupImuPreintegrated);
+  std::shared_ptr<IMU::Preintegrated> temp_preint(&mBackupImuPreintegrated);
+  mpImuPreintegrated->CopyFrom(temp_preint);
 
   // Remove all backup container
   mvBackupMapPointsId.clear();
