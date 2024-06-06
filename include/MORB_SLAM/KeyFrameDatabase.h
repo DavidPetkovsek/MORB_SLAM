@@ -76,6 +76,8 @@ class KeyFrameDatabase {
   void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpKFid);
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
 
+  size_t GetMemoryUsage();
+
  protected:
   // Associated vocabulary
   std::shared_ptr<ORBVocabulary> mpVoc;

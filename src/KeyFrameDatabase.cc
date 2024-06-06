@@ -633,4 +633,25 @@ void KeyFrameDatabase::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) 
   mvInvertedFile.resize(mpVoc->size());
 }
 
+size_t KeyFrameDatabase::GetMemoryUsage() {
+    size_t totalMemory = 0;
+
+    // Memory for the vector itself
+    totalMemory += sizeof(mvInvertedFile);
+    totalMemory += mvInvertedFile.capacity() * sizeof(std::list<std::shared_ptr<KeyFrame>>);
+
+    for (const auto& lst : mvInvertedFile) {
+        // Memory for each list itself
+        totalMemory += sizeof(lst);
+        totalMemory += lst.size() * (sizeof(std::shared_ptr<KeyFrame>) + 2 * sizeof(void*)); // List node overhead
+
+        for (const auto& sharedPtr : lst) {
+            if (sharedPtr) {
+                totalMemory += sizeof(std::shared_ptr<KeyFrame>); // Size of the shared pointer itself
+            }
+        }
+    }
+    return totalMemory;
+}
+
 }  // namespace MORB_SLAM
