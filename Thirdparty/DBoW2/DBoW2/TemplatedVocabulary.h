@@ -1366,16 +1366,14 @@ bool TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
     createScoringObject();
 
     // nodes
-    int expected_nodes =
-    (int)((pow((double)m_k, (double)m_L + 1) - 1)/(m_k - 1));
+    int expected_nodes = (int)((pow((double)m_k, (double)m_L + 1) - 1)/(m_k - 1));
     m_nodes.reserve(expected_nodes);
 
     m_words.reserve(pow((double)m_k, (double)m_L + 1));
 
     m_nodes.resize(1);
     m_nodes[0].id = 0;
-    while(!f.eof())
-    {
+    while(!f.eof()) {
         std::string snode;
         std::getline(f,snode);
         std::stringstream ssnode;
@@ -1383,7 +1381,7 @@ bool TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
 
         int nid = m_nodes.size();
         m_nodes.resize(m_nodes.size()+1);
-	m_nodes[nid].id = nid;
+	      m_nodes[nid].id = nid;
 	
         int pid ;
         ssnode >> pid;
@@ -1394,29 +1392,27 @@ bool TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
         ssnode >> nIsLeaf;
 
         std::stringstream ssd;
-        for(int iD=0;iD<F::L;iD++)
-        {
+        for(int iD=0;iD<F::L;iD++) {
             std::string sElement;
             ssnode >> sElement;
             ssd << sElement << " ";
-	}
+	      }
         F::fromString(m_nodes[nid].descriptor, ssd.str());
 
         ssnode >> m_nodes[nid].weight;
 
-        if(nIsLeaf>0)
-        {
+        if(nIsLeaf>0) {
             int wid = m_words.size();
             m_words.resize(wid+1);
 
             m_nodes[nid].word_id = wid;
             m_words[wid] = &m_nodes[nid];
-        }
-        else
-        {
+        } else {
             m_nodes[nid].children.reserve(m_k);
         }
     }
+    m_nodes.shrink_to_fit();
+    m_words.shrink_to_fit();
 
     return true;
 
