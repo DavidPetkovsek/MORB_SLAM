@@ -1,0 +1,373 @@
+diff --git a/sophus/common.hpp b/sophus/common.hpp
+index eff22f63..e751e485 100644
+--- a/sophus/common.hpp
++++ b/sophus/common.hpp
+@@ -43,29 +43,6 @@
+ #define SOPHUS_WINDOW_NVCC_FALLBACK
+ #endif
+ 
+-// Make sure this compiles with older versions of Eigen which do not have
+-// EIGEN_DEFAULT_COPY_CONSTRUCTOR defined
+-#ifndef EIGEN_DEFAULT_COPY_CONSTRUCTOR
+-#if EIGEN_HAS_CXX11 && !defined(SOPHUS_WINDOW_NVCC_FALLBACK)
+-#define EIGEN_DEFAULT_COPY_CONSTRUCTOR(CLASS) EIGEN_DEVICE_FUNC CLASS(const CLASS&) = default;
+-#else
+-#define EIGEN_DEFAULT_COPY_CONSTRUCTOR(CLASS)
+-#endif
+-#ifndef EIGEN_INHERIT_ASSIGNMENT_OPERATORS
+-#error "eigen must have EIGEN_INHERIT_ASSIGNMENT_OPERATORS"
+-#endif
+-#define SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Derived) \
+-    EIGEN_INHERIT_ASSIGNMENT_OPERATORS(Derived) \
+-    EIGEN_DEFAULT_COPY_CONSTRUCTOR(Derived)
+-#endif
+-
+-#ifndef SOPHUS_INHERIT_ASSIGNMENT_OPERATORS
+-#ifndef EIGEN_INHERIT_ASSIGNMENT_OPERATORS
+-#error "eigen must have EIGEN_INHERIT_ASSIGNMENT_OPERATORS"
+-#endif
+-#define SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Derived) EIGEN_INHERIT_ASSIGNMENT_OPERATORS(Derived)
+-#endif
+-
+ #define SOPHUS_FUNC EIGEN_DEVICE_FUNC
+ 
+ #if defined(SOPHUS_DISABLE_ENSURES)
+diff --git a/sophus/rxso2.hpp b/sophus/rxso2.hpp
+index c873fdf3..d9c32966 100644
+--- a/sophus/rxso2.hpp
++++ b/sophus/rxso2.hpp
+@@ -190,10 +190,6 @@ class RxSO2Base {
+     return sR;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC RxSO2Base& operator=(RxSO2Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -366,7 +362,7 @@ class RxSO2Base {
+ 
+   SOPHUS_FUNC SO2<Scalar> so2() const { return SO2<Scalar>(complex()); }
+ 
+- protected:
++ private:
+   /// Mutator of complex is private to ensure class invariant.
+   ///
+   SOPHUS_FUNC ComplexType& complex_nonconst() {
+@@ -390,7 +386,9 @@ class RxSO2 : public RxSO2Base<RxSO2<Scalar_, Options>> {
+   /// ``Base`` is friend so complex_nonconst can be accessed from ``Base``.
+   friend class RxSO2Base<RxSO2<Scalar_, Options>>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes complex number to identity rotation and
+   /// scale to 1.
+@@ -600,9 +598,7 @@ class Map<Sophus::RxSO2<Scalar_>, Options>
+   /// ``Base`` is friend so complex_nonconst can be accessed from ``Base``.
+   friend class Sophus::RxSO2Base<Map<Sophus::RxSO2<Scalar_>, Options>>;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/rxso3.hpp b/sophus/rxso3.hpp
+index 92711309..2f8bb19a 100644
+--- a/sophus/rxso3.hpp
++++ b/sophus/rxso3.hpp
+@@ -90,7 +90,7 @@ class RxSO3Base {
+   using Adjoint = Matrix<Scalar, DoF, DoF>;
+ 
+   struct TangentAndTheta {
+-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++    
+ 
+     Tangent tangent;
+     Scalar theta;
+@@ -219,10 +219,6 @@ class RxSO3Base {
+     return sR;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC RxSO3Base& operator=(RxSO3Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -403,7 +399,7 @@ class RxSO3Base {
+ 
+   SOPHUS_FUNC SO3<Scalar> so3() const { return SO3<Scalar>(quaternion()); }
+ 
+- protected:
++ private:
+   /// Mutator of quaternion is private to ensure class invariant.
+   ///
+   SOPHUS_FUNC QuaternionType& quaternion_nonconst() {
+@@ -427,7 +423,9 @@ class RxSO3 : public RxSO3Base<RxSO3<Scalar_, Options>> {
+   /// ``Base`` is friend so quaternion_nonconst can be accessed from ``Base``.
+   friend class RxSO3Base<RxSO3<Scalar_, Options>>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes quaternion to identity rotation and scale
+   /// to 1.
+@@ -669,10 +667,7 @@ class Map<Sophus::RxSO3<Scalar_>, Options>
+   /// ``Base`` is friend so quaternion_nonconst can be accessed from ``Base``.
+   friend class Sophus::RxSO3Base<Map<Sophus::RxSO3<Scalar_>, Options>>;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/se2.hpp b/sophus/se2.hpp
+index f31ea619..0f1c5d3b 100644
+--- a/sophus/se2.hpp
++++ b/sophus/se2.hpp
+@@ -214,10 +214,6 @@ class SE2Base {
+     return matrix;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC SE2Base& operator=(SE2Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -377,7 +373,9 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
+   using SO2Member = SO2<Scalar, Options>;
+   using TranslationMember = Vector2<Scalar, Options>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes rigid body motion to the identity.
+   ///
+@@ -757,10 +755,7 @@ class Map<Sophus::SE2<Scalar_>, Options>
+   using Tangent = typename Base::Tangent;
+   using Adjoint = typename Base::Adjoint;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/se3.hpp b/sophus/se3.hpp
+index 56b9307d..dc7516c8 100644
+--- a/sophus/se3.hpp
++++ b/sophus/se3.hpp
+@@ -289,10 +289,6 @@ class SE3Base {
+     return matrix;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC SE3Base& operator=(SE3Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -443,7 +439,9 @@ class SE3 : public SE3Base<SE3<Scalar_, Options>> {
+   using SO3Member = SO3<Scalar, Options>;
+   using TranslationMember = Vector3<Scalar, Options>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes rigid body motion to the identity.
+   ///
+@@ -999,10 +997,7 @@ class Map<Sophus::SE3<Scalar_>, Options>
+   using Tangent = typename Base::Tangent;
+   using Adjoint = typename Base::Adjoint;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/sim2.hpp b/sophus/sim2.hpp
+index 24f6cf28..88712b8f 100644
+--- a/sophus/sim2.hpp
++++ b/sophus/sim2.hpp
+@@ -188,10 +188,6 @@ class Sim2Base {
+     return matrix;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC Sim2Base& operator=(Sim2Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -365,7 +361,9 @@ class Sim2 : public Sim2Base<Sim2<Scalar_, Options>> {
+   using RxSo2Member = RxSO2<Scalar, Options>;
+   using TranslationMember = Vector2<Scalar, Options>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes similarity transform to the identity.
+   ///
+@@ -646,10 +644,7 @@ class Map<Sophus::Sim2<Scalar_>, Options>
+   using Tangent = typename Base::Tangent;
+   using Adjoint = typename Base::Adjoint;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/sim3.hpp b/sophus/sim3.hpp
+index 515eb9d4..55c72155 100644
+--- a/sophus/sim3.hpp
++++ b/sophus/sim3.hpp
+@@ -190,10 +190,6 @@ class Sim3Base {
+     return matrix;
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC Sim3Base& operator=(Sim3Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -365,7 +361,9 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
+   using RxSo3Member = RxSO3<Scalar, Options>;
+   using TranslationMember = Vector3<Scalar, Options>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes similarity transform to the identity.
+   ///
+@@ -663,10 +661,7 @@ class Map<Sophus::Sim3<Scalar_>, Options>
+   using Tangent = typename Base::Tangent;
+   using Adjoint = typename Base::Adjoint;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/so2.hpp b/sophus/so2.hpp
+index 1d8c4b2a..8b7d0c6e 100644
+--- a/sophus/so2.hpp
++++ b/sophus/so2.hpp
+@@ -196,10 +196,6 @@ class SO2Base {
+     return R;
+   }
+ 
+-  /// Assignment operator
+-  ///
+-  SOPHUS_FUNC SO2Base& operator=(SO2Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -353,7 +349,9 @@ class SO2 : public SO2Base<SO2<Scalar_, Options>> {
+   /// ``Base`` is friend so unit_complex_nonconst can be accessed from ``Base``.
+   friend class SO2Base<SO2<Scalar, Options>>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes unit complex number to identity rotation.
+   ///
+@@ -560,10 +558,7 @@ class Map<Sophus::SO2<Scalar_>, Options>
+   /// ``Base`` is friend so unit_complex_nonconst can be accessed from ``Base``.
+   friend class Sophus::SO2Base<Map<Sophus::SO2<Scalar_>, Options>>;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
+diff --git a/sophus/so3.hpp b/sophus/so3.hpp
+index 572849a4..b806dd3f 100644
+--- a/sophus/so3.hpp
++++ b/sophus/so3.hpp
+@@ -96,7 +96,7 @@ class SO3Base {
+   using Adjoint = Matrix<Scalar, DoF, DoF>;
+ 
+   struct TangentAndTheta {
+-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++    
+ 
+     Tangent tangent;
+     Scalar theta;
+@@ -311,10 +311,6 @@ class SO3Base {
+     return unit_quaternion().toRotationMatrix();
+   }
+ 
+-  /// Assignment operator.
+-  ///
+-  SOPHUS_FUNC SO3Base& operator=(SO3Base const& other) = default;
+-
+   /// Assignment-like operator from OtherDerived.
+   ///
+   template <class OtherDerived>
+@@ -446,7 +442,9 @@ class SO3 : public SO3Base<SO3<Scalar_, Options>> {
+   /// ``Base``.
+   friend class SO3Base<SO3<Scalar, Options>>;
+ 
+-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
++  using Base::operator=;
++
++  
+ 
+   /// Default constructor initializes unit quaternion to identity rotation.
+   ///
+@@ -790,10 +788,7 @@ class Map<Sophus::SO3<Scalar_>, Options>
+   /// ``Base``.
+   friend class Sophus::SO3Base<Map<Sophus::SO3<Scalar_>, Options>>;
+ 
+-  // LCOV_EXCL_START
+-  SOPHUS_INHERIT_ASSIGNMENT_OPERATORS(Map);
+-  // LCOV_EXCL_STOP
+-
++  using Base::operator=;
+   using Base::operator*=;
+   using Base::operator*;
+ 
