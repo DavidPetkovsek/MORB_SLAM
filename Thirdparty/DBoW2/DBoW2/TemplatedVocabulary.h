@@ -27,11 +27,11 @@
 #include <opencv2/core/core.hpp>
 #include <limits>
 
-#include "FeatureVector.h"
-#include "BowVector.h"
-#include "ScoringObject.h"
+#include "DBoW2/FeatureVector.h"
+#include "DBoW2/BowVector.h"
+#include "DBoW2/ScoringObject.h"
 
-#include "../DUtils/Random.h"
+#include "DUtils/Random.h"
 
 
 namespace DBoW2 {
