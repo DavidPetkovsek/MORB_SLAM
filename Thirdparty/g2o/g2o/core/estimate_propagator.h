@@ -27,8 +27,8 @@
 #ifndef G2O_ESTIMATE_PROPAGATOR_H
 #define G2O_ESTIMATE_PROPAGATOR_H
 
-#include "optimizable_graph.h"
-#include "sparse_optimizer.h"
+#include "g2o/core/optimizable_graph.h"
+#include "g2o/core/sparse_optimizer.h"
 
 #include <map>
 #include <set>

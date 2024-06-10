@@ -24,7 +24,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "timeutil.h"
+#include "g2o/stuff/timeutil.h"
 #include <iostream>
 
 #ifdef _WINDOWS
@@ -32,7 +32,7 @@
 #include <windows.h>
 #endif
 
-#ifdef UNIX
+#ifdef __unix__
 #include <unistd.h>
 #endif
 

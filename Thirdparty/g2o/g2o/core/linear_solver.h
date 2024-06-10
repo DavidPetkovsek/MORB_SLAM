@@ -26,8 +26,8 @@
 
 #ifndef G2O_LINEAR_SOLVER_H
 #define G2O_LINEAR_SOLVER_H
-#include "sparse_block_matrix.h"
-#include "sparse_block_matrix_ccs.h"
+#include "g2o/core/sparse_block_matrix.h"
+#include "g2o/core/sparse_block_matrix_ccs.h"
 
 namespace g2o {
 

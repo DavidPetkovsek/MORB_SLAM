@@ -32,7 +32,7 @@
 
 #include <Eigen/Core>
 
-#include "optimizable_graph.h"
+#include "g2o/core/optimizable_graph.h"
 
 namespace g2o {
 

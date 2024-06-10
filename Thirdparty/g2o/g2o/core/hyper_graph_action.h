@@ -27,8 +27,8 @@
 #ifndef G2O_HYPER_GRAPH_ACTION_H
 #define G2O_HYPER_GRAPH_ACTION_H
 
-#include "hyper_graph.h"
-#include "../stuff/property.h"
+#include "g2o/core/hyper_graph.h"
+#include "g2o/stuff/property.h"
 
 #include <typeinfo>
 #include <iosfwd>

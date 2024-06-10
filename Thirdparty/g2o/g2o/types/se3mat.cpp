@@ -1,4 +1,4 @@
-#include "se3mat.h"
+#include "g2o/types/se3mat.h"
 
 namespace g2o {
 

@@ -34,13 +34,13 @@
 #include <cmath>
 #include <typeinfo>
 
-#include "openmp_mutex.h"
-#include "hyper_graph.h"
-#include "parameter.h"
-#include "parameter_container.h"
-#include "jacobian_workspace.h"
+#include "g2o/core/openmp_mutex.h"
+#include "g2o/core/hyper_graph.h"
+#include "g2o/core/parameter.h"
+#include "g2o/core/parameter_container.h"
+#include "g2o/core/jacobian_workspace.h"
 
-#include "../stuff/macros.h"
+#include "g2o/stuff/macros.h"
 
 namespace g2o {
 

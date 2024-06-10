@@ -30,11 +30,11 @@
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 
-#include "../core/linear_solver.h"
-#include "../core/batch_stats.h"
-#include "../stuff/timeutil.h"
+#include "g2o/core/linear_solver.h"
+#include "g2o/core/batch_stats.h"
+#include "g2o/stuff/timeutil.h"
 
-#include "../core/eigen_types.h"
+#include "g2o/core/eigen_types.h"
 
 #include <iostream>
 #include <vector>

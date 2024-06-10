@@ -23,6 +23,10 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+#include "g2o/core/base_binary_edge.h"
+
+namespace g2o {
 
 template <int D, typename E, typename VertexXiType, typename VertexXjType>
 OptimizableGraph::Vertex* BaseBinaryEdge<D, E, VertexXiType, VertexXjType>::createFrom(){
@@ -216,3 +220,5 @@ void BaseBinaryEdge<D, E, VertexXiType, VertexXjType>::mapHessianMemory(double* 
   }
   _hessianRowMajor = rowMajor;
 }
+
+} // end namespace g2o

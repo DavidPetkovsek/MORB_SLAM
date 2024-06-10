@@ -27,7 +27,7 @@
 #ifndef G2O_OPTIMIZATION_ALGORITHM_WITH_HESSIAN_H
 #define G2O_OPTIMIZATION_ALGORITHM_WITH_HESSIAN_H
 
-#include "optimization_algorithm.h"
+#include "g2o/core/optimization_algorithm.h"
 
 namespace g2o {
 

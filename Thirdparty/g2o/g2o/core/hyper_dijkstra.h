@@ -31,7 +31,7 @@
 #include <set>
 #include <limits>
 
-#include "hyper_graph.h"
+#include "g2o/core/hyper_graph.h"
 
 namespace g2o{
 

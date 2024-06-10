@@ -27,10 +27,6 @@ if(MSVC90)
   target_compile_definitions(${TARGET_NAME} PUBLIC -DEIGEN_DONT_ALIGN_STATICALLY=1)
   message(STATUS "Disabling memory alignment for MSVC8")
 endif(MSVC90)
-IF(UNIX)
-  target_compile_definitions(${TARGET_NAME} PUBLIC -DUNIX)
-  message(STATUS "Compiling on Unix")
-ENDIF(UNIX)
 
 
 

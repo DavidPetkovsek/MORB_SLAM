@@ -23,15 +23,17 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+#include "g2o/core/block_solver.h"
 
-#include "sparse_optimizer.h"
+#include "g2o/core/sparse_optimizer.h"
 #include <Eigen/LU>
 #include <fstream>
 #include <iomanip>
 
-#include "../stuff/timeutil.h"
-#include "../stuff/macros.h"
-#include "../stuff/misc.h"
+#include "g2o/stuff/timeutil.h"
+#include "g2o/stuff/macros.h"
+#include "g2o/stuff/misc.h"
 
 namespace g2o {
 

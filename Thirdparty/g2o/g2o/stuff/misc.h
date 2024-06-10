@@ -27,7 +27,7 @@
 #ifndef G2O_STUFF_MISC_H
 #define G2O_STUFF_MISC_H
 
-#include "macros.h"
+#include "g2o/stuff/macros.h"
 #include <cmath>
 
 #ifndef M_PI

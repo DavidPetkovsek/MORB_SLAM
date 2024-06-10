@@ -23,6 +23,10 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+#include "g2o/core/base_multi_edge.h"
+
+namespace g2o {
 
 namespace internal {
   inline int computeUpperTriangleIndex(int i, int j)
@@ -220,3 +224,5 @@ void BaseMultiEdge<D, E>::computeQuadraticForm(const InformationType& omega, con
 
   }
 }
+
+} // end namespace g2o

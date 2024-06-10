@@ -27,8 +27,8 @@
 #ifndef G2O_MARGINAL_COVARIANCE_CHOLESKY_H
 #define G2O_MARGINAL_COVARIANCE_CHOLESKY_H
 
-#include "optimizable_graph.h"
-#include "sparse_block_matrix.h"
+#include "g2o/core/optimizable_graph.h"
+#include "g2o/core/sparse_block_matrix.h"
 
 #include <cassert>
 #include <vector>

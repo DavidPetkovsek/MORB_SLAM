@@ -27,7 +27,7 @@
 #ifndef G2O_OPTIMIZATION_ALGORITHM_GAUSS_NEWTON_H
 #define G2O_OPTIMIZATION_ALGORITHM_GAUSS_NEWTON_H
 
-#include "optimization_algorithm_with_hessian.h"
+#include "g2o/core/optimization_algorithm_with_hessian.h"
 
 namespace g2o {
 

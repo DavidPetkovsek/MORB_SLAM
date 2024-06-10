@@ -23,6 +23,10 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+#include "g2o/core/base_unary_edge.h"
+
+namespace g2o {
 
 template <int D, typename E, typename VertexXiType>
 void BaseUnaryEdge<D, E, VertexXiType>::resize(size_t size)
@@ -127,3 +131,5 @@ void BaseUnaryEdge<D, E, VertexXiType>::initialEstimate(const OptimizableGraph::
 {
   std::cerr << __PRETTY_FUNCTION__ << " is not implemented, please give implementation in your derived class" << std::endl;
 }
+
+} // end namespace g2o

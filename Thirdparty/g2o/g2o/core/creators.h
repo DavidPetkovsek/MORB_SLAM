@@ -27,7 +27,7 @@
 #ifndef G2O_CREATORS_H
 #define G2O_CREATORS_H
 
-#include "hyper_graph.h"
+#include "g2o/core/hyper_graph.h"
 
 #include <string>
 #include <typeinfo>
