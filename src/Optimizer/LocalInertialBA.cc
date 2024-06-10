@@ -42,7 +42,7 @@
 #include "MORB_SLAM/Exceptions.hpp"
 
 namespace MORB_SLAM {
-void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit) {
+void Optimizer::LocalInertialBA(KeyFrame* pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge, bool bRecInit) {
   std::shared_ptr<Map> pCurrentMap = pKF->GetMap();
 
   // bLarge is true if pKF has 100 MapPoints

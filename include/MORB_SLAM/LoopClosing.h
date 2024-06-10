@@ -92,38 +92,6 @@ public:
 
     bool isFinished();
 
-#ifdef REGISTER_TIMES
-
-    std::vector<double> vdDataQuery_ms;
-    std::vector<double> vdEstSim3_ms;
-    std::vector<double> vdPRTotal_ms;
-
-    std::vector<double> vdMergeMaps_ms;
-    std::vector<double> vdWeldingBA_ms;
-    std::vector<double> vdMergeOptEss_ms;
-    std::vector<double> vdMergeTotal_ms;
-    std::vector<int> vnMergeKFs;
-    std::vector<int> vnMergeMPs;
-    int nMerges;
-
-    std::vector<double> vdLoopFusion_ms;
-    std::vector<double> vdLoopOptEss_ms;
-    std::vector<double> vdLoopTotal_ms;
-    std::vector<int> vnLoopKFs;
-    int nLoop;
-
-    std::vector<double> vdGBA_ms;
-    std::vector<double> vdUpdateMap_ms;
-    std::vector<double> vdFGBATotal_ms;
-    std::vector<int> vnGBAKFs;
-    std::vector<int> vnGBAMPs;
-    int nFGBA_exec;
-    int nFGBA_abort;
-
-#endif
-
-    
-
 protected:
 
     bool CheckNewKeyFrames();

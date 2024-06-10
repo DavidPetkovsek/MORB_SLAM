@@ -103,23 +103,6 @@ class LocalMapping {
   bool mbFarPoints;
   float mThFarPoints;
 
-#ifdef REGISTER_TIMES
-  std::vector<double> vdKFInsert_ms;
-  std::vector<double> vdMPCulling_ms;
-  std::vector<double> vdMPCreation_ms;
-  std::vector<double> vdLBA_ms;
-  std::vector<double> vdKFCulling_ms;
-  std::vector<double> vdLMTotal_ms;
-
-  std::vector<double> vdLBASync_ms;
-  std::vector<double> vdKFCullingSync_ms;
-  std::vector<int> vnLBA_edges;
-  std::vector<int> vnLBA_KFopt;
-  std::vector<int> vnLBA_KFfixed;
-  std::vector<int> vnLBA_MPs;
-  int nLBA_exec;
-  int nLBA_abort;
-#endif
  protected:
   bool CheckNewKeyFrames();
   void ProcessNewKeyFrame();

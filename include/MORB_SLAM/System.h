@@ -137,12 +137,6 @@ public:
 
     void ForceLost();
 
-#ifdef REGISTER_TIMES
-    void InsertRectTime(double& time);
-    void InsertResizeTime(double& time);
-    void InsertTrackTime(double& time);
-#endif
-
     friend Viewer;
     friend ExternalMapViewer;
 

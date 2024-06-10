@@ -62,9 +62,7 @@ class Optimizer {
                              Eigen::VectorXd *vSingVal = nullptr,
                              bool *bHess = nullptr);
 
-  void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
-                                    int &num_fixedKF, int &num_OptKF,
-                                    int &num_MPs, int &num_edges, bool bInertial);
+  void static LocalBundleAdjustment(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial);
 
   int static PoseOptimization(Frame *pFrame);
   int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit = false);
@@ -103,10 +101,7 @@ class Optimizer {
 
   // For inertial systems
 
-  void static LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
-                              int &num_fixedKF, int &num_OptKF, int &num_MPs,
-                              int &num_edges, bool bLarge = false,
-                              bool bRecInit = false);
+  void static LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge = false, bool bRecInit = false);
   void static MergeInertialBA(KeyFrame *pCurrKF, KeyFrame *pMergeKF,
                               bool *pbStopFlag, std::shared_ptr<Map> pMap,
                               LoopClosing::KeyFrameAndPose &corrPoses);

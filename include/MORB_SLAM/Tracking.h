@@ -164,22 +164,6 @@ public:
 
   void setForcedLost(bool forceLost);
 
-#ifdef REGISTER_TIMES
-  void LocalMapStats2File();
-  void TrackStats2File();
-  void PrintTimeStats();
-
-  std::vector<double> vdRectStereo_ms;
-  std::vector<double> vdResizeImage_ms;
-  std::vector<double> vdORBExtract_ms;
-  std::vector<double> vdStereoMatch_ms;
-  std::vector<double> vdIMUInteg_ms;
-  std::vector<double> vdPosePred_ms;
-  std::vector<double> vdLMTrack_ms;
-  std::vector<double> vdNewKF_ms;
-  std::vector<double> vdTrackTotal_ms;
-#endif
-
  protected:
   // Main tracking function. It is independent of the input sensor.
   void Track();
