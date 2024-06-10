@@ -5,6 +5,7 @@
 #define SOPHUS_FORMATSTRING_HPP
 
 #include <iostream>
+#include <sstream>
 
 namespace Sophus {
 namespace details {
