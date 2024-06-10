@@ -153,6 +153,9 @@ public:
 
     std::shared_ptr<Settings> getSettings() const;
 
+    bool getIsLoopClosed();
+    void setIsLoopClosed(bool isLoopClosed);
+
 private:
 
     void SaveAtlas(int type);

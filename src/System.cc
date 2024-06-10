@@ -571,4 +571,10 @@ std::shared_ptr<Settings> System::getSettings() const { return settings; }
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }
 
+bool System::getIsLoopClosed() {
+  return mpLoopCloser->loopClosed;
+}
+
+void System::setIsLoopClosed(bool isLoopClosed) { mpLoopCloser->loopClosed = isLoopClosed; }
+
 }  // namespace MORB_SLAM
