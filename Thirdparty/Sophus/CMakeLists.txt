@@ -26,10 +26,6 @@ set(SOPHUS_HEADER_FILES
   sophus/formatstring.hpp
 )
 
-set(SOPHUS_OTHER_FILES
-  sophus/test_macros.hpp
-  sophus/example_ensure_handler.cpp
-)
 
 add_library(${TARGET_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
@@ -51,31 +47,15 @@ if(MSVC)
   # Define common math constants if we compile with MSVC
   target_compile_definitions (${TARGET_NAME} INTERFACE _USE_MATH_DEFINES)
 endif (MSVC)
-# Declare all used C++11 features
-target_compile_features (${TARGET_NAME} INTERFACE
-  cxx_auto_type
-  cxx_decltype
-  cxx_nullptr
-  cxx_right_angle_brackets
-  cxx_variadic_macros
-  cxx_variadic_templates
-)
-# Add sources as custom target so that they are shown in IDE's
-add_custom_target(${TARGET_NAME}_other SOURCES ${SOPHUS_OTHER_FILES})
-
-# Create 'test' make target using ctest
-option(BUILD_TESTS "Build tests." OFF)
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(test)
-endif()
-
-# Create examples make targets using ctest
-option(BUILD_EXAMPLES "Build examples." OFF)
-if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
+# # Declare all used C++11 features
+# target_compile_features (${TARGET_NAME} INTERFACE
+#   cxx_auto_type
+#   cxx_decltype
+#   cxx_nullptr
+#   cxx_right_angle_brackets
+#   cxx_variadic_macros
+#   cxx_variadic_templates
+# )
 
 #################################################
 #                 boiler plate                  #
