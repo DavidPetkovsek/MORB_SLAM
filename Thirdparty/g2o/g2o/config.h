@@ -1,8 +1,8 @@
 #ifndef G2O_CONFIG_H
 #define G2O_CONFIG_H
 
-#cmakedefine G2O_OPENMP 1
-#cmakedefine G2O_SHARED_LIBS 1
+/* #undef G2O_OPENMP */
+#define G2O_SHARED_LIBS 1
 
 // give a warning if Eigen defaults to row-major matrices.
 // We internally assume column-major matrices throughout the code.
