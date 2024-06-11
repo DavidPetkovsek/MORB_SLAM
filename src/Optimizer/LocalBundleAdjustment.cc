@@ -57,6 +57,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag, std::shar
       lLocalKeyFrames.push_back(pKFi);
   }
 
+  int num_fixedKF = 0;
   // Local MapPoints seen in Local KeyFrames
   std::list<MapPoint*> lLocalMapPoints;
   std::set<MapPoint*> sNumObsMP;
@@ -65,6 +66,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag, std::shar
        lit != lend; lit++) {
     KeyFrame* pKFi = *lit;
     if (pKFi->mnId == pMap->GetInitKFid()) {
+      num_fixedKF = 1;
     }
     std::vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
     for (std::vector<MapPoint*>::iterator vit = vpMPs.begin(), vend = vpMPs.end();
@@ -99,6 +101,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, bool* pbStopFlag, std::shar
           lFixedCameras.push_back(pKFi);
       }
     }
+  }
+
+  num_fixedKF += lFixedCameras.size();
+
+  if (num_fixedKF == 0) {
+    Verbose::PrintMess("LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
+    return;
   }
 
   // Setup optimizer
