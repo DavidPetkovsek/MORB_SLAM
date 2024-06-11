@@ -24,10 +24,17 @@
 #include <Eigen/Dense>
 #include <opencv2/core/core.hpp>
 
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/types/types_seven_dof_expmap.h>
+#include <apps/morb_g2o/g2o/types/types_six_dof_expmap.h>
+#include <apps/morb_sophus/geometry.hpp>
+#include <apps/morb_sophus/sim3.hpp>
+#else
 #include "g2o/types/types_seven_dof_expmap.h"
 #include "g2o/types/types_six_dof_expmap.h"
 #include "sophus/geometry.hpp"
 #include "sophus/sim3.hpp"
+#endif
 
 namespace MORB_SLAM {
 

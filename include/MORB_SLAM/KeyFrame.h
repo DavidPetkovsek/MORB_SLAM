@@ -31,8 +31,13 @@
 #include <vector>
 #include <memory>
 
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DBoW2/BowVector.h>
+#include <apps/morb_dbow2/DBoW2/FeatureVector.h>
+#else
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
+#endif
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
 #include "MORB_SLAM/ImuTypes.h"

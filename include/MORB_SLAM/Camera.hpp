@@ -1,7 +1,7 @@
 #pragma once
 #include <thread>
 #include <string>
-#include "ImprovedTypes.hpp"
+#include "MORB_SLAM/ImprovedTypes.hpp"
 #include <mutex>
 #include <condition_variable>
 #include <future>

@@ -28,7 +28,11 @@
 #include <boost/serialization/vector.hpp>
 #include <mutex>
 #include <opencv2/core/core.hpp>
+#ifdef FactoryEngine
+#include <apps/morb_sophus/se3.hpp>
+#else
 #include <sophus/se3.hpp>
+#endif
 #include <utility>
 #include <vector>
 

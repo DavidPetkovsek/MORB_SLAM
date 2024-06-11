@@ -25,8 +25,7 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/Tracking.h"
-
-#include "KeyFrameDatabase.h"
+#include "MORB_SLAM/KeyFrameDatabase.h"
 
 #include <boost/algorithm/string.hpp>
 #include <thread>
@@ -36,7 +35,11 @@
 #include <string>
 #include <set>
 #include <vector>
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/types/types_seven_dof_expmap.h>
+#else
 #include "g2o/types/types_seven_dof_expmap.h"
+#endif
 
 namespace MORB_SLAM
 {

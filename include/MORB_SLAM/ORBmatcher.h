@@ -28,7 +28,11 @@
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/MapPoint.h"
+#ifdef FactoryEngine
+#include <apps/morb_sophus/sim3.hpp>
+#else
 #include "sophus/sim3.hpp"
+#endif
 
 namespace MORB_SLAM {
 

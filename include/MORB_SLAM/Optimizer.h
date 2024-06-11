@@ -29,6 +29,17 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/Map.h"
 #include "MORB_SLAM/MapPoint.h"
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/core/block_solver.h>
+#include <apps/morb_g2o/g2o/core/optimization_algorithm_gauss_newton.h>
+#include <apps/morb_g2o/g2o/core/optimization_algorithm_levenberg.h>
+#include <apps/morb_g2o/g2o/core/robust_kernel_impl.h>
+#include <apps/morb_g2o/g2o/core/sparse_block_matrix.h>
+#include <apps/morb_g2o/g2o/solvers/linear_solver_dense.h>
+#include <apps/morb_g2o/g2o/solvers/linear_solver_eigen.h>
+#include <apps/morb_g2o/g2o/types/types_seven_dof_expmap.h>
+#include <apps/morb_g2o/g2o/types/types_six_dof_expmap.h>
+#else
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
@@ -38,6 +49,7 @@
 #include "g2o/solvers/linear_solver_eigen.h"
 #include "g2o/types/types_seven_dof_expmap.h"
 #include "g2o/types/types_six_dof_expmap.h"
+#endif
 
 namespace MORB_SLAM {
 

@@ -20,12 +20,14 @@
  */
 
 #include "MORB_SLAM/KeyFrameDatabase.h"
-
+#include "MORB_SLAM/KeyFrame.h"
 #include <mutex>
 
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DBoW2/BowVector.h>
+#else
 #include "DBoW2/BowVector.h"
-#include "MORB_SLAM/KeyFrame.h"
-
+#endif
 
 
 namespace MORB_SLAM {

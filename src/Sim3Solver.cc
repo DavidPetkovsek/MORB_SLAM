@@ -24,10 +24,14 @@
 #include <cmath>
 #include <opencv2/core/core.hpp>
 #include <vector>
-
-#include "DUtils/Random.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/ORBmatcher.h"
+
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DUtils/Random.h>
+#else
+#include "DUtils/Random.h"
+#endif
 
 namespace MORB_SLAM {
 

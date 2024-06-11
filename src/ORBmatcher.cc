@@ -26,8 +26,11 @@
 
 #include <opencv2/core/core.hpp>
 
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DBoW2/FeatureVector.h>
+#else
 #include "DBoW2/FeatureVector.h"
-
+#endif
 
 
 namespace MORB_SLAM {
