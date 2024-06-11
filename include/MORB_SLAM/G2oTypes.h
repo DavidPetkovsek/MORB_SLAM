@@ -19,11 +19,11 @@
 #pragma once
 
 #ifdef FactoryEngine
-#include "apps/morb_g2o/g2o/core/base_vertex.h"
-#include "apps/morb_g2o/g2o/core/base_binary_edge.h"
-#include "apps/morb_g2o/g2o/types/types_sba.h"
-#include "apps/morb_g2o/g2o/core/base_multi_edge.h"
-#include "apps/morb_g2o/g2o/core/base_unary_edge.h"
+#include <apps/morb_g2o/g2o/core/base_vertex.h>
+#include <apps/morb_g2o/g2o/core/base_binary_edge.h>
+#include <apps/morb_g2o/g2o/types/types_sba.h>
+#include <apps/morb_g2o/g2o/core/base_multi_edge.h>
+#include <apps/morb_g2o/g2o/core/base_unary_edge.h>
 #else
 #include "g2o/core/base_vertex.h"
 #include "g2o/core/base_binary_edge.h"
