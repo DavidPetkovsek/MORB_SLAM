@@ -3,6 +3,14 @@
 > This fork of [ORB_SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3) converts it into a CMake package that can be imported into other projects. It is continued from the original now deprecated/abandoned fork [MORB_SLAM](https://github.com/Soldann/MORB_SLAM).
 
 
+### Build with Factory Engine
+```bash
+git clone https://github.com/DavidPetkovsek/MORB_SLAM
+cd MORB_SLAM
+fe install # get the dependencies
+fe build # build the app
+```
+
 ### Build with vcpkg to gather dependencies
 ```bash
 git clone https://github.com/DavidPetkovsek/MORB_SLAM
