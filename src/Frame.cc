@@ -53,14 +53,9 @@ Frame::Frame()
       mpPrevFrame(nullptr),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       mpLastKeyFrame(nullptr),
       isPartiallyConstructed(true) {
-#ifdef REGISTER_TIMES
-  mTimeStereoMatch = 0;
-  mTimeORB_Ext = 0;
-#endif
   mpMutexImu = std::make_shared<std::mutex>();
   mnId = nNextId++;
 }
@@ -116,7 +111,6 @@ Frame::Frame(const Frame &frame)
       mvInvScaleFactors(frame.mvInvScaleFactors),
       mvLevelSigma2(frame.mvLevelSigma2),
       mvInvLevelSigma2(frame.mvInvLevelSigma2),
-      mbIsSet(frame.mbIsSet),
       mbImuPreintegrated(frame.mbImuPreintegrated),
       mpMutexImu(frame.mpMutexImu),
       camera{frame.camera},
@@ -142,11 +136,6 @@ Frame::Frame(const Frame &frame)
   if (frame.HasVelocity()) {
     SetVelocity(frame.GetVelocity());
   }
-
-#ifdef REGISTER_TIMES
-  mTimeStereoMatch = frame.mTimeStereoMatch;
-  mTimeORB_Ext = frame.mTimeORB_Ext;
-#endif
 }
 
 // Copy for ExternalMapViewer.
@@ -180,7 +169,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
@@ -199,16 +187,9 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
   // ORB extraction
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
   auto leftFut = camera->queueLeft(std::bind(&Frame::ExtractORB, this, true, imLeft, 0, 0));
   auto rightFut = camera->queueRight(std::bind(&Frame::ExtractORB, this, false, imRight, 0, 0));
   if(!leftFut.get() || !rightFut.get()) return;
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
-  mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(time_EndExtORB - time_StartExtORB).count();
-#endif
 
   // This is done only for the first Frame (or after a change in the
   // calibration)
@@ -232,15 +213,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   if (mvKeys.empty()) return;
 
   UndistortKeyPoints();
-  
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartStereoMatches = std::chrono::steady_clock::now();
-#endif
   ComputeStereoMatches();
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndStereoMatches = std::chrono::steady_clock::now();
-  mTimeStereoMatch = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(time_EndStereoMatches - time_StartStereoMatches).count();
-#endif
 
   mvpMapPoints = std::vector<std::shared_ptr<MapPoint>>(N, nullptr);
   mvbOutlier = std::vector<bool>(N, false);
@@ -288,7 +261,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam), 
       mpCamera(pCamera),
@@ -307,14 +279,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
   mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
   // ORB extraction
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
   ExtractORB(true, imGray, 0, 0);
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
-  mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(time_EndExtORB - time_StartExtORB).count();
-#endif
 
   // This is done only for the first Frame (or after a change in the
   // calibration)
@@ -387,7 +352,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbIsSet(false),
       mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
@@ -406,14 +370,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
   mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
   // ORB extraction
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
   ExtractORB(true, imGray, 0, 1000);
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
-  mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(time_EndExtORB - time_StartExtORB).count();
-#endif
 
   // This is done only for the first Frame (or after a change in the
   // calibration)
@@ -515,10 +472,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
   // ORB extraction
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartExtORB =
-      std::chrono::steady_clock::now();
-#endif
   auto leftFut = camera->queueLeft(std::bind(&Frame::ExtractORB, this, true, imLeft,
                     std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[0],
                     std::static_pointer_cast<const KannalaBrandt8>(mpCamera)->getLappingArea()[1]));
@@ -526,15 +479,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
                     std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[0],
                     std::static_pointer_cast<const KannalaBrandt8>(mpCamera2)->getLappingArea()[1]));
   if(!leftFut.get() || !rightFut.get()) return;
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndExtORB =
-      std::chrono::steady_clock::now();
-
-  mTimeORB_Ext =
-      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-          time_EndExtORB - time_StartExtORB)
-          .count();
-#endif
 
   // This is done only for the first Frame (or after a change in the
   // calibration)
@@ -566,20 +510,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
   mRlr = mTlr.rotationMatrix();
   mtlr = mTlr.translation();
 
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_StartStereoMatches =
-      std::chrono::steady_clock::now();
-#endif
   ComputeStereoFishEyeMatches();
-#ifdef REGISTER_TIMES
-  std::chrono::steady_clock::time_point time_EndStereoMatches =
-      std::chrono::steady_clock::now();
-
-  mTimeStereoMatch =
-      std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-          time_EndStereoMatches - time_StartStereoMatches)
-          .count();
-#endif
 
   // Put all descriptors in the same matrix
   cv::vconcat(mDescriptors, mDescriptorsRight, mDescriptors);
@@ -631,13 +562,10 @@ void Frame::ExtractORB(bool isLeft, const cv::Mat &im, const int x0, const int x
     monoRight = (*mpORBextractorRight)(im, mvKeysRight, mDescriptorsRight, vLapping);
 }
 
-bool Frame::isSet() const { return mbIsSet; }
-
 void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
   mTcw = Tcw;
 
   UpdatePoseMatrices();
-  mbIsSet = true;
   mbHasPose = true;
 }
 
@@ -663,7 +591,6 @@ void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f
   mTcw = mImuCalib.mTcb * Tbw;
 
   UpdatePoseMatrices();
-  mbIsSet = true;
   mbHasPose = true;
 }
 

@@ -1,0 +1,22 @@
+compatibility: ^1.0.0-alpha.1
+cpp-deps: !!set
+  eigen3: null
+  opencv4: null
+cpp-deps/eigen3/package: Eigen3
+cpp-deps/eigen3/public_libs: !!set
+  Eigen3::Eigen: null
+cpp-deps/opencv4/package: OpenCV
+cpp-deps/opencv4/public_libs: !!set
+  ${OpenCV_LIBS}: null
+cpp-port-overrides: !!set
+  vcpkg_overlay_ports/libcap: null
+dependencies: {}
+description: A General Framework for Graph Optimization
+docker-base: alpine
+icon: null
+include: null
+name: null
+private_include: null
+slug: morb_g2o
+src: null
+version: 2020.12.23

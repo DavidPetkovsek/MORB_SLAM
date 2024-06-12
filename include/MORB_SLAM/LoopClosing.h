@@ -25,8 +25,7 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/Tracking.h"
-
-#include "KeyFrameDatabase.h"
+#include "MORB_SLAM/KeyFrameDatabase.h"
 
 #include <boost/algorithm/string.hpp>
 #include <thread>
@@ -36,7 +35,11 @@
 #include <string>
 #include <set>
 #include <vector>
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/types/types_seven_dof_expmap.h>
+#else
 #include "g2o/types/types_seven_dof_expmap.h"
+#endif
 
 namespace MORB_SLAM
 {
@@ -91,38 +94,6 @@ public:
     void RequestFinish();
 
     bool isFinished();
-
-#ifdef REGISTER_TIMES
-
-    std::vector<double> vdDataQuery_ms;
-    std::vector<double> vdEstSim3_ms;
-    std::vector<double> vdPRTotal_ms;
-
-    std::vector<double> vdMergeMaps_ms;
-    std::vector<double> vdWeldingBA_ms;
-    std::vector<double> vdMergeOptEss_ms;
-    std::vector<double> vdMergeTotal_ms;
-    std::vector<int> vnMergeKFs;
-    std::vector<int> vnMergeMPs;
-    int nMerges;
-
-    std::vector<double> vdLoopFusion_ms;
-    std::vector<double> vdLoopOptEss_ms;
-    std::vector<double> vdLoopTotal_ms;
-    std::vector<int> vnLoopKFs;
-    int nLoop;
-
-    std::vector<double> vdGBA_ms;
-    std::vector<double> vdUpdateMap_ms;
-    std::vector<double> vdFGBATotal_ms;
-    std::vector<int> vnGBAKFs;
-    std::vector<int> vnGBAMPs;
-    int nFGBA_exec;
-    int nFGBA_abort;
-
-#endif
-
-    
 
 protected:
 

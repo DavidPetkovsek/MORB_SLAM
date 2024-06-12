@@ -27,25 +27,6 @@ if(MSVC90)
   target_compile_definitions(${TARGET_NAME} PUBLIC -DEIGEN_DONT_ALIGN_STATICALLY=1)
   message(STATUS "Disabling memory alignment for MSVC8")
 endif(MSVC90)
-IF(UNIX)
-  target_compile_definitions(${TARGET_NAME} PUBLIC -DUNIX)
-  message(STATUS "Compiling on Unix")
-ENDIF(UNIX)
-
-# Eigen library parallelise itself, though, presumably due to performance issues
-# OPENMP is experimental. We experienced some slowdown with it
-option(G2O_USE_OPENMP "Build g2o with OpenMP support (EXPERIMENTAL)" OFF) # Disabled by default
-IF(G2O_USE_OPENMP)
-  find_package(OpenMP REQUIRED)
-  SET (G2O_OPENMP 1)
-  target_compile_definitions(${TARGET_NAME} PUBLIC -DG2O_OPENMP=1)
-  target_compile_definitions(${TARGET_NAME} PUBLIC -DEIGEN_DONT_PARALLELIZE)
-  target_link_libraries(${TARGET_NAME} PUBLIC OpenMP::OpenMP_CXX)
-  message(STATUS "Compiling with OpenMP support")
-ENDIF(G2O_USE_OPENMP)
-
-set(GENERATED_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/config.h)
-configure_file(config.h.in ${GENERATED_CONFIG})
 
 
 
@@ -78,7 +59,7 @@ install(TARGETS ${TARGET_NAME}
 )
 
 # install header file
-install(FILES ${GENERATED_CONFIG} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${TARGET_NAME}/config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME})
 install(FILES ${headers_core} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME}/core)
 install(FILES ${headers_solvers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME}/solvers)
 install(FILES ${headers_stuff} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Thirdparty/${TARGET_NAME}/stuff)

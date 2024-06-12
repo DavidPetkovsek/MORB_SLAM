@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <vector>
 
-#include "macros.h"
+#include "g2o/stuff/macros.h"
 
 namespace g2o {
 

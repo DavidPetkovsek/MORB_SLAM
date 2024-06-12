@@ -1,0 +1,4794 @@
+diff --git a/include/DUtils/BinaryFile.h b/include/DUtils/BinaryFile.h
+deleted file mode 100644
+index 3766180..0000000
+--- a/include/DUtils/BinaryFile.h
++++ /dev/null
+@@ -1,255 +0,0 @@
+-/*	
+- * File: BinaryFile.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: April 2010
+- * Description: reads and writes binary files in network byte order.
+- *    Manages endianness and data size automatically.
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_BINARY_FILE__
+-#define __D_BINARY_FILE__
+-
+-#include "DException.h"
+-#include "FileModes.h"
+-#include <fstream>
+-using namespace std;
+-
+-namespace DUtils {
+-
+-/// Manages files in binary format
+-class BinaryFile
+-{
+-public:
+-	
+-	/**
+-	 * Creates a binary file with no file
+-	 */
+-	BinaryFile(void);
+-
+-	/**
+-	 * Closes any opened file
+-	 */
+-	~BinaryFile(void);
+-
+-	/**
+-	 * Creates a binary file by opening a file
+-	 * @param filename
+-	 * @param mode: READ or WRITE
+-	 * @throws DException if cannot open the file
+-	 */
+-	BinaryFile(const char *filename, const FILE_MODES mode);
+-	
+-	/**
+-	 * Creates a binary file by opening a file
+-	 * @param filename
+-	 * @param mode: READ or WRITE
+-	 * @throws DException if cannot open the file
+-	 */
+-	BinaryFile(const string &filename, const FILE_MODES mode);
+-
+-	/**
+-	 * Opens a file for reading. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	void OpenForReading(const char *filename);
+-	
+-	/**
+-	 * Opens a file for reading. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	inline void OpenForReading(const string &filename)
+-	{
+-		OpenForReading(filename.c_str());
+-	}
+-
+-	/**
+-	 * Opens a file for writing. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	void OpenForWriting(const char *filename);
+-	
+-	/**
+-	 * Opens a file for writing. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	inline void OpenForWriting(const string &filename)
+-	{
+-		OpenForWriting(filename.c_str());
+-	}
+-
+-	/**
+-	 * Opens a file for writing at the end. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	void OpenForAppending(const char *filename);
+-	
+-	/**
+-	 * Opens a file for writing at the end. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	inline void OpenForAppending(const string &filename)
+-	{
+-		OpenForAppending(filename.c_str());
+-	}
+-
+-	/**
+-	 * Says whether the end of the file has been reached. Requires to
+-	 * read the end of the file to return true
+-	 * @return true iff the end of the file has been already read
+-	 * @throws DException if wrong access mode
+-	 */
+-	inline bool Eof();
+-
+-	/**
+-	 * Closes any opened file. It is not necessary to call this function
+-	 * explicitly
+-	 */
+-	void Close();
+-
+-	/**
+-	 * Reads the next byte and throws it away
+-	 * @throws DException if wrong access mode
+-	 */
+-	inline void DiscardNextByte(){
+-		DiscardBytes(1);
+-	}
+-
+-	/**
+-	 * Reads n bytes and discards them
+-	 * @param count number of bytes to discard
+-	 * @throws DException if wrong access mode
+-	 */
+-	void DiscardBytes(int count);
+-
+-	/**
+-	 * Returns the number of bytes read in reading mode
+-	 * @return number of bytes read
+-	 */
+-	unsigned int BytesRead();
+-
+-	/**
+-	 * Writes a byte char
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator<< (char v);
+-
+-	/**
+-	 * Writes a 4 byte integer value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator<< (int v);
+-
+-	/**
+-	 * Writes a 4 byte float value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator<< (float v);
+-
+-	/**
+-	 * Writes a 8 byte float value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator<< (double v);
+-
+-	/**
+-	 * Reads a byte char
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator>>(char &v);
+-
+-	/**
+-	 * Reads a 4 byte integer value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator>>(int &v);
+-
+-	/**
+-	 * Reads a 4 byte float value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator>>(float &v);
+-
+-	/**
+-	 * Reads a 8 byte float value
+-	 * @throws DException if wrong access mode
+-	 */
+-	BinaryFile& operator>>(double &v);
+-
+-protected:
+-
+-	/**
+-	 * Initializes the object by opening a file
+-	 * @param filename file to open
+-	 * @param mode opening mode
+-	 * @throws DException if cannot open the file
+-	 */
+-	void Init(const char *filename, const FILE_MODES mode);
+-
+-	/** 
+-	 * Checks the endianness of this machine
+-	 */
+-	void setEndianness();
+-
+-	/**
+-	 * Converts a float into 4 bytes in network order
+-	 * @param v float value
+-	 * @param buf (out) byte buffer output. Only buf[0..3] is used
+-	 */
+-	void hton_f(float v, char buf[8]) const;
+-
+-	/**
+-	 * Converts a double into 8 bytes in network order
+-	 * @param d double value
+-	 * @param buf (out) byte buffer output
+-	 */
+-	void hton_d(double d, char buf[8]) const;
+-
+-	/**
+-	 * Converts an array of bytes in network order into a 4 byte float
+-	 * @param buf byte array. only buf[0..3] is used
+-	 * @return float value
+-	 */
+-	float ntoh_f(char buf[8]) const;
+-
+-	/**
+-	 * Converts an array of bytes in network order into a 8 byte double
+-	 * @param buf byte array
+-	 * @return double value
+-	 */
+-	double ntoh_d(char buf[8]) const;
+-
+-	/** 
+-	 * Returns if this machine uses little endian
+-	 * @return true iff little endian
+-	 */
+-	inline bool isLittleEndian() const
+-	{
+-		return (m_is_little_endian == 1 ? true : false);
+-	}
+-
+-protected:
+-  /// Opening mode
+-	FILE_MODES m_mode;		// opening mode
+-	/// File stream
+-	fstream m_f;			// fstream
+-	/// Auxiliar buffer
+-	char m_aux[8];	// auxiliar buffer
+-
+-	/// Current machine endianness
+-	int m_is_little_endian; // 1: little endian, 0: big endian, -1: not set
+-
+-};
+-
+-}
+-
+-#endif
+diff --git a/include/DUtils/ConfigFile.h b/include/DUtils/ConfigFile.h
+deleted file mode 100644
+index 548e0d3..0000000
+--- a/include/DUtils/ConfigFile.h
++++ /dev/null
+@@ -1,281 +0,0 @@
+-/*	
+- * File: ConfigFile.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: February 15, 2011
+- * Description: simple text file for human-machine storage
+- *
+- * Short description of configuration text files:
+- * - The text files managed are simple files with one entry per line.
+- * - Entries have the form "item = value".
+- * - Blank spaces and tabs are ignored in the beginning and the end of the
+- *   value part.
+- * - The value can be given between quotation marks ("value") to void ignoring
+- *   the blank spaces.
+- * - The equal symbol (=) can safely apper in the value part. The first equal
+- *   symbol is used to tell item and value apart only.
+- * - The number symbol (#) can be used for comments. It can be escaped with
+- *   the sequence \# 
+- * - The name of the items can be used as variables in the value part with
+- *   the notation $(item). 
+- * - Anonymous values can appear. It is, entries with no "item = ". These are
+- *   automatically given the entry with name "?X", where X is an integer which
+- *   starts at 0. These values can be retrieved as strings with getAnonymous.
+- * 
+- * Example:
+- *   name = Albert Einstein
+- *   age = 76
+- *   location = "Ulm, Germany" # quotation marks are not necessary here
+- *   eq = E = mc^2
+- *   description = $(name) was $(age) and was born in $(location). $(eq)!
+- * 
+- * 
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_CONFIG_FILE__
+-#define __D_CONFIG_FILE__
+-
+-#include "DException.h"
+-#include "FileModes.h"
+-#include "LineFile.h"
+-#include "StringFunctions.h"
+-#include <map>
+-#include <set>
+-#include <fstream>
+-
+-namespace DUtils {
+-
+-/// Manages simple text-based configuration files
+-class ConfigFile
+-{
+-public:
+-  ConfigFile();
+-  ~ConfigFile();
+-  
+-  /** 
+-   * Creates a config file by opening a file
+-   * @param filename
+-   * @param mode: READ or WRITE
+-   * @throws DException if cannot open the file
+-   */
+-  ConfigFile(const char *filename, const FILE_MODES mode);
+-  
+-  /** 
+-   * Creates a config file by opening a file
+-   * @param filename
+-   * @param mode: READ or WRITE
+-   * @throws DException if cannot open the file
+-   */
+-  ConfigFile(const std::string &filename, const FILE_MODES mode);
+-  
+-  /**
+-   * Opens a file for reading. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot create the file
+-   */
+-  void OpenForReading(const char *filename);
+-  
+-  /**
+-   * Opens a file for reading. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot create the file
+-   */
+-  inline void OpenForReading(const std::string &filename)
+-  {
+-    OpenForReading(filename.c_str());
+-  }
+-
+-  /** 
+-   * Opens a file for writing. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot create the file
+-   */
+-  void OpenForWriting(const char *filename);
+-  
+-  /** 
+-   * Opens a file for writing. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot create the file
+-   */
+-  inline void OpenForWriting(const std::string &filename)
+-  {
+-    OpenForWriting(filename.c_str());
+-  }
+-
+-  /**
+-   * Opens a file for writing at the end. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot open the file
+-   */
+-  void OpenForAppending(const char *filename);
+-  
+-  /**
+-   * Opens a file for writing at the end. It closes any other opened file
+-   * @param filename
+-   * @throws DException if cannot open the file
+-   */
+-  inline void OpenForAppending(const std::string &filename)
+-  {
+-    OpenForAppending(filename.c_str());
+-  }
+-
+-  /**
+-   * Closes any opened file. It is not necessary to call this function
+-	 * explicitly
+-	 */
+-	void Close();
+-	
+-	/**
+-	 * Gets data from the file. Returns 0 or similar if it does not exist.
+-	 * @param name
+-	 */
+-	template<class T>
+-	T get(const std::string &name) const;
+-	
+-	/**
+-	 * Gets data from the file. Returns 0 or similar if it does not exist
+-	 * @param name
+-	 */
+-	template<class T>
+-	T get(const char *name) const;
+-	
+-	/**
+-	 * Returns the number of anonymous entries when reading a file
+-	 * @return n
+-	 */
+-	inline int sizeAnonymous() const;
+-	
+-	/** 
+-	 * Gets anonymous data from the file. Returns 0 or similar if it does not
+-	 * exist
+-	 * @param n index of anonymous entry
+-	 */
+-	template<class T>
+-	T getAnonymous(int n) const;
+-	
+-	/**
+-	 * Writes or overwrites a piece of data with the given name
+-	 * @param name
+-	 * @param data
+-	 */
+-	template<class T>
+-	void put(const std::string &name, const T &data);
+-	
+-	/**
+-	 * Writes or overwrites a piece of data with the given name
+-	 * @param name
+-	 * @param data
+-	 */
+-	template<class T>
+-	void put(const char *name, const T &data);
+-
+-protected:
+-
+-  /**
+-   * Initiates the file
+-   */
+-  void Init(const char *filename, const FILE_MODES mode);
+-  
+-  /**
+-   * Reads the content of the m_file already opened
+-   * and stores it in m_data.
+-   * This operation also resolves the possible name deferencing when using
+-   * variables
+-   */
+-  void readContent();
+-  
+-  /**
+-   * Writes the items into the file
+-   */
+-  void writeContent();
+-  
+-  /**
+-   * Resolves the value of the variables used as right-hand expressions
+-   */
+-  void resolveVariables();
+-  
+-  /** 
+-   * Resolves the value of a single variable
+-   * @param value the string value to modify
+-   * @param used the names of the tokens that cannot be replaced because of
+-   *   circular dependencies
+-   */
+-  void resolveVar(std::string &value, const std::set<string> &used);
+-	
+-protected:
+-
+-  /// Data read from the file
+-  std::map<std::string, std::string> m_data; // <key, value>
+-  /// File
+-  LineFile m_file;
+-  /// Number of unknowns entries read
+-  int m_unknowns;
+-
+-};
+-
+-// ----------------------------------------------------------------------------
+-
+-template<class T>
+-T ConfigFile::getAnonymous(int n) const
+-{
+-  const char U = '?';
+-  stringstream ss;
+-  ss << U << n;
+-  return get<T>(ss.str().c_str());
+-}
+-
+-template<class T>
+-T ConfigFile::get(const std::string &name) const
+-{
+-  return get<T>(name.c_str());
+-}
+-
+-template<class T>
+-T ConfigFile::get(const char *name) const
+-{
+-  std::map<std::string, std::string>::const_iterator it =
+-    m_data.find(name);
+-  
+-  if(it != m_data.end())
+-    return StringFunctions::fromString<T>(it->second);
+-  else
+-    return T();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-template<class T>
+-void ConfigFile::put(const std::string &name, const T &data)
+-{
+-  put<T>(name.c_str(), data);
+-}
+-
+-template<class T>
+-void ConfigFile::put(const char *name, const T &data)
+-{
+-  pair<std::map<std::string, std::string>::iterator, bool> status;
+-  
+-  std::string value = StringFunctions::toString<T>(data);
+-  
+-  status = m_data.insert(make_pair(name, value));
+-  
+-  if(!status.second)
+-  {
+-    status.first->second = value;
+-  }
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-int ConfigFile::sizeAnonymous() const
+-{
+-  return m_unknowns;
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-}
+-
+-#endif
+diff --git a/include/DUtils/DException.h b/include/DUtils/DException.h
+deleted file mode 100644
+index c8e7450..0000000
+--- a/include/DUtils/DException.h
++++ /dev/null
+@@ -1,65 +0,0 @@
+-/*	
+- * File: DException.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: October 6, 2009
+- * Description: general exception of the library
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-
+-#ifndef __D_EXCEPTION__
+-#define __D_EXCEPTION__
+-
+-#include <stdexcept>
+-#include <string>
+-using namespace std;
+-
+-namespace DUtils {
+-
+-/// General exception
+-class DException :
+-	public exception
+-{
+-public:
+-	/**
+-	 * Creates an exception with a general error message
+-	 */
+-	DException(void) throw(): m_message("DUtils exception"){}
+-
+-	/**
+-	 * Creates an exception with a custom error message
+-	 * @param msg: message
+-	 */
+-	DException(const char *msg) throw(): m_message(msg){}
+-	
+-	/**
+-	 * Creates an exception with a custom error message
+-	 * @param msg: message
+-	 */
+-	DException(const string &msg) throw(): m_message(msg){}
+-
+-  /**
+-	 * Destructor
+-	 */
+-	virtual ~DException(void) throw(){}
+-
+-	/**
+-	 * Returns the exception message
+-	 */
+-	virtual const char* what() const throw()
+-	{
+-		return m_message.c_str();
+-	}
+-
+-protected:
+-  /// Error message
+-	string m_message;
+-};
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/DUtils.h b/include/DUtils/DUtils.h
+deleted file mode 100644
+index ab75640..0000000
+--- a/include/DUtils/DUtils.h
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/*
+- * File: DUtils.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: October 6, 2009
+- * Description: include file for including all the library functionalities
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-/*! \mainpage DUtils Library
+- *
+- * DUtils library for C++:
+- * Collection of classes with general utilities for C++ applications.
+- *
+- * Written by Dorian Galvez-Lopez,
+- * University of Zaragoza
+- * 
+- * Check my website to obtain updates: http://webdiis.unizar.es/~dorian
+- *
+- * \section license License
+- * This program is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU Lesser General Public License (LGPL) as 
+- * published by the Free Software Foundation, either version 3 of the License, 
+- * or any later version.
+- *
+- */
+-
+-
+-#pragma once
+-
+-#ifndef __D_UTILS__
+-#define __D_UTILS__
+-
+-/// Several utilities for C++ programs
+-namespace DUtils
+-{
+-}
+-
+-// Exception
+-#include "DException.h"
+-
+-// Files
+-#include "FileModes.h"
+-#include "LineFile.h"
+-#include "BinaryFile.h"
+-#include "FileFunctions.h"
+-#include "ConfigFile.h"
+-
+-// Timestamp
+-#include "Timestamp.h"
+-#include "TimeManager.h"
+-#include "Profiler.h"
+-
+-// Random numbers
+-#include "Random.h"
+-
+-// Math
+-#include "Math.hpp"
+-
+-// STL
+-#include "STL.h"
+-
+-// Strings
+-#include "StringFunctions.h"
+-
+-// LUTs
+-#include "LUT.h"
+-
+-// Debug
+-#include "DebugFunctions.h"
+-
+-#endif
+diff --git a/include/DUtils/DebugFunctions.h b/include/DUtils/DebugFunctions.h
+deleted file mode 100644
+index facaad8..0000000
+--- a/include/DUtils/DebugFunctions.h
++++ /dev/null
+@@ -1,94 +0,0 @@
+-/*
+- * File: DebugFunctions.h
+- * Author: Dorian Galvez-Lopez
+- * Date: April 2012
+- * Description: debug functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_DEBUG__
+-#define __D_DEBUG__
+-
+-#include <string>
+-#include "Profiler.h"
+-
+-namespace DUtils
+-{
+-
+-/**
+- * Measures the approx. memory consumption of the given command and prints it 
+- * with a title
+- * @param cmd command
+- * @param s title
+- */
+-#define MEMORY_S(cmd, s) \
+-  { unsigned long s_begin, s_end; \
+-    s_begin = DUtils::DebugFunctions::getMemoryUsage(); \
+-    cmd; \
+-    s_end = DUtils::DebugFunctions::getMemoryUsage(); \
+-    std::cout << s << " - memory used: " \
+-      << DUtils::DebugFunctions::formatBytes(s_end - s_begin) \
+-      << std::endl; \
+-  }
+-
+-/**
+- * Measures the approx. memory consumption of the given command and prints it
+- * @param cmd command
+- */
+-#define MEMORY(cmd) MEMORY_S(cmd, "")
+-
+-/**
+- * Measures the time and memory consumption of the given command and prints it
+- * with a title
+- * @param cmd command
+- * @param s title
+- */
+-#define WATCH_S(cmd, s) \
+-  { DUtils::Timestamp t_begin, t_end; \
+-    unsigned long s_begin, s_end; \
+-    s_begin = DUtils::DebugFunctions::getMemoryUsage(); \
+-    t_begin.setToCurrentTime(); \
+-    cmd; \
+-    t_end.setToCurrentTime(); \
+-    s_end = DUtils::DebugFunctions::getMemoryUsage(); \
+-    std::cout << s << " - elapsed time: " \
+-      << DUtils::Timestamp::Format(t_end - t_begin) \
+-      << ", memory used: " \
+-      << DUtils::DebugFunctions::formatBytes(s_end - s_begin) \
+-      << std::endl; \
+-  }
+-
+-/**
+- * Measures the time and memory consumption of the given command and prints it
+- * @param cmd command
+- */
+-#define WATCH(cmd) WATCH_S(cmd, "")
+-
+-class DebugFunctions
+-{
+-public:
+-
+-  /**
+-   * Returns the memory usage of the current process in bytes
+-   * @note Only *nix version provided. In windows, it returns 0
+-   */
+-  static unsigned long getMemoryUsage();
+-
+-  /**
+-   * Returns a string representing a human-readable version of the given
+-   * bytes
+-   * @param bytes
+-   * @param factor conversion factor between kilo, mega, etc 
+-   *   (usually 1024 or 1000)
+-   * @return human-readable string
+-   */
+-  static std::string formatBytes(unsigned long bytes, 
+-    unsigned long factor = 1024);
+-
+-};
+-
+-} // namespace DUtils
+-
+-#endif
+-
+diff --git a/include/DUtils/FileFunctions.h b/include/DUtils/FileFunctions.h
+deleted file mode 100644
+index b45abc0..0000000
+--- a/include/DUtils/FileFunctions.h
++++ /dev/null
+@@ -1,87 +0,0 @@
+-/*
+- * File: FileFunctions.h
+- * Author: Dorian Galvez-Lopez
+- * Date: June 2009
+- * Description: file system functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_FILE_FUNCTIONS__
+-#define __D_FILE_FUNCTIONS__
+-
+-#pragma once
+-
+-#include <vector>
+-#include <string>
+-
+-namespace DUtils {
+-
+-/// General functions to manipulate directories and files
+-class FileFunctions
+-{
+-public:
+-	
+-	/**
+-	 * Creates the directory 'path'. The parent directory must exist
+-	 * @param path
+-	 */
+-	static void MkDir(const char *path);
+-
+-	/**
+-	 * Removes a directory and its content
+-	 * @param path
+-	 */
+-	static void RmDir(const char *path);
+-
+-	/**
+-	 * Removes a file 
+-	 * @param path
+-	 */
+-	static void RmFile(const char *path);
+-
+-	/**
+-	 * Checks the existence of a folder
+-	 * @return true iff the directory exists
+-	 */
+-	static bool DirExists(const char *path);
+-
+-	/**
+-	 * Checks the existence of a file
+-	 * @returns true iff the file exists
+-	 */
+-	static bool FileExists(const char *filename);
+-
+-	/**
+-	 * Returns the relative path of the files located in the path given and 
+-	 * whose right path of the name matches 'right'
+-	 * @param path: path to directory
+-	 * @param right: string like "_L.png"
+-	 * @param sorted: if true, the files are sorted alphabetically
+-	 * @return path list
+-	 */
+-	static std::vector<std::string> Dir(const char *path, const char *right,
+-	  bool sorted = false);
+-
+-	/**
+-	 * Extracts the filename of the given path
+-	 * @param filepath path
+-	 * @return file name
+-	 */
+-	static std::string FileName(const std::string filepath);
+-
+-	/**
+-	 * Extracts the path, file name and extension of the given path
+-	 * @param filepath
+-	 * @param path (out): path to file
+-	 * @param filename (out): filename without extension or dot
+-	 * @param ext (out): extension without dot
+-	 */
+-	static void FileParts(const std::string filepath, std::string &path, 
+-		std::string &filename, std::string &ext);
+-	
+-};
+-
+-}
+-
+-#endif
+diff --git a/include/DUtils/FileModes.h b/include/DUtils/FileModes.h
+deleted file mode 100644
+index 448f84e..0000000
+--- a/include/DUtils/FileModes.h
++++ /dev/null
+@@ -1,28 +0,0 @@
+-/*	
+- * File: FileModes.h
+- * Project: DUtils library
+- * Author: Dorian Galvez
+- * Date: April 2010
+- * Description: types used with file managers
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_FILE_MODES__
+-#define __D_FILE_MODES__
+-
+-namespace DUtils {
+-
+-/// Opening file modes
+-enum FILE_MODES {
+-	READ = 1,
+-	WRITE = 2,
+-	APPEND = 4,
+-	WRITE_APPEND = 6 // == WRITE & APPEND
+-};
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/LUT.h b/include/DUtils/LUT.h
+deleted file mode 100644
+index 520b87f..0000000
+--- a/include/DUtils/LUT.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * File: LUT.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: June 2012
+- * Description: some LUTs for binary tasks
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_LUT__
+-#define __D_LUT__
+-
+-namespace DUtils
+-{
+-
+-class LUT
+-{
+-public:
+-
+-  /// Number of bits set in 1 byte
+-  static int ones8bits[256]; 
+-
+-};
+-
+-} // namespace DUtils
+-
+-#endif
+-
+diff --git a/include/DUtils/LineFile.h b/include/DUtils/LineFile.h
+deleted file mode 100644
+index ac49126..0000000
+--- a/include/DUtils/LineFile.h
++++ /dev/null
+@@ -1,197 +0,0 @@
+-/*	
+- * File: LineFile.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: October 6, 2009
+- * Description: reads and writes text line files
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_LINE_FILE__
+-#define __D_LINE_FILE__
+-
+-#include "DException.h"
+-#include "FileModes.h"
+-#include <vector>
+-#include <fstream>
+-using namespace std;
+-
+-namespace DUtils {
+-
+-/// Reads and writes a file by string lines
+-class LineFile
+-{
+-public:
+-	/**
+-	 * Creates a linefile with no file
+-	 */
+-	LineFile(void);
+-
+-	/**
+-	 * Closes any opened file
+-	 */
+-	~LineFile(void);
+-
+-	/**
+-	 * Creates a linefile by opening a file
+-	 * @param filename
+-	 * @param mode: READ or WRITE
+-	 * @throws DException if cannot open the file
+-	 */
+-	LineFile(const char *filename, const FILE_MODES mode);
+-	
+-	/** 
+-	 * Creates a linefile by opening a file
+-	 * @param filename
+-	 * @param mode: READ or WRITE
+-	 * @throws DException if cannot open the file
+-	 */
+-	LineFile(const string &filename, const FILE_MODES mode);
+-
+-	/**
+-	 * Opens a file for reading. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	void OpenForReading(const char *filename);
+-	
+-	/**
+-	 * Opens a file for reading. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	inline void OpenForReading(const string &filename)
+-	{
+-		OpenForReading(filename.c_str());
+-	}
+-
+-	/**
+-	 * Opens a file for writing. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	void OpenForWriting(const char *filename);
+-	
+-	/**
+-	 * Opens a file for writing. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot create the file
+-	 */
+-	inline void OpenForWriting(const string &filename)
+-	{
+-		OpenForWriting(filename.c_str());
+-	}
+-
+-	/**
+-	 * Opens a file for writing at the end. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	void OpenForAppending(const char *filename);
+-	
+-	/**
+-	 * Opens a file for writing at the end. It closes any other opened file
+-	 * @param filename
+-	 * @throws DException if cannot open the file
+-	 */
+-	inline void OpenForAppending(const string &filename)
+-	{
+-		OpenForAppending(filename.c_str());
+-	}
+-
+-	/**
+-	 * Says whether the end of the file has been reached. It is not necessary
+-	 * to read a last empty line to reach eof
+-	 * @return true iff there is nothing else to read
+-	 * @throws DException if wrong access mode
+-	 */
+-	bool Eof();
+-
+-	/**
+-	 * Closes any opened file. It is not necessary to call this function
+-	 * explicitly
+-	 */
+-	void Close();
+-
+-	/**
+-	 * Writes a line
+-	 * @throws DException if wrong access mode
+-	 */
+-	LineFile& operator<< (const char *s);
+-	
+-	/**
+-	 * Writes a line
+-	 * @throws DException if wrong access mode
+-	 */
+-	inline LineFile& operator<< (const string &s)
+-	{
+-		return this->operator <<(s.c_str()); 
+-	}
+-
+-	/**
+-	 * Reads a line
+-	 * @param s: string to write on
+-	 * @throws DException if wrong access mode
+-	 */
+-	LineFile& operator>> (string &s);
+-
+-  /**
+-   * Reads all the remaining lines in the file
+-   * @param v vector to store the lines in
+-   * @throws DException if wrong access mode
+-   */
+-  LineFile& operator>> (vector<string> &v);
+-
+-	/**
+-	 * Writes several lines at a time
+-	 * @param v: vector of line strings
+-	 * @throws DException if wrong access mode
+-	 */
+-	void Dump(const vector<string> &v);
+-	
+-	/**
+-	 * Writes several lines at a time
+-	 * @param v: vector of line strings
+-	 * @throws DException if wrong access mode
+-	 */
+-	inline LineFile& operator<< (const vector<string> &v)
+-	{
+-		Dump(v);
+-		return *this;
+-	}
+-
+-	/**
+-	 * In reading mode, reads and throws away the next line
+-	 */
+-	void DiscardLine();
+-	
+-	/**
+-	 * Returns the opening mode
+-	 */
+-	inline FILE_MODES GetOpenMode() const { return m_mode; }
+-
+-protected:
+-
+-	/**
+-	 * Initializes the object by opening a file
+-	 * @param filename file to open
+-	 * @param mode opening mode
+-	 * @throws DException if cannot open the file
+-	 */
+-	void Init(const char *filename, const FILE_MODES mode);
+-
+-protected:
+-  /// Opening mode
+-	FILE_MODES m_mode;		// opening mode
+-	/// File stream
+-	fstream m_f;			// fstream
+-	/// Next line to read
+-	string m_next_line;	// next line to read
+-};
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/Math.hpp b/include/DUtils/Math.hpp
+deleted file mode 100644
+index 8b6e03e..0000000
+--- a/include/DUtils/Math.hpp
++++ /dev/null
+@@ -1,214 +0,0 @@
+-/*	
+- * File: Math.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: April 2010
+- * Modified: December 2010
+- * Description: some math functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_MATH__
+-#define __D_MATH__
+-
+-#include <vector>
+-#include <algorithm>
+-#include <numeric>
+-#include <cmath>
+-#include <limits>
+-
+-namespace DUtils {
+-
+-/// Math functions
+-class Math {
+-
+-public:
+-
+-  /**
+-   * Returns the mean of a population
+-   * @param v population vector
+-   */
+-  template <class T>
+-  static double Mean(const std::vector<T> &v)
+-  {
+-    if(v.empty())
+-      return 0;
+-    else{
+-      double sum = 0;
+-      typename std::vector<T>::const_iterator it;
+-      for(it = v.begin(); it != v.end(); it++){
+-        sum += *it;
+-      }
+-      return sum/double(v.size());
+-    }
+-  }
+-  
+-  // ------------------------------------------------------------------------
+-
+-  /**
+-   * Returns the standard deviation of a population
+-   * @param v population vector
+-   */
+-  template <class T>
+-  static double Stdev(const std::vector<T> &v)
+-  {
+-    return Math::Stdev<T>(v, Math::Mean<T>(v));
+-  }
+-
+-  // ------------------------------------------------------------------------
+-
+-  /**
+-   * Returns the standard deviation of a population
+-   * @param v population vector
+-   * @param mean the mean of the population
+-   */
+-  template <class T>
+-  static double Stdev(const std::vector<T> &v, double mean)
+-  {
+-    if(v.size() <= 1)
+-      return 0;
+-    else{
+-      // stdev = sqrt( Sum{ (x_i - mean)^2 } / (N-1) )
+-      double sum = 0;
+-      typename std::vector<T>::const_iterator it;
+-      for(it = v.begin(); it != v.end(); it++){
+-        sum += pow(*it - mean, 2);
+-      }
+-      return sqrt(sum/double(v.size()-1));
+-    }
+-  }
+-
+-  // ------------------------------------------------------------------------
+-
+-  /** 
+-   * Returns the median of a population
+-   * @param v
+-   */
+-  template <class T>
+-  static double Median(const std::vector<T> &v)
+-  {
+-    if(v.empty())
+-      return 0;
+-    else{
+-      std::vector<T> w = v;
+-      sort(w.begin(), w.end());
+-      int i = w.size() / 2;
+-      if(w.size() % 2 == 1)
+-      {
+-        return (double)w[i];
+-      }
+-      else
+-      {
+-        return ((double)w[i-1] + (double)w[i]) / 2.;
+-      }
+-    }
+-  }
+-
+-  // ------------------------------------------------------------------------
+-
+-  /**
+-   * Returns the minimum value of v
+-   * @param v
+-   * @return minimum value
+-   */
+-  template <class T>
+-  static T Min(const std::vector<T> &v)
+-  {
+-    return Math::MinMax(v, true, 
+-      bool2type<std::numeric_limits<T>::is_specialized>());
+-  }
+-  
+-  /**
+-   * Returns the maximum value of v
+-   * @param v
+-   * @return minimum value
+-   */
+-  template <class T>
+-  static T Max(const std::vector<T> &v)
+-  {
+-    return Math::MinMax(v, false, 
+-      bool2type<std::numeric_limits<T>::is_specialized>());
+-  }
+-
+-  // ------------------------------------------------------------------------
+-  
+-  /**
+-   * Converts an angle in [0..360) into an angle in (-180..180]
+-   * @param angle angle in degrees
+-   * @return signed angle in degrees
+-   */
+-  template<class T>
+-  inline static T signedAngle(T angle)
+-  {
+-    return ( angle <= 180 ? angle : angle - 360 );
+-  }
+-  
+-  /**
+-   * Converts an angle in (-180..180] into an angle in [0..360)
+-   * @param angle angle in degrees
+-   * @return absolute angle in degrees
+-   */
+-  template<class T>
+-  inline static T absoluteAngle(T angle)
+-  {
+-    return ( angle >= 0 ? angle : angle + 360 );
+-  }
+-  
+-  // ------------------------------------------------------------------------
+-
+-protected:
+-  // to test numeric types in compilation-time
+-  template<bool> struct bool2type { };
+-
+-  /**
+-   * Returns the minimum or maximum for numeric types
+-   * @param v
+-   * @param minormax true for calculating the min, false otherwise
+-   */
+-  template<class T>
+-  static T MinMax(const std::vector<T> &v, bool minormax, bool2type<true>);
+-
+-  /**
+-   * Returns the minimum or maximum for non-numeric types
+-   * @param v
+-   * @param minormax true for calculating the min, false otherwise
+-   */
+-  template<class T>
+-  static T MinMax(const std::vector<T> &v, bool minormax, bool2type<false>);
+-
+-};
+-
+-// ----------------------------------------------------------------------------
+-
+-template<class T>
+-T Math::MinMax(const std::vector<T> &v, bool minormax, bool2type<true>)
+-{
+-  if(v.empty())
+-    return std::numeric_limits<T>::quiet_NaN( );
+-  else if(minormax)
+-    return *std::min_element(v.begin(), v.end());
+-  else
+-    return *std::max_element(v.begin(), v.end());
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-template<class T>
+-T Math::MinMax(const std::vector<T> &v, bool minormax, bool2type<false>)
+-{
+-  if(v.empty())
+-    return T();
+-  else if(minormax)
+-    return *std::min_element(v.begin(), v.end());
+-  else
+-    return *std::max_element(v.begin(), v.end());
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/Profiler.h b/include/DUtils/Profiler.h
+deleted file mode 100644
+index 3b00ce4..0000000
+--- a/include/DUtils/Profiler.h
++++ /dev/null
+@@ -1,223 +0,0 @@
+-/*	
+- * File: Profiler.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: September 14, 2010
+- * Description: class for profiling code
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_PROFILER__
+-#define __D_PROFILER__
+-
+-#include <map>
+-#include <vector>
+-#include <string>
+-
+-#include "Timestamp.h"
+-
+-namespace DUtils {
+-
+-/**
+- * Measures the execution time of the given command and prints it with
+- * a title
+- * @param cmd command
+- * @param s title
+- */
+-#define PROFILE_S(cmd, s) \
+-  { DUtils::Timestamp t_begin, t_end; \
+-    t_begin.setToCurrentTime(); \
+-    cmd; \
+-    t_end.setToCurrentTime(); \
+-    std::cout << s << " - elapsed time: " \
+-      << DUtils::Timestamp::Format(t_end - t_begin) \
+-      << std::endl; \
+-  }
+-
+-/**
+- * Measures the execution time of the given command and prints it
+- * @param cmd command
+- */
+-#define PROFILE(cmd) PROFILE_S(cmd, "")
+-
+-/** 
+- * Profiles a command with a profiler
+- * @param P Profiler object
+- * @param name name of profiling item
+- * @param scale scaling factor of execution time
+- * @param cmd command
+- */
+-#define PROFILE_CODE(P, name, scale, cmd) \
+-  { (P).profile(name); \
+-    cmd; \
+-    (P).stopAndScale((scale), (name)); \
+-  }
+-
+-/// Measures execution time of code
+-class Profiler
+-{
+-public:
+-
+-  // scales of time
+-  static const float MS; // milliseconds
+-  static const float SECONDS; // seconds
+-
+-public:
+-
+-  Profiler(const float scale = Profiler::SECONDS): 
+-    m_last_profile(""), m_scale(scale){}
+-  virtual ~Profiler(){}
+-  
+-  /**
+-   * Starts profiling the given item. If a profile on this item is already 
+-   * active, that previous call with this item is overriden.
+-   * @param name name of item to profile. If not given, an empty string is used.
+-   */
+-  void profile(const std::string &name = "");
+-  
+-  /**
+-   * Does the same as Profiler::stop, but overrides the default scale of time
+-   * (i.e it multiplies the elapsed time in seconds by
+-   * the given scale factor)
+-   * @param scale stored_duration = actual_duration (s) * scale
+-   * @param name item name. If not given, last entry used in ::profile is used.
+-   * @note use scale 1e3 to store the time in milliseconds
+-   */
+-  void stopAndScale(double scale, const std::string &name = "");
+-  
+-  /**
+-   * Stops profiling the given item or the last one if this is not provided.
+-   * Adds the elapsed time (in the default scale of time) to the sum of this 
+-   * item profile time
+-   * @param name item name. If not given, last entry used in ::profile is used.
+-   */
+-  inline void stop(const std::string &name = "")
+-  {
+-    stopAndScale(m_scale, name);
+-  }
+-
+-  /**
+-   * Adds a value to the given entry
+-   * @param v value (already scaled) to add
+-   * @param name entry name. If not given, an empty string is used.
+-   */
+-  void add(double v, const std::string &name = "");
+-
+-  /**
+-   * Returns the last measured time for an item
+-   * @param name item name. If not given, an empty string is used.
+-   */
+-  double back(const std::string &name = "") const;
+- 
+-  /**
+-   * Removes all the measurements of the given item
+-   * @param name item name. If not given, an empty string is used.
+-   */
+-  void reset(const std::string &name = "");
+-  
+-  /**
+-   * Removes the measurements of all the items
+-   */
+-  inline void resetAll()
+-  {
+-    m_profiles.clear();
+-  }
+-
+-  /**
+-   * Returns the names of all the entries in the profiler
+-   * @param names (out) names
+-   */
+-  void getEntryNames(std::vector<std::string> &names) const;
+-
+-  /**
+-   * Returns the default scale of time to use with ::stop
+-   * @return scale
+-   */
+-  inline float getDefaultScale() const { return m_scale; }
+-  
+-  /**
+-   * Sets the default scale of time to use with ::stop
+-   * @param scale
+-   */
+-  inline void setDefaultScale(float scale) {  m_scale = scale; }
+-
+-  /**
+-   * Returns the mean of the time of the given entry
+-   * @param name entry name
+-   */
+-  double getMeanTime(const std::string &name = "") const ;
+-  
+-  /**
+-   * Returns the standard deviation of the time of the given entry
+-   * @param name entry name
+-   */
+-  double getStdevTime(const std::string &name = "") const ;
+-  
+-  /**
+-   * Returns the min time of the given entry
+-   * @param name entry name
+-   */
+-  double getMinTime(const std::string &name = "") const ;
+-  
+-  /**
+-   * Returns the max time of the given entry
+-   * @param name entry name
+-   */
+-  double getMaxTime(const std::string &name = "") const ;
+-  
+-  /**
+-   * Returns the sum of the times of the given entry
+-   * @param name entry name
+-   */
+-  double getTotalTime(const std::string &name = "") const;
+-  
+-  /**
+-   * Returns all the time measurements of the given entry
+-   * @param time (out) measurements
+-   * @param name entry name
+-   */
+-  void getTime(std::vector<double> &time, const std::string &name = "") const;
+-  
+-  /**
+-   * Returns all the statistics of the given entry
+-   * @param mean (out) mean
+-   * @param stdev (out) standard deviation
+-   * @param min (out) min value
+-   * @param max (out) max value
+-   * @param name entry name
+-   */
+-  void getStatistics(double &mean, double &stdev,
+-    double &min, double &max, const std::string &name = "") const;
+-  
+-  /**
+-   * Prints all the statistics of the given entry
+-   * @param name entry name
+-   * @param suffix unit suffix to print with the measurements
+-   * @param scale scale to multiply the measurements before printing
+-   * @param out stream to print to
+-   */
+-  void showStatistics(const std::string &name = "", 
+-    const std::string &suffix = "s", double scale = 1.,
+-    ostream &out = std::cout) const;
+-
+-protected:
+-  
+-  /// Profile data
+-  std::map<std::string, std::vector<double> > m_profiles;
+-  
+-  /// Starting points
+-  std::map<std::string, Timestamp> m_start_points;
+-  
+-  /// Last used entry
+-  std::string m_last_profile;
+-  
+-  /// Default scale
+-  float m_scale;
+-  
+-};
+-
+-}
+-
+-#endif
+diff --git a/include/DUtils/STL.h b/include/DUtils/STL.h
+deleted file mode 100644
+index b885bd6..0000000
+--- a/include/DUtils/STL.h
++++ /dev/null
+@@ -1,368 +0,0 @@
+-/*	
+- * File: STL.h
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: November 2010
+- * Description: STL-related functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#pragma once
+-#ifndef __D_STL__
+-#define __D_STL__
+-
+-#include <vector>
+-#include <algorithm>
+-#include <iostream>
+-#include <string>
+-
+-namespace DUtils {
+-
+-/// Functions to use with STL containers
+-class STL {
+-public:
+-
+-  /**
+-   * Removes from data the items of given indices
+-   * @param data (in/out) vector to remove items from
+-   * @param indices indices of items to remove
+-   * @param preserve_order if true, the items kept in data are in the same
+-   *    order as given. If false, the order may be different; this makes 
+-   *    this operation faster
+-   */
+-  template<class T>
+-  static void removeIndices(std::vector<T> &data, 
+-    const std::vector<unsigned int> &indices, bool preserve_order = true);
+-  
+-  /**
+-   * Removes from data the items of given indices, but can modify the index vector
+-   * @param data (in/out) vector to remove items from
+-   * @param indices indices of items to remove
+-   * @param preserve_order if true, the items kept in data are in the same
+-   *    order as given. If false, the order may be different; this makes 
+-   *    this operation faster
+-   */
+-  template<class T>
+-  static void removeIndices(std::vector<T> &data, 
+-    std::vector<unsigned int> &indices, bool preserve_order = true);
+-
+-  /** 
+-   * Removes from data the items whose status is 0
+-   * @param data (in/out) vector to remove items from
+-   * @param status status of items in the vector.Those with status 0 are removed
+-   * @param preserve_order if true, the items kept in data are in the same
+-   *    order as given. If false, the order may be different; this makes 
+-   *    this operation faster
+-   */
+-  template<class T>
+-  static void removeIndices(std::vector<T> &data,
+-    const std::vector<unsigned char> &status, bool preserve_order = true);
+-
+-  /**
+-   * Prints the content of the vector in f
+-   * Format: <name> = [ v1 v2 ... ]\n
+-   * @param v
+-   * @param name (optional) name given to the printed variable
+-   * @param f stream
+-   */
+-  template<class T>
+-  static void print(const std::vector<T> &v, const std::string &name,
+-   std::ostream &f = std::cout);
+-
+-  /**
+-   * Returns the indexes of the sorted input elements in the range [first, last),
+-   * without moving the input data
+-   * @param first 
+-   * @param last 
+-   * @param sorted_indexes (out) indexes in the order 
+-   */
+-  template< class RandomIt >
+-  inline static void indexSort(RandomIt first, RandomIt last, 
+-    std::vector<unsigned int>& sorted_indexes);
+-  
+-  /**
+-   * Returns the indexes of the sorted input elements in the range [first, last),
+-   * without moving the input data
+-   * @param first 
+-   * @param last 
+-   * @param sorted_indexes (out) indexes in the order 
+-   * @param fun comparison function
+-   */
+-  template< class RandomIt, class Compare >
+-  static void indexSort(RandomIt first, RandomIt last, 
+-    std::vector<unsigned int>& sorted_indexes, Compare fun);
+-
+-  /**
+-   * Arranges items of a container in the given order. This function is
+-   * useful after an indexSort
+-   * @param first first element of ranged data: [first, last)
+-   * @param last last+1 element of ranged data: [first, last)
+-   * @param indices indexes of the items in their final place
+-   *   indices must have length == last-first, with no repeated and valid items
+-   */
+-  template<class RandomIt>
+-  inline static void arrange(RandomIt first, RandomIt last,
+-    const std::vector<unsigned int> &indices);
+-
+-public:
+-
+-  /** 
+-   * Removes the items of given indices from data 
+-   * @param data (in/out) vector to remove items from
+-   * @param indices indices of items to remove. It must be in ascending order,
+-   *    with valid and no repeated indexes. If they are not, use
+-   *    the ::removeIndices functions instead.
+-   * @param preserve_order if true, the items kept in data are in the same
+-   *    order as given. If false, the order may be different; this makes 
+-   *    this operation faster
+-   */
+-  template<class T>
+-  static void _removeIndices(std::vector<T> &data, 
+-    const std::vector<unsigned int> &indices, bool preserve_order);
+-
+-protected:
+-
+-  /**
+-   * Auxiliar functor used as comparison function when performing index sorting
+-   * @param RandomIt iterator class
+-   * @param Compare comparison function for the type of the iterator 
+-   */
+-  template<class RandomIt, class Compare> 
+-  struct index_cmp 
+-  {
+-    index_cmp(const RandomIt& _first, const Compare &_fun)
+-      : m_first(_first), m_fun(_fun) {}
+-    
+-    // unsigned int is the type of the vector of indexes
+-    bool operator()(const unsigned int a, const unsigned int b) const
+-    {
+-      return m_fun( *(m_first + a), *(m_first + b) );
+-    }
+-    
+-  private:
+-    const RandomIt& m_first;
+-    const Compare& m_fun;
+-  };
+-  
+-
+-};
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class T>
+-void STL::removeIndices(std::vector<T> &data,
+-  const std::vector<unsigned char> &status, bool preserve_order)
+-{
+-  assert(data.size() == status.size());
+-  
+-  std::vector<unsigned int> indices;
+-  for(unsigned int i = 0; i < status.size(); ++i)
+-    if (status[i] == 0) indices.push_back(i);
+-  
+-  STL::_removeIndices(data, indices, preserve_order);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class T>
+-void STL::removeIndices(std::vector<T> &data, 
+-  const std::vector<unsigned int> &indices, bool preserve_order)
+-{
+-  if(indices.empty()) return;
+-  
+-  std::vector<unsigned int> copied_indices = indices;
+-  STL::removeIndices(data, copied_indices, preserve_order);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class T>
+-void STL::removeIndices(std::vector<T> &data, 
+-  std::vector<unsigned int> &indices, bool preserve_order)
+-{
+-  if(indices.empty()) return;
+-  
+-  // sort the index entries    
+-  std::sort(indices.begin(), indices.end()); // ascending order
+-  
+-  // remove those indices that exceed the data vector length
+-  {
+-    int i_idx = (int)indices.size() - 1;
+-    while( indices[i_idx] >= data.size() ) i_idx--;
+-    indices.resize(i_idx+1);
+-  }
+-    
+-  // make sure there are no repeated indices
+-  {
+-    const std::vector<unsigned int>::iterator last =
+-      std::unique(indices.begin(), indices.end());
+-    indices.erase(last, indices.end());
+-  }
+-  
+-  STL::_removeIndices(data, indices, preserve_order);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class T>
+-void STL::_removeIndices(std::vector<T> &data, 
+-  const std::vector<unsigned int> &indices, bool preserve_order)
+-{
+-  // go
+-  if(preserve_order)
+-  {
+-    // remove indices in descending order, grouping when possible
+-    int i_idx = (int)indices.size() - 1;
+-    while(i_idx >= 0)
+-    {
+-      int j_idx = i_idx - 1;
+-      while(j_idx >= 0 && ((int)(indices[i_idx] - indices[j_idx]) == i_idx - j_idx))
+-      {
+-        j_idx--;
+-      }
+-      data.erase(data.begin() + indices[j_idx + 1], 
+-        data.begin() + indices[i_idx] + 1);
+-      i_idx = j_idx;
+-    }
+-    
+-  }
+-  else
+-  { 
+-    // swap with the last items
+-    int nremoved = 0;
+-    
+-    const typename std::vector<T>::iterator first = data.begin();
+-    const typename std::vector<T>::iterator last = data.end()-1;
+-  
+-    int i_idx = (int)indices.size() - 1;
+-    
+-    // exception case: removing items are at the end of the vector
+-    while(i_idx >= 0 && 
+-      (indices.size() - i_idx == data.size() - indices[i_idx]))
+-    {
+-      i_idx--;
+-      nremoved++;
+-    }
+-        
+-    while(i_idx >= 0)
+-    {
+-      int j_idx = i_idx - 1;
+-      while(j_idx >= 0 && ((int)(indices[i_idx] - indices[j_idx]) == i_idx - j_idx))
+-      {
+-        j_idx--;
+-      }
+-      
+-      int nremoving = i_idx - j_idx;
+-      
+-      const typename std::vector<T>::iterator cpy_end = last - nremoved + 1;
+-      const typename std::vector<T>::iterator cpy_src = cpy_end - 
+-        std::min( nremoving, (int)data.size()-1 - nremoved - (int)indices[i_idx] );
+-      const typename std::vector<T>::iterator trg = first + indices[j_idx + 1];
+-            
+-      std::copy( cpy_src, cpy_end, trg );
+-      
+-      nremoved += nremoving;
+-      i_idx = j_idx;
+-    }
+-    
+-    data.resize(data.size() - nremoved);
+-
+-    // v2, presumedly slower
+-#if 0
+-    std::vector<unsigned int>::reverse_iterator rit;
+-    for(rit = indices.rbegin(); rit != indices.rend(); ++rit)
+-    {
+-      if(*rit < data.size())
+-      {
+-        *(first + *rit) = *(last - nremoved);
+-        nremoved++;
+-      }
+-    }
+-    data.resize(data.size() - nremoved);
+-#endif
+-  }
+-  
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class T>
+-void STL::print(const std::vector<T> &v, const std::string &name,
+-  std::ostream &f)
+-{
+-  if(!name.empty())
+-  {
+-    f << name << " = ";
+-  }
+-  f << "[ ";
+-  
+-  typename std::vector<T>::const_iterator vit;
+-  for(vit = v.begin(); vit != v.end(); ++vit)
+-  {
+-    f << *vit << " ";
+-  }
+-  f << "]";
+-  f << endl;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template< class RandomIt >
+-void STL::indexSort(RandomIt first, RandomIt last, 
+-  std::vector<unsigned int>& sorted_indexes)
+-{
+-  STL::indexSort(first, last, sorted_indexes, 
+-    std::less<typename RandomIt::value_type>() );
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template< class RandomIt, class Compare >
+-void STL::indexSort(RandomIt first, RandomIt last, 
+-  std::vector<unsigned int>& sorted_indexes, Compare fun)
+-{
+-  if(last == first)
+-  {
+-    sorted_indexes.clear();
+-    return;
+-  }
+-  
+-  sorted_indexes.clear();
+-  sorted_indexes.reserve(last - first);
+-  
+-  RandomIt it = first;
+-  for(unsigned int i = 0; it != last; ++it, ++i)
+-    sorted_indexes.push_back(i);
+-  
+-  std::sort(sorted_indexes.begin(), sorted_indexes.end(), 
+-    index_cmp<RandomIt, Compare>(first, fun));
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class RandomIt>
+-void STL::arrange(RandomIt first, RandomIt last,
+-  const std::vector<unsigned int> &indices)
+-{
+-  for(size_t i = 0; i < indices.size(); ++i)
+-  {
+-    unsigned int idx = indices[i];
+-    while(idx < i)
+-    {
+-      idx = indices[idx];
+-    }
+-    
+-    if(idx > i)
+-    {
+-      iter_swap(first + idx, first + i);
+-    }
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/StringFunctions.h b/include/DUtils/StringFunctions.h
+deleted file mode 100644
+index 68f586d..0000000
+--- a/include/DUtils/StringFunctions.h
++++ /dev/null
+@@ -1,129 +0,0 @@
+-/*
+- * File: StringFunctions.h
+- * Author: Dorian Galvez-Lopez
+- * Date: December 2010
+- * Description: string functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_STRING__
+-#define __D_STRING__
+-
+-#include <string>
+-#include <vector>
+-#include <string>
+-#include <sstream>
+-
+-namespace DUtils {
+-
+-/// Functions to manipulate strings
+-class StringFunctions
+-{
+-public:
+-
+-  /**
+-   * Splits the given string into single tokens
+-   * @param s string
+-   * @param tokens returned tokens (no empty tokens are returned)
+-   * @param delims delimitation characters
+-   * @param max_splits maximum number of splits. If -1, all the possible splits
+-   *   are done. Otherwise, those delimiters found after the max number of
+-   *   splits has been done are ignored
+-   */
+-  static void split(const std::string &s, std::vector<std::string> &tokens,
+-    const std::string &delims = " \t\n", int max_splits = -1);
+-
+-  /** 
+-   * Removes blank spaces, tabs and new lines from the beginning and the 
+-   * end of the string
+-   * @param s
+-   */
+-  static void trim(std::string &s);
+-
+-  /**
+-   * Removes from a string all the chars after finding the first char given
+-   * (this included)
+-   * @param s string to modify
+-   * @param c character to find and to start the removal from
+-   * @param escape if given, the char c found in the string is ignored if it 
+-   *   is the same as escape. This string must include the character c
+-   * @example removeFrom(s, '#', "\#")
+-   */
+-  static void removeFrom(std::string &s, const char c, 
+-    const std::string &escape = "");
+-  
+-  /** 
+-   * Replaces each occurrence of one of several strings in s by another string
+-   * @param s the original string whose substring will be replaced
+-   * @param map a vector of pairs of string where the first one is the substring
+-   *   to search for, and the second one, the replacing text
+-   * @note the entries are searched for as they appear in the map vector. An
+-   *   entry can replace the text already put by previous entries
+-   */
+-  static void replace(std::string &s, 
+-    const std::vector<std::pair<std::string, std::string> > &map);
+-  
+-  /** 
+-   * The same as above, but only with one "pair"
+-   * @param s
+-   * @param search
+-   * @param rep
+-   */
+-  static void replace(std::string &s, const std::string &search,
+-    const std::string &rep);
+-
+-  /**
+-   * Converts a piece of data into a string
+-   * @param data
+-   */
+-  template<class T>
+-  static std::string toString(const T& data);
+-  
+-  /**
+-   * Returns a data type from a string representation
+-   * @param s
+-   */  
+-  template<class T>
+-  static T fromString(const std::string &s);
+-  
+-};
+-
+-// --------------------------------------------------------------------------
+-
+-template<class T>
+-std::string StringFunctions::toString(const T& data)
+-{
+-  std::stringstream ss;
+-  ss << data;
+-  return ss.str();
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<>
+-inline std::string StringFunctions::fromString(const std::string &s)
+-{ 
+-  return s;
+-}
+-
+-template<class T>
+-T StringFunctions::fromString(const std::string &s)
+-{ 
+-  if(s.empty())
+-    return T();
+-  else
+-  {
+-    std::stringstream ss(s);
+-    T ret;
+-    ss >> ret;
+-    return ret;
+-  }
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-}
+-
+-#endif
+-
+diff --git a/include/DUtils/TimeManager.h b/include/DUtils/TimeManager.h
+deleted file mode 100644
+index 3dd9b98..0000000
+--- a/include/DUtils/TimeManager.h
++++ /dev/null
+@@ -1,255 +0,0 @@
+-/*
+- * File: TimeManager.h
+- * Author: Dorian Galvez-Lopez
+- * Date: February 2011
+- * Description: allows to sort a collection of timestamps and get them 
+- *   at a desired frequency
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_TIME_MANAGER__
+-#define __D_TIME_MANAGER__
+-
+-#include <vector>
+-#include "Timestamp.h"
+-
+-namespace DUtils
+-{
+-
+-/// Manages collections of timestamps
+-class TimeManager
+-{
+-public:
+-
+-  /// Iterator of managed data (these data are copied)
+-  class iterator
+-  {
+-  public:
+-
+-    /// Index of the current timestamp as it was inserted into the TimeManager 
+-    /// or -1 if the index is not valid (all the timestamp collection was 
+-    /// traversed)
+-    int index; 
+-    
+-    /// Current timestamp (if the iterator is valid)
+-    Timestamp timestamp;
+-
+-  public:
+-    
+-    /** 
+-     * Returns whether this iterator is valid
+-     * (if not, the sequences has been iterated until the end)
+-     * @return true if the iterator is valid
+-     */
+-    inline bool good() const { return index >= 0; }
+-    
+-    /** 
+-     * Moves the iterator to the next timestamp according to the frequency
+-     * The timestamp of the returned iterator is the smallest one that is
+-     * greater or equal to the current time + frequency^-1 (or to the next
+-     * timestamps if frequency is -1)
+-     */
+-    void operator++();
+-    
+-    /** 
+-     * Moves the iterator to the previous timestamp according to the frequency
+-     * The timestamp of the returned iterator is the smallest one that is
+-     * greater or equal to the current time - frequency^-1 (or to the previous
+-     * timestamps if frequency is -1)
+-     */
+-    void operator--();
+-    
+-    /** 
+-     * Sum n steps of "frequency" size to the current iterator
+-     * @param n
+-     */
+-    void operator+=(int n);
+-    
+-    /**
+-     * Moves the iterator secs seconds forward
+-     * @param secs
+-     */
+-    void step(double secs);
+-    
+-    /**
+-     * Sets a new frequency for this iterator
+-     * @param frequency
+-     */
+-    inline void setFrequency(float frequency)
+-    {
+-      m_frequency = frequency;
+-    }
+-  
+-  protected:
+-    
+-    /**
+-     * Tries to set the iterator pointing to the desired time (other than the
+-     * current one)
+-     * @param desired_time
+-     * @param moving_backwards says iif the time is moving backwards
+-     */
+-    void set(const Timestamp &desired_time, bool moving_backwards = false);
+-    
+-    /**
+-     * Tries to set the iterator pointing to the desired time
+-     * @param desired_time
+-     * @param geq_order if true, the timestamp set is the first one that
+-     *   is >= desired_time. If false, the timestamp set is the last one that
+-     *   is < desired_time
+-     */
+-    //void set(const Timestamp &desired_time, bool geq_order = true);
+-  
+-  protected:
+-    friend class TimeManager;
+-    
+-    /// Frequency at which the iterator moves
+-    float m_frequency; // can be -1 to mean all the timestamps
+-    /// TimeManager associated to this iterator
+-    const TimeManager *m_tm;
+-  };
+-
+-public:
+-
+-  TimeManager();
+-  ~TimeManager();
+-  
+-  /**
+-   * Returns the idx-th timestamp after sorting all the timestamps
+-   * @param idx 0 <= idx < size
+-   */
+-  Timestamp operator[](unsigned int idx);
+-  
+-  /**
+-   * Adds a timestamp to the collection. 
+-   * This action invalidate the created iterators
+-   * @param t
+-   */
+-  void add(const Timestamp &t);
+-  
+-  /**
+-   * Removes the given timestamps from the collection. This can also decrease the
+-   * insertion index of the timestamps added after the removed one.
+-   * This action invalidates the created iterators
+-   * @param t
+-   * @param decrease_indexes if true, indexes of next timestamps are decreased
+-   */
+-  void remove(const Timestamp &t, bool decrease_indexes);
+-  
+-  /**
+-   * Removes all the timestamps.
+-   * This action invalidates the created iterators
+-   */
+-  void clear();
+-  
+-  /**
+-   * Says if the collection is empty
+-   * @return true iff empty
+-   */
+-  inline bool empty() const
+-  {
+-    return m_entries.empty();
+-  }
+-  
+-  /**
+-   * Returns the number of timestamps in the collection
+-   * @return number of entries
+-   */
+-  inline unsigned int size() const
+-  {
+-    return m_entries.size();
+-  }
+-  
+-  /**
+-   * Returns an iterator to the first item of the sequence. When the interator
+-   * is incremented, it will according with the desired frequency here
+-   * @param frequency frequency to get the timestamps. It can be -1 to mean
+-   *   all the timestamps
+-   */
+-  iterator begin(float frequency = -1);
+-  
+-  /**
+-   * Returns an interator to the lower timestamp that is greater or equal to
+-   * the first timetamp + seconds (first timestamp = the oldest one)
+-   * @param seconds
+-   * @param frequency frequency of iterator. -1 by default (single step frequency)
+-   */
+-  iterator beginAfter(double seconds, float frequency = -1);
+-  
+-  /**
+-   * Returns an interator to the closest timestamp to the given one
+-   * @param t
+-   * @param frequency frequency of iterator. -1 by default (single step)
+-   */
+-  iterator beginAt(const Timestamp &t, float frequency = -1);
+-  
+-  /**
+-   * Returns the first timestamp (in order) of the collection
+-   * @return first timestamp
+-   */
+-  Timestamp getFirstTimestamp();
+-  
+-  /**
+-   * Returns the last timestmap (in order) of the collection
+-   * @return last timestamp
+-   */
+-  Timestamp getLastTimestamp();
+-    
+-protected:
+-
+-  /**
+-   * Makes the stored timestamps to be sorted in ascending order
+-   */
+-  void sort();
+-
+-protected:
+-  friend class iterator;
+-
+-  /// Single entry of the collection
+-  struct tEntry
+-  {
+-    /// Timestamp
+-    Timestamp timestamp;
+-    /// Index of the timestamp according to the moment it was added
+-    unsigned int index; // index got when the timestamp was added
+-    
+-    /**
+-     * Uninitialized entry
+-     */
+-    tEntry(){}
+-    
+-    /**
+-     * Initializes entry with a timestamp
+-     * @param t timestamp
+-     */
+-    tEntry(const Timestamp &t): timestamp(t), index(-1){}
+-    
+-    /**
+-     * Initializes entry with a timestamp and an index
+-     * @param t timestamp
+-     * @param i index
+-     */
+-    tEntry(const Timestamp &t, unsigned int i): timestamp(t), index(i){}
+-  };
+-
+-  /// All the entries of the timestamp collection
+-  std::vector<tEntry> m_entries;
+-  /// Flag to tell when the entries are sorted
+-  bool m_is_sorted;
+-  
+-protected:
+-
+-  /**
+-   * Checks if timestamp of a < timestamp of b
+-   * @param a
+-   * @param b
+-   * @return true iif a < b
+-   */
+-  static bool le(const tEntry &a, const tEntry &b);
+- 
+-
+-};
+-
+-}
+-
+-#endif
+diff --git a/include/DUtils/Timestamp.h b/include/DUtils/Timestamp.h
+index b92f89f..0b1095b 100644
+--- a/include/DUtils/Timestamp.h
++++ b/include/DUtils/Timestamp.h
+@@ -10,8 +10,7 @@
+ #ifndef __D_TIMESTAMP__
+ #define __D_TIMESTAMP__
+ 
+-#include <iostream>
+-using namespace std;
++#include <string>
+ 
+ namespace DUtils {
+ 
+@@ -78,7 +77,7 @@ public:
+ 	 * Sets the timestamp from a string with the time in seconds
+ 	 * @param stime: string such as "1235603336.036609"
+ 	 */
+-	void setTime(const string &stime);
++	void setTime(const std::string &stime);
+ 	
+ 	/**
+ 	 * Sets the timestamp from a number of seconds from the epoch
+@@ -94,7 +93,7 @@ public:
+ 	/**
+ 	 * Returns this timestamp as the number of seconds in fixed length string format
+ 	 */
+-	string getStringTime() const;
++	std::string getStringTime() const;
+ 
+ 	/**
+ 	 * Returns the difference in seconds between this timestamp (greater) and t (smaller)
+@@ -181,14 +180,14 @@ public:
+    * @note This has not been tested under Windows
+    * @note The timestamp is truncated to seconds
+    */
+-  string Format(bool machine_friendly = false) const;
++  std::string Format(bool machine_friendly = false) const;
+ 
+ 	/**
+ 	 * Returns a string version of the elapsed time in seconds, with the format
+ 	 * xd hh:mm:ss, hh:mm:ss, mm:ss or s.us
+ 	 * @param s: elapsed seconds (given by getFloatTime) to format
+ 	 */
+-	static string Format(double s);
++	static std::string Format(double s);
+ 	
+ 
+ protected:
+diff --git a/include/DUtils/dirent_win.h b/include/DUtils/dirent_win.h
+deleted file mode 100644
+index 6425174..0000000
+--- a/include/DUtils/dirent_win.h
++++ /dev/null
+@@ -1,230 +0,0 @@
+-/*****************************************************************************
+- * dirent.h - dirent API for Microsoft Visual Studio
+- *
+- * Copyright (C) 2006 Toni Ronkko
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining
+- * a copy of this software and associated documentation files (the
+- * ``Software''), to deal in the Software without restriction, including
+- * without limitation the rights to use, copy, modify, merge, publish,
+- * distribute, sublicense, and/or sell copies of the Software, and to
+- * permit persons to whom the Software is furnished to do so, subject to
+- * the following conditions:
+- *
+- * The above copyright notice and this permission notice shall be included
+- * in all copies or substantial portions of the Software.
+- *
+- * THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
+- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+- * IN NO EVENT SHALL TONI RONKKO BE LIABLE FOR ANY CLAIM, DAMAGES OR
+- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+- * OTHER DEALINGS IN THE SOFTWARE.
+- *
+- * Dec 15, 2009, John Cunningham
+- * Added rewinddir member function
+- *
+- * Jan 18, 2008, Toni Ronkko
+- * Using FindFirstFileA and WIN32_FIND_DATAA to avoid converting string
+- * between multi-byte and unicode representations.  This makes the
+- * code simpler and also allows the code to be compiled under MingW.  Thanks
+- * to Azriel Fasten for the suggestion.
+- *
+- * Mar 4, 2007, Toni Ronkko
+- * Bug fix: due to the strncpy_s() function this file only compiled in
+- * Visual Studio 2005.  Using the new string functions only when the
+- * compiler version allows.
+- *
+- * Nov  2, 2006, Toni Ronkko
+- * Major update: removed support for Watcom C, MS-DOS and Turbo C to
+- * simplify the file, updated the code to compile cleanly on Visual
+- * Studio 2005 with both unicode and multi-byte character strings,
+- * removed rewinddir() as it had a bug.
+- *
+- * Aug 20, 2006, Toni Ronkko
+- * Removed all remarks about MSVC 1.0, which is antiqued now.  Simplified
+- * comments by removing SGML tags.
+- *
+- * May 14 2002, Toni Ronkko
+- * Embedded the function definitions directly to the header so that no
+- * source modules need to be included in the Visual Studio project.  Removed
+- * all the dependencies to other projects so that this very header can be
+- * used independently.
+- *
+- * May 28 1998, Toni Ronkko
+- * First version.
+- *****************************************************************************/
+-#ifndef DIRENT_H
+-#define DIRENT_H
+-
+-#include <windows.h>
+-#include <string.h>
+-#include <assert.h>
+-
+-
+-typedef struct dirent
+-{
+-   char d_name[MAX_PATH + 1]; /* current dir entry (multi-byte char string) */
+-   WIN32_FIND_DATAA data;     /* file attributes */
+-}  dirent;
+-
+-
+-typedef struct DIR
+-{
+-   dirent current;            /* Current directory entry */
+-   int    cached;             /* Indicates un-processed entry in memory */
+-   HANDLE search_handle;      /* File search handle */
+-   char   patt[MAX_PATH + 3]; /* search pattern (3 = pattern + "\\*\0") */
+-} DIR;
+-
+-
+-/* Forward declarations */
+-static DIR *opendir (const char *dirname);
+-static struct dirent *readdir (DIR *dirp);
+-static int closedir (DIR *dirp);
+-static void rewinddir(DIR* dirp);
+-
+-
+-/* Use the new safe string functions introduced in Visual Studio 2005 */
+-#if defined(_MSC_VER) && _MSC_VER >= 1400
+-# define STRNCPY(dest,src,size) strncpy_s((dest),(size),(src),_TRUNCATE)
+-#else
+-# define STRNCPY(dest,src,size) strncpy((dest),(src),(size))
+-#endif
+-
+-
+-/*****************************************************************************
+- * Open directory stream DIRNAME for read and return a pointer to the
+- * internal working area that is used to retrieve individual directory
+- * entries.
+- */
+-static DIR *opendir(const char *dirname)
+-{
+-   DIR *dirp;
+-   assert (dirname != NULL);
+-   assert (strlen (dirname) < MAX_PATH);
+-
+-   /* construct new DIR structure */
+-   dirp = (DIR*) malloc (sizeof (struct DIR));
+-   if (dirp != NULL) {
+-      char *p;
+-
+-      /* take directory name... */
+-      STRNCPY (dirp->patt, dirname, sizeof(dirp->patt));
+-      dirp->patt[MAX_PATH] = '\0';
+-
+-      /* ... and append search pattern to it */
+-      p = strchr (dirp->patt, '\0');
+-      if (dirp->patt < p  &&  *(p-1) != '\\'  &&  *(p-1) != ':') {
+-         *p++ = '\\';
+-      }
+-      *p++ = '*';
+-      *p = '\0';
+-
+-      /* open stream and retrieve first file */
+-      dirp->search_handle = FindFirstFileA (dirp->patt, &dirp->current.data);
+-      if (dirp->search_handle == INVALID_HANDLE_VALUE) {
+-         /* invalid search pattern? */
+-         free (dirp);
+-         return NULL;
+-      }
+-
+-      /* there is an un-processed directory entry in memory now */
+-      dirp->cached = 1;
+-   }
+-
+-   return dirp;
+-}
+-
+-
+-/*****************************************************************************
+- * Read a directory entry, and return a pointer to a dirent structure
+- * containing the name of the entry in d_name field.  Individual directory
+- * entries returned by this very function include regular files,
+- * sub-directories, pseudo-directories "." and "..", but also volume labels,
+- * hidden files and system files may be returned.
+- */
+-static struct dirent *readdir(DIR *dirp)
+-{
+-   assert (dirp != NULL);
+-
+-   if (dirp->search_handle == INVALID_HANDLE_VALUE) {
+-      /* directory stream was opened/rewound incorrectly or ended normally */
+-      return NULL;
+-   }
+-
+-   /* get next directory entry */
+-   if (dirp->cached != 0) {
+-      /* a valid directory entry already in memory */
+-      dirp->cached = 0;
+-   } else {
+-      /* read next directory entry from disk */
+-      if (FindNextFileA (dirp->search_handle, &dirp->current.data) == FALSE) {
+-         /* the very last file has been processed or an error occured */
+-         FindClose (dirp->search_handle);
+-         dirp->search_handle = INVALID_HANDLE_VALUE;
+-         return NULL;
+-      }
+-   }
+-
+-   /* copy as a multibyte character string */
+-   STRNCPY ( dirp->current.d_name,
+-             dirp->current.data.cFileName,
+-             sizeof(dirp->current.d_name) );
+-   dirp->current.d_name[MAX_PATH] = '\0';
+-
+-   return &dirp->current;
+-}
+-
+-
+-/*****************************************************************************
+- * Close directory stream opened by opendir() function.  Close of the
+- * directory stream invalidates the DIR structure as well as any previously
+- * read directory entry.
+- */
+-static int closedir(DIR *dirp)
+-{
+-   assert (dirp != NULL);
+-
+-   /* release search handle */
+-   if (dirp->search_handle != INVALID_HANDLE_VALUE) {
+-      FindClose (dirp->search_handle);
+-      dirp->search_handle = INVALID_HANDLE_VALUE;
+-   }
+-
+-   /* release directory handle */
+-   free (dirp);
+-   return 0;
+-}
+-
+-
+-/*****************************************************************************
+- * Resets the position of the directory stream to which dirp refers to the
+- * beginning of the directory. It also causes the directory stream to refer
+- * to the current state of the corresponding directory, as a call to opendir()
+- * would have done. If dirp does not refer to a directory stream, the effect
+- * is undefined.
+- */
+-static void rewinddir(DIR* dirp)
+-{
+-   /* release search handle */
+-   if (dirp->search_handle != INVALID_HANDLE_VALUE) {
+-      FindClose (dirp->search_handle);
+-      dirp->search_handle = INVALID_HANDLE_VALUE;
+-   }
+-
+-   /* open new search handle and retrieve first file */
+-   dirp->search_handle = FindFirstFileA (dirp->patt, &dirp->current.data);
+-   if (dirp->search_handle == INVALID_HANDLE_VALUE) {
+-      /* invalid search pattern? */
+-      free (dirp);
+-      return;
+-   }
+-
+-   /* there is an un-processed directory entry in memory now */
+-   dirp->cached = 1;
+-}
+-
+-
+-#endif /*DIRENT_H*/
+diff --git a/src/DUtils/BinaryFile.cpp b/src/DUtils/BinaryFile.cpp
+deleted file mode 100644
+index 029c689..0000000
+--- a/src/DUtils/BinaryFile.cpp
++++ /dev/null
+@@ -1,346 +0,0 @@
+-/*	
+- * File: BinaryFile.cpp
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: April 2010
+- * Description: reads and writes binary files in network byte order.
+- *    Manages endianness and data size automatically.
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include "FileModes.h"
+-#include "BinaryFile.h"
+-
+-#ifdef _WIN32
+-#ifndef WIN32
+-#define WIN32
+-#endif
+-#endif
+-
+-#ifdef WIN32
+-#include <winsock2.h>
+-#else
+-#include <netinet/in.h>
+-#endif
+-
+-#ifdef _MSC_VER
+-// Microsoft Visual Studio does not ship stdint.h
+-typedef __int32 int32_t;
+-typedef unsigned __int32 uint32_t;
+-typedef __int64 int64_t;
+-typedef unsigned __int32 uint64_t;
+-#else
+-#include <stdint.h>
+-#endif
+-
+-
+-using namespace DUtils;
+-
+-BinaryFile::BinaryFile(void): m_is_little_endian(-1)
+-{
+-	setEndianness();
+-}
+-
+-BinaryFile::~BinaryFile(void)
+-{
+-	Close();
+-}
+-
+-void BinaryFile::Close()
+-{
+-	if(m_f.is_open()) m_f.close();
+-}
+-
+-BinaryFile::BinaryFile(const char *filename, const FILE_MODES mode)
+-{
+-	Init(filename, mode);
+-}
+-
+-BinaryFile::BinaryFile(const string &filename, const FILE_MODES mode)
+-{
+-	Init(filename.c_str(), mode);
+-}
+-
+-void BinaryFile::Init(const char *filename, const FILE_MODES mode)
+-{
+-	m_is_little_endian = -1;
+-	setEndianness();
+-	
+-	if(mode & READ){
+-		OpenForReading(filename);
+-	}else if((mode & WRITE) && (mode & APPEND)){
+-		OpenForAppending(filename);
+-	}else if(mode & WRITE){
+-		OpenForWriting(filename);
+-	}else{
+-		throw DException("Wrong access mode");
+-	}
+-}
+-
+-void BinaryFile::OpenForReading(const char *filename)
+-{
+-	Close();
+-
+-	m_f.open(filename, ios::in | ios::binary);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for reading");
+-	}else{
+-		m_mode = READ;
+-	}
+-}
+-
+-void BinaryFile::OpenForWriting(const char *filename)
+-{
+-	Close();
+-	
+-	m_f.open(filename, ios::out | ios::binary);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for writing");
+-	}else{
+-		m_mode = WRITE;
+-	}
+-}
+-
+-void BinaryFile::OpenForAppending(const char *filename)
+-{
+-	Close();
+-
+-	m_f.open(filename, ios::out | ios::app | ios::binary);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for writing at the end");
+-	}else{
+-		m_mode = DUtils::FILE_MODES(WRITE | APPEND);
+-	}
+-}
+-
+-void BinaryFile::DiscardBytes(int count)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		m_f.ignore(count);
+-	}else
+-		throw DException("Wrong access mode");
+-}
+-
+-inline bool BinaryFile::Eof()
+-{
+-	return(!m_f.is_open() || m_f.eof());
+-}
+-
+-unsigned int BinaryFile::BytesRead()
+-{
+-	if(m_mode & READ){
+-		return (unsigned int)m_f.tellg();
+-	}else
+-		throw DException("Wrong access mode");
+-}
+-
+-BinaryFile& BinaryFile::operator<< (char v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & WRITE){
+-		m_f.write(&v, 1);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator<< (int v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & WRITE){
+-		uint32_t w = htonl(v);
+-		m_f.write((const char *)&w, 4);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator<< (float v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & WRITE){
+-		hton_f(v, m_aux);
+-		m_f.write(m_aux, 4);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator<< (double v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & WRITE){
+-		hton_d(v, m_aux);
+-		m_f.write(m_aux, 8);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator>>(char &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		m_f.read(&v, 1);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator>>(int &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		m_f.read(m_aux, 4);
+-		uint32_t *w = ((uint32_t*)&m_aux[0]);
+-		v = (int)htonl(*w);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator>>(float &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		m_f.read(m_aux, 4);
+-		v = ntoh_f(m_aux);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-BinaryFile& BinaryFile::operator>>(double &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		m_f.read(m_aux, 8);
+-		v = ntoh_d(m_aux);
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-
+-void BinaryFile::hton_f(float v, char buf[8]) const
+-{
+-	unsigned char *w = (unsigned char *)&v;
+-
+-	// network order is big endian
+-	if(isLittleEndian()){
+-		buf[0] = w[3];
+-		buf[1] = w[2];
+-		buf[2] = w[1];
+-		buf[3] = w[0];
+-	}else{
+-		buf[0] = w[0];
+-		buf[1] = w[1];
+-		buf[2] = w[2];
+-		buf[3] = w[3];
+-	}
+-}
+-
+-float BinaryFile::ntoh_f(char buf[8]) const
+-{
+-	float v;
+-	unsigned char *w = (unsigned char*)&v;
+-
+-	// network order is big endian
+-	if(isLittleEndian()){
+-		w[3] = buf[0];
+-		w[2] = buf[1];
+-		w[1] = buf[2];
+-		w[0] = buf[3];
+-	}else{
+-		w[0] = buf[0];
+-		w[1] = buf[1];
+-		w[2] = buf[2];
+-		w[3] = buf[3];
+-	}
+-
+-	return v;
+-}
+-
+-void BinaryFile::hton_d(double v, char buf[8]) const
+-{
+-	unsigned char *w = (unsigned char *)&v;
+-
+-	// network order is big endian
+-	if(isLittleEndian()){
+-		buf[0] = w[7];
+-		buf[1] = w[6];
+-		buf[2] = w[5];
+-		buf[3] = w[4];
+-		buf[4] = w[3];
+-		buf[5] = w[2];
+-		buf[6] = w[1];
+-		buf[7] = w[0];
+-	}else{
+-		buf[0] = w[0];
+-		buf[1] = w[1];
+-		buf[2] = w[2];
+-		buf[3] = w[3];
+-		buf[4] = w[4];
+-		buf[5] = w[5];
+-		buf[6] = w[6];
+-		buf[7] = w[7];
+-	}
+-}
+-
+-double BinaryFile::ntoh_d(char buf[8]) const
+-{
+-	double v;
+-	unsigned char *w = (unsigned char*)&v;
+-
+-	// network order is big endian
+-	if(isLittleEndian()){
+-		w[7] = buf[0];
+-		w[6] = buf[1];
+-		w[5] = buf[2];
+-		w[4] = buf[3];
+-		w[3] = buf[4];
+-		w[2] = buf[5];
+-		w[1] = buf[6];
+-		w[0] = buf[7];
+-	}else{
+-		w[0] = buf[0];
+-		w[1] = buf[1];
+-		w[2] = buf[2];
+-		w[3] = buf[3];
+-		w[4] = buf[4];
+-		w[5] = buf[5];
+-		w[6] = buf[6];
+-		w[7] = buf[7];
+-	}
+-
+-	return v;
+-}
+-
+-void BinaryFile::setEndianness()
+-{
+-	if(m_is_little_endian == -1){
+-		char SwapTest[2] = { 1, 0 }; 
+-		short *p = (short *) SwapTest;
+-		m_is_little_endian = (*p == 1 ? 1 : 0);
+-	}
+-}
+-	
+diff --git a/src/DUtils/ConfigFile.cpp b/src/DUtils/ConfigFile.cpp
+deleted file mode 100644
+index 0fea517..0000000
+--- a/src/DUtils/ConfigFile.cpp
++++ /dev/null
+@@ -1,240 +0,0 @@
+-/*	
+- * File: ConfigFile.cpp
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: February 15, 2011
+- * Description: simple text file for human-machine storage
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include "DException.h"
+-#include "FileModes.h"
+-#include "LineFile.h"
+-#include "ConfigFile.h"
+-#include "StringFunctions.h"
+-#include <vector>
+-#include <fstream>
+-#include <iostream>
+-#include <map>
+-#include <set>
+-using namespace std;
+-using namespace DUtils;
+-
+-// ----------------------------------------------------------------------------
+-
+-ConfigFile::ConfigFile()
+-{
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-ConfigFile::~ConfigFile()
+-{
+-  Close();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-ConfigFile::ConfigFile(const char *filename, const FILE_MODES mode)
+-{
+-  Init(filename, mode);
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-ConfigFile::ConfigFile(const string &filename, const FILE_MODES mode)
+-{
+-  Init(filename.c_str(), mode);
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::Init(const char *filename, const FILE_MODES mode)
+-{
+-  m_unknowns = 0;
+-  if(mode & READ){
+-		OpenForReading(filename);
+-	}else if((mode & WRITE) && (mode & APPEND)){
+-		OpenForAppending(filename);
+-	}else if(mode & WRITE){
+-		OpenForWriting(filename);
+-	}else{
+-		throw DException("Wrong access mode");
+-	}
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::OpenForReading(const char *filename)
+-{
+-  m_file.OpenForReading(filename);
+-  readContent();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::OpenForWriting(const char *filename)
+-{
+-  m_file.OpenForWriting(filename);
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::OpenForAppending(const char *filename)
+-{
+-  m_file.OpenForAppending(filename);
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::Close()
+-{
+-  if(m_file.GetOpenMode() & APPEND || m_file.GetOpenMode() & WRITE)
+-  {
+-    writeContent();
+-  }
+-
+-  m_file.Close();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::writeContent()
+-{
+-  std::map<std::string, std::string>::const_iterator mit;
+-  
+-  for(mit = m_data.begin(); mit != m_data.end(); ++mit)
+-  {
+-    string s = mit->first + " = " + mit->second;
+-    m_file << s;
+-  }
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::readContent()
+-{
+-  m_data.clear();
+-  
+-  m_unknowns = 0;
+-  const string U = "?"; // prefix of anonymous tokens
+-  
+-  string s;
+-  
+-  while(!m_file.Eof())
+-  {
+-    m_file >> s;
+-    
+-    // remove comments, but escape \#
+-    StringFunctions::removeFrom(s, '#', "\\#");
+-    StringFunctions::trim(s);
+-    
+-    vector<std::string> tokens;
+-    StringFunctions::split(s, tokens, "=", 1); // split only once
+-    
+-    if(tokens.size() >= 2)
+-    {
+-      StringFunctions::trim(tokens[0]);
+-      StringFunctions::trim(tokens[1]);
+-      
+-      // if value is between quotes, remove them because it is a literal string
+-      if(tokens[1].size() > 1)
+-      {
+-        if(tokens[1][0] == '"' && tokens[1][tokens[1].size()-1] == '"')
+-        {
+-          tokens[1].erase(tokens[1].begin() + tokens[1].size() - 1);
+-          tokens[1].erase(tokens[1].begin());
+-        }
+-      }
+-      
+-      put(tokens[0], tokens[1]);
+-    }
+-    else if(tokens.size() == 1)
+-    {
+-      // anonymous token
+-      stringstream ss;
+-      ss << U << m_unknowns++;
+-      put(ss.str(), tokens[0]);
+-    }
+-  }
+-  
+-  // resolve replace variable names in the right hand side tokens now
+-  resolveVariables();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::resolveVariables()
+-{
+-  std::map<std::string, std::string>::iterator mit;
+-  std::set<string> used;
+-  
+-  for(mit = m_data.begin(); mit != m_data.end(); ++mit)
+-  {
+-    used.clear();
+-    used.insert(mit->first); // avoid circular dependencies
+-    resolveVar(mit->second, used);
+-  }
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-void ConfigFile::resolveVar(std::string &value, const std::set<string> &used)
+-{
+-  vector<pair<string, string> > replacements;
+-  map<string, string>::iterator mit;
+-  
+-  const char D = '$'; // variable char 
+-  
+-  for(string::size_type p = value.find(D); p != string::npos; 
+-    p = value.find(D, p+1) )
+-  {
+-    if(p != string::npos)
+-    {
+-      // check if there is a string in () after p
+-      if(p+1 < value.length() && value[p+1] == '(')
+-      {
+-        string::size_type pf = value.find(')', p+2);
+-        if(pf != string::npos)
+-        {
+-          string token = value.substr(p + 2, pf - p - 2);
+-          
+-          if(used.find(token) != used.end())
+-          {
+-            cout << "Warning: ConfigFile: circular dependency found: \"" 
+-              << token << "\"" << endl;
+-          }
+-          else
+-          {
+-            // check if token is valid
+-            mit = m_data.find(token);
+-            
+-            if(mit == m_data.end())
+-            {
+-              cout << "Warning: ConfigFile: token unknown: \"" 
+-                << token << "\"" << endl;
+-            }
+-            else
+-            {
+-              // resolve 
+-              const string extoken = string(1, D) + "(" + token + ")";
+-              set<string> used2 = used;
+-              used2.insert(token);
+-              resolveVar(mit->second, used2);
+-              replacements.push_back(make_pair(extoken, mit->second));
+-            } 
+-          } // if circular dependency
+-          
+-        } // if final part of token found
+-      } // if initial part of token found
+-    } // if $ found
+-  } // for
+-  
+-  // do the replacements
+-  StringFunctions::replace(value, replacements);
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-
+diff --git a/src/DUtils/DebugFunctions.cpp b/src/DUtils/DebugFunctions.cpp
+deleted file mode 100644
+index 0762877..0000000
+--- a/src/DUtils/DebugFunctions.cpp
++++ /dev/null
+@@ -1,106 +0,0 @@
+-/*
+- * File: DebugFunctions.cpp
+- * Author: Dorian Galvez-Lopez
+- * Date: April 2012
+- * Description: debug functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include <fstream>
+-#include <string>
+-#include <sstream>
+-#include <iomanip>
+-
+-#include "DebugFunctions.h"
+-
+-using namespace std;
+-using namespace DUtils;
+-
+-#ifdef _WIN32
+-#ifndef WIN32
+-#define WIN32
+-#endif
+-#endif
+-
+-#ifndef WIN32
+-extern "C" 
+-{
+-  #include <sys/types.h>
+-  #include <unistd.h>
+-}
+-#endif
+-
+-// ----------------------------------------------------------------------------
+-
+-unsigned long DebugFunctions::getMemoryUsage()
+-{
+-#ifdef WIN32
+-  return 0;
+-#else
+-
+-  pid_t pid = getpid();
+-  
+-  char buf[64];
+-  if(64 == snprintf(buf, 64, "/proc/%d/statm", pid)) return 0;
+-
+-  fstream f(buf, ios::in);
+-  
+-  if(!f.is_open()) return 0;
+-  
+-  // http://www.kernel.org/doc/man-pages/online/pages/man5/proc.5.html
+-  // format (measured in pages):
+-  //  size       total program size
+-  //             (same as VmSize in /proc/[pid]/status)
+-  //  resident   resident set size
+-  //             (same as VmRSS in /proc/[pid]/status)
+-  //  share      shared pages (from shared mappings)
+-  //  text       text (code)
+-  //  lib        library (unused in Linux 2.6)
+-  //  data       data + stack
+-  //  dt         dirty pages (unused in Linux 2.6)
+-
+-  unsigned long sz;
+-  f >> sz; // pages
+-  
+-  f.close();
+-  
+-  long pagesize = sysconf(_SC_PAGE_SIZE); // bytes
+-  
+-  if(pagesize == -1)
+-    return 0;
+-  else
+-    return sz * pagesize;
+-
+-#endif
+-}
+-
+-
+-// ----------------------------------------------------------------------------
+-
+-std::string DebugFunctions::formatBytes(unsigned long bytes, 
+-  unsigned long factor)
+-{
+-  stringstream ss;
+-  
+-  if(bytes < factor)
+-    ss << bytes << " B";
+-  else
+-  {
+-    const int N = 3;
+-    std::string suffix[N] = { " KB", " MB", " GB" };
+-
+-    double f = (double)factor;
+-    double v = (double)bytes / f;
+-    int i = 0;
+-    for(; i < N-1 && v >= f; ++i) v /= f;
+-    
+-    ss << v << setprecision(2) << suffix[i];
+-  }
+-  
+-  return ss.str();
+-}
+-
+-// ----------------------------------------------------------------------------
+-
+-
+diff --git a/src/DUtils/FileFunctions.cpp b/src/DUtils/FileFunctions.cpp
+deleted file mode 100644
+index 6d5050e..0000000
+--- a/src/DUtils/FileFunctions.cpp
++++ /dev/null
+@@ -1,136 +0,0 @@
+-/*
+- * File: FileFunctions.cpp
+- * Author: Dorian Galvez-Lopez
+- * Date: June 2009
+- * Description: file system functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include "FileFunctions.h"
+-#include <vector>
+-#include <string>
+-#include <fstream>
+-#include <cstdio>
+-#include <algorithm>
+-
+-#ifdef _WIN32
+-#ifndef WIN32
+-#define WIN32
+-#endif
+-#endif
+-
+-#ifdef WIN32
+-	#include <direct.h>
+-	#include "dirent_win.h"
+-	#define mkdir(a) _mkdir(a)
+-#else
+-	#include <dirent.h>
+-	#include <sys/stat.h>
+-  #include <unistd.h>
+-	#define mkdir(a) mkdir(a, 0755)
+-#endif
+-
+-using namespace std;
+-using namespace DUtils;
+-
+-void FileFunctions::MkDir(const char *path)
+-{
+-	mkdir(path);
+-}
+-
+-void FileFunctions::RmDir(const char *path)
+-{
+-	// empty path
+-	vector<string> files = FileFunctions::Dir(path, "");
+-	for(vector<string>::iterator it = files.begin(); it != files.end(); it++){
+-		remove(it->c_str());
+-	}
+-	rmdir(path);
+-}
+-
+-void FileFunctions::RmFile(const char *path)
+-{
+-	remove(path);
+-}
+-
+-bool FileFunctions::FileExists(const char *filename)
+-{
+-	std::fstream f(filename, ios::in);
+-
+-	if(f.is_open()){
+-		f.close();
+-		return true;
+-	}else
+-		return false;
+-}
+-
+-bool FileFunctions::DirExists(const char *path)
+-{
+-    DIR *dirp;
+-	if((dirp = opendir(path)) != NULL){
+-		closedir(dirp);
+-		return true;
+-	}else
+-		return false;
+-}
+-
+-std::vector<std::string> FileFunctions::Dir(const char *path, const char *right,
+-  bool sorted)
+-{
+-	DIR *dirp;
+-	struct dirent *entry;
+-	vector<string> ret;
+-
+-	if((dirp = opendir(path)) != NULL){
+-		while((entry = readdir(dirp)) != NULL){
+-			string name(entry->d_name);
+-			string r(right);
+-			if((name.length() >= r.length()) && 
+-				(name.substr(name.length() - r.length()).compare(r) == 0))
+-			{
+-				ret.push_back(string(path) + "/" + entry->d_name);
+-			}
+-		}
+-		closedir(dirp);
+-	}
+-	
+-	if(sorted) sort(ret.begin(), ret.end());
+-	
+-	return ret;
+-}
+-std::string FileFunctions::FileName(const std::string filepath)
+-{
+-	string::size_type p = filepath.find_last_of('/');
+-	string::size_type p2 = filepath.find_last_of('\\');
+-	if(p2 != string::npos && p2 > p) p = p2;
+-	return filepath.substr(p+1);
+-}
+-
+-void FileFunctions::FileParts(const std::string filepath, std::string &path,
+-						   std::string &filename, std::string &ext)
+-{
+-	string::size_type p = filepath.find_last_of('/');
+-	string::size_type p2 = filepath.find_last_of('\\');
+-	if(p == string::npos || (p2 != string::npos && p2 > p)) p = p2;
+-
+-	std::string filext;
+-
+-	if(p == string::npos){
+-		path = "";
+-		filext = filepath;
+-	}else{
+-		path = filepath.substr(0, p);
+-		filext = filepath.substr(p+1);
+-	}
+-
+-	p = filext.find_last_of('.');
+-	if(p == string::npos){
+-		filename = filext;
+-		ext = "";
+-	}else{
+-		filename = filext.substr(0, p);
+-		ext = filext.substr(p+1);
+-	}
+-}
+-
+diff --git a/src/DUtils/LUT.cpp b/src/DUtils/LUT.cpp
+deleted file mode 100644
+index 941be5b..0000000
+--- a/src/DUtils/LUT.cpp
++++ /dev/null
+@@ -1,273 +0,0 @@
+-/*
+- * File: LUT.cpp
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: June 2012
+- * Description: some LUTs for binary tasks
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include "LUT.h"
+-
+-int DUtils::LUT::ones8bits[256] = 
+-{
+-  0, // 0
+-  1, // 1
+-  1, // 2
+-  2, // 3
+-  1, // 4
+-  2, // 5
+-  2, // 6
+-  3, // 7
+-  1, // 8
+-  2, // 9
+-  2, // 10
+-  3, // 11
+-  2, // 12
+-  3, // 13
+-  3, // 14
+-  4, // 15
+-  1, // 16
+-  2, // 17
+-  2, // 18
+-  3, // 19
+-  2, // 20
+-  3, // 21
+-  3, // 22
+-  4, // 23
+-  2, // 24
+-  3, // 25
+-  3, // 26
+-  4, // 27
+-  3, // 28
+-  4, // 29
+-  4, // 30
+-  5, // 31
+-  1, // 32
+-  2, // 33
+-  2, // 34
+-  3, // 35
+-  2, // 36
+-  3, // 37
+-  3, // 38
+-  4, // 39
+-  2, // 40
+-  3, // 41
+-  3, // 42
+-  4, // 43
+-  3, // 44
+-  4, // 45
+-  4, // 46
+-  5, // 47
+-  2, // 48
+-  3, // 49
+-  3, // 50
+-  4, // 51
+-  3, // 52
+-  4, // 53
+-  4, // 54
+-  5, // 55
+-  3, // 56
+-  4, // 57
+-  4, // 58
+-  5, // 59
+-  4, // 60
+-  5, // 61
+-  5, // 62
+-  6, // 63
+-  1, // 64
+-  2, // 65
+-  2, // 66
+-  3, // 67
+-  2, // 68
+-  3, // 69
+-  3, // 70
+-  4, // 71
+-  2, // 72
+-  3, // 73
+-  3, // 74
+-  4, // 75
+-  3, // 76
+-  4, // 77
+-  4, // 78
+-  5, // 79
+-  2, // 80
+-  3, // 81
+-  3, // 82
+-  4, // 83
+-  3, // 84
+-  4, // 85
+-  4, // 86
+-  5, // 87
+-  3, // 88
+-  4, // 89
+-  4, // 90
+-  5, // 91
+-  4, // 92
+-  5, // 93
+-  5, // 94
+-  6, // 95
+-  2, // 96
+-  3, // 97
+-  3, // 98
+-  4, // 99
+-  3, // 100
+-  4, // 101
+-  4, // 102
+-  5, // 103
+-  3, // 104
+-  4, // 105
+-  4, // 106
+-  5, // 107
+-  4, // 108
+-  5, // 109
+-  5, // 110
+-  6, // 111
+-  3, // 112
+-  4, // 113
+-  4, // 114
+-  5, // 115
+-  4, // 116
+-  5, // 117
+-  5, // 118
+-  6, // 119
+-  4, // 120
+-  5, // 121
+-  5, // 122
+-  6, // 123
+-  5, // 124
+-  6, // 125
+-  6, // 126
+-  7, // 127
+-  1, // 128
+-  2, // 129
+-  2, // 130
+-  3, // 131
+-  2, // 132
+-  3, // 133
+-  3, // 134
+-  4, // 135
+-  2, // 136
+-  3, // 137
+-  3, // 138
+-  4, // 139
+-  3, // 140
+-  4, // 141
+-  4, // 142
+-  5, // 143
+-  2, // 144
+-  3, // 145
+-  3, // 146
+-  4, // 147
+-  3, // 148
+-  4, // 149
+-  4, // 150
+-  5, // 151
+-  3, // 152
+-  4, // 153
+-  4, // 154
+-  5, // 155
+-  4, // 156
+-  5, // 157
+-  5, // 158
+-  6, // 159
+-  2, // 160
+-  3, // 161
+-  3, // 162
+-  4, // 163
+-  3, // 164
+-  4, // 165
+-  4, // 166
+-  5, // 167
+-  3, // 168
+-  4, // 169
+-  4, // 170
+-  5, // 171
+-  4, // 172
+-  5, // 173
+-  5, // 174
+-  6, // 175
+-  3, // 176
+-  4, // 177
+-  4, // 178
+-  5, // 179
+-  4, // 180
+-  5, // 181
+-  5, // 182
+-  6, // 183
+-  4, // 184
+-  5, // 185
+-  5, // 186
+-  6, // 187
+-  5, // 188
+-  6, // 189
+-  6, // 190
+-  7, // 191
+-  2, // 192
+-  3, // 193
+-  3, // 194
+-  4, // 195
+-  3, // 196
+-  4, // 197
+-  4, // 198
+-  5, // 199
+-  3, // 200
+-  4, // 201
+-  4, // 202
+-  5, // 203
+-  4, // 204
+-  5, // 205
+-  5, // 206
+-  6, // 207
+-  3, // 208
+-  4, // 209
+-  4, // 210
+-  5, // 211
+-  4, // 212
+-  5, // 213
+-  5, // 214
+-  6, // 215
+-  4, // 216
+-  5, // 217
+-  5, // 218
+-  6, // 219
+-  5, // 220
+-  6, // 221
+-  6, // 222
+-  7, // 223
+-  3, // 224
+-  4, // 225
+-  4, // 226
+-  5, // 227
+-  4, // 228
+-  5, // 229
+-  5, // 230
+-  6, // 231
+-  4, // 232
+-  5, // 233
+-  5, // 234
+-  6, // 235
+-  5, // 236
+-  6, // 237
+-  6, // 238
+-  7, // 239
+-  4, // 240
+-  5, // 241
+-  5, // 242
+-  6, // 243
+-  5, // 244
+-  6, // 245
+-  6, // 246
+-  7, // 247
+-  5, // 248
+-  6, // 249
+-  6, // 250
+-  7, // 251
+-  6, // 252
+-  7, // 253
+-  7, // 254
+-  8  // 255
+-};
+-
+-
+diff --git a/src/DUtils/LineFile.cpp b/src/DUtils/LineFile.cpp
+deleted file mode 100644
+index 36c279b..0000000
+--- a/src/DUtils/LineFile.cpp
++++ /dev/null
+@@ -1,186 +0,0 @@
+-/*	
+- * File: LineFile.cpp
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: October 6, 2009
+- * Description: reads and writes text line files
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include "LineFile.h"
+-#include "DException.h"
+-#include "FileModes.h"
+-#include <vector>
+-#include <string>
+-using namespace std;
+-
+-using namespace DUtils;
+-
+-LineFile::LineFile(void): m_next_line("")
+-{
+-}
+-
+-LineFile::~LineFile(void)
+-{
+-	Close();
+-}
+-
+-LineFile::LineFile(const char *filename, const FILE_MODES mode)
+-{
+-	Init(filename, mode);
+-}
+-
+-LineFile::LineFile(const string &filename, const FILE_MODES mode)
+-{
+-	Init(filename.c_str(), mode);
+-}
+-
+-void LineFile::Init(const char *filename, const FILE_MODES mode)
+-{
+-	m_next_line = "";
+-	
+-	if(mode & READ){
+-		OpenForReading(filename);
+-	}else if((mode & WRITE) && (mode & APPEND)){
+-		OpenForAppending(filename);
+-	}else if(mode & WRITE){
+-		OpenForWriting(filename);
+-	}else{
+-		throw DException("Wrong access mode");
+-	}
+-}
+-
+-void LineFile::OpenForReading(const char *filename)
+-{
+-	m_f.open(filename, ios::in);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for reading");
+-	}else{
+-		m_mode = READ;
+-	}
+-}
+-
+-void LineFile::OpenForWriting(const char *filename)
+-{
+-	m_f.open(filename, ios::out);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for writing");
+-	}else{
+-		m_mode = WRITE;
+-	}
+-}
+-
+-void LineFile::OpenForAppending(const char *filename)
+-{
+-	m_f.open(filename, ios::out | ios::app);
+-	if(!m_f.is_open()){
+-		throw DException(string("Cannot open ") + filename + " for writing");
+-	}else{
+-		m_mode = DUtils::FILE_MODES(WRITE | APPEND);
+-	}
+-}
+-
+-void LineFile::Close()
+-{
+-	if(m_f.is_open()) m_f.close();
+-}
+-
+-bool LineFile::Eof()
+-{
+-	if(!m_f.is_open()) return true;
+-
+-	if(m_mode & READ){
+-		if(m_f.eof())
+-			return true;
+-		else if(!m_next_line.empty())
+-			return false;
+-		else{
+-			getline(m_f, m_next_line);
+-			return m_f.eof();
+-		}
+-	}else
+-		throw DException("Wrong access mode");
+-
+-}
+-
+-LineFile& LineFile::operator<< (const char *s)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & WRITE)
+-		m_f << s << endl;
+-	else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-LineFile& LineFile::operator>> (string &s)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-	if(m_mode & READ){
+-		if(m_f.eof()){
+-			s.clear();
+-		}else if(!m_next_line.empty()){
+-			s = m_next_line;
+-			m_next_line.clear();
+-		}else{
+-			getline(m_f, s);
+-			if(m_f.eof()){
+-				s.clear();
+-			}
+-		}
+-		
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-LineFile& LineFile::operator>> (vector<string> &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-
+-  v.clear();
+-
+-	if(m_mode & READ){
+-	  if(!m_next_line.empty()){
+-	    v.push_back(m_next_line);
+-		  m_next_line.clear();
+-		}
+-		
+-		string s;
+-		while(!m_f.eof())
+-		{
+-		  getline(m_f, s);
+-		  if(!m_f.eof()) v.push_back(s);
+-		}
+-		
+-	}else
+-		throw DException("Wrong access mode");
+-	
+-	return *this;
+-}
+-
+-void LineFile::Dump(const vector<string> &v)
+-{
+-	if(!m_f.is_open()) throw DException("File is not open");
+-		
+-	if(m_mode & WRITE){
+-		vector<string>::const_iterator it;
+-		for(it = v.begin(); it != v.end(); it++){
+-			m_f << *it << endl;
+-		}
+-	}else
+-		throw DException("Wrong access mode");
+-}
+-
+-void LineFile::DiscardLine()
+-{
+-	string nul;
+-	*this >> nul;
+-}
+-
+-
+diff --git a/src/DUtils/Profiler.cpp b/src/DUtils/Profiler.cpp
+deleted file mode 100644
+index 44aaddd..0000000
+--- a/src/DUtils/Profiler.cpp
++++ /dev/null
+@@ -1,259 +0,0 @@
+-/*	
+- * File: Profile.cpp
+- * Project: DUtils library
+- * Author: Dorian Galvez-Lopez
+- * Date: September 14, 2010
+- * Description: class for profiling code
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include <map>
+-#include <vector>
+-#include <string>
+-#include <algorithm>
+-
+-#include "Timestamp.h"
+-#include "Profiler.h"
+-#include "Math.hpp"
+-
+-using namespace DUtils;
+-using namespace std;
+-
+-// ---------------------------------------------------------------------------
+-const float Profiler::MS = 1e3; // milliseconds
+-const float Profiler::SECONDS = 1; // seconds
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::profile(const std::string &name)
+-{
+-  Timestamp t;
+-  m_last_profile = name;
+-  pair<std::map<std::string, Timestamp>::iterator, bool> res =
+-    m_start_points.insert(make_pair(name, t));
+-  res.first->second.setToCurrentTime();
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::stopAndScale(double scale, const std::string &name)
+-{
+-  Timestamp t;
+-  t.setToCurrentTime();
+-  
+-  string s = (name.empty() ? m_last_profile : name);
+-  
+-  std::map<std::string, Timestamp>::iterator it = m_start_points.find(s);
+-  
+-  if(it != m_start_points.end())
+-  {
+-    double duration = (t - it->second) * scale;
+-    m_start_points.erase(it);
+-    
+-    pair<std::map<std::string, std::vector<double> >::iterator,bool> pdit;
+-    pdit.first = m_profiles.find(s);
+-    if(pdit.first == m_profiles.end())
+-    {
+-      pdit = m_profiles.insert(make_pair(s, vector<double>()));
+-    }
+-    pdit.first->second.push_back(duration);
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::add(double v, const std::string &name)
+-{
+-  std::map<std::string, vector<double> >::iterator it = m_profiles.find(name);
+-  
+-  if(it == m_profiles.end())
+-  {
+-    m_profiles.insert(make_pair(name, vector<double>(1, v)));
+-  }
+-  else
+-  {
+-    it->second.push_back(v);
+-  }
+-  
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-double Profiler::getMeanTime(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    return Math::Mean<double>(it->second);
+-  }
+-  else return 0;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-double Profiler::getStdevTime(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-
+-  if(it != m_profiles.end())
+-  {
+-    return Math::Stdev<double>(it->second);
+-  }
+-  else return 0;
+-}
+-  
+-// ---------------------------------------------------------------------------
+-  
+-double Profiler::getMinTime(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    return *std::min_element(it->second.begin(), it->second.end());
+-  }
+-  else return 0;
+-}
+-  
+-// ---------------------------------------------------------------------------
+-  
+-double Profiler::getMaxTime(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    return *std::max_element(it->second.begin(), it->second.end());
+-  }
+-  else return 0;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-double Profiler::getTotalTime(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    double ret = 0;
+-    vector<double>::const_iterator vit;
+-    for(vit = it->second.begin(); vit != it->second.end(); ++vit)
+-      ret += *vit;
+-    
+-    return ret;
+-  }
+-  else return 0;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::getStatistics(double &mean, double &stdev, double &min, 
+-  double &max, const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    if(it->second.empty())
+-    {
+-      mean = stdev = min = max = 0;
+-    }
+-    else
+-    {
+-      vector<double>::const_iterator dit = it->second.begin();
+-      mean = min = max = *dit;
+-      
+-      for(++dit; dit != it->second.end(); ++dit)
+-      {
+-        mean += *dit;
+-        if(*dit < min) min = *dit;
+-        else if(*dit > max) max = *dit;
+-      }
+-      mean /= it->second.size();
+-      stdev = Math::Stdev<double>(it->second, mean);
+-    }
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::showStatistics(const std::string &name, 
+-  const std::string &suffix, double scale, ostream &out) const
+-{
+-  double mean, std, min, max;
+-  this->getStatistics(mean, std, min, max, name);
+-  
+-  if(!name.empty())
+-    out << name << ": ";
+-  
+-  out << mean * scale
+-    << " +/- " << std * scale << " " << suffix
+-    << " (" << min * scale << " .. " << max * scale << ")" << endl;
+-}
+-
+-// ---------------------------------------------------------------------------
+-  
+-void
+-Profiler::getTime(std::vector<double> &time, const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    time = it->second;
+-  }
+-  else time.clear();
+-}
+-  
+-// ---------------------------------------------------------------------------
+-
+-double Profiler::back(const std::string &name) const
+-{
+-  std::map<std::string, std::vector<double> >::const_iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    return it->second.back();
+-  }
+-  else return 0;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::reset(const std::string &name)
+-{
+-  std::map<std::string, std::vector<double> >::iterator it =
+-    m_profiles.find(name);
+-  
+-  if(it != m_profiles.end())
+-  {
+-    it->second.clear();
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void Profiler::getEntryNames(std::vector<std::string> &names) const
+-{
+-  names.clear();
+-  names.reserve(m_profiles.size());
+-  
+-  map<string, vector<double> >::const_iterator pit;
+-  for(pit = m_profiles.begin(); pit != m_profiles.end(); ++pit)
+-  {
+-    names.push_back(pit->first);
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+diff --git a/src/DUtils/Random.cpp b/src/DUtils/Random.cpp
+index 79df2a6..9b129e1 100644
+--- a/src/DUtils/Random.cpp
++++ b/src/DUtils/Random.cpp
+@@ -11,7 +11,7 @@
+ #include "Random.h"
+ #include "Timestamp.h"
+ #include <cstdlib>
+-using namespace std;
++
+ 
+ bool DUtils::Random::m_already_seeded = false;
+ 
+diff --git a/src/DUtils/StringFunctions.cpp b/src/DUtils/StringFunctions.cpp
+deleted file mode 100644
+index 9436a36..0000000
+--- a/src/DUtils/StringFunctions.cpp
++++ /dev/null
+@@ -1,147 +0,0 @@
+-/*
+- * File: String.cpp
+- * Author: Dorian Galvez-Lopez
+- * Date: December 2010
+- * Description: string functions
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include <string>
+-#include <vector>
+-#include "StringFunctions.h"
+-
+-using namespace std;
+-using namespace DUtils;
+-
+-// ---------------------------------------------------------------------------
+-
+-void StringFunctions::split(const std::string &s, 
+-  std::vector<std::string> &tokens, const std::string &delims, int max_splits)
+-{
+-  tokens.resize(0);
+-  
+-  string::size_type first, last;
+-  first = 0;
+-  
+-  bool goon = true;
+-  while(goon)
+-  {
+-    if( (int)tokens.size() == max_splits )
+-    {
+-      goon = false;
+-      last = s.length();
+-    }
+-    else
+-    {
+-      last = s.find_first_of(delims, first);
+-      if(last == string::npos)
+-      {
+-        goon = false;
+-        last = s.length();
+-      }
+-    }
+-      
+-    if(last > first)
+-    {    
+-      // add from [first-last)
+-      tokens.push_back( s.substr(first, last-first) );
+-    }
+-    
+-    first = last + 1;
+-  }
+-  
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void StringFunctions::removeFrom(std::string &s, const char c,
+-  const std::string &escape)
+-{
+-  const string::size_type cpos = escape.find(c);
+-  const string::size_type esclen = escape.length();
+-  const bool check_escape = esclen > 0 && cpos != string::npos;
+-  const string::size_type slen = s.length();
+-  
+-  for(string::size_type n = 0; ; ++n)
+-  {
+-    n = s.find(c, n);
+-    
+-    bool found = false;
+-    if(n == string::npos)
+-      return;
+-    else
+-    {
+-      if(check_escape && n >= cpos && (n + esclen - cpos <= slen))
+-      {
+-        string subs = s.substr(n - cpos, esclen);
+-        found = subs != escape;
+-      }
+-      else
+-      {
+-        found = true;
+-      }
+-    }
+-    
+-    if(found)
+-    {
+-      s.resize(n);
+-      return;
+-    }
+-  }
+-  
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void StringFunctions::trim(std::string &s)
+-{
+-  #define notvalid(s) ((s) == ' ' || (s) == '\r' || (s) == '\n' || (s) == '\t')
+-  
+-  // trim spaces at the end
+-  int n = s.length()-1;
+-  while(n >= 0 && notvalid(s[n]) ) n--;
+-  s = s.substr(0, n+1);
+-
+-  // trim spaces in the beginning
+-  n = 0;
+-  while(n < (int)s.length() && notvalid(s[n]) ) n++;
+-  if(n > 0) s = s.substr(n);
+-  
+-  #undef notvalid
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void StringFunctions::replace(std::string &s, 
+-  const std::vector<std::pair<std::string, std::string> > &map)
+-{
+-  std::vector<std::pair<std::string, std::string> >::const_iterator mit;
+-  for(mit = map.begin(); mit != map.end(); ++mit)
+-  {
+-    const string &search = mit->first;
+-    const string &rep = mit->second;
+-    
+-    size_t n = 0;
+-    while((n = s.find(search, n)) != string::npos)
+-    {
+-      s.replace(n, search.size(), rep);
+-      n = n + rep.size();
+-      if(n == 0) n = 1;
+-    }
+-  }
+-}  
+-
+-// ---------------------------------------------------------------------------
+-
+-void StringFunctions::replace(std::string &s, const std::string &search,
+-  const std::string &rep)
+-{
+-  std::vector<std::pair<std::string, std::string> > map;
+-  map.push_back(make_pair(search, rep));
+-  
+-  replace(s, map);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+diff --git a/src/DUtils/TimeManager.cpp b/src/DUtils/TimeManager.cpp
+deleted file mode 100644
+index 74ebd51..0000000
+--- a/src/DUtils/TimeManager.cpp
++++ /dev/null
+@@ -1,367 +0,0 @@
+-/*
+- * File: TimeManager.cpp
+- * Author: Dorian Galvez-Lopez
+- * Date: February 2011
+- * Description: allows to sort a collection of timestamps and get them 
+- *   at a desired frequency
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include <vector>
+-#include <algorithm>
+-#include "Timestamp.h"
+-#include "TimeManager.h"
+-
+-using namespace std;
+-using namespace DUtils;
+-
+-// ---------------------------------------------------------------------------
+-
+-TimeManager::TimeManager()
+-{
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-TimeManager::~TimeManager()
+-{
+-}
+-
+-// ---------------------------------------------------------------------------  
+-
+-void TimeManager::add(const Timestamp &t)
+-{
+-  if(m_entries.empty())
+-  {
+-    m_is_sorted = true;
+-  }
+-  else if(m_entries.back().timestamp > t)
+-  {
+-    m_is_sorted = false;
+-  }
+-  
+-  m_entries.push_back(tEntry(t, m_entries.size()) );
+-}
+-
+-// ---------------------------------------------------------------------------  
+-
+-Timestamp TimeManager::operator[](unsigned int idx)
+-{
+-  sort();
+-  return m_entries[idx].timestamp;
+-}
+-
+-// ---------------------------------------------------------------------------  
+-
+-void TimeManager::clear()
+-{
+-  m_entries.clear();
+-  m_is_sorted = true;
+-}
+-
+-// ---------------------------------------------------------------------------  
+-
+-bool TimeManager::le(const tEntry &a, const tEntry &b)
+-{
+-  return a.timestamp < b.timestamp;
+-}
+-
+-// ---------------------------------------------------------------------------  
+-
+-void TimeManager::remove(const Timestamp &t, bool decrease_indexes)
+-{
+-  vector<tEntry>::iterator it;
+-  int removed_id = -1;
+-  
+-  tEntry entry(t);
+-  
+-  if(m_is_sorted)
+-  {
+-    it = lower_bound(m_entries.begin(), m_entries.end(), entry, TimeManager::le);
+-    
+-    if(it != m_entries.end() && it->timestamp == t)
+-    {
+-      removed_id = it->index;
+-      m_entries.erase(it);
+-    }
+-  }
+-  else
+-  {
+-    for(it = m_entries.begin(); it != m_entries.end(); ++it)
+-    {
+-      if(it->timestamp == t) break;
+-    }
+-    if(it != m_entries.end())
+-    {
+-      removed_id = it->index;
+-      m_entries[ it - m_entries.begin() ] = m_entries.back();
+-      m_entries.pop_back();
+-    }
+-  }
+-  
+-  // decreases all the indices after the removed one
+-  if(removed_id != -1 && decrease_indexes)
+-  {
+-    for(it = m_entries.begin(); it != m_entries.end(); ++it)
+-    {
+-      if((int)it->index > removed_id) it->index--;
+-    }
+-  }
+-  
+-  if(!m_is_sorted) 
+-    m_is_sorted = (m_entries.size() <= 1);
+-}
+-  
+-// ---------------------------------------------------------------------------
+-
+-TimeManager::iterator TimeManager::begin(float frequency)
+-{
+-  sort(); // make sure timestamps are in order
+-  
+-  TimeManager::iterator ret;
+-  ret.m_frequency = frequency;
+-  ret.m_tm = this;
+-  
+-  if(m_entries.empty())
+-  {
+-    ret.index = -1;
+-  }
+-  else
+-  {
+-    ret.index = m_entries[0].index;
+-    ret.timestamp = m_entries[0].timestamp;
+-  }
+-  
+-  return ret;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-TimeManager::iterator TimeManager::beginAt(const Timestamp &t, float frequency)
+-{
+-  sort();
+-  
+-  TimeManager::iterator ret;
+-  ret.m_frequency = frequency;
+-  ret.m_tm = this;
+-  ret.index = -1;
+-  
+-  if(!m_entries.empty())
+-  {
+-    ret.set(t);
+-  }
+-  
+-  return ret;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-TimeManager::iterator TimeManager::beginAfter(double seconds, float frequency)
+-{
+-  sort();
+-  return beginAt(m_entries[0].timestamp + seconds, frequency);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-Timestamp TimeManager::getFirstTimestamp()
+-{
+-  sort();
+-  return m_entries[0].timestamp;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-Timestamp TimeManager::getLastTimestamp()
+-{
+-  sort();
+-  return m_entries.back().timestamp;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void TimeManager::sort()
+-{
+-  if(!m_is_sorted)
+-  {
+-    std::sort(m_entries.begin(), m_entries.end(), TimeManager::le);
+-    m_is_sorted = true;
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void TimeManager::iterator::operator++()
+-{
+-  Timestamp desired_time;
+-  if(m_frequency > 0)
+-  {
+-    desired_time = this->timestamp + 1.f/m_frequency;
+-  }
+-  else
+-  {
+-    desired_time = this->timestamp.plus(0, 1); // next instant
+-  }
+-  
+-  set(desired_time, false);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void TimeManager::iterator::step(double secs)
+-{
+-  Timestamp desired_time = this->timestamp + secs;
+-  set(desired_time);
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void TimeManager::iterator::operator--()
+-{
+-  Timestamp desired_time;
+-  if(m_frequency > 0)
+-  {
+-    desired_time = this->timestamp - 1.f/m_frequency;
+-    set(desired_time, true);
+-  }
+-  else
+-  {
+-    desired_time = this->timestamp.minus(0, 1); // previous instant
+-    set(desired_time, true);
+-  }
+-
+-}
+-
+-// ---------------------------------------------------------------------------
+-    
+-void TimeManager::iterator::operator+=(int n)
+-{
+-  Timestamp desired_time;
+-  if(m_frequency > 0)
+-  {
+-    desired_time = this->timestamp + n*1.f/m_frequency;
+-    set(desired_time);
+-  }
+-  else
+-  {
+-    for(int i = 0; i < n; ++i)
+-    {
+-      desired_time = this->timestamp.plus(0, 1); // next instant
+-      set(desired_time);
+-      
+-      if(this->index == -1) break; // end of seq
+-    }
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void TimeManager::iterator::set(const Timestamp &desired_time, bool moving_backwards)
+-//bool geq_order)
+-{  
+-  // assume the time manager was not altered while the existence of this
+-  // iterator, so that it is still sorted
+-  
+-  if(m_tm->m_entries.empty())
+-  {
+-    this->index = -1;
+-    return;
+-  }
+-  
+-  vector<TimeManager::tEntry>::const_iterator it =
+-    lower_bound(m_tm->m_entries.begin(), m_tm->m_entries.end(), 
+-      desired_time, TimeManager::le);  
+- 
+-  // it >= desired_time
+-  // select the closer timestamps from [it-1, it] which is different
+-  // from the current one
+-  
+-  if(it == m_tm->m_entries.end())
+-  {
+-    // nothing
+-    /*
+-    if(this->index != (int)m_tm->m_entries.back().index)
+-    {
+-      it = m_tm->m_entries.begin() + m_tm->m_entries.size() - 1;
+-    }
+-    */
+-  }
+-  else if(it == m_tm->m_entries.begin())
+-  {
+-    if(this->index == (int)m_tm->m_entries[0].index)
+-    {
+-      if(moving_backwards)
+-        it = m_tm->m_entries.end();
+-      else
+-      {
+-        it = m_tm->m_entries.begin() + 1; // second element or end
+-      } 
+-    }
+-  }
+-  else
+-  {
+-    double d1 = it->timestamp - desired_time;
+-    double d2 = desired_time - (it-1)->timestamp;
+-        
+-    if(d2 < d1)
+-    {
+-      it = it-1;
+-    }
+-    
+-    if((int)it->index == this->index)
+-    {
+-      if(moving_backwards) it--;
+-      else it++;
+-    }
+-  }
+-  
+-  if(it != m_tm->m_entries.end())
+-  {
+-    this->index = it->index;
+-    this->timestamp = it->timestamp;
+-  }
+-  else
+-  {
+-    this->index = -1;
+-  }
+-  
+-  /*
+-  if(geq_order)
+-  {
+-    // search for the first timestamp in m_tm >= to desired_time
+-    
+-    if(it == m_tm->m_entries.end())
+-    {
+-      // end of sequence
+-      this->index = -1;
+-    }
+-    else
+-    {
+-      this->index = it->index;
+-      this->timestamp = it->timestamp;
+-    }
+-    
+-  } // if geq_order
+-  else
+-  {
+-    // search for the last timestamp in m_tm < to desired_time
+-    if(it == m_tm->m_entries.begin())
+-    {
+-      // before the sequence
+-      this->index = -1;
+-    }
+-    else
+-    {
+-      it = it - 1;
+-      
+-      this->index = it->index;
+-      this->timestamp = it->timestamp;
+-    }
+-    
+-  } // if !geq_order
+-  */
+-}
+-
+-// ---------------------------------------------------------------------------
+-

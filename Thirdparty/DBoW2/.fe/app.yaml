@@ -1,0 +1,30 @@
+compatibility: ^1.0.0-alpha.1
+cpp-deps: !!set
+  boost-regex: null
+  boost-serialization: null
+  opencv4: null
+cpp-deps/boost-regex/components: !!set
+  regex: null
+cpp-deps/boost-regex/package: Boost
+cpp-deps/boost-regex/public_libs: !!set
+  Boost::regex: null
+cpp-deps/boost-serialization/components: !!set
+  serialization: null
+cpp-deps/boost-serialization/package: Boost
+cpp-deps/boost-serialization/public_libs: !!set
+  Boost::serialization: null
+cpp-deps/opencv4/package: OpenCV
+cpp-deps/opencv4/public_libs: !!set
+  ${OpenCV_LIBS}: null
+cpp-port-overrides: !!set
+  vcpkg_overlay_ports/libcap: null
+dependencies: {}
+description: "Enhanced hierarchical bag-of-word library for C++"
+docker-base: alpine
+icon: null
+include: null
+name: null
+private_include: null
+slug: morb_dbow2
+src: null
+version: 1.0.0

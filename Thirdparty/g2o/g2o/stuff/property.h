@@ -31,7 +31,7 @@
 #include <map>
 #include <sstream>
 
-#include "string_tools.h"
+#include "g2o/stuff/string_tools.h"
 
 namespace g2o {
 

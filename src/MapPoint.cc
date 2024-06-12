@@ -476,7 +476,6 @@ void MapPoint::UpdateNormalAndDepth() {
 
   Eigen::Vector3f normal;
   normal.setZero();
-  int n = 0;
   for (auto &pair : observations) {
     if(std::shared_ptr<KeyFrame> pKF = pair.first.lock()) {
       std::tuple<int, int> indexes = pair.second;
@@ -486,13 +485,11 @@ void MapPoint::UpdateNormalAndDepth() {
         Eigen::Vector3f Owi = pKF->GetCameraCenter();
         Eigen::Vector3f normali = Pos - Owi;
         normal += normali / normali.norm();
-        n++;
       }
       if (rightIndex != -1) {
         Eigen::Vector3f Owi = pKF->GetRightCameraCenter();
         Eigen::Vector3f normali = Pos - Owi;
         normal += normali / normali.norm();
-        n++;
       }
     }
   }
@@ -519,7 +516,7 @@ void MapPoint::UpdateNormalAndDepth() {
     std::unique_lock<std::mutex> lock3(mMutexPos);
     mfMaxDistance = dist * levelScaleFactor;
     mfMinDistance = mfMaxDistance / pRefKF->mvScaleFactors[nLevels - 1];
-    mNormalVector = normal / n;
+    mNormalVector = normal / normal.norm();
   }
 }
 

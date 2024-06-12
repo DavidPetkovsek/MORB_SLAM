@@ -24,8 +24,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "robust_kernel_factory.h"
-#include "robust_kernel.h"
+#include "g2o/core/robust_kernel_factory.h"
+#include "g2o/core/robust_kernel.h"
 
 #include <cassert>
 

@@ -22,24 +22,29 @@
 #include <vector>
 #include <map>
 
+#ifdef FactoryEngine
+#include "apps/morb_dbow2/DBoW2/BowVector.h"
+#include "apps/morb_dbow2/DBoW2/FeatureVector.h"
+#include "apps/morb_sophus/geometry.hpp"
+#include "apps/morb_sophus/se3.hpp"
+#else
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
-
 #include "sophus/geometry.hpp"
+#include "sophus/se3.hpp"
+#endif
 
-#include "ImuTypes.h"
-#include "ORBVocabulary.h"
+#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/ORBVocabulary.h"
+#include "MORB_SLAM/Converter.h"
+#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Camera.hpp"
 
-#include "Converter.h"
-#include "Settings.h"
 
 #include <mutex>
 #include <opencv2/opencv.hpp>
-
 #include "Eigen/Core"
-#include "sophus/se3.hpp"
 
-#include "MORB_SLAM/Camera.hpp"
 
 namespace MORB_SLAM
 {
@@ -133,8 +138,6 @@ public:
 
     bool imuIsPreintegrated();
     void setIntegrated();
-
-    bool isSet() const;
 
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();
@@ -302,12 +305,6 @@ public:
 
     static bool mbInitialComputations;
 
-
-#ifdef REGISTER_TIMES
-    double mTimeORB_Ext;
-    double mTimeStereoMatch;
-#endif
-
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.
@@ -320,8 +317,6 @@ private:
 
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();
-
-    bool mbIsSet;
 
     bool mbImuPreintegrated;
 

@@ -31,8 +31,8 @@
 #include <cassert>
 #include <limits>
 
-#include "base_edge.h"
-#include "robust_kernel.h"
+#include "g2o/core/base_edge.h"
+#include "g2o/core/robust_kernel.h"
 #include "g2o/config.h"
 
 namespace g2o {
@@ -92,8 +92,8 @@ namespace g2o {
       
   };
 
-#include "base_unary_edge.hpp"
-
 } // end namespace g2o
+
+#include "g2o/core/base_unary_edge.hpp"
 
 #endif

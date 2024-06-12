@@ -329,11 +329,6 @@ System::~System() {
     Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     SaveAtlas(FileType::BINARY_FILE);
   }
-  
-
-#ifdef REGISTER_TIMES
-  mpTracker->PrintTimeStats();
-#endif
 }
 
 TrackingState System::GetTrackingState() {
@@ -366,20 +361,6 @@ bool System::isLost() {
 bool System::isFinished() { return (GetTimeFromIMUInit() > 0.1); }
 
 float System::GetImageScale() { return mpTracker->GetImageScale(); }
-
-#ifdef REGISTER_TIMES
-void System::InsertRectTime(double& time) {
-  mpTracker->vdRectStereo_ms.push_back(time);
-}
-
-void System::InsertResizeTime(double& time) {
-  mpTracker->vdResizeImage_ms.push_back(time);
-}
-
-void System::InsertTrackTime(double& time) {
-  mpTracker->vdTrackTotal_ms.push_back(time);
-}
-#endif
 
 void System::SaveAtlas(int type) {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl;
@@ -570,5 +551,11 @@ std::shared_ptr<Settings> System::getSettings() const { return settings; }
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }
+
+bool System::getIsLoopClosed() {
+  return mpLoopCloser->loopClosed;
+}
+
+void System::setIsLoopClosed(bool isLoopClosed) { mpLoopCloser->loopClosed = isLoopClosed; }
 
 }  // namespace MORB_SLAM

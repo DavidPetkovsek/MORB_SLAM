@@ -1,8 +1,11 @@
 #pragma once
 #include <opencv2/opencv.hpp>
-#include <sophus/se3.hpp>
 #include <optional>
-
+#ifdef FactoryEngine
+#include <apps/morb_sophus/se3.hpp>
+#else
+#include <sophus/se3.hpp>
+#endif
 
 namespace MORB_SLAM{
 

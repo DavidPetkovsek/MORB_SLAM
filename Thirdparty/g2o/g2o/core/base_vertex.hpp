@@ -23,6 +23,10 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+#include "g2o/core/base_vertex.h"
+
+namespace g2o {
 
 template <int D, typename T>
 BaseVertex<D, T>::BaseVertex() :
@@ -53,3 +57,5 @@ void BaseVertex<D, T>::mapHessianMemory(double* d)
 {
   new (&_hessian) HessianBlockType(d, D, D);
 }
+
+} // end namespace g2o

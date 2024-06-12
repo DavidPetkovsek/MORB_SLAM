@@ -2,6 +2,13 @@
 
 > This fork of [ORB_SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3) converts it into a CMake package that can be imported into other projects. It is continued from the original now deprecated/abandoned fork [MORB_SLAM](https://github.com/Soldann/MORB_SLAM).
 
+### Build with Factory Engine
+```bash
+git clone https://github.com/DavidPetkovsek/MORB_SLAM
+cd MORB_SLAM
+fe install # get the dependencies
+fe build # build the app
+```
 
 ### Build with vcpkg to gather dependencies
 ```bash
@@ -17,6 +24,14 @@ cd MORB_SLAM
 find_package(MORB_SLAM REQUIRED COMPONENTS MORB_SLAM DBoW2 g2o sophus)
 add_executable(myprogram ${MY_CPP_FILES})
 target_link_libraries(myprogram MORB_SLAM::MORB_SLAM)
+```
+
+#### Note for wsl users
+You may need to add some lines to your bashrc file to allow the visualizer to work properly
+```bash
+export DISPLAY=:0
+export XDG_RUNTIME_DIR="/tmp/runtime-$USER"
+export RUNLEVEL=3
 ```
 
 ### Install the library dependencies  and build the old fashion way:

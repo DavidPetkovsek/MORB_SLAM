@@ -10,7 +10,7 @@
 #ifndef __D_T_FEATURE_VECTOR__
 #define __D_T_FEATURE_VECTOR__
 
-#include "BowVector.h"
+#include "DBoW2/BowVector.h"
 #include <map>
 #include <vector>
 #include <iostream>

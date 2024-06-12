@@ -40,8 +40,8 @@ namespace g2o {
   inline Eigen::Vector3d unproject(const Eigen::Vector2d&);
   inline Eigen::Vector4d unproject(const Eigen::Vector3d&);
 
-#include "se3_ops.hpp"
+} // end namespace g2o
 
-}
+#include "g2o/types/se3_ops.hpp"
 
 #endif //MATH_STUFF

@@ -30,19 +30,11 @@
 #include "MORB_SLAM/Converter.h"
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/OptimizableTypes.h"
-#include "g2o/core/block_solver.h"
-#include "g2o/core/optimization_algorithm_gauss_newton.h"
-#include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/core/robust_kernel_impl.h"
-#include "g2o/core/sparse_block_matrix.h"
-#include "g2o/solvers/linear_solver_dense.h"
-#include "g2o/solvers/linear_solver_eigen.h"
-#include "g2o/types/types_six_dof_expmap.h"
-
 #include "MORB_SLAM/Exceptions.hpp"
 
 namespace MORB_SLAM {
-void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit) {
+
+void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge, bool bRecInit) {
   std::shared_ptr<Map> pCurrentMap = pKF->GetMap();
 
   // bLarge is true if pKF has 100 MapPoints

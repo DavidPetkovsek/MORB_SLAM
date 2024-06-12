@@ -30,21 +30,10 @@
 #include "MORB_SLAM/Converter.h"
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/OptimizableTypes.h"
-#include "g2o/core/block_solver.h"
-#include "g2o/core/optimization_algorithm_gauss_newton.h"
-#include "g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/core/robust_kernel_impl.h"
-#include "g2o/core/sparse_block_matrix.h"
-#include "g2o/solvers/linear_solver_dense.h"
-#include "g2o/solvers/linear_solver_eigen.h"
-#include "g2o/types/types_six_dof_expmap.h"
 
 namespace MORB_SLAM {
 
-void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
-                                      std::shared_ptr<Map> pMap, int& num_fixedKF,
-                                      int& num_OptKF, int& num_MPs,
-                                      int& num_edges, bool bInertial) {
+void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial) {
   // Local KeyFrames: First Breath Search from Current Keyframe
   std::list<std::shared_ptr<KeyFrame>> lLocalKeyFrames;
 
@@ -60,8 +49,8 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
       lLocalKeyFrames.push_back(pKFi);
   }
 
+  int num_fixedKF = 0;
   // Local MapPoints seen in Local KeyFrames
-  num_fixedKF = 0;
   std::list<std::shared_ptr<MapPoint>> lLocalMapPoints;
   std::set<std::shared_ptr<MapPoint>> sNumObsMP;
   for (std::list<std::shared_ptr<KeyFrame>>::iterator lit = lLocalKeyFrames.begin(),
@@ -100,12 +89,11 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
       }
     }
   }
-  num_fixedKF = lFixedCameras.size() + num_fixedKF;
+
+  num_fixedKF += lFixedCameras.size();
 
   if (num_fixedKF == 0) {
-    Verbose::PrintMess(
-        "LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted",
-        Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
     return;
   }
 
@@ -149,7 +137,6 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
     // DEBUG LBA
     pCurrentMap->msOptKFs.insert(pKFi->mnId);
   }
-  num_OptKF = lLocalKeyFrames.size();
 
   // Set Fixed KeyFrame vertices
   for (std::list<std::shared_ptr<KeyFrame>>::iterator lit = lFixedCameras.begin(),
@@ -334,7 +321,6 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
       }
     }
   }
-  num_edges = nEdges;
 
   if (pbStopFlag)
     if (*pbStopFlag) return;

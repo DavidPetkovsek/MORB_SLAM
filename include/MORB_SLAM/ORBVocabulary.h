@@ -21,8 +21,13 @@
 
 #pragma once
 
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DBoW2/FORB.h>
+#include <apps/morb_dbow2/DBoW2/TemplatedVocabulary.h>
+#else
 #include "DBoW2/FORB.h"
 #include "DBoW2/TemplatedVocabulary.h"
+#endif
 
 namespace MORB_SLAM {
 

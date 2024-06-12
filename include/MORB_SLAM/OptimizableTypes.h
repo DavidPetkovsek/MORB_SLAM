@@ -22,12 +22,19 @@
 #pragma once
 
 #include <MORB_SLAM/CameraModels/GeometricCamera.h>
+
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/types/sim3.h>
+#include <apps/morb_g2o/g2o/types/types_six_dof_expmap.h>
+#include <apps/morb_g2o/g2o/core/base_unary_edge.h>
+#else
 #include <g2o/types/sim3.h>
 #include <g2o/types/types_six_dof_expmap.h>
+#include "g2o/core/base_unary_edge.h"
+#endif
 
 #include <Eigen/Geometry>
 
-#include "g2o/core/base_unary_edge.h"
 
 namespace MORB_SLAM {
 class EdgeSE3ProjectXYZOnlyPose

@@ -27,11 +27,11 @@
 #ifndef G2O_BLOCK_SOLVER_H
 #define G2O_BLOCK_SOLVER_H
 #include <Eigen/Core>
-#include "solver.h"
-#include "linear_solver.h"
-#include "sparse_block_matrix.h"
-#include "sparse_block_matrix_diagonal.h"
-#include "openmp_mutex.h"
+#include "g2o/core/solver.h"
+#include "g2o/core/linear_solver.h"
+#include "g2o/core/sparse_block_matrix.h"
+#include "g2o/core/sparse_block_matrix_diagonal.h"
+#include "g2o/core/openmp_mutex.h"
 #include "g2o/config.h"
 
 namespace g2o {
@@ -186,7 +186,7 @@ namespace g2o {
 
 } // end namespace
 
-#include "block_solver.hpp"
+#include "g2o/core/block_solver.hpp"
 
 
 #endif

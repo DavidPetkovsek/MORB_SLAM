@@ -28,7 +28,11 @@
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/MapPoint.h"
+#ifdef FactoryEngine
+#include <apps/morb_sophus/sim3.hpp>
+#else
 #include "sophus/sim3.hpp"
+#endif
 
 namespace MORB_SLAM {
 
@@ -114,10 +118,10 @@ class ORBmatcher {
  public:
   static const int TH_LOW;
   static const int TH_HIGH;
-  static const int HISTO_LENGTH;
   
-
  protected:
+  static const int HISTO_LENGTH;
+
   float RadiusByViewingCos(const float &viewCos);
 
   void ComputeThreeMaxima(std::vector<int> *histo, const int L, int &ind1,

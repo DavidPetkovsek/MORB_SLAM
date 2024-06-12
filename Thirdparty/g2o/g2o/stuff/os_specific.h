@@ -48,7 +48,7 @@ int vasprintf(char** strp, const char* fmt, va_list ap);
 
 #endif
 
-#ifdef UNIX
+#if defined(__unix__)
 #include <sys/time.h>
 // nothing to do on real operating systems
 #endif

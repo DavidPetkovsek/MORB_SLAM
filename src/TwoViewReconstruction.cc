@@ -24,9 +24,13 @@
 #include <thread>
 
 #include "MORB_SLAM/Converter.h"
-#include "DUtils/Random.h"
 #include "MORB_SLAM/GeometricTools.h"
 
+#ifdef FactoryEngine
+#include <apps/morb_dbow2/DUtils/Random.h>
+#else
+#include "DUtils/Random.h"
+#endif
 
 namespace MORB_SLAM {
 TwoViewReconstruction::TwoViewReconstruction(const Eigen::Matrix3f &k,

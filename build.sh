@@ -79,6 +79,8 @@ for arg in "$@"; do
     j_arg="$arg"
   elif [[ $arg =~ ^-G[0-9a-zA-Z]+$ ]]; then
     g_arg="$arg"
+  elif [[ $arg =~ ^-DCMAKE_TOOLCHAIN_FILE ]]; then
+    vcpkg_arg="found"
   else
     cmake_args+=("$arg")
   fi
@@ -123,14 +125,22 @@ if [ ! -d "build" ] || [ ! -f "build/${configCompleteFile}" ]; then
         echo "Workers: ${j_arg}    Generator: ${g_arg}"
         if test -n "$vcpkg_arg"; then
           echo "With VCPKG"
-          vcpkg_arg="-DCMAKE_TOOLCHAIN_FILE=${vcpkg_arg}"
+          if [[ "$vcpkg_arg" != "found" ]]; then
+            vcpkg_arg="-DCMAKE_TOOLCHAIN_FILE=${vcpkg_arg}"
+          else
+            vcpkg_arg=""
+          fi
           do_vcpkg_prereqs
         fi
         echo "User Flags: ${cmake_args[@]}"
         mkdir build 2> /dev/null
         cd build
         # https://unix.stackexchange.com/questions/31414/how-can-i-pass-a-command-line-argument-into-a-shell-script
-        cmake .. ${g_arg} "${vcpkg_arg}" "${cmake_args[@]}" # pass arguments on to cmake
+        if test -n "$vcpkg_arg"; then
+          cmake .. ${g_arg} "${vcpkg_arg}" "${cmake_args[@]}" # pass arguments on to cmake
+        else
+          cmake .. ${g_arg} "${cmake_args[@]}" # pass arguments on to cmake
+        fi
         if [ $? -ne 0 ]; then
                 rm "${configCompleteFile}" 2> /dev/null
                 cd ..

@@ -27,15 +27,15 @@
 // Modified Raul Mur Artal (2014)
 // - Stop criterium (solve function)
 
-#include "optimization_algorithm_levenberg.h"
+#include "g2o/core/optimization_algorithm_levenberg.h"
 
 #include <iostream>
 
-#include "../stuff/timeutil.h"
+#include "g2o/stuff/timeutil.h"
 
-#include "sparse_optimizer.h"
-#include "solver.h"
-#include "batch_stats.h"
+#include "g2o/core/sparse_optimizer.h"
+#include "g2o/core/solver.h"
+#include "g2o/core/batch_stats.h"
 
 
 namespace g2o {

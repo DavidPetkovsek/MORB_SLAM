@@ -1,0 +1,55 @@
+compatibility: ^1.0.0-alpha.1
+cpp-deps: !!set
+  boost-regex: null
+  boost-serialization: null
+  eigen3: null
+  ixwebsocket: null
+  opencv4: null
+  openssl: null
+  pangolin: null
+cpp-deps/boost-regex/components: !!set
+  regex: null
+cpp-deps/boost-regex/package: Boost
+cpp-deps/boost-regex/public_libs: !!set
+  Boost::regex: null
+cpp-deps/boost-serialization/components: !!set
+  serialization: null
+cpp-deps/boost-serialization/package: Boost
+cpp-deps/boost-serialization/public_libs: !!set
+  Boost::serialization: null
+cpp-deps/eigen3/package: Eigen3
+cpp-deps/eigen3/public_libs: !!set
+  Eigen3::Eigen: null
+cpp-deps/ixwebsocket/package: ixwebsocket
+cpp-deps/ixwebsocket/private_libs: !!set
+  ixwebsocket::ixwebsocket: null
+cpp-deps/opencv4/package: OpenCV
+cpp-deps/opencv4/public_libs: !!set
+  ${OpenCV_LIBS}: null
+cpp-deps/openssl/package: OpenSSL
+cpp-deps/openssl/private_libs: !!set
+  OpenSSL::SSL: null
+cpp-deps/pangolin/package: Pangolin
+cpp-deps/pangolin/private_libs: !!set
+  ${Pangolin_LIBRARIES}: null
+cpp-port-overrides: !!set
+  vcpkg_overlay_ports/libcap: null
+cpp-public-defs: !!set
+  -DFactoryEngine: null
+cpp-public-libs: !!set
+  Threads::Threads: null
+cpp-system-packages: !!set
+  Threads: null
+dependencies:
+  morb_dbow2: Thirdparty/DBoW2
+  morb_g2o: Thirdparty/g2o
+  morb_sophus: Thirdparty/Sophus
+description: An Accurate Open-Source Library for Visual-Inertial and Multi-Map SLAM
+docker-base: alpine
+icon: null
+include: include
+name: MORB SLAM
+private_include: null
+slug: morb_slam
+src: src
+version: 0.1.0

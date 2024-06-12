@@ -1,0 +1,3087 @@
+diff --git a/include/DBoW2/BowVector.h b/include/DBoW2/BowVector.h
+index f559811..a7a12a9 100644
+--- a/include/DBoW2/BowVector.h
++++ b/include/DBoW2/BowVector.h
+@@ -14,6 +14,9 @@
+ #include <map>
+ #include <vector>
+ 
++#include <boost/serialization/serialization.hpp>
++#include <boost/serialization/map.hpp>
++
+ namespace DBoW2 {
+ 
+ /// Id of words
+@@ -56,6 +59,13 @@ enum ScoringType
+ class BowVector: 
+ 	public std::map<WordId, WordValue>
+ {
++    friend class boost::serialization::access;
++    template<class Archive>
++    void serialize(Archive& ar, const int version)
++    {
++        ar & boost::serialization::base_object<std::map<WordId, WordValue> >(*this);
++    }
++
+ public:
+ 
+ 	/** 
+diff --git a/include/DBoW2/DBoW2.h b/include/DBoW2/DBoW2.h
+deleted file mode 100644
+index 2ded3f3..0000000
+--- a/include/DBoW2/DBoW2.h
++++ /dev/null
+@@ -1,89 +0,0 @@
+-/*
+- * File: DBoW2.h
+- * Date: November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: Generic include file for the DBoW2 classes and
+- *   the specialized vocabularies and databases
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-/*! \mainpage DBoW2 Library
+- *
+- * DBoW2 library for C++:
+- * Bag-of-word image database for image retrieval.
+- *
+- * Written by Dorian Galvez-Lopez,
+- * University of Zaragoza
+- * 
+- * Check my website to obtain updates: http://webdiis.unizar.es/~dorian
+- *
+- * \section requirements Requirements
+- * This library requires the DUtils, DUtilsCV, DVision and OpenCV libraries,
+- * as well as the boost::dynamic_bitset class.
+- *
+- * \section citation Citation
+- * If you use this software in academic works, please cite:
+- <pre>
+-   @@ARTICLE{GalvezTRO12,
+-    author={Galvez-Lopez, Dorian and Tardos, J. D.}, 
+-    journal={IEEE Transactions on Robotics},
+-    title={Bags of Binary Words for Fast Place Recognition in Image Sequences},
+-    year={2012},
+-    month={October},
+-    volume={28},
+-    number={5},
+-    pages={1188--1197},
+-    doi={10.1109/TRO.2012.2197158},
+-    ISSN={1552-3098}
+-  }
+- </pre>
+- *
+- * \section license License
+- * This file is licensed under a Creative Commons 
+- * Attribution-NonCommercial-ShareAlike 3.0 license. 
+- * This file can be freely used and users can use, download and edit this file 
+- * provided that credit is attributed to the original author. No users are 
+- * permitted to use this file for commercial purposes unless explicit permission
+- * is given by the original author. Derivative works must be licensed using the
+- * same or similar license.
+- * Check http://creativecommons.org/licenses/by-nc-sa/3.0/ to obtain further
+- * details.
+- *
+- */
+-
+-#ifndef __D_T_DBOW2__
+-#define __D_T_DBOW2__
+-
+-/// Includes all the data structures to manage vocabularies and image databases
+-namespace DBoW2
+-{
+-}
+-
+-#include "TemplatedVocabulary.h"
+-#include "TemplatedDatabase.h"
+-#include "BowVector.h"
+-#include "FeatureVector.h"
+-#include "QueryResults.h"
+-#include "FSurf64.h"
+-#include "FBrief.h"
+-#include "FORB.h"
+-
+-/// SURF64 Vocabulary
+-typedef DBoW2::TemplatedVocabulary<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
+-  Surf64Vocabulary;
+-
+-/// SURF64 Database
+-typedef DBoW2::TemplatedDatabase<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
+-  Surf64Database;
+-  
+-/// BRIEF Vocabulary
+-typedef DBoW2::TemplatedVocabulary<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
+-  BriefVocabulary;
+-
+-/// BRIEF Database
+-typedef DBoW2::TemplatedDatabase<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
+-  BriefDatabase;
+-
+-#endif
+-
+diff --git a/include/DBoW2/FBrief.h b/include/DBoW2/FBrief.h
+deleted file mode 100644
+index 5231b54..0000000
+--- a/include/DBoW2/FBrief.h
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/**
+- * File: FBrief.h
+- * Date: November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: functions for BRIEF descriptors
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_T_F_BRIEF__
+-#define __D_T_F_BRIEF__
+-
+-#include <opencv/cv.h>
+-#include <vector>
+-#include <string>
+-
+-#include "FClass.h"
+-#include <DVision/DVision.h>
+-
+-namespace DBoW2 {
+-
+-/// Functions to manipulate BRIEF descriptors
+-class FBrief: protected FClass
+-{
+-public:
+-
+-  typedef DVision::BRIEF::bitset TDescriptor;
+-  typedef const TDescriptor *pDescriptor;
+-
+-  /**
+-   * Calculates the mean value of a set of descriptors
+-   * @param descriptors
+-   * @param mean mean descriptor
+-   */
+-  static void meanValue(const std::vector<pDescriptor> &descriptors, 
+-    TDescriptor &mean);
+-  
+-  /**
+-   * Calculates the distance between two descriptors
+-   * @param a
+-   * @param b
+-   * @return distance
+-   */
+-  static double distance(const TDescriptor &a, const TDescriptor &b);
+-  
+-  /**
+-   * Returns a string version of the descriptor
+-   * @param a descriptor
+-   * @return string version
+-   */
+-  static std::string toString(const TDescriptor &a);
+-  
+-  /**
+-   * Returns a descriptor from a string
+-   * @param a descriptor
+-   * @param s string version
+-   */
+-  static void fromString(TDescriptor &a, const std::string &s);
+-  
+-  /**
+-   * Returns a mat with the descriptors in float format
+-   * @param descriptors
+-   * @param mat (out) NxL 32F matrix
+-   */
+-  static void toMat32F(const std::vector<TDescriptor> &descriptors, 
+-    cv::Mat &mat);
+-
+-};
+-
+-} // namespace DBoW2
+-
+-#endif
+-
+diff --git a/include/DBoW2/FClass.h b/include/DBoW2/FClass.h
+index 592e1bd..13be53d 100644
+--- a/include/DBoW2/FClass.h
++++ b/include/DBoW2/FClass.h
+@@ -10,7 +10,7 @@
+ #ifndef __D_T_FCLASS__
+ #define __D_T_FCLASS__
+ 
+-#include <opencv/cv.h>
++#include <opencv2/core/core.hpp>
+ #include <vector>
+ #include <string>
+ 
+diff --git a/include/DBoW2/FORB.h b/include/DBoW2/FORB.h
+index bc0ba80..a39599f 100644
+--- a/include/DBoW2/FORB.h
++++ b/include/DBoW2/FORB.h
+@@ -10,7 +10,7 @@
+ #ifndef __D_T_F_ORB__
+ #define __D_T_F_ORB__
+ 
+-#include <opencv/cv.h>
++#include <opencv2/core/core.hpp>
+ #include <vector>
+ #include <string>
+ 
+@@ -18,7 +18,7 @@
+ 
+ namespace DBoW2 {
+ 
+-/// Functions to manipulate BRIEF descriptors
++/// Functions to manipulate ORB descriptors
+ class FORB: protected FClass
+ {
+ public:
+@@ -28,7 +28,7 @@ public:
+   /// Pointer to a single descriptor
+   typedef const TDescriptor *pDescriptor;
+   /// Descriptor length (in bytes)
+-  static const int L = 32;
++  static const int L;
+ 
+   /**
+    * Calculates the mean value of a set of descriptors
+@@ -44,7 +44,7 @@ public:
+    * @param b
+    * @return distance
+    */
+-  static double distance(const TDescriptor &a, const TDescriptor &b);
++  static int distance(const TDescriptor &a, const TDescriptor &b);
+ 
+   /**
+    * Returns a string version of the descriptor
+@@ -68,18 +68,6 @@ public:
+   static void toMat32F(const std::vector<TDescriptor> &descriptors,
+     cv::Mat &mat);
+ 
+-  /**
+-   * Returns a mat with the descriptors in float format
+-   * @param descriptors NxL CV_8U matrix
+-   * @param mat (out) NxL 32F matrix
+-   */
+-  static void toMat32F(const cv::Mat &descriptors, cv::Mat &mat);
+-
+-  /**
+-   * Returns a matrix with the descriptor in OpenCV format
+-   * @param descriptors vector of N row descriptors
+-   * @param mat (out) NxL CV_8U matrix
+-   */
+   static void toMat8U(const std::vector<TDescriptor> &descriptors,
+     cv::Mat &mat);
+ 
+diff --git a/include/DBoW2/FSurf64.h b/include/DBoW2/FSurf64.h
+deleted file mode 100644
+index 36d0a8b..0000000
+--- a/include/DBoW2/FSurf64.h
++++ /dev/null
+@@ -1,84 +0,0 @@
+-/**
+- * File: FSurf64.h
+- * Date: November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: functions for Surf64 descriptors
+- * License: see the LICENSE.txt file
+- *
+- */
+- 
+-#ifndef __D_T_F_SURF_64__
+-#define __D_T_F_SURF_64__
+-
+-#include <opencv/cv.h>
+-#include <vector>
+-#include <string>
+-
+-#include "FClass.h"
+-
+-namespace DBoW2 {
+-
+-/// Functions to manipulate SURF64 descriptors
+-class FSurf64: protected FClass
+-{
+-public:
+-
+-  /// Descriptor type
+-  typedef std::vector<float> TDescriptor;
+-  /// Pointer to a single descriptor
+-  typedef const TDescriptor *pDescriptor;
+-  /// Descriptor length
+-  static const int L = 64; 
+-
+-  /**
+-   * Returns the number of dimensions of the descriptor space
+-   * @return dimensions
+-   */
+-  inline static int dimensions()
+-  {
+-    return L;
+-  }
+-
+-  /**
+-   * Calculates the mean value of a set of descriptors
+-   * @param descriptors vector of pointers to descriptors
+-   * @param mean mean descriptor
+-   */
+-  static void meanValue(const std::vector<pDescriptor> &descriptors, 
+-    TDescriptor &mean);
+-  
+-  /**
+-   * Calculates the (squared) distance between two descriptors
+-   * @param a
+-   * @param b
+-   * @return (squared) distance
+-   */
+-  static double distance(const TDescriptor &a, const TDescriptor &b);
+-  
+-  /**
+-   * Returns a string version of the descriptor
+-   * @param a descriptor
+-   * @return string version
+-   */
+-  static std::string toString(const TDescriptor &a);
+-  
+-  /**
+-   * Returns a descriptor from a string
+-   * @param a descriptor
+-   * @param s string version
+-   */
+-  static void fromString(TDescriptor &a, const std::string &s);
+-
+-  /**
+-   * Returns a mat with the descriptors in float format
+-   * @param descriptors
+-   * @param mat (out) NxL 32F matrix
+-   */
+-  static void toMat32F(const std::vector<TDescriptor> &descriptors, 
+-    cv::Mat &mat);
+-
+-};
+-
+-} // namespace DBoW2
+-
+-#endif
+diff --git a/include/DBoW2/FeatureVector.h b/include/DBoW2/FeatureVector.h
+index 08a91de..426f36d 100644
+--- a/include/DBoW2/FeatureVector.h
++++ b/include/DBoW2/FeatureVector.h
+@@ -15,12 +15,22 @@
+ #include <vector>
+ #include <iostream>
+ 
++#include <boost/serialization/serialization.hpp>
++#include <boost/serialization/map.hpp>
++
+ namespace DBoW2 {
+ 
+ /// Vector of nodes with indexes of local features
+ class FeatureVector: 
+   public std::map<NodeId, std::vector<unsigned int> >
+ {
++    friend class boost::serialization::access;
++    template<class Archive>
++    void serialize(Archive& ar, const int version)
++    {
++        ar & boost::serialization::base_object<std::map<NodeId, std::vector<unsigned int> > >(*this);
++    }
++
+ public:
+ 
+   /**
+diff --git a/include/DBoW2/QueryResults.h b/include/DBoW2/QueryResults.h
+deleted file mode 100644
+index 2490bce..0000000
+--- a/include/DBoW2/QueryResults.h
++++ /dev/null
+@@ -1,205 +0,0 @@
+-/**
+- * File: QueryResults.h
+- * Date: March, November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: structure to store results of database queries
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#ifndef __D_T_QUERY_RESULTS__
+-#define __D_T_QUERY_RESULTS__
+-
+-#include <vector>
+-
+-namespace DBoW2 {
+-
+-/// Id of entries of the database
+-typedef unsigned int EntryId;
+-
+-/// Single result of a query
+-class Result
+-{
+-public:
+-  
+-  /// Entry id
+-  EntryId Id;
+-  
+-  /// Score obtained
+-  double Score;
+-  
+-  /// debug
+-  int nWords; // words in common
+-  // !!! this is filled only by Bhatt score!
+-  // (and for BCMatching, BCThresholding then)
+-  
+-  double bhatScore, chiScore;
+-  /// debug
+-  
+-  // only done by ChiSq and BCThresholding 
+-  double sumCommonVi;
+-  double sumCommonWi;
+-  double expectedChiScore;
+-  /// debug
+-
+-  /**
+-   * Empty constructors
+-   */
+-  inline Result(){}
+-  
+-  /**
+-   * Creates a result with the given data
+-   * @param _id entry id
+-   * @param _score score
+-   */
+-  inline Result(EntryId _id, double _score): Id(_id), Score(_score){}
+-
+-  /**
+-   * Compares the scores of two results
+-   * @return true iff this.score < r.score
+-   */
+-  inline bool operator<(const Result &r) const
+-  {
+-    return this->Score < r.Score;
+-  }
+-
+-  /**
+-   * Compares the scores of two results
+-   * @return true iff this.score > r.score
+-   */
+-  inline bool operator>(const Result &r) const
+-  {
+-    return this->Score > r.Score;
+-  }
+-
+-  /**
+-   * Compares the entry id of the result
+-   * @return true iff this.id == id
+-   */
+-  inline bool operator==(EntryId id) const
+-  {
+-    return this->Id == id;
+-  }
+-  
+-  /**
+-   * Compares the score of this entry with a given one
+-   * @param s score to compare with
+-   * @return true iff this score < s
+-   */
+-  inline bool operator<(double s) const
+-  {
+-    return this->Score < s;
+-  }
+-  
+-  /**
+-   * Compares the score of this entry with a given one
+-   * @param s score to compare with
+-   * @return true iff this score > s
+-   */
+-  inline bool operator>(double s) const
+-  {
+-    return this->Score > s;
+-  }
+-  
+-  /**
+-   * Compares the score of two results
+-   * @param a
+-   * @param b
+-   * @return true iff a.Score > b.Score
+-   */
+-  static inline bool gt(const Result &a, const Result &b)
+-  {
+-    return a.Score > b.Score;
+-  }
+-  
+-  /**
+-   * Compares the scores of two results
+-   * @return true iff a.Score > b.Score
+-   */
+-  inline static bool ge(const Result &a, const Result &b)
+-  {
+-    return a.Score > b.Score;
+-  }
+-  
+-  /**
+-   * Returns true iff a.Score >= b.Score
+-   * @param a
+-   * @param b
+-   * @return true iff a.Score >= b.Score
+-   */
+-  static inline bool geq(const Result &a, const Result &b)
+-  {
+-    return a.Score >= b.Score;
+-  }
+-  
+-  /**
+-   * Returns true iff a.Score >= s
+-   * @param a
+-   * @param s
+-   * @return true iff a.Score >= s
+-   */
+-  static inline bool geqv(const Result &a, double s)
+-  {
+-    return a.Score >= s;
+-  }
+-  
+-  
+-  /**
+-   * Returns true iff a.Id < b.Id
+-   * @param a
+-   * @param b
+-   * @return true iff a.Id < b.Id
+-   */
+-  static inline bool ltId(const Result &a, const Result &b)
+-  {
+-    return a.Id < b.Id;
+-  }
+-  
+-  /**
+-   * Prints a string version of the result
+-   * @param os ostream
+-   * @param ret Result to print
+-   */
+-  friend std::ostream & operator<<(std::ostream& os, const Result& ret );
+-};
+-
+-/// Multiple results from a query
+-class QueryResults: public std::vector<Result>
+-{
+-public:
+-
+-  /** 
+-   * Multiplies all the scores in the vector by factor
+-   * @param factor
+-   */
+-  inline void scaleScores(double factor);
+-  
+-  /**
+-   * Prints a string version of the results
+-   * @param os ostream
+-   * @param ret QueryResults to print
+-   */
+-  friend std::ostream & operator<<(std::ostream& os, const QueryResults& ret );
+-  
+-  /**
+-   * Saves a matlab file with the results 
+-   * @param filename 
+-   */
+-  void saveM(const std::string &filename) const;
+-  
+-};
+-
+-// --------------------------------------------------------------------------
+-
+-inline void QueryResults::scaleScores(double factor)
+-{
+-  for(QueryResults::iterator qit = begin(); qit != end(); ++qit) 
+-    qit->Score *= factor;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-} // namespace TemplatedBoW
+-  
+-#endif
+-
+diff --git a/include/DBoW2/ScoringObject.h b/include/DBoW2/ScoringObject.h
+index c57502d..8d5b821 100644
+--- a/include/DBoW2/ScoringObject.h
++++ b/include/DBoW2/ScoringObject.h
+@@ -41,6 +41,7 @@ public:
+ 	// epsilon value (this is needed by the KL method)
+ 
+   virtual ~GeneralScoring() {} //!< Required for virtual base classes
++	
+ };
+ 
+ /** 
+diff --git a/include/DBoW2/TemplatedDatabase.h b/include/DBoW2/TemplatedDatabase.h
+deleted file mode 100644
+index 867165a..0000000
+--- a/include/DBoW2/TemplatedDatabase.h
++++ /dev/null
+@@ -1,1352 +0,0 @@
+-/**
+- * File: TemplatedDatabase.h
+- * Date: March 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: templated database of images
+- * License: see the LICENSE.txt file
+- *
+- */
+- 
+-#ifndef __D_T_TEMPLATED_DATABASE__
+-#define __D_T_TEMPLATED_DATABASE__
+-
+-#include <vector>
+-#include <numeric>
+-#include <fstream>
+-#include <string>
+-#include <list>
+-#include <set>
+-
+-#include "TemplatedVocabulary.h"
+-#include "QueryResults.h"
+-#include "ScoringObject.h"
+-#include "BowVector.h"
+-#include "FeatureVector.h"
+-
+-#include <DUtils/DUtils.h>
+-
+-using namespace std;
+-
+-namespace DBoW2 {
+-
+-// For query functions
+-static int MIN_COMMON_WORDS = 5;
+-
+-/// @param TDescriptor class of descriptor
+-/// @param F class of descriptor functions
+-template<class TDescriptor, class F>
+-/// Generic Database
+-class TemplatedDatabase
+-{
+-public:
+-
+-  /**
+-   * Creates an empty database without vocabulary
+-   * @param use_di a direct index is used to store feature indexes
+-   * @param di_levels levels to go up the vocabulary tree to select the 
+-   *   node id to store in the direct index when adding images
+-   */
+-  explicit TemplatedDatabase(bool use_di = true, int di_levels = 0);
+-
+-  /**
+-   * Creates a database with the given vocabulary
+-   * @param T class inherited from TemplatedVocabulary<TDescriptor, F>
+-   * @param voc vocabulary
+-   * @param use_di a direct index is used to store feature indexes
+-   * @param di_levels levels to go up the vocabulary tree to select the 
+-   *   node id to store in the direct index when adding images
+-   */
+-  template<class T>
+-  explicit TemplatedDatabase(const T &voc, bool use_di = true, 
+-    int di_levels = 0);
+-
+-  /**
+-   * Copy constructor. Copies the vocabulary too
+-   * @param db object to copy
+-   */
+-  TemplatedDatabase(const TemplatedDatabase<TDescriptor, F> &db);
+-
+-  /** 
+-   * Creates the database from a file
+-   * @param filename
+-   */
+-  TemplatedDatabase(const std::string &filename);
+-
+-  /** 
+-   * Creates the database from a file
+-   * @param filename
+-   */
+-  TemplatedDatabase(const char *filename);
+-
+-  /**
+-   * Destructor
+-   */
+-  virtual ~TemplatedDatabase(void);
+-
+-  /**
+-   * Copies the given database and its vocabulary
+-   * @param db database to copy
+-   */
+-  TemplatedDatabase<TDescriptor,F>& operator=(
+-    const TemplatedDatabase<TDescriptor,F> &db);
+-
+-  /**
+-   * Sets the vocabulary to use and clears the content of the database.
+-   * @param T class inherited from TemplatedVocabulary<TDescriptor, F>
+-   * @param voc vocabulary to copy
+-   */
+-  template<class T>
+-  inline void setVocabulary(const T &voc);
+-  
+-  /**
+-   * Sets the vocabulary to use and the direct index parameters, and clears
+-   * the content of the database
+-   * @param T class inherited from TemplatedVocabulary<TDescriptor, F>
+-   * @param voc vocabulary to copy
+-   * @param use_di a direct index is used to store feature indexes
+-   * @param di_levels levels to go up the vocabulary tree to select the 
+-   *   node id to store in the direct index when adding images
+-   */
+-  template<class T>
+-  void setVocabulary(const T& voc, bool use_di, int di_levels = 0);
+-  
+-  /**
+-   * Returns a pointer to the vocabulary used
+-   * @return vocabulary
+-   */
+-  inline const TemplatedVocabulary<TDescriptor,F>* getVocabulary() const;
+-
+-  /** 
+-   * Allocates some memory for the direct and inverted indexes
+-   * @param nd number of expected image entries in the database 
+-   * @param ni number of expected words per image
+-   * @note Use 0 to ignore a parameter
+-   */
+-  void allocate(int nd = 0, int ni = 0);
+-
+-  /**
+-   * Adds an entry to the database and returns its index
+-   * @param features features of the new entry
+-   * @param bowvec if given, the bow vector of these features is returned
+-   * @param fvec if given, the vector of nodes and feature indexes is returned
+-   * @return id of new entry
+-   */
+-  EntryId add(const vector<TDescriptor> &features,
+-    BowVector *bowvec = NULL, FeatureVector *fvec = NULL);
+-
+-  /**
+-   * Adss an entry to the database and returns its index
+-   * @param vec bow vector
+-   * @param fec feature vector to add the entry. Only necessary if using the
+-   *   direct index
+-   * @return id of new entry
+-   */
+-  EntryId add(const BowVector &vec, 
+-    const FeatureVector &fec = FeatureVector() );
+-
+-  /**
+-   * Empties the database
+-   */
+-  inline void clear();
+-
+-  /**
+-   * Returns the number of entries in the database 
+-   * @return number of entries in the database
+-   */
+-  inline unsigned int size() const;
+-  
+-  /**
+-   * Checks if the direct index is being used
+-   * @return true iff using direct index
+-   */
+-  inline bool usingDirectIndex() const;
+-  
+-  /**
+-   * Returns the di levels when using direct index
+-   * @return di levels
+-   */
+-  inline int getDirectIndexLevels() const;
+-  
+-  /**
+-   * Queries the database with some features
+-   * @param features query features
+-   * @param ret (out) query results
+-   * @param max_results number of results to return. <= 0 means all
+-   * @param max_id only entries with id <= max_id are returned in ret. 
+-   *   < 0 means all
+-   */
+-  void query(const vector<TDescriptor> &features, QueryResults &ret,
+-    int max_results = 1, int max_id = -1) const;
+-  
+-  /**
+-   * Queries the database with a vector
+-   * @param vec bow vector already normalized
+-   * @param ret results
+-   * @param max_results number of results to return. <= 0 means all
+-   * @param max_id only entries with id <= max_id are returned in ret. 
+-   *   < 0 means all
+-   */
+-  void query(const BowVector &vec, QueryResults &ret, 
+-    int max_results = 1, int max_id = -1) const;
+-
+-  /**
+-   * Returns the a feature vector associated with a database entry
+-   * @param id entry id (must be < size())
+-   * @return const reference to map of nodes and their associated features in
+-   *   the given entry
+-   */
+-  const FeatureVector& retrieveFeatures(EntryId id) const;
+-
+-  /**
+-   * Stores the database in a file
+-   * @param filename
+-   */
+-  void save(const string &filename) const;
+-  
+-  /**
+-   * Loads the database from a file
+-   * @param filename
+-   */
+-  void load(const string &filename);
+-  
+-  /** 
+-   * Stores the database in the given file storage structure
+-   * @param fs
+-   * @param name node name
+-   */
+-  virtual void save(cv::FileStorage &fs, 
+-    const std::string &name = "database") const;
+-  
+-  /** 
+-   * Loads the database from the given file storage structure
+-   * @param fs
+-   * @param name node name
+-   */
+-  virtual void load(const cv::FileStorage &fs, 
+-    const std::string &name = "database");
+-
+-protected:
+-  
+-  /// Query with L1 scoring
+-  void queryL1(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-  
+-  /// Query with L2 scoring
+-  void queryL2(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-  
+-  /// Query with Chi square scoring
+-  void queryChiSquare(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-  
+-  /// Query with Bhattacharyya scoring
+-  void queryBhattacharyya(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-  
+-  /// Query with KL divergence scoring  
+-  void queryKL(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-  
+-  /// Query with dot product scoring
+-  void queryDotProduct(const BowVector &vec, QueryResults &ret, 
+-    int max_results, int max_id) const;
+-
+-protected:
+-
+-  /* Inverted file declaration */
+-  
+-  /// Item of IFRow
+-  struct IFPair
+-  {
+-    /// Entry id
+-    EntryId entry_id;
+-    
+-    /// Word weight in this entry
+-    WordValue word_weight;
+-    
+-    /**
+-     * Creates an empty pair
+-     */
+-    IFPair(){}
+-    
+-    /**
+-     * Creates an inverted file pair
+-     * @param eid entry id
+-     * @param wv word weight
+-     */
+-    IFPair(EntryId eid, WordValue wv): entry_id(eid), word_weight(wv) {}
+-    
+-    /**
+-     * Compares the entry ids
+-     * @param eid
+-     * @return true iff this entry id is the same as eid
+-     */
+-    inline bool operator==(EntryId eid) const { return entry_id == eid; }
+-  };
+-  
+-  /// Row of InvertedFile
+-  typedef std::list<IFPair> IFRow;
+-  // IFRows are sorted in ascending entry_id order
+-  
+-  /// Inverted index
+-  typedef std::vector<IFRow> InvertedFile; 
+-  // InvertedFile[word_id] --> inverted file of that word
+-  
+-  /* Direct file declaration */
+-
+-  /// Direct index
+-  typedef std::vector<FeatureVector> DirectFile;
+-  // DirectFile[entry_id] --> [ directentry, ... ]
+-
+-protected:
+-
+-  /// Associated vocabulary
+-  TemplatedVocabulary<TDescriptor, F> *m_voc;
+-  
+-  /// Flag to use direct index
+-  bool m_use_di;
+-  
+-  /// Levels to go up the vocabulary tree to select nodes to store
+-  /// in the direct index
+-  int m_dilevels;
+-  
+-  /// Inverted file (must have size() == |words|)
+-  InvertedFile m_ifile;
+-  
+-  /// Direct file (resized for allocation)
+-  DirectFile m_dfile;
+-  
+-  /// Number of valid entries in m_dfile
+-  int m_nentries;
+-  
+-};
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor, F>::TemplatedDatabase
+-  (bool use_di, int di_levels)
+-  : m_voc(NULL), m_use_di(use_di), m_dilevels(di_levels)
+-{
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-template<class T>
+-TemplatedDatabase<TDescriptor, F>::TemplatedDatabase
+-  (const T &voc, bool use_di, int di_levels)
+-  : m_voc(NULL), m_use_di(use_di), m_dilevels(di_levels)
+-{
+-  setVocabulary(voc);
+-  clear();
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor,F>::TemplatedDatabase
+-  (const TemplatedDatabase<TDescriptor,F> &db)
+-  : m_voc(NULL)
+-{
+-  *this = db;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor, F>::TemplatedDatabase
+-  (const std::string &filename)
+-  : m_voc(NULL)
+-{
+-  load(filename);
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor, F>::TemplatedDatabase
+-  (const char *filename)
+-  : m_voc(NULL)
+-{
+-  load(filename);
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor, F>::~TemplatedDatabase(void)
+-{
+-  delete m_voc;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-TemplatedDatabase<TDescriptor,F>& TemplatedDatabase<TDescriptor,F>::operator=
+-  (const TemplatedDatabase<TDescriptor,F> &db)
+-{
+-  if(this != &db)
+-  {
+-    m_dfile = db.m_dfile;
+-    m_dilevels = db.m_dilevels;
+-    m_ifile = db.m_ifile;
+-    m_nentries = db.m_nentries;
+-    m_use_di = db.m_use_di;
+-    setVocabulary(*db.m_voc);
+-  }
+-  return *this;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-EntryId TemplatedDatabase<TDescriptor, F>::add(
+-  const vector<TDescriptor> &features,
+-  BowVector *bowvec, FeatureVector *fvec)
+-{
+-  BowVector aux;
+-  BowVector& v = (bowvec ? *bowvec : aux);
+-  
+-  if(m_use_di && fvec != NULL)
+-  {
+-    m_voc->transform(features, v, *fvec, m_dilevels); // with features
+-    return add(v, *fvec);
+-  }
+-  else if(m_use_di)
+-  {
+-    FeatureVector fv;
+-    m_voc->transform(features, v, fv, m_dilevels); // with features
+-    return add(v, fv);
+-  }
+-  else if(fvec != NULL)
+-  {
+-    m_voc->transform(features, v, *fvec, m_dilevels); // with features
+-    return add(v);
+-  }
+-  else
+-  {
+-    m_voc->transform(features, v); // with features
+-    return add(v);
+-  }
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-EntryId TemplatedDatabase<TDescriptor, F>::add(const BowVector &v,
+-  const FeatureVector &fv)
+-{
+-  EntryId entry_id = m_nentries++;
+-
+-  BowVector::const_iterator vit;
+-  vector<unsigned int>::const_iterator iit;
+-
+-  if(m_use_di)
+-  {
+-    // update direct file
+-    if(entry_id == m_dfile.size())
+-    {
+-      m_dfile.push_back(fv);
+-    }
+-    else
+-    {
+-      m_dfile[entry_id] = fv;
+-    }
+-  }
+-  
+-  // update inverted file
+-  for(vit = v.begin(); vit != v.end(); ++vit)
+-  {
+-    const WordId& word_id = vit->first;
+-    const WordValue& word_weight = vit->second;
+-    
+-    IFRow& ifrow = m_ifile[word_id];
+-    ifrow.push_back(IFPair(entry_id, word_weight));
+-  }
+-  
+-  return entry_id;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-template<class T>
+-inline void TemplatedDatabase<TDescriptor, F>::setVocabulary
+-  (const T& voc)
+-{
+-  delete m_voc;
+-  m_voc = new T(voc);
+-  clear();
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-template<class T>
+-inline void TemplatedDatabase<TDescriptor, F>::setVocabulary
+-  (const T& voc, bool use_di, int di_levels)
+-{
+-  m_use_di = use_di;
+-  m_dilevels = di_levels;
+-  delete m_voc;
+-  m_voc = new T(voc);
+-  clear();
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-inline const TemplatedVocabulary<TDescriptor,F>* 
+-TemplatedDatabase<TDescriptor, F>::getVocabulary() const
+-{
+-  return m_voc;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-inline void TemplatedDatabase<TDescriptor, F>::clear()
+-{
+-  // resize vectors
+-  m_ifile.resize(0);
+-  m_ifile.resize(m_voc->size());
+-  m_dfile.resize(0);
+-  m_nentries = 0;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::allocate(int nd, int ni)
+-{
+-  // m_ifile already contains |words| items
+-  if(ni > 0)
+-  {
+-    typename std::vector<IFRow>::iterator rit;
+-    for(rit = m_ifile.begin(); rit != m_ifile.end(); ++rit)
+-    {
+-      int n = (int)rit->size();
+-      if(ni > n)
+-      {
+-        rit->resize(ni);
+-        rit->resize(n);
+-      }
+-    }
+-  }
+-  
+-  if(m_use_di && (int)m_dfile.size() < nd)
+-  {
+-    m_dfile.resize(nd);
+-  }
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-inline unsigned int TemplatedDatabase<TDescriptor, F>::size() const
+-{
+-  return m_nentries;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-inline bool TemplatedDatabase<TDescriptor, F>::usingDirectIndex() const
+-{
+-  return m_use_di;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-inline int TemplatedDatabase<TDescriptor, F>::getDirectIndexLevels() const
+-{
+-  return m_dilevels;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::query(
+-  const vector<TDescriptor> &features, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector vec;
+-  m_voc->transform(features, vec);
+-  query(vec, ret, max_results, max_id);
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::query(
+-  const BowVector &vec, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  ret.resize(0);
+-  
+-  switch(m_voc->getScoringType())
+-  {
+-    case L1_NORM:
+-      queryL1(vec, ret, max_results, max_id);
+-      break;
+-      
+-    case L2_NORM:
+-      queryL2(vec, ret, max_results, max_id);
+-      break;
+-      
+-    case CHI_SQUARE:
+-      queryChiSquare(vec, ret, max_results, max_id);
+-      break;
+-      
+-    case KL:
+-      queryKL(vec, ret, max_results, max_id);
+-      break;
+-      
+-    case BHATTACHARYYA:
+-      queryBhattacharyya(vec, ret, max_results, max_id);
+-      break;
+-      
+-    case DOT_PRODUCT:
+-      queryDotProduct(vec, ret, max_results, max_id);
+-      break;
+-  }
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryL1(const BowVector &vec, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-    
+-  map<EntryId, double> pairs;
+-  map<EntryId, double>::iterator pit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& qvalue = vit->second;
+-        
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& dvalue = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        double value = fabs(qvalue - dvalue) - fabs(qvalue) - fabs(dvalue);
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second += value;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, double>::value_type(entry_id, value));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // move to vector
+-  ret.reserve(pairs.size());
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit)
+-  {
+-    ret.push_back(Result(pit->first, pit->second));
+-  }
+-	
+-  // resulting "scores" are now in [-2 best .. 0 worst]	
+-  
+-  // sort vector in ascending order of score
+-  sort(ret.begin(), ret.end());
+-  // (ret is inverted now --the lower the better--)
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-  
+-  // complete and scale score to [0 worst .. 1 best]
+-  // ||v - w||_{L1} = 2 + Sum(|v_i - w_i| - |v_i| - |w_i|) 
+-  //		for all i | v_i != 0 and w_i != 0 
+-  // (Nister, 2006)
+-  // scaled_||v - w||_{L1} = 1 - 0.5 * ||v - w||_{L1}
+-  QueryResults::iterator qit;
+-  for(qit = ret.begin(); qit != ret.end(); qit++) 
+-    qit->Score = -qit->Score/2.0;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryL2(const BowVector &vec, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-  
+-  map<EntryId, double> pairs;
+-  map<EntryId, double>::iterator pit;
+-  
+-  //map<EntryId, int> counters;
+-  //map<EntryId, int>::iterator cit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& qvalue = vit->second;
+-    
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& dvalue = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        double value = - qvalue * dvalue; // minus sign for sorting trick
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        //cit = counters.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second += value; 
+-          //cit->second += 1;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, double>::value_type(entry_id, value));
+-          
+-          //counters.insert(cit, 
+-          //  map<EntryId, int>::value_type(entry_id, 1));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // move to vector
+-  ret.reserve(pairs.size());
+-  //cit = counters.begin();
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit)//, ++cit)
+-  {
+-    ret.push_back(Result(pit->first, pit->second));// / cit->second));
+-  }
+-	
+-  // resulting "scores" are now in [-1 best .. 0 worst]	
+-  
+-  // sort vector in ascending order of score
+-  sort(ret.begin(), ret.end());
+-  // (ret is inverted now --the lower the better--)
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-
+-  // complete and scale score to [0 worst .. 1 best]
+-  // ||v - w||_{L2} = sqrt( 2 - 2 * Sum(v_i * w_i) 
+-	//		for all i | v_i != 0 and w_i != 0 )
+-	// (Nister, 2006)
+-	QueryResults::iterator qit;
+-  for(qit = ret.begin(); qit != ret.end(); qit++) 
+-  {
+-    if(qit->Score <= -1.0) // rounding error
+-      qit->Score = 1.0;
+-    else
+-      qit->Score = 1.0 - sqrt(1.0 + qit->Score); // [0..1]
+-      // the + sign is ok, it is due to - sign in 
+-      // value = - qvalue * dvalue
+-  }
+-  
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryChiSquare(const BowVector &vec, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-  
+-  map<EntryId, pair<double, int> > pairs;
+-  map<EntryId, pair<double, int> >::iterator pit;
+-  
+-  map<EntryId, pair<double, double> > sums; // < sum vi, sum wi >
+-  map<EntryId, pair<double, double> >::iterator sit;
+-  
+-  // In the current implementation, we suppose vec is not normalized
+-  
+-  //map<EntryId, double> expected;
+-  //map<EntryId, double>::iterator eit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& qvalue = vit->second;
+-    
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& dvalue = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        // (v-w)^2/(v+w) - v - w = -4 vw/(v+w)
+-        // we move the 4 out
+-        double value = 0;
+-        if(qvalue + dvalue != 0.0) // words may have weight zero
+-          value = - qvalue * dvalue / (qvalue + dvalue);
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        sit = sums.lower_bound(entry_id);
+-        //eit = expected.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second.first += value;
+-          pit->second.second += 1;
+-          //eit->second += dvalue;
+-          sit->second.first += qvalue;
+-          sit->second.second += dvalue;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, pair<double, int> >::value_type(entry_id, 
+-              make_pair(value, 1) ));
+-          //expected.insert(eit, 
+-          //  map<EntryId, double>::value_type(entry_id, dvalue));
+-          
+-          sums.insert(sit, 
+-            map<EntryId, pair<double, double> >::value_type(entry_id, 
+-              make_pair(qvalue, dvalue) ));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // move to vector
+-  ret.reserve(pairs.size());
+-  sit = sums.begin();
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit, ++sit)
+-  {
+-    if(pit->second.second >= MIN_COMMON_WORDS)
+-    {
+-      ret.push_back(Result(pit->first, pit->second.first));
+-      ret.back().nWords = pit->second.second;
+-      ret.back().sumCommonVi = sit->second.first;
+-      ret.back().sumCommonWi = sit->second.second;
+-      ret.back().expectedChiScore = 
+-        2 * sit->second.second / (1 + sit->second.second);
+-    }
+-  
+-    //ret.push_back(Result(pit->first, pit->second));
+-  }
+-	
+-  // resulting "scores" are now in [-2 best .. 0 worst]	
+-  // we have to add +2 to the scores to obtain the chi square score
+-  
+-  // sort vector in ascending order of score
+-  sort(ret.begin(), ret.end());
+-  // (ret is inverted now --the lower the better--)
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-
+-  // complete and scale score to [0 worst .. 1 best]
+-  QueryResults::iterator qit;
+-  for(qit = ret.begin(); qit != ret.end(); qit++)
+-  {
+-    // this takes the 4 into account
+-    qit->Score = - 2. * qit->Score; // [0..1]
+-    
+-    qit->chiScore = qit->Score;
+-  }
+-  
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryKL(const BowVector &vec, 
+-  QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-  
+-  map<EntryId, double> pairs;
+-  map<EntryId, double>::iterator pit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& vi = vit->second;
+-    
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {    
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& wi = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        double value = 0;
+-        if(vi != 0 && wi != 0) value = vi * log(vi/wi);
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second += value;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, double>::value_type(entry_id, value));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // resulting "scores" are now in [-X worst .. 0 best .. X worst]
+-  // but we cannot make sure which ones are better without calculating
+-  // the complete score
+-
+-  // complete scores and move to vector
+-  ret.reserve(pairs.size());
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit)
+-  {
+-    EntryId eid = pit->first;
+-    double value = 0.0;
+-
+-    for(vit = vec.begin(); vit != vec.end(); ++vit)
+-    {
+-      const WordValue &vi = vit->second;
+-      const IFRow& row = m_ifile[vit->first];
+-
+-      if(vi != 0)
+-      {
+-        if(row.end() == find(row.begin(), row.end(), eid ))
+-        {
+-          value += vi * (log(vi) - GeneralScoring::LOG_EPS);
+-        }
+-      }
+-    }
+-    
+-    pit->second += value;
+-    
+-    // to vector
+-    ret.push_back(Result(pit->first, pit->second));
+-  }
+-  
+-  // real scores are now in [0 best .. X worst]
+-
+-  // sort vector in ascending order
+-  // (scores are inverted now --the lower the better--)
+-  sort(ret.begin(), ret.end());
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-
+-  // cannot scale scores
+-    
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryBhattacharyya(
+-  const BowVector &vec, QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-  
+-  //map<EntryId, double> pairs;
+-  //map<EntryId, double>::iterator pit;
+-  
+-  map<EntryId, pair<double, int> > pairs; // <eid, <score, counter> >
+-  map<EntryId, pair<double, int> >::iterator pit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& qvalue = vit->second;
+-    
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& dvalue = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        double value = sqrt(qvalue * dvalue);
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second.first += value;
+-          pit->second.second += 1;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, pair<double, int> >::value_type(entry_id, 
+-              make_pair(value, 1)));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // move to vector
+-  ret.reserve(pairs.size());
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit)
+-  {
+-    if(pit->second.second >= MIN_COMMON_WORDS)
+-    {
+-      ret.push_back(Result(pit->first, pit->second.first));
+-      ret.back().nWords = pit->second.second;
+-      ret.back().bhatScore = pit->second.first;
+-    }
+-  }
+-	
+-  // scores are already in [0..1]
+-
+-  // sort vector in descending order
+-  sort(ret.begin(), ret.end(), Result::gt);
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::queryDotProduct(
+-  const BowVector &vec, QueryResults &ret, int max_results, int max_id) const
+-{
+-  BowVector::const_iterator vit;
+-  typename IFRow::const_iterator rit;
+-  
+-  map<EntryId, double> pairs;
+-  map<EntryId, double>::iterator pit;
+-  
+-  for(vit = vec.begin(); vit != vec.end(); ++vit)
+-  {
+-    const WordId word_id = vit->first;
+-    const WordValue& qvalue = vit->second;
+-    
+-    const IFRow& row = m_ifile[word_id];
+-    
+-    // IFRows are sorted in ascending entry_id order
+-    
+-    for(rit = row.begin(); rit != row.end(); ++rit)
+-    {
+-      const EntryId entry_id = rit->entry_id;
+-      const WordValue& dvalue = rit->word_weight;
+-      
+-      if((int)entry_id < max_id || max_id == -1)
+-      {
+-        double value; 
+-        if(this->m_voc->getWeightingType() == BINARY)
+-          value = 1;
+-        else
+-          value = qvalue * dvalue;
+-        
+-        pit = pairs.lower_bound(entry_id);
+-        if(pit != pairs.end() && !(pairs.key_comp()(entry_id, pit->first)))
+-        {
+-          pit->second += value;
+-        }
+-        else
+-        {
+-          pairs.insert(pit, 
+-            map<EntryId, double>::value_type(entry_id, value));
+-        }
+-      }
+-      
+-    } // for each inverted row
+-  } // for each query word
+-	
+-  // move to vector
+-  ret.reserve(pairs.size());
+-  for(pit = pairs.begin(); pit != pairs.end(); ++pit)
+-  {
+-    ret.push_back(Result(pit->first, pit->second));
+-  }
+-	
+-  // scores are the greater the better
+-
+-  // sort vector in descending order
+-  sort(ret.begin(), ret.end(), Result::gt);
+-
+-  // cut vector
+-  if(max_results > 0 && (int)ret.size() > max_results)
+-    ret.resize(max_results);
+-
+-  // these scores cannot be scaled
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-const FeatureVector& TemplatedDatabase<TDescriptor, F>::retrieveFeatures
+-  (EntryId id) const
+-{
+-  assert(id < size());
+-  return m_dfile[id];
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::save(const string &filename) const
+-{
+-  cv::FileStorage fs(filename.c_str(), cv::FileStorage::WRITE);
+-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
+-  
+-  save(fs);
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::save(cv::FileStorage &fs,
+-  const std::string &name) const
+-{
+-  // Format YAML:
+-  // vocabulary { ... see TemplatedVocabulary::save }
+-  // database 
+-  // {
+-  //   nEntries: 
+-  //   usingDI: 
+-  //   diLevels: 
+-  //   invertedIndex
+-  //   [
+-  //     [
+-  //        { 
+-  //          imageId: 
+-  //          weight: 
+-  //        }
+-  //     ]
+-  //   ]
+-  //   directIndex
+-  //   [
+-  //      [
+-  //        {
+-  //          nodeId:
+-  //          features: [ ]
+-  //        }
+-  //      ]
+-  //   ]
+-
+-  // invertedIndex[i] is for the i-th word
+-  // directIndex[i] is for the i-th entry
+-  // directIndex may be empty if not using direct index
+-  //
+-  // imageId's and nodeId's must be stored in ascending order
+-  // (according to the construction of the indexes)
+-
+-  m_voc->save(fs);
+- 
+-  fs << name << "{";
+-  
+-  fs << "nEntries" << m_nentries;
+-  fs << "usingDI" << (m_use_di ? 1 : 0);
+-  fs << "diLevels" << m_dilevels;
+-  
+-  fs << "invertedIndex" << "[";
+-  
+-  typename InvertedFile::const_iterator iit;
+-  typename IFRow::const_iterator irit;
+-  for(iit = m_ifile.begin(); iit != m_ifile.end(); ++iit)
+-  {
+-    fs << "["; // word of IF
+-    for(irit = iit->begin(); irit != iit->end(); ++irit)
+-    {
+-      fs << "{:" 
+-        << "imageId" << (int)irit->entry_id
+-        << "weight" << irit->word_weight
+-        << "}";
+-    }
+-    fs << "]"; // word of IF
+-  }
+-  
+-  fs << "]"; // invertedIndex
+-  
+-  fs << "directIndex" << "[";
+-  
+-  typename DirectFile::const_iterator dit;
+-  typename FeatureVector::const_iterator drit;
+-  for(dit = m_dfile.begin(); dit != m_dfile.end(); ++dit)
+-  {
+-    fs << "["; // entry of DF
+-    
+-    for(drit = dit->begin(); drit != dit->end(); ++drit)
+-    {
+-      NodeId nid = drit->first;
+-      const vector<unsigned int>& features = drit->second;
+-      
+-      // save info of last_nid
+-      fs << "{";
+-      fs << "nodeId" << (int)nid;
+-      // msvc++ 2010 with opencv 2.3.1 does not allow FileStorage::operator<<
+-      // with vectors of unsigned int
+-      fs << "features" << "[" 
+-        << *(const vector<int>*)(&features) << "]";
+-      fs << "}";
+-    }
+-    
+-    fs << "]"; // entry of DF
+-  }
+-  
+-  fs << "]"; // directIndex
+-  
+-  fs << "}"; // database
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::load(const string &filename)
+-{
+-  cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
+-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
+-  
+-  load(fs);
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-template<class TDescriptor, class F>
+-void TemplatedDatabase<TDescriptor, F>::load(const cv::FileStorage &fs,
+-  const std::string &name)
+-{ 
+-  // load voc first
+-  // subclasses must instantiate m_voc before calling this ::load
+-  if(!m_voc) m_voc = new TemplatedVocabulary<TDescriptor, F>;
+-  
+-  m_voc->load(fs);
+-
+-  // load database now
+-  clear(); // resizes inverted file 
+-    
+-  cv::FileNode fdb = fs[name];
+-  
+-  m_nentries = (int)fdb["nEntries"]; 
+-  m_use_di = (int)fdb["usingDI"] != 0;
+-  m_dilevels = (int)fdb["diLevels"];
+-  
+-  cv::FileNode fn = fdb["invertedIndex"];
+-  for(WordId wid = 0; wid < fn.size(); ++wid)
+-  {
+-    cv::FileNode fw = fn[wid];
+-    
+-    for(unsigned int i = 0; i < fw.size(); ++i)
+-    {
+-      EntryId eid = (int)fw[i]["imageId"];
+-      WordValue v = fw[i]["weight"];
+-      
+-      m_ifile[wid].push_back(IFPair(eid, v));
+-    }
+-  }
+-  
+-  if(m_use_di)
+-  {
+-    fn = fdb["directIndex"];
+-    
+-    m_dfile.resize(fn.size());
+-    assert(m_nentries == (int)fn.size());
+-    
+-    FeatureVector::iterator dit;
+-    for(EntryId eid = 0; eid < fn.size(); ++eid)
+-    {
+-      cv::FileNode fe = fn[eid];
+-      
+-      m_dfile[eid].clear();
+-      for(unsigned int i = 0; i < fe.size(); ++i)
+-      {
+-        NodeId nid = (int)fe[i]["nodeId"];
+-        
+-        dit = m_dfile[eid].insert(m_dfile[eid].end(), 
+-          make_pair(nid, vector<unsigned int>() )); 
+-        
+-        // this failed to compile with some opencv versions (2.3.1)
+-        //fe[i]["features"] >> dit->second;
+-        
+-        // this was ok until OpenCV 2.4.1
+-        //vector<int> aux;
+-        //fe[i]["features"] >> aux; // OpenCV < 2.4.1
+-        //dit->second.resize(aux.size());
+-        //std::copy(aux.begin(), aux.end(), dit->second.begin());
+-        
+-        cv::FileNode ff = fe[i]["features"][0];
+-        dit->second.reserve(ff.size());
+-                
+-        cv::FileNodeIterator ffit;
+-        for(ffit = ff.begin(); ffit != ff.end(); ++ffit)
+-        {
+-          dit->second.push_back((int)*ffit); 
+-        }
+-      }
+-    } // for each entry
+-  } // if use_id
+-  
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-/**
+- * Writes printable information of the database
+- * @param os stream to write to
+- * @param db
+- */
+-template<class TDescriptor, class F>
+-std::ostream& operator<<(std::ostream &os, 
+-  const TemplatedDatabase<TDescriptor,F> &db)
+-{
+-  os << "Database: Entries = " << db.size() << ", "
+-    "Using direct index = " << (db.usingDirectIndex() ? "yes" : "no");
+-  
+-  if(db.usingDirectIndex())
+-    os << ", Direct index levels = " << db.getDirectIndexLevels();
+-  
+-  os << ". " << *db.getVocabulary();
+-  return os;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-} // namespace DBoW2
+-
+-#endif
+diff --git a/include/DBoW2/TemplatedVocabulary.h b/include/DBoW2/TemplatedVocabulary.h
+index 4d7a237..52aeee6 100644
+--- a/include/DBoW2/TemplatedVocabulary.h
++++ b/include/DBoW2/TemplatedVocabulary.h
+@@ -1,3 +1,10 @@
++/**
++ * This is a modified version of TemplatedVocabulary.h from DBoW2 (see below).
++ * Added functions: Save and Load from text files without using cv::FileStorage.
++ * Date: August 2015
++ * Raúl Mur-Artal
++ */
++
+ /**
+  * File: TemplatedVocabulary.h
+  * Date: February 2011
+@@ -17,15 +24,15 @@
+ #include <fstream>
+ #include <string>
+ #include <algorithm>
+-#include <opencv/cv.h>
++#include <opencv2/core/core.hpp>
++#include <limits>
+ 
+ #include "FeatureVector.h"
+ #include "BowVector.h"
+ #include "ScoringObject.h"
+ 
+-#include <DUtils/DUtils.h>
++#include "../DUtils/Random.h"
+ 
+-using namespace std;
+ 
+ namespace DBoW2 {
+ 
+@@ -226,6 +233,18 @@ public:
+    */
+   void setScoringType(ScoringType type);
+ 
++  /**
++   * Loads the vocabulary from a text file
++   * @param filename
++   */
++  bool loadFromTextFile(const std::string &filename);
++
++  /**
++   * Saves the vocabulary into a text file
++   * @param filename
++   */
++  void saveToTextFile(const std::string &filename) const;  
++
+   /**
+    * Saves the vocabulary into a file
+    * @param filename
+@@ -281,7 +300,7 @@ protected:
+     /// Weight if the node is a word
+     WordValue weight;
+     /// Children 
+-    vector<NodeId> children;
++    std::vector<NodeId> children;
+     /// Parent node (undefined in case of root)
+     NodeId parent;
+     /// Node descriptor
+@@ -321,8 +340,8 @@ protected:
+    * @param features (out) pointers to the training features
+    */
+   void getFeatures(
+-    const vector<vector<TDescriptor> > &training_features, 
+-    vector<pDescriptor> &features) const;
++    const std::vector<std::vector<TDescriptor> > &training_features, 
++    std::vector<pDescriptor> &features) const;
+ 
+   /**
+    * Returns the word id associated to a feature
+@@ -333,7 +352,7 @@ protected:
+    * @param levelsup
+    */
+   virtual void transform(const TDescriptor &feature, 
+-    WordId &id, WordValue &weight, NodeId* nid = NULL, int levelsup = 0) const;
++    WordId &id, WordValue &weight, NodeId* nid = nullptr, int levelsup = 0) const;
+ 
+   /**
+    * Returns the word id associated to a feature
+@@ -349,7 +368,7 @@ protected:
+    * @param descriptors descriptors to run the kmeans on
+    * @param current_level current level in the tree
+    */
+-  void HKmeansStep(NodeId parent_id, const vector<pDescriptor> &descriptors, 
++  void HKmeansStep(NodeId parent_id, const std::vector<pDescriptor> &descriptors, 
+     int current_level);
+ 
+   /**
+@@ -357,8 +376,8 @@ protected:
+    * @note In this class, kmeans++ is used, but this function should be
+    *   overriden by inherited classes.
+    */
+-  virtual void initiateClusters(const vector<pDescriptor> &descriptors,
+-    vector<TDescriptor> &clusters) const;
++  virtual void initiateClusters(const std::vector<pDescriptor> &descriptors,
++    std::vector<TDescriptor> &clusters) const;
+   
+   /**
+    * Creates k clusters from the given descriptor sets by running the
+@@ -366,8 +385,8 @@ protected:
+    * @param descriptors 
+    * @param clusters resulting clusters
+    */
+-  void initiateClustersKMpp(const vector<pDescriptor> &descriptors, 
+-    vector<TDescriptor> &clusters) const;
++  void initiateClustersKMpp(const std::vector<pDescriptor> &descriptors, 
++    std::vector<TDescriptor> &clusters) const;
+   
+   /**
+    * Create the words of the vocabulary once the tree has been built
+@@ -380,7 +399,7 @@ protected:
+    * created (by calling HKmeansStep and createWords)
+    * @param features
+    */
+-  void setNodeWeights(const vector<vector<TDescriptor> > &features);
++  void setNodeWeights(const std::vector<std::vector<TDescriptor> > &features);
+   
+ protected:
+ 
+@@ -414,7 +433,7 @@ template<class TDescriptor, class F>
+ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
+   (int k, int L, WeightingType weighting, ScoringType scoring)
+   : m_k(k), m_L(L), m_weighting(weighting), m_scoring(scoring),
+-  m_scoring_object(NULL)
++  m_scoring_object(nullptr)
+ {
+   createScoringObject();
+ }
+@@ -423,7 +442,7 @@ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
+ 
+ template<class TDescriptor, class F>
+ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
+-  (const std::string &filename): m_scoring_object(NULL)
++  (const std::string &filename): m_scoring_object(nullptr)
+ {
+   load(filename);
+ }
+@@ -432,7 +451,7 @@ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
+ 
+ template<class TDescriptor, class F>
+ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
+-  (const char *filename): m_scoring_object(NULL)
++  (const char *filename): m_scoring_object(nullptr)
+ {
+   load(filename);
+ }
+@@ -443,7 +462,7 @@ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::createScoringObject()
+ {
+   delete m_scoring_object;
+-  m_scoring_object = NULL;
++  m_scoring_object = nullptr;
+   
+   switch(m_scoring)
+   {
+@@ -496,7 +515,7 @@ void TemplatedVocabulary<TDescriptor,F>::setWeightingType(WeightingType type)
+ template<class TDescriptor, class F>
+ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary(
+   const TemplatedVocabulary<TDescriptor, F> &voc)
+-  : m_scoring_object(NULL)
++  : m_scoring_object(nullptr)
+ {
+   *this = voc;
+ }
+@@ -548,7 +567,7 @@ void TemplatedVocabulary<TDescriptor,F>::create(
+   m_nodes.reserve(expected_nodes); // avoid allocations when creating the tree
+   
+   
+-  vector<pDescriptor> features;
++  std::vector<pDescriptor> features;
+   getFeatures(training_features, features);
+ 
+ 
+@@ -599,13 +618,13 @@ void TemplatedVocabulary<TDescriptor,F>::create(
+ 
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::getFeatures(
+-  const vector<vector<TDescriptor> > &training_features, 
+-  vector<pDescriptor> &features) const
++  const std::vector<std::vector<TDescriptor> > &training_features, 
++  std::vector<pDescriptor> &features) const
+ {
+   features.resize(0);
+   
+-  typename vector<vector<TDescriptor> >::const_iterator vvit;
+-  typename vector<TDescriptor>::const_iterator vit;
++  typename std::vector<std::vector<TDescriptor> >::const_iterator vvit;
++  typename std::vector<TDescriptor>::const_iterator vit;
+   for(vvit = training_features.begin(); vvit != training_features.end(); ++vvit)
+   {
+     features.reserve(features.size() + vvit->size());
+@@ -620,13 +639,13 @@ void TemplatedVocabulary<TDescriptor,F>::getFeatures(
+ 
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id, 
+-  const vector<pDescriptor> &descriptors, int current_level)
++  const std::vector<pDescriptor> &descriptors, int current_level)
+ {
+   if(descriptors.empty()) return;
+         
+   // features associated to each cluster
+-  vector<TDescriptor> clusters;
+-	vector<vector<unsigned int> > groups; // groups[i] = [j1, j2, ...]
++  std::vector<TDescriptor> clusters;
++	std::vector<std::vector<unsigned int> > groups; // groups[i] = [j1, j2, ...]
+ 	// j1, j2, ... indices of descriptors associated to cluster i
+ 
+   clusters.reserve(m_k);
+@@ -656,7 +675,7 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+     bool goon = true;
+     
+     // to check if clusters move after iterations
+-    vector<int> last_association, current_association;
++    std::vector<int> last_association, current_association;
+ 
+     while(goon)
+     {
+@@ -673,7 +692,7 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+ 
+         for(unsigned int c = 0; c < clusters.size(); ++c)
+         {
+-          vector<pDescriptor> cluster_descriptors;
++          std::vector<pDescriptor> cluster_descriptors;
+           cluster_descriptors.reserve(groups[c].size());
+           
+           /*
+@@ -686,7 +705,7 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+           }
+           */
+           
+-          vector<unsigned int>::const_iterator vit;
++          std::vector<unsigned int>::const_iterator vit;
+           for(vit = groups[c].begin(); vit != groups[c].end(); ++vit)
+           {
+             cluster_descriptors.push_back(descriptors[*vit]);
+@@ -702,12 +721,12 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+ 
+       // calculate distances to cluster centers
+       groups.clear();
+-      groups.resize(clusters.size(), vector<unsigned int>());
++      groups.resize(clusters.size(), std::vector<unsigned int>());
+       current_association.resize(descriptors.size());
+ 
+       //assoc.clear();
+ 
+-      typename vector<pDescriptor>::const_iterator fit;
++      typename std::vector<pDescriptor>::const_iterator fit;
+       //unsigned int d = 0;
+       for(fit = descriptors.begin(); fit != descriptors.end(); ++fit)//, ++d)
+       {
+@@ -776,15 +795,15 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+   if(current_level < m_L)
+   {
+     // iterate again with the resulting clusters
+-    const vector<NodeId> &children_ids = m_nodes[parent_id].children;
++    const std::vector<NodeId> &children_ids = m_nodes[parent_id].children;
+     for(unsigned int i = 0; i < clusters.size(); ++i)
+     {
+       NodeId id = children_ids[i];
+ 
+-      vector<pDescriptor> child_features;
++      std::vector<pDescriptor> child_features;
+       child_features.reserve(groups[i].size());
+ 
+-      vector<unsigned int>::const_iterator vit;
++      std::vector<unsigned int>::const_iterator vit;
+       for(vit = groups[i].begin(); vit != groups[i].end(); ++vit)
+       {
+         child_features.push_back(descriptors[*vit]);
+@@ -802,7 +821,7 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
+ 
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor, F>::initiateClusters
+-  (const vector<pDescriptor> &descriptors, vector<TDescriptor> &clusters) const
++  (const std::vector<pDescriptor> &descriptors, std::vector<TDescriptor> &clusters) const
+ {
+   initiateClustersKMpp(descriptors, clusters);  
+ }
+@@ -811,7 +830,7 @@ void TemplatedVocabulary<TDescriptor, F>::initiateClusters
+ 
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
+-  const vector<pDescriptor> &pfeatures, vector<TDescriptor> &clusters) const
++  const std::vector<pDescriptor> &pfeatures, std::vector<TDescriptor> &clusters) const
+ {
+   // Implements kmeans++ seeding algorithm
+   // Algorithm:
+@@ -828,7 +847,7 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
+ 
+   clusters.resize(0);
+   clusters.reserve(m_k);
+-  vector<double> min_dists(pfeatures.size(), std::numeric_limits<double>::max());
++  std::vector<double> min_dists(pfeatures.size(), std::numeric_limits<double>::max());
+   
+   // 1.
+   
+@@ -838,8 +857,8 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
+   clusters.push_back(*pfeatures[ifeature]);
+ 
+   // compute the initial distances
+-  typename vector<pDescriptor>::const_iterator fit;
+-  vector<double>::iterator dit;
++  typename std::vector<pDescriptor>::const_iterator fit;
++  std::vector<double>::iterator dit;
+   dit = min_dists.begin();
+   for(fit = pfeatures.begin(); fit != pfeatures.end(); ++fit, ++dit)
+   {
+@@ -903,7 +922,7 @@ void TemplatedVocabulary<TDescriptor,F>::createWords()
+   {
+     m_words.reserve( (int)pow((double)m_k, (double)m_L) );
+ 
+-    typename vector<Node>::iterator nit;
++    typename std::vector<Node>::iterator nit;
+     
+     nit = m_nodes.begin(); // ignore root
+     for(++nit; nit != m_nodes.end(); ++nit)
+@@ -921,7 +940,7 @@ void TemplatedVocabulary<TDescriptor,F>::createWords()
+ 
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
+-  (const vector<vector<TDescriptor> > &training_features)
++  (const std::vector<std::vector<TDescriptor> > &training_features)
+ {
+   const unsigned int NWords = m_words.size();
+   const unsigned int NDocs = training_features.size();
+@@ -939,11 +958,11 @@ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
+     // Note: this actually calculates the idf part of the tf-idf score.
+     // The complete tf-idf score is calculated in ::transform
+ 
+-    vector<unsigned int> Ni(NWords, 0);
+-    vector<bool> counted(NWords, false);
++    std::vector<unsigned int> Ni(NWords, 0);
++    std::vector<bool> counted(NWords, false);
+     
+-    typename vector<vector<TDescriptor> >::const_iterator mit;
+-    typename vector<TDescriptor>::const_iterator fit;
++    typename std::vector<std::vector<TDescriptor> >::const_iterator mit;
++    typename std::vector<TDescriptor>::const_iterator fit;
+ 
+     for(mit = training_features.begin(); mit != training_features.end(); ++mit)
+     {
+@@ -1057,7 +1076,7 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
+   LNorm norm;
+   bool must = m_scoring_object->mustNormalize(norm);
+ 
+-	typename vector<TDescriptor>::const_iterator fit;
++	typename std::vector<TDescriptor>::const_iterator fit;
+ 
+   if(m_weighting == TF || m_weighting == TF_IDF)
+   {
+@@ -1120,7 +1139,7 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
+   LNorm norm;
+   bool must = m_scoring_object->mustNormalize(norm);
+   
+-  typename vector<TDescriptor>::const_iterator fit;
++  typename std::vector<TDescriptor>::const_iterator fit;
+   
+   if(m_weighting == TF || m_weighting == TF_IDF)
+   {
+@@ -1199,12 +1218,12 @@ void TemplatedVocabulary<TDescriptor,F>::transform(const TDescriptor &feature,
+   WordId &word_id, WordValue &weight, NodeId *nid, int levelsup) const
+ { 
+   // propagate the feature down the tree
+-  vector<NodeId> nodes;
+-  typename vector<NodeId>::const_iterator nit;
++  std::vector<NodeId> nodes;
++  typename std::vector<NodeId>::const_iterator nit;
+ 
+   // level at which the node must be stored in nid, if given
+   const int nid_level = m_L - levelsup;
+-  if(nid_level <= 0 && nid != NULL) *nid = 0; // root
++  if(nid_level <= 0 && nid != nullptr) *nid = 0; // root
+ 
+   NodeId final_id = 0; // root
+   int current_level = 0;
+@@ -1228,7 +1247,7 @@ void TemplatedVocabulary<TDescriptor,F>::transform(const TDescriptor &feature,
+       }
+     }
+     
+-    if(nid != NULL && current_level == nid_level)
++    if(nid != nullptr && current_level == nid_level)
+       *nid = final_id;
+     
+   } while( !m_nodes[final_id].isLeaf() );
+@@ -1269,7 +1288,7 @@ void TemplatedVocabulary<TDescriptor,F>::getWordsFromNode
+   {
+     words.reserve(m_k); // ^1, ^2, ...
+     
+-    vector<NodeId> parents;
++    std::vector<NodeId> parents;
+     parents.push_back(nid);
+     
+     while(!parents.empty())
+@@ -1277,8 +1296,8 @@ void TemplatedVocabulary<TDescriptor,F>::getWordsFromNode
+       NodeId parentid = parents.back();
+       parents.pop_back();
+       
+-      const vector<NodeId> &child_ids = m_nodes[parentid].children;
+-      vector<NodeId>::const_iterator cit;
++      const std::vector<NodeId> &child_ids = m_nodes[parentid].children;
++      std::vector<NodeId>::const_iterator cit;
+       
+       for(cit = child_ids.begin(); cit != child_ids.end(); ++cit)
+       {
+@@ -1300,7 +1319,7 @@ template<class TDescriptor, class F>
+ int TemplatedVocabulary<TDescriptor,F>::stopWords(double minWeight)
+ {
+   int c = 0;
+-  typename vector<Node*>::iterator wit;
++  typename std::vector<Node*>::iterator wit;
+   for(wit = m_words.begin(); wit != m_words.end(); ++wit)
+   {
+     if((*wit)->weight < minWeight)
+@@ -1314,11 +1333,127 @@ int TemplatedVocabulary<TDescriptor,F>::stopWords(double minWeight)
+ 
+ // --------------------------------------------------------------------------
+ 
++template<class TDescriptor, class F>
++bool TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &filename)
++{
++    std::ifstream f;
++    f.open(filename.c_str());
++	
++    if(f.eof())
++	return false;
++
++    m_words.clear();
++    m_nodes.clear();
++
++    std::string s;
++    std::getline(f,s);
++    std::stringstream ss;
++    ss << s;
++    ss >> m_k;
++    ss >> m_L;
++    int n1, n2;
++    ss >> n1;
++    ss >> n2;
++
++    if(m_k<0 || m_k>20 || m_L<1 || m_L>10 || n1<0 || n1>5 || n2<0 || n2>3)
++    {
++        std::cerr << "Vocabulary loading failure: This is not a correct text file!" << std::endl;
++	return false;
++    }
++    
++    m_scoring = (ScoringType)n1;
++    m_weighting = (WeightingType)n2;
++    createScoringObject();
++
++    // nodes
++    int expected_nodes =
++    (int)((pow((double)m_k, (double)m_L + 1) - 1)/(m_k - 1));
++    m_nodes.reserve(expected_nodes);
++
++    m_words.reserve(pow((double)m_k, (double)m_L + 1));
++
++    m_nodes.resize(1);
++    m_nodes[0].id = 0;
++    while(!f.eof())
++    {
++        std::string snode;
++        std::getline(f,snode);
++        std::stringstream ssnode;
++        ssnode << snode;
++
++        int nid = m_nodes.size();
++        m_nodes.resize(m_nodes.size()+1);
++	m_nodes[nid].id = nid;
++	
++        int pid ;
++        ssnode >> pid;
++        m_nodes[nid].parent = pid;
++        m_nodes[pid].children.push_back(nid);
++
++        int nIsLeaf;
++        ssnode >> nIsLeaf;
++
++        std::stringstream ssd;
++        for(int iD=0;iD<F::L;iD++)
++        {
++            std::string sElement;
++            ssnode >> sElement;
++            ssd << sElement << " ";
++	}
++        F::fromString(m_nodes[nid].descriptor, ssd.str());
++
++        ssnode >> m_nodes[nid].weight;
++
++        if(nIsLeaf>0)
++        {
++            int wid = m_words.size();
++            m_words.resize(wid+1);
++
++            m_nodes[nid].word_id = wid;
++            m_words[wid] = &m_nodes[nid];
++        }
++        else
++        {
++            m_nodes[nid].children.reserve(m_k);
++        }
++    }
++
++    return true;
++
++}
++
++// --------------------------------------------------------------------------
++
++template<class TDescriptor, class F>
++void TemplatedVocabulary<TDescriptor,F>::saveToTextFile(const std::string &filename) const
++{
++    std::fstream f;
++    f.open(filename.c_str(),std::ios_base::out);
++    f << m_k << " " << m_L << " " << " " << m_scoring << " " << m_weighting << std::endl;
++
++    for(size_t i=1; i<m_nodes.size();i++)
++    {
++        const Node& node = m_nodes[i];
++
++        f << node.parent << " ";
++        if(node.isLeaf())
++            f << 1 << " ";
++        else
++            f << 0 << " ";
++
++        f << F::toString(node.descriptor) << " " << (double)node.weight << std::endl;
++    }
++
++    f.close();
++}
++
++// --------------------------------------------------------------------------
++
+ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::save(const std::string &filename) const
+ {
+   cv::FileStorage fs(filename.c_str(), cv::FileStorage::WRITE);
+-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
++  if(!fs.isOpened()) throw std::string("Could not open file ") + filename;
+   
+   save(fs);
+ }
+@@ -1329,7 +1464,7 @@ template<class TDescriptor, class F>
+ void TemplatedVocabulary<TDescriptor,F>::load(const std::string &filename)
+ {
+   cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
+-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
++  if(!fs.isOpened()) throw std::string("Could not open file ") + filename;
+   
+   this->load(fs);
+ }
+@@ -1377,8 +1512,8 @@ void TemplatedVocabulary<TDescriptor,F>::save(cv::FileStorage &f,
+   
+   // tree
+   f << "nodes" << "[";
+-  vector<NodeId> parents, children;
+-  vector<NodeId>::const_iterator pit;
++  std::vector<NodeId> parents, children;
++  std::vector<NodeId>::const_iterator pit;
+ 
+   parents.push_back(0); // root
+ 
+@@ -1415,7 +1550,7 @@ void TemplatedVocabulary<TDescriptor,F>::save(cv::FileStorage &f,
+   // words
+   f << "words" << "[";
+   
+-  typename vector<Node*>::const_iterator wit;
++  typename std::vector<Node*>::const_iterator wit;
+   for(wit = m_words.begin(); wit != m_words.end(); wit++)
+   {
+     WordId id = wit - m_words.begin();
+@@ -1455,12 +1590,14 @@ void TemplatedVocabulary<TDescriptor,F>::load(const cv::FileStorage &fs,
+   m_nodes.resize(fn.size() + 1); // +1 to include root
+   m_nodes[0].id = 0;
+ 
+-  for(unsigned int i = 0; i < fn.size(); ++i)
++  unsigned int i = 0;
++  for(cv::FileNodeIterator it = fn.begin(); it != fn.end(); ++it, ++i)
+   {
+-    NodeId nid = (int)fn[i]["nodeId"];
+-    NodeId pid = (int)fn[i]["parentId"];
+-    WordValue weight = (WordValue)fn[i]["weight"];
+-    string d = (string)fn[i]["descriptor"];
++    cv::FileNode fni = *it;
++    NodeId nid = (int)fni["nodeId"];
++    NodeId pid = (int)fni["parentId"];
++    WordValue weight = (WordValue)fni["weight"];
++    std::string d = (std::string)fni["descriptor"];
+     
+     m_nodes[nid].id = nid;
+     m_nodes[nid].parent = pid;
+@@ -1475,10 +1612,12 @@ void TemplatedVocabulary<TDescriptor,F>::load(const cv::FileStorage &fs,
+   
+   m_words.resize(fn.size());
+ 
+-  for(unsigned int i = 0; i < fn.size(); ++i)
++  i = 0;
++  for(cv::FileNodeIterator it = fn.begin(); it != fn.end(); ++it, ++i)
+   {
+-    NodeId wid = (int)fn[i]["wordId"];
+-    NodeId nid = (int)fn[i]["nodeId"];
++    cv::FileNode fni = *it;
++    NodeId wid = (int)fni["wordId"];
++    NodeId nid = (int)fni["nodeId"];
+     
+     m_nodes[nid].word_id = wid;
+     m_words[wid] = &m_nodes[nid];
+diff --git a/src/DBoW2.cmake.in b/src/DBoW2.cmake.in
+deleted file mode 100644
+index c3f9203..0000000
+--- a/src/DBoW2.cmake.in
++++ /dev/null
+@@ -1,9 +0,0 @@
+-FIND_LIBRARY(DBoW2_LIBRARY DBoW2
+-    PATHS @CMAKE_INSTALL_PREFIX@/lib
+-)
+-FIND_PATH(DBoW2_INCLUDE_DIR DBoW2Config.cmake
+-    PATHS @CMAKE_INSTALL_PREFIX@/include/@PROJECT_NAME@ 
+-)
+-SET(DBoW2_LIBRARIES ${DBoW2_LIBRARY})
+-SET(DBoW2_LIBS ${DBoW2_LIBRARY})
+-SET(DBoW2_INCLUDE_DIRS ${DBoW2_INCLUDE_DIR})
+\ No newline at end of file
+diff --git a/src/FBrief.cpp b/src/FBrief.cpp
+deleted file mode 100644
+index 94073cc..0000000
+--- a/src/FBrief.cpp
++++ /dev/null
+@@ -1,109 +0,0 @@
+-/**
+- * File: FBrief.cpp
+- * Date: November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: functions for BRIEF descriptors
+- * License: see the LICENSE.txt file
+- *
+- */
+- 
+-#include <vector>
+-#include <string>
+-#include <sstream>
+-
+-#include <DVision/DVision.h>
+-#include "FBrief.h"
+-
+-using namespace std;
+-
+-namespace DBoW2 {
+-
+-// --------------------------------------------------------------------------
+-
+-void FBrief::meanValue(const std::vector<FBrief::pDescriptor> &descriptors, 
+-  FBrief::TDescriptor &mean)
+-{
+-  mean.reset();
+-  
+-  if(descriptors.empty()) return;
+-  
+-  const int N2 = descriptors.size() / 2;
+-  const int L = descriptors[0]->size();
+-  
+-  vector<int> counters(L, 0);
+-
+-  vector<FBrief::pDescriptor>::const_iterator it;
+-  for(it = descriptors.begin(); it != descriptors.end(); ++it)
+-  {
+-    const FBrief::TDescriptor &desc = **it;
+-    for(int i = 0; i < L; ++i)
+-    {
+-      if(desc[i]) counters[i]++;
+-    }
+-  }
+-  
+-  for(int i = 0; i < L; ++i)
+-  {
+-    if(counters[i] > N2) mean.set(i);
+-  }
+-  
+-}
+-
+-// --------------------------------------------------------------------------
+-  
+-double FBrief::distance(const FBrief::TDescriptor &a, 
+-  const FBrief::TDescriptor &b)
+-{
+-  return (double)DVision::BRIEF::distance(a, b);
+-}
+-
+-// --------------------------------------------------------------------------
+-  
+-std::string FBrief::toString(const FBrief::TDescriptor &a)
+-{
+-  // from boost::bitset
+-  string s;
+-  to_string(a, s); // reversed
+-  return s;
+-}
+-
+-// --------------------------------------------------------------------------
+-  
+-void FBrief::fromString(FBrief::TDescriptor &a, const std::string &s)
+-{
+-  // from boost::bitset
+-  stringstream ss(s);
+-  ss >> a;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-void FBrief::toMat32F(const std::vector<TDescriptor> &descriptors, 
+-  cv::Mat &mat)
+-{
+-  if(descriptors.empty())
+-  {
+-    mat.release();
+-    return;
+-  }
+-  
+-  const int N = descriptors.size();
+-  const int L = descriptors[0].size();
+-  
+-  mat.create(N, L, CV_32F);
+-  
+-  for(int i = 0; i < N; ++i)
+-  {
+-    const TDescriptor& desc = descriptors[i];
+-    float *p = mat.ptr<float>(i);
+-    for(int j = 0; j < L; ++j, ++p)
+-    {
+-      *p = (desc[j] ? 1 : 0);
+-    }
+-  } 
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-} // namespace DBoW2
+-
+diff --git a/src/FORB.cpp b/src/FORB.cpp
+index a1a280e..fcf5569 100644
+--- a/src/FORB.cpp
++++ b/src/FORB.cpp
+@@ -5,24 +5,26 @@
+  * Description: functions for ORB descriptors
+  * License: see the LICENSE.txt file
+  *
++ * Distance function has been modified 
++ *
+  */
+ 
++ 
+ #include <vector>
+ #include <string>
+ #include <sstream>
+-#include <stdint.h>
+-#include <limits.h>
++#include <cinttypes>
+ 
+-#include "DUtils.h"
+-#include "DVision.h"
+ #include "FORB.h"
+ 
+-using namespace std;
++
+ 
+ namespace DBoW2 {
+ 
+ // --------------------------------------------------------------------------
+ 
++const int FORB::L=32;
++
+ void FORB::meanValue(const std::vector<FORB::pDescriptor> &descriptors, 
+   FORB::TDescriptor &mean)
+ {
+@@ -37,7 +39,7 @@ void FORB::meanValue(const std::vector<FORB::pDescriptor> &descriptors,
+   }
+   else
+   {
+-    vector<int> sum(FORB::L * 8, 0);
++    std::vector<int> sum(FORB::L * 8, 0);
+     
+     for(size_t i = 0; i < descriptors.size(); ++i)
+     {
+@@ -76,51 +78,33 @@ void FORB::meanValue(const std::vector<FORB::pDescriptor> &descriptors,
+ 
+ // --------------------------------------------------------------------------
+   
+-double FORB::distance(const FORB::TDescriptor &a, 
++int FORB::distance(const FORB::TDescriptor &a,
+   const FORB::TDescriptor &b)
+ {
+-  // Bit count function got from:
+-  // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+-  // This implementation assumes that a.cols (CV_8U) % sizeof(uint64_t) == 0
++  // Bit set count operation from
++  // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
++
++  const int *pa = a.ptr<int32_t>();
++  const int *pb = b.ptr<int32_t>();
+ 
+-  const uint64_t *pa, *pb;
+-  pa = a.ptr<uint64_t>(); // a & b are actually CV_8U
+-  pb = b.ptr<uint64_t>(); 
++  int dist=0;
+ 
+-  uint64_t v, ret = 0;
+-  for(size_t i = 0; i < a.cols / sizeof(uint64_t); ++i, ++pa, ++pb)
++  for(int i=0; i<8; i++, pa++, pb++)
+   {
+-    v = *pa ^ *pb;
+-    v = v - ((v >> 1) & (uint64_t)~(uint64_t)0/3);
+-    v = (v & (uint64_t)~(uint64_t)0/15*3) + ((v >> 2) & 
+-      (uint64_t)~(uint64_t)0/15*3);
+-    v = (v + (v >> 4)) & (uint64_t)~(uint64_t)0/255*15;
+-    ret += (uint64_t)(v * ((uint64_t)~(uint64_t)0/255)) >> 
+-      (sizeof(uint64_t) - 1) * CHAR_BIT;
++      unsigned  int v = *pa ^ *pb;
++      v = v - ((v >> 1) & 0x55555555);
++      v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
++      dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+   }
+ 
+-  return ret;
+-  
+-  // // If uint64_t is not defined in your system, you can try this 
+-  // // portable approach
+-  // const unsigned char *pa, *pb;
+-  // pa = a.ptr<unsigned char>();
+-  // pb = b.ptr<unsigned char>();
+-  // 
+-  // int ret = 0;
+-  // for(int i = 0; i < a.cols; ++i, ++pa, ++pb)
+-  // {
+-  //   ret += DUtils::LUT::ones8bits[ *pa ^ *pb ];
+-  // }
+-  //  
+-  // return ret;
++  return dist;
+ }
+ 
+ // --------------------------------------------------------------------------
+   
+ std::string FORB::toString(const FORB::TDescriptor &a)
+ {
+-  stringstream ss;
++  std::stringstream ss;
+   const unsigned char *p = a.ptr<unsigned char>();
+   
+   for(int i = 0; i < a.cols; ++i, ++p)
+@@ -138,7 +122,7 @@ void FORB::fromString(FORB::TDescriptor &a, const std::string &s)
+   a.create(1, FORB::L, CV_8U);
+   unsigned char *p = a.ptr<unsigned char>();
+   
+-  stringstream ss(s);
++  std::stringstream ss(s);
+   for(int i = 0; i < FORB::L; ++i, ++p)
+   {
+     int n;
+@@ -187,55 +171,17 @@ void FORB::toMat32F(const std::vector<TDescriptor> &descriptors,
+ 
+ // --------------------------------------------------------------------------
+ 
+-void FORB::toMat32F(const cv::Mat &descriptors, cv::Mat &mat)
+-{
+-
+-  descriptors.convertTo(mat, CV_32F);
+-  return; 
+-
+-  if(descriptors.empty())
+-  {
+-    mat.release();
+-    return;
+-  }
+-  
+-  const int N = descriptors.rows;
+-  const int C = descriptors.cols;
+-  
+-  mat.create(N, FORB::L*8, CV_32F);
+-  float *p = mat.ptr<float>(); // p[i] == 1 or 0
+-  
+-  const unsigned char *desc = descriptors.ptr<unsigned char>();
+-  
+-  for(int i = 0; i < N; ++i, desc += C)
+-  {
+-    for(int j = 0; j < C; ++j, p += 8)
+-    {
+-      p[0] = (desc[j] & (1 << 7) ? 1 : 0);
+-      p[1] = (desc[j] & (1 << 6) ? 1 : 0);
+-      p[2] = (desc[j] & (1 << 5) ? 1 : 0);
+-      p[3] = (desc[j] & (1 << 4) ? 1 : 0);
+-      p[4] = (desc[j] & (1 << 3) ? 1 : 0);
+-      p[5] = (desc[j] & (1 << 2) ? 1 : 0);
+-      p[6] = (desc[j] & (1 << 1) ? 1 : 0);
+-      p[7] = desc[j] & (1);
+-    }
+-  } 
+-}
+-
+-// --------------------------------------------------------------------------
+-
+ void FORB::toMat8U(const std::vector<TDescriptor> &descriptors, 
+   cv::Mat &mat)
+ {
+-  mat.create(descriptors.size(), FORB::L, CV_8U);
++  mat.create(descriptors.size(), 32, CV_8U);
+   
+   unsigned char *p = mat.ptr<unsigned char>();
+   
+-  for(size_t i = 0; i < descriptors.size(); ++i, p += FORB::L)
++  for(size_t i = 0; i < descriptors.size(); ++i, p += 32)
+   {
+     const unsigned char *d = descriptors[i].ptr<unsigned char>();
+-    std::copy(d, d + FORB::L, p);
++    std::copy(d, d+32, p);
+   }
+   
+ }
+@@ -244,3 +190,4 @@ void FORB::toMat8U(const std::vector<TDescriptor> &descriptors,
+ 
+ } // namespace DBoW2
+ 
++
+diff --git a/src/FSurf64.cpp b/src/FSurf64.cpp
+deleted file mode 100644
+index df5d886..0000000
+--- a/src/FSurf64.cpp
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/**
+- * File: FSurf64.cpp
+- * Date: November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: functions for Surf64 descriptors
+- * License: see the LICENSE.txt file
+- *
+- */
+- 
+-#include <vector>
+-#include <string>
+-#include <sstream>
+-
+-#include "FClass.h"
+-#include "FSurf64.h"
+-
+-using namespace std;
+-
+-namespace DBoW2 {
+-
+-// --------------------------------------------------------------------------
+-
+-void FSurf64::meanValue(const std::vector<FSurf64::pDescriptor> &descriptors, 
+-  FSurf64::TDescriptor &mean)
+-{
+-  mean.resize(0);
+-  mean.resize(FSurf64::L, 0);
+-  
+-  float s = descriptors.size();
+-  
+-  vector<FSurf64::pDescriptor>::const_iterator it;
+-  for(it = descriptors.begin(); it != descriptors.end(); ++it)
+-  {
+-    const FSurf64::TDescriptor &desc = **it;
+-    for(int i = 0; i < FSurf64::L; i += 4)
+-    {
+-      mean[i  ] += desc[i  ] / s;
+-      mean[i+1] += desc[i+1] / s;
+-      mean[i+2] += desc[i+2] / s;
+-      mean[i+3] += desc[i+3] / s;
+-    }
+-  }
+-}
+-
+-// --------------------------------------------------------------------------
+-  
+-double FSurf64::distance(const FSurf64::TDescriptor &a, const FSurf64::TDescriptor &b)
+-{
+-  double sqd = 0.;
+-  for(int i = 0; i < FSurf64::L; i += 4)
+-  {
+-    sqd += (a[i  ] - b[i  ])*(a[i  ] - b[i  ]);
+-    sqd += (a[i+1] - b[i+1])*(a[i+1] - b[i+1]);
+-    sqd += (a[i+2] - b[i+2])*(a[i+2] - b[i+2]);
+-    sqd += (a[i+3] - b[i+3])*(a[i+3] - b[i+3]);
+-  }
+-  return sqd;
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-std::string FSurf64::toString(const FSurf64::TDescriptor &a)
+-{
+-  stringstream ss;
+-  for(int i = 0; i < FSurf64::L; ++i)
+-  {
+-    ss << a[i] << " ";
+-  }
+-  return ss.str();
+-}
+-
+-// --------------------------------------------------------------------------
+-  
+-void FSurf64::fromString(FSurf64::TDescriptor &a, const std::string &s)
+-{
+-  a.resize(FSurf64::L);
+-  
+-  stringstream ss(s);
+-  for(int i = 0; i < FSurf64::L; ++i)
+-  {
+-    ss >> a[i];
+-  }
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-void FSurf64::toMat32F(const std::vector<TDescriptor> &descriptors, 
+-    cv::Mat &mat)
+-{
+-  if(descriptors.empty())
+-  {
+-    mat.release();
+-    return;
+-  }
+-  
+-  const int N = descriptors.size();
+-  const int L = FSurf64::L;
+-  
+-  mat.create(N, L, CV_32F);
+-  
+-  for(int i = 0; i < N; ++i)
+-  {
+-    const TDescriptor& desc = descriptors[i];
+-    float *p = mat.ptr<float>(i);
+-    for(int j = 0; j < L; ++j, ++p)
+-    {
+-      *p = desc[j];
+-    }
+-  } 
+-}
+-
+-// --------------------------------------------------------------------------
+-
+-} // namespace DBoW2
+-
+diff --git a/src/QueryResults.cpp b/src/QueryResults.cpp
+deleted file mode 100644
+index 01897ca..0000000
+--- a/src/QueryResults.cpp
++++ /dev/null
+@@ -1,63 +0,0 @@
+-/**
+- * File: QueryResults.cpp
+- * Date: March, November 2011
+- * Author: Dorian Galvez-Lopez
+- * Description: structure to store results of database queries
+- * License: see the LICENSE.txt file
+- *
+- */
+-
+-#include <iostream>
+-#include <fstream>
+-#include "QueryResults.h"
+-
+-using namespace std;
+-
+-namespace DBoW2
+-{
+-
+-// ---------------------------------------------------------------------------
+-
+-ostream & operator<<(ostream& os, const Result& ret )
+-{
+-  os << "<EntryId: " << ret.Id << ", Score: " << ret.Score << ">";
+-  return os;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-ostream & operator<<(ostream& os, const QueryResults& ret )
+-{
+-  if(ret.size() == 1)
+-    os << "1 result:" << endl;
+-  else
+-    os << ret.size() << " results:" << endl;
+-    
+-  QueryResults::const_iterator rit;
+-  for(rit = ret.begin(); rit != ret.end(); ++rit)
+-  {
+-    os << *rit;
+-    if(rit + 1 != ret.end()) os << endl;
+-  }
+-  return os;
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-void QueryResults::saveM(const std::string &filename) const
+-{
+-  fstream f(filename.c_str(), ios::out);
+-  
+-  QueryResults::const_iterator qit;
+-  for(qit = begin(); qit != end(); ++qit)
+-  {
+-    f << qit->Id << " " << qit->Score << endl;
+-  }
+-  
+-  f.close();
+-}
+-
+-// ---------------------------------------------------------------------------
+-
+-} // namespace DBoW2
+-

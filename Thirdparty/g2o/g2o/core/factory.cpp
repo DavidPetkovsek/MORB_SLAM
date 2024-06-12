@@ -24,13 +24,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "factory.h"
+#include "g2o/core/factory.h"
 
-#include "creators.h"
-#include "parameter.h"
-#include "cache.h"
-#include "optimizable_graph.h"
-#include "../stuff/color_macros.h"
+#include "g2o/core/creators.h"
+#include "g2o/core/parameter.h"
+#include "g2o/core/cache.h"
+#include "g2o/core/optimizable_graph.h"
+#include "g2o/stuff/color_macros.h"
 
 #include <iostream>
 #include <typeinfo>

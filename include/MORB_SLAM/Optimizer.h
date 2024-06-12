@@ -29,6 +29,17 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/Map.h"
 #include "MORB_SLAM/MapPoint.h"
+#ifdef FactoryEngine
+#include <apps/morb_g2o/g2o/core/block_solver.h>
+#include <apps/morb_g2o/g2o/core/optimization_algorithm_gauss_newton.h>
+#include <apps/morb_g2o/g2o/core/optimization_algorithm_levenberg.h>
+#include <apps/morb_g2o/g2o/core/robust_kernel_impl.h>
+#include <apps/morb_g2o/g2o/core/sparse_block_matrix.h>
+#include <apps/morb_g2o/g2o/solvers/linear_solver_dense.h>
+#include <apps/morb_g2o/g2o/solvers/linear_solver_eigen.h>
+#include <apps/morb_g2o/g2o/types/types_seven_dof_expmap.h>
+#include <apps/morb_g2o/g2o/types/types_six_dof_expmap.h>
+#else
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_gauss_newton.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
@@ -38,6 +49,7 @@
 #include "g2o/solvers/linear_solver_eigen.h"
 #include "g2o/types/types_seven_dof_expmap.h"
 #include "g2o/types/types_six_dof_expmap.h"
+#endif
 
 namespace MORB_SLAM {
 
@@ -62,9 +74,7 @@ class Optimizer {
                              Eigen::VectorXd *vSingVal = nullptr,
                              bool *bHess = nullptr);
 
-  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame>pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
-                                    int &num_fixedKF, int &num_OptKF,
-                                    int &num_MPs, int &num_edges, bool bInertial);
+  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame>pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial);
 
   int static PoseOptimization(Frame *pFrame);
   int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit = false);
@@ -103,11 +113,8 @@ class Optimizer {
 
   // For inertial systems
 
-  void static LocalInertialBA(std::shared_ptr<KeyFrame>pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap,
-                              int &num_fixedKF, int &num_OptKF, int &num_MPs,
-                              int &num_edges, bool bLarge = false,
-                              bool bRecInit = false);
-  void static MergeInertialBA(std::shared_ptr<KeyFrame>pCurrKF, std::shared_ptr<KeyFrame>pMergeKF,
+  void static LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge = false, bool bRecInit = false);
+  void static MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_ptr<KeyFrame> pMergeKF,
                               bool *pbStopFlag, std::shared_ptr<Map> pMap,
                               LoopClosing::KeyFrameAndPose &corrPoses);
 

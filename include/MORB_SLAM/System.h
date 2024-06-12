@@ -137,12 +137,6 @@ public:
 
     void ForceLost();
 
-#ifdef REGISTER_TIMES
-    void InsertRectTime(double& time);
-    void InsertResizeTime(double& time);
-    void InsertTrackTime(double& time);
-#endif
-
     friend Viewer;
     friend ExternalMapViewer;
 
@@ -152,6 +146,9 @@ public:
     void setTrackingState(TrackingState state);
 
     std::shared_ptr<Settings> getSettings() const;
+
+    bool getIsLoopClosed();
+    void setIsLoopClosed(bool isLoopClosed);
 
 private:
 
