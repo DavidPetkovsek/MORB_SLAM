@@ -178,7 +178,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
 
  public:
   Preintegrated(const Bias &b_, const Calib &calib);
-  Preintegrated(std::shared_ptr<Preintegrated> pImuPre);
+  Preintegrated(Preintegrated *pImuPre);
   Preintegrated();
   ~Preintegrated();
   void CopyFrom(std::shared_ptr<Preintegrated> pImuPre);

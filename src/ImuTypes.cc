@@ -122,7 +122,7 @@ Preintegrated::~Preintegrated(){
 }
 
 // Copy constructor
-Preintegrated::Preintegrated(std::shared_ptr<Preintegrated> pImuPre)
+Preintegrated::Preintegrated(Preintegrated *pImuPre)
     : dT(pImuPre->dT),
       C(pImuPre->C),
       Info(pImuPre->Info),
