@@ -922,7 +922,7 @@ void Tracking::Track() {
   //     mlbLost.push_back(mState == TrackingState::LOST);
   //   }
   // }
-  if ((mState == TrackingState::OK || mState == TrackingState::RECENTLY_LOST) && mCurrentFrame.isSet())
+  if ((mState == TrackingState::OK || mState == TrackingState::RECENTLY_LOST) && mCurrentFrame.HasPose())
     mRelativeFramePose = mCurrentFrame.GetPose() * mCurrentFrame.mpReferenceKF->GetPoseInverse();
 
 #ifdef REGISTER_LOOP
