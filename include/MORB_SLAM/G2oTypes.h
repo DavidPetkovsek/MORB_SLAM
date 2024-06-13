@@ -87,8 +87,7 @@ public:
     ImuCamPose(Frame* pF);
     ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, std::shared_ptr<KeyFrame> pKF);
 
-    void SetParam(const std::vector<Eigen::Matrix3d> &_Rcw, const std::vector<Eigen::Vector3d> &_tcw, const std::vector<Eigen::Matrix3d> &_Rbc,
-                  const std::vector<Eigen::Vector3d> &_tbc, const double &_bf);
+    void SetParam(const std::vector<Eigen::Matrix3d> &_Rcw, const std::vector<Eigen::Vector3d> &_tcw, const std::vector<Eigen::Matrix3d> &_Rbc, const std::vector<Eigen::Vector3d> &_tbc, const double &_bf);
 
     void Update(const double *pu); // update in the imu reference
     void UpdateW(const double *pu); // update in the world reference
@@ -150,8 +149,7 @@ public:
     virtual bool read(std::istream& is);
     virtual bool write(std::ostream& os) const;
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         _estimate.Update(update_);
@@ -171,16 +169,14 @@ public:
     VertexPose4DoF(Frame* pF){
         setEstimate(ImuCamPose(pF));
     }
-    VertexPose4DoF(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, std::shared_ptr<KeyFrame> pKF){
-
+    VertexPose4DoF(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, std::shared_ptr<KeyFrame> pKF) {
         setEstimate(ImuCamPose(_Rwc, _twc, pKF));
     }
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         double update6DoF[6];
@@ -206,8 +202,7 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         Eigen::Vector3d uv;
@@ -227,8 +222,7 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         Eigen::Vector3d ubg;
@@ -249,8 +243,7 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         Eigen::Vector3d uba;
@@ -268,8 +261,7 @@ public:
     GDirection(){}
     GDirection(Eigen::Matrix3d pRwg): Rwg(pRwg){}
 
-    void Update(const double *pu)
-    {
+    void Update(const double *pu) {
         Rwg=Rwg*ExpSO3(pu[0],pu[1],0.0);
     }
 
@@ -290,8 +282,7 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         _estimate.Update(update_);
@@ -303,7 +294,6 @@ public:
 class VertexScale : public g2o::BaseVertex<1,double>
 {
 public:
-    
     VertexScale(){
         setEstimate(1.0);
     }
@@ -337,8 +327,7 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    virtual void setToOriginImpl() {
-        }
+    virtual void setToOriginImpl(){}
 
     virtual void oplusImpl(const double* update_){
         _estimate.Update(update_);
@@ -351,8 +340,7 @@ class EdgeMono : public g2o::BaseBinaryEdge<2,Eigen::Vector2d,g2o::VertexSBAPoin
 public:
     
 
-    EdgeMono(int cam_idx_=0): cam_idx(cam_idx_){
-    }
+    EdgeMono(int cam_idx_=0): cam_idx(cam_idx_){}
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -367,8 +355,7 @@ public:
 
     virtual void linearizeOplus();
 
-    bool isDepthPositive()
-    {
+    bool isDepthPositive(){
         const g2o::VertexSBAPointXYZ* VPoint = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
         const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[1]);
         return VPose->estimate().isDepthPositive(VPoint->estimate(),cam_idx);
@@ -413,8 +400,7 @@ public:
 
     virtual void linearizeOplus();
 
-    bool isDepthPositive()
-    {
+    bool isDepthPositive(){
         const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[0]);
         return VPose->estimate().isDepthPositive(Xw,cam_idx);
     }
@@ -503,7 +489,6 @@ class EdgeInertial : public g2o::BaseMultiEdge<9,Vector9d>
 {
 public:
     
-
     EdgeInertial(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
@@ -556,8 +541,6 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9,Vector9d>
 {
 public:
     
-
-    // EdgeInertialGS(std::shared_ptr<IMU::Preintegrated> pInt);
     EdgeInertialGS(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
@@ -643,7 +626,6 @@ class EdgeGyroRW : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,VertexGyroBias,V
 {
 public:
     
-
     EdgeGyroRW(){}
 
     virtual bool read(std::istream& is){return false;}
@@ -714,11 +696,9 @@ class ConstraintPoseImu
 {
 public:
     
+    ConstraintPoseImu(const Eigen::Matrix3d &Rwb_, const Eigen::Vector3d &twb_, const Eigen::Vector3d &vwb_, const Eigen::Vector3d &bg_, const Eigen::Vector3d &ba_, const Matrix15d &H_):
+            Rwb(Rwb_), twb(twb_), vwb(vwb_), bg(bg_), ba(ba_), H(H_) {
 
-    ConstraintPoseImu(const Eigen::Matrix3d &Rwb_, const Eigen::Vector3d &twb_, const Eigen::Vector3d &vwb_,
-                       const Eigen::Vector3d &bg_, const Eigen::Vector3d &ba_, const Matrix15d &H_):
-                       Rwb(Rwb_), twb(twb_), vwb(vwb_), bg(bg_), ba(ba_), H(H_)
-    {
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix<double,15,15> > es(H);
         Eigen::Matrix<double,15,1> eigs = es.eigenvalues();
         for(int i=0;i<15;i++)
@@ -775,7 +755,6 @@ class EdgePriorAcc : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexAccBias>
 {
 public:
     
-
     EdgePriorAcc(const Eigen::Vector3f &bprior_):bprior(bprior_.cast<double>()){}
 
     virtual bool read(std::istream& is){return false;}
@@ -824,7 +803,6 @@ class Edge4DoF : public g2o::BaseBinaryEdge<6,Vector6d,VertexPose4DoF,VertexPose
 {
 public:
     
-
     Edge4DoF(const Eigen::Matrix4d &deltaT){
         dTij = deltaT;
         dRij = deltaT.block<3,3>(0,0);
@@ -840,8 +818,6 @@ public:
         _error << LogSO3(VPi->estimate().Rcw[0]*VPj->estimate().Rcw[0].transpose()*dRij.transpose()),
                  VPi->estimate().Rcw[0]*(-VPj->estimate().Rcw[0].transpose()*VPj->estimate().tcw[0])+VPi->estimate().tcw[0] - dtij;
     }
-
-    // virtual void linearizeOplus(); // numerical implementation
 
     Eigen::Matrix4d dTij;
     Eigen::Matrix3d dRij;

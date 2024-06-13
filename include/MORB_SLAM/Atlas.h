@@ -58,7 +58,6 @@ class Atlas {
 
     // Save/load a set structure, the set structure is broken in libboost 1.58
     // for ubuntu 16.04, a vector is serializated
-    // ar & mspMaps;
     ar& mvpBackupMaps;
     ar& mvpCameras;
     // Need to save/load the static Id from Frame, KeyFrame, MapPoint and Map
@@ -85,8 +84,6 @@ class Atlas {
   // Method for change components in the current map
   void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
   void AddMapPoint(std::shared_ptr<MapPoint> pMP);
-  // void EraseMapPoint(std::shared_ptr<MapPoint> pMP);
-  // void EraseKeyFrame(std::shared_ptr<KeyFrame> pKF);
 
   std::shared_ptr<const GeometricCamera> AddCamera(const std::shared_ptr<const GeometricCamera> &pCam);
   std::vector<std::shared_ptr<const GeometricCamera>> GetAllCameras();
@@ -123,8 +120,6 @@ class Atlas {
   // Function for guarantee the correction of serialization of this object
   void PreSave();
   void PostLoad();
-
-  // std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
 
   void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
   std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();

@@ -55,9 +55,8 @@ class LoopClosing
 {
 public:
 
-    typedef std::pair<std::set<std::shared_ptr<KeyFrame>>,int> ConsistentGroup;
-    typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>,
-        Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3> > > KeyFrameAndPose;
+    typedef std::pair<std::set<std::shared_ptr<KeyFrame>>, int> ConsistentGroup;
+    typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>, Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3>>> KeyFrameAndPose;
 
     bool hasMergedLocalMap;
 
@@ -86,6 +85,7 @@ public:
         std::unique_lock<std::mutex> lock(mMutexGBA);
         return mbRunningGBA;
     }
+
     bool isFinishedGBA(){
         std::unique_lock<std::mutex> lock(mMutexGBA);
         return mbFinishedGBA;
@@ -105,13 +105,11 @@ protected:
     bool DetectAndReffineSim3FromLastKF(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
                                         std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
     bool DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFrame>> &vpBowCand, std::shared_ptr<KeyFrame> &pMatchedKF, std::shared_ptr<KeyFrame> &pLastCurrentKF, g2o::Sim3 &g2oScw,
-                                     int &nNumCoincidences, std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
+                                    int &nNumCoincidences, std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
     bool DetectCommonRegionsFromLastKF(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
-                                            std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
-    int FindMatchesByProjection(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKFw, g2o::Sim3 &g2oScw,
-                                std::set<std::shared_ptr<MapPoint>> &spMatchedMPinOrigin, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints,
-                                std::vector<std::shared_ptr<MapPoint>> &vpMatchedMapPoints);
-
+                                        std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
+    int FindMatchesByProjection(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKFw, g2o::Sim3 &g2oScw, std::set<std::shared_ptr<MapPoint>> &spMatchedMPinOrigin,
+                                std::vector<std::shared_ptr<MapPoint>> &vpMapPoints, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMapPoints);
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints);
     void SearchAndFuse(const std::vector<std::shared_ptr<KeyFrame>> &vConectedKFs, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints);
@@ -201,8 +199,6 @@ protected:
 
 
     int mnFullBAIdx;
-
-
 
     std::vector<double> vdPR_CurrentTime;
     std::vector<double> vdPR_MatchedTime;

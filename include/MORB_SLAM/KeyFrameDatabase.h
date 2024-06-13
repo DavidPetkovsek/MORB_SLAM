@@ -63,10 +63,6 @@ class KeyFrameDatabase {
   void clearMap(std::shared_ptr<Map> pMap);
 
   // Loop and Merge Detection
-
-  // UNUSED
-  // void DetectCandidates(std::shared_ptr<KeyFrame> pKF, float minScore, std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand, std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand);
-  // void DetectBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand, std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand, int nMinWords);
   void DetectNBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand, std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand, int nNumCandidates);
 
   // Relocalization

@@ -36,16 +36,12 @@ class Sim3Solver {
       const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale = true,
       const std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>());
 
-  void SetRansacParameters(double probability = 0.99, int minInliers = 6,
-                           int maxIterations = 300);
+  void SetRansacParameters(double probability = 0.99, int minInliers = 6, int maxIterations = 300);
 
   Eigen::Matrix4f find(std::vector<bool> &vbInliers12, int &nInliers);
 
-  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore,
-                          std::vector<bool> &vbInliers, int &nInliers);
-  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore,
-                          std::vector<bool> &vbInliers, int &nInliers,
-                          bool &bConverge);
+  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers);
+  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers, bool &bConverge);
 
   Eigen::Matrix4f GetEstimatedTransformation();
   Eigen::Matrix3f GetEstimatedRotation();
@@ -53,19 +49,14 @@ class Sim3Solver {
   float GetEstimatedScale();
 
  protected:
-  void ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr,
-                       Eigen::Vector3f &C);
+  void ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr, Eigen::Vector3f &C);
 
   bool ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2);
 
   void CheckInliers();
 
-  void Project(const std::vector<Eigen::Vector3f> &vP3Dw,
-               std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw,
-               const std::shared_ptr<const GeometricCamera> &pCamera);
-  void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc,
-                         std::vector<Eigen::Vector2f> &vP2D,
-                         const std::shared_ptr<const GeometricCamera> &pCamera);
+  void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, const std::shared_ptr<const GeometricCamera> &pCamera);
+  void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, const std::shared_ptr<const GeometricCamera> &pCamera);
 
  protected:
   // KeyFrames and matches
@@ -126,10 +117,6 @@ class Sim3Solver {
   // Threshold inlier/outlier. e = dist(Pi,T_ij*Pj)^2 < 5.991*mSigma2
   float mTh;
   float mSigma2;
-
-  // Calibration
-  // cv::Mat mK1;
-  // cv::Mat mK2;
 
   std::shared_ptr<const GeometricCamera> pCamera1, pCamera2;
 };

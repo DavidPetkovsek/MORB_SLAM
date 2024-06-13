@@ -63,18 +63,15 @@ class Tracking {
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
 
   // Load new settings
-  // The focal lenght should be similar or scale prediction will fail when
-  // projecting points
+  // The focal lenght should be similar or scale prediction will fail when projecting points
 
-  // Use this function if you have deactivated local mapping and you only want
-  // to localize the camera.
+  // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool& flag);
 
   void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
   std::shared_ptr<KeyFrame> GetLastKeyFrame() { return mpLastKeyFrame; }
 
   void CreateMapInAtlas();
-  // std::mutex mMutexTracks;
 
   //--
   int GetMatchesInliers();
@@ -121,13 +118,9 @@ class Tracking {
 
   Sophus::SE3f mReturnPose;
 
-  // Lists used to recover the full camera trajectory at the end of the
-  // execution. Basically we store the reference keyframe for each frame and its
-  // relative transformation
+  // Lists used to recover the full camera trajectory at the end of the execution. Basically we store the reference keyframe for each frame and its relative transformation
 protected:
-  // std::list<Sophus::SE3f> mlRelativeFramePoses;
-  // std::list<std::shared_ptr<KeyFrame>> mlpReferences;
-  // std::list<bool> mlbLost;
+
   Sophus::SE3f mRelativeFramePose;
 
   bool mFastInit;
@@ -154,11 +147,7 @@ public:
   // Reset the system (clear Atlas or the active map)
   void CheckTrackingReset();
   void RequestReset();
-  // bool ResetRequested();
-  // void Reset(bool bLocMap = false);
   void RequestResetActiveMap();
-  // bool ResetActiveMapRequested();
-  // void ResetActiveMap(bool bLocMap = false);
 
   bool fastIMUInitEnabled() const { return mFastInit; }
   bool stationaryIMUInitEnabled() const { return mStationaryInit; }
@@ -174,7 +163,6 @@ public:
 
   // Map initialization for monocular
   void MonocularInitialization();
-  // void CreateNewMapPoints();
   void CreateInitialMapMonocular();
 
   void CheckReplacedInLastFrame();
@@ -214,21 +202,16 @@ public:
   // Queue of IMU measurements between frames
   std::list<IMU::Point> mlQueueImuData;
 
-  // Vector of IMU measurements from previous to current frame (to be filled by
-  // PreintegrateIMU)
+  // Vector of IMU measurements from previous to current frame (to be filled by PreintegrateIMU)
   std::mutex mMutexImuQueue;
 
   // Imu calibration parameters
   std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // Last Bias Estimation (at keyframe creation)
-  //IMU::Bias mLastBias;
 
-  // In case of performing only localization, this flag is true when there are
-  // no matches to points in the map. Still tracking will continue if there are
-  // enough matches with temporal points. In that case we are doing visual
-  // odometry. The system will try to do relocalization to recover "zero-drift"
-  // localization to the map.
+  // In case of performing only localization, this flag is true when there are no matches to points in the map. Still tracking will continue if there are
+  // enough matches with temporal points. In that case we are doing visual odometry. The system will try to do relocalization to recover "zero-drift" localization to the map.
   bool notEnoughMatchPoints_trackOnlyMode;
 
   // Other Thread Pointers
@@ -272,13 +255,10 @@ public:
   int mnFramesToResetIMU;
 
   // Threshold close/far points
-  // Points seen as close by the stereo/RGBD sensor are considered reliable
-  // and inserted from just one frame. Far points requiere a match in two
-  // keyframes.
+  // Points seen as close by the stereo/RGBD sensor are considered reliable and inserted from just one frame. Far points requiere a match in two keyframes.
   float mThDepth;
 
-  // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are
-  // scaled.
+  // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are scaled.
   float mDepthMapFactor;
 
   // Current matches in frame

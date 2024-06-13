@@ -64,20 +64,9 @@ class Settings {
   CameraModelType cameraModelType() const { return cameraModelType_; }
   std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
   std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
-  cv::Mat camera1DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
-    // cv::Mat distortionMat(vPinHoleDistorsion1_.size(), 1, CV_32F);
-    // std::copy(vPinHoleDistorsion1_.begin(), vPinHoleDistorsion1_.end(), distortionMat.ptr<float>());
 
-    // return distortionMat;
-  }
-  cv::Mat camera2DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data());
-    // cv::Mat distortionMat(vPinHoleDistorsion2_.size(), 1, CV_32F);
-    // std::copy(vPinHoleDistorsion2_.begin(), vPinHoleDistorsion2_.end(), distortionMat.ptr<float>());
-
-    // return distortionMat;
-  }
+  cv::Mat camera1DistortionCoef() { return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data()); }
+  cv::Mat camera2DistortionCoef() { return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data()); }
 
   const Sophus::SE3f &Tlr() const { return Tlr_; }
   float bf() const { return bf_; }
@@ -134,8 +123,7 @@ class Settings {
 
  private:
   template <typename T>
-  T readParameter(cv::FileStorage& fSettings, const std::string& name,
-                  bool& found, const bool required = true) {
+  T readParameter(cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required = true) {
     cv::FileNode node = fSettings[name];
     if (node.empty()) {
       if (required) {

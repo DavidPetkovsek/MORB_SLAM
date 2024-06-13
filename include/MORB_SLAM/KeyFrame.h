@@ -69,45 +69,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& const_cast<int&>(mnGridRows);
     ar& const_cast<float&>(mfGridElementWidthInv);
     ar& const_cast<float&>(mfGridElementHeightInv);
-
-    // Variables of tracking
-    // ar & mnTrackReferenceForFrame;
-    // ar & mnFuseTargetForKF;
-    // Variables of local mapping
-    // ar & mnBALocalForKF;
-    // ar & mnBAFixedForKF;
-    // Variables used by KeyFrameDatabase
-    // ar & mnLoopQuery;
-    // ar & mnLoopWords;
-    // ar & mLoopScore;
-    // ar & mnRelocQuery;
-    // ar & mnRelocWords;
-    // ar & mRelocScore;
-    // ar & mnMergeQuery;
-    // ar & mnMergeWords;
-    // ar & mMergeScore;
-    // ar & mnPlaceRecognitionQuery;
-    // ar & mnPlaceRecognitionWords;
-    // ar & mPlaceRecognitionScore;
-    // Variables of loop closing
-    // serializeMatrix(ar,mTcwGBA,version);
-    // serializeMatrix(ar,mTcwBefGBA,version);
-    // serializeMatrix(ar,mVwbGBA,version);
-    // serializeMatrix(ar,mVwbBefGBA,version);
-    // ar & mBiasGBA;
-    // ar & mnBAGlobalForKF;
-    // Variables of Merging
-    // serializeMatrix(ar,mTcwMerge,version);
-    // serializeMatrix(ar,mTcwBefMerge,version);
-    // serializeMatrix(ar,mTwcBefMerge,version);
-    // serializeMatrix(ar,mVwbMerge,version);
-    // serializeMatrix(ar,mVwbBefMerge,version);
-    // ar & mBiasMerge;
-    // ar & mnMergeCorrectedForKF;
-    // ar & mnMergeForKF;
-    // ar & mfScaleMerge;
-    // ar & mnBALocalForMerge;
-
     // Scale
     ar& mfScale;
     // Calibration parameters
@@ -260,9 +221,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<MapPoint> GetMapPoint(const size_t& idx);
 
   // KeyPoint functions
-  std::vector<size_t> GetFeaturesInArea(const float& x, const float& y,
-                                        const float& r,
-                                        const bool bRight = false) const;
+  std::vector<size_t> GetFeaturesInArea(const float& x, const float& y, const float& r, const bool bRight = false) const;
   bool UnprojectStereo(int i, Eigen::Vector3f& x3D);
 
   // Image
@@ -281,9 +240,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   static bool weightComp(int a, int b) { return a > b; }
 
-  static bool lId(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2) {
-    return pKF1->mnId < pKF2->mnId;
-  }
+  static bool lId(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2) { return pKF1->mnId < pKF2->mnId; }
 
   std::shared_ptr<Map> GetMap();
   void UpdateMap(std::shared_ptr<Map> pMap);
@@ -296,14 +253,10 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   IMU::Bias GetImuBias();
 
   bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
-  bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u,
-                             float& v);
+  bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
-  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP,
-               std::set<std::shared_ptr<const GeometricCamera>>& spCam);
-  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
-                std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid,
-                std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
+  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam);
+  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
@@ -312,8 +265,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   static long unsigned int nKFsInMemory;
 
-  // The following variables are accesed from only 1 thread or never change (no
-  // mutex needed).
+  // The following variables are accesed from only 1 thread or never change (no mutex needed).
  public:
 
   bool isPartiallyConstructed{false};
@@ -424,11 +376,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::vector<std::shared_ptr<KeyFrame>> mvpLoopCandKFs;
   std::vector<std::shared_ptr<KeyFrame>> mvpMergeCandKFs;
 
-  // bool mbHasHessian;
-  // cv::Mat mHessianPose;
-
-  // The following variables need to be accessed trough a mutex to be thread
-  // safe.
+  // The following variables need to be accessed trough a mutex to be thread safe.
  protected:
   // sophus poses
   Sophus::SE3<float> mTcw;

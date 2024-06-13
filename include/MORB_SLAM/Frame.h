@@ -102,21 +102,25 @@ public:
 
     Eigen::Matrix<float,3,1> GetImuPosition() const;
     Eigen::Matrix<float,3,3> GetImuRotation();
+    //UNUSED
     Sophus::SE3<float> GetImuPose();
 
     Sophus::SE3f GetRelativePoseTrl();
     Sophus::SE3f GetRelativePoseTlr();
+    //UNUSED
     Eigen::Matrix3f GetRelativePoseTlr_rotation();
+    //UNUSED
     Eigen::Vector3f GetRelativePoseTlr_translation();
 
     void SetNewBias(const IMU::Bias &b);
 
-    // Check if a MapPoint is in the frustum of the camera
-    // and fill variables of the MapPoint to be used by the tracking
+    // Check if a MapPoint is in the frustum of the camera and fill variables of the MapPoint to be used by the tracking
     bool isInFrustum(std::shared_ptr<MapPoint> pMP, float viewingCosLimit);
 
+    //UNUSED
     bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v);
 
+    //UNUSED
     Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
 
     // Compute the cell of a keypoint (return false if outside the grid)
@@ -308,8 +312,7 @@ public:
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.
-    // Only for the RGB-D case. Stereo must be already rectified!
-    // (called in the constructor).
+    // Only for the RGB-D case. Stereo must be already rectified! (called in the constructor).
     void UndistortKeyPoints();
 
     // Computes image bounds for the undistorted image (called in the constructor).
@@ -342,8 +345,7 @@ public:
     //For stereo fisheye matching
     static cv::BFMatcher BFmatcher;
 
-    //Triangulated stereo observations using as reference the left camera. These are
-    //computed during ComputeStereoFishEyeMatches
+    //Triangulated stereo observations using as reference the left camera. These are computed during ComputeStereoFishEyeMatches
     std::vector<Eigen::Vector3f> mvStereo3Dpoints;
 
     //Grid for the right image

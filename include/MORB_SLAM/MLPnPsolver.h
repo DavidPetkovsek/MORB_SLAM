@@ -66,9 +66,7 @@ class MLPnPsolver {
 
   ~MLPnPsolver();
 
-  void SetRansacParameters(double probability = 0.99, int minInliers = 8,
-                           int maxIterations = 300, int minSet = 6,
-                           float epsilon = 0.4, float th2 = 5.991);
+  void SetRansacParameters(double probability = 0.99, int minInliers = 8, int maxIterations = 300, int minSet = 6, float epsilon = 0.4, float th2 = 5.991);
 
   // Find metod is necessary?
 
@@ -87,8 +85,7 @@ class MLPnPsolver {
                       Eigen::aligned_allocator<bearingVector_t> >
       bearingVectors_t;
 
-  /** A 2-matrix containing the 2D covariance information of a bearing vector
-   */
+  /** A 2-matrix containing the 2D covariance information of a bearing vector */
   typedef Eigen::Matrix2d cov2_mat_t;
 
   /** A 3-matrix containing the 3D covariance information of a bearing vector */
@@ -137,22 +134,13 @@ class MLPnPsolver {
    * reference system), the camera rays and (optionally) the covariance matrix
    * of those camera rays. Result is stored in solution
    */
-  void computePose(const bearingVectors_t& f, const points_t& p,
-                   const cov3_mats_t& covMats, const std::vector<int>& indices,
-                   transformation_t& result);
+  void computePose(const bearingVectors_t& f, const points_t& p, const cov3_mats_t& covMats, const std::vector<int>& indices, transformation_t& result);
 
-  void mlpnp_gn(Eigen::VectorXd& x, const points_t& pts,
-                const std::vector<Eigen::MatrixXd>& nullspaces,
-                const Eigen::SparseMatrix<double> Kll, bool use_cov);
+  void mlpnp_gn(Eigen::VectorXd& x, const points_t& pts, const std::vector<Eigen::MatrixXd>& nullspaces, const Eigen::SparseMatrix<double> Kll, bool use_cov);
 
-  void mlpnp_residuals_and_jacs(const Eigen::VectorXd& x, const points_t& pts,
-                                const std::vector<Eigen::MatrixXd>& nullspaces,
-                                Eigen::VectorXd& r, Eigen::MatrixXd& fjac,
-                                bool getJacs);
+  void mlpnp_residuals_and_jacs(const Eigen::VectorXd& x, const points_t& pts, const std::vector<Eigen::MatrixXd>& nullspaces, Eigen::VectorXd& r, Eigen::MatrixXd& fjac, bool getJacs);
 
-  void mlpnpJacs(const point_t& pt, const Eigen::Vector3d& nullspace_r,
-                 const Eigen::Vector3d& nullspace_s, const rodrigues_t& w,
-                 const translation_t& t, Eigen::MatrixXd& jacs);
+  void mlpnpJacs(const point_t& pt, const Eigen::Vector3d& nullspace_r, const Eigen::Vector3d& nullspace_s, const rodrigues_t& w, const translation_t& t, Eigen::MatrixXd& jacs);
 
   // Auxiliar methods
 

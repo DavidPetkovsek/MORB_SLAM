@@ -46,16 +46,13 @@ class Map
     friend class boost::serialization::access;
 
     template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
+    void serialize(Archive &ar, const unsigned int version) {
         ar & mnId;
         ar & mnInitKFid;
         ar & mnMaxKFid;
         ar & mnBigChangeIdx;
 
         // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
-        //ar & mspKeyFrames;
-        //ar & mspMapPoints;
         ar & mvpBackupKeyFrames;
         ar & mvpBackupMapPoints;
 
@@ -127,7 +124,7 @@ public:
     unsigned int GetLowerKFID();
 
     void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc/*, std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKeyFrameId*/, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
+    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
 
     void printReprojectionError(std::list<std::shared_ptr<KeyFrame>> &lpLocalWindowKFs, std::shared_ptr<KeyFrame> mpCurrentKF, std::string &name, std::string &name_folder);
 

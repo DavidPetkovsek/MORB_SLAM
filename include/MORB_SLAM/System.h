@@ -58,13 +58,11 @@ public:
     static eLevel th;
 
 public:
-    static void PrintMess(std::string str, eLevel lev)
-    {
+    static void PrintMess(std::string str, eLevel lev) {
         std::cout << "Level: " << lev << " | " << str << std::endl;
     }
 
-    static void SetTh(eLevel _th)
-    {
+    static void SetTh(eLevel _th) {
         th = _th;
     }
 };
@@ -118,10 +116,6 @@ public:
     // This function must be called before saving the trajectory.
     virtual ~System();
 
-    // TODO: Save/Load functions
-    // SaveMap(const std::string &filename);
-    // LoadMap(const std::string &filename);
-
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     TrackingState GetTrackingState();
@@ -142,8 +136,6 @@ public:
 
     bool getHasMergedLocalMap();
     bool getIsDoneVIBA();
-
-    void setTrackingState(TrackingState state);
 
     std::shared_ptr<Settings> getSettings() const;
 
@@ -168,7 +160,6 @@ private:
     std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
-    //Map* mpMap;
     Atlas_ptr mpAtlas;
 
     // Tracker. It receives a frame and computes the associated camera pose.
