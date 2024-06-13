@@ -78,15 +78,13 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF,
   mbTrackInViewR = false;
   mbTrackInView = false;
 
-  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
-  // conflicts with id.
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
   nMPsInMemory++;
 }
 
-MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<KeyFrame> pRefKF,
-                   std::shared_ptr<KeyFrame> pHostKF, std::shared_ptr<Map> pMap)
+MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<KeyFrame> pHostKF, std::shared_ptr<Map> pMap)
     : mnFirstKFid(pRefKF->mnId),
       mnFirstFrame(pRefKF->mnFrameId),
       nObs(0),
@@ -114,8 +112,7 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
   mNormalVector.setZero();
 
   // Worldpos is not set
-  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
-  // conflicts with id.
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
   nMPsInMemory++;
@@ -156,11 +153,9 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
 
   Eigen::Vector3f PC = mWorldPos - Ow;
   const float dist = PC.norm();
-  const int level = (pFrame->Nleft == -1)
-                        ? pFrame->mvKeysUn[idxF].octave
-                        : (idxF < pFrame->Nleft)
-                              ? pFrame->mvKeys[idxF].octave
-                              : pFrame->mvKeysRight[idxF].octave;
+  const int level = (pFrame->Nleft == -1) ? pFrame->mvKeysUn[idxF].octave :
+                    (idxF < pFrame->Nleft) ? pFrame->mvKeys[idxF].octave :
+                    pFrame->mvKeysRight[idxF].octave;
   const float levelScaleFactor = pFrame->mvScaleFactors[level];
   const int nLevels = pFrame->mnScaleLevels;
 
@@ -169,15 +164,13 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
 
   pFrame->mDescriptors.row(idxF).copyTo(mDescriptor);
 
-  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid
-  // conflicts with id.
+  // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
   mnId = nNextId++;
   nMPsInMemory++;
 }
 
 MapPoint::~MapPoint() {
-  // std::cout << "MapPoint Destroyed" << std::endl;
   nMPsInMemory--;
 }
 
@@ -220,7 +213,6 @@ void MapPoint::AddObservation(std::shared_ptr<KeyFrame> pKF, int idx) {
   }
 
   mObservations[wpKF] = indexes;
-  // pKF->mvAllMPs.push_back(shared_from_this());
 
   if (!pKF->mpCamera2 && pKF->mvuRight[idx] >= 0)
     nObs += 2;
@@ -277,7 +269,6 @@ void MapPoint::SetBadFlag() {
     mbBad = true;
     obs = mObservations;
     mObservations.clear();
-    // mpRefKF = nullptr;
     mpReplaced = nullptr;
   }
   for (auto &pair : obs) {
@@ -508,7 +499,6 @@ void MapPoint::UpdateNormalAndDepth() {
     level = pRefKF->mvKeysRight[rightIndex - pRefKF->NLeft].octave;
   }
 
-  // const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
   const float levelScaleFactor = pRefKF->mvScaleFactors[level];
   const int nLevels = pRefKF->mnScaleLevels;
 
@@ -571,8 +561,6 @@ void MapPoint::PrintObservations() {
   std::cout << "MP_OBS: MP " << mnId << std::endl;
   for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = mObservations.begin(), mend = mObservations.end(); mit != mend; mit++) {
     if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
-      // std::tuple<int,int> indexes = mit->second; // UNUSED
-      // int leftIndex = std::get<0>(indexes), rightIndex = std::get<1>(indexes); // UNUSED
       std::cout << "--OBS in KF " << pKFi->mnId << " in map " << pKFi->GetMap()->GetId() << std::endl;
     }
   }
@@ -607,8 +595,7 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::
         mBackupObservationsId1[pKFi->mnId] = std::get<0>(it->second);
         mBackupObservationsId2[pKFi->mnId] = std::get<1>(it->second);
       } else {
-        EraseObservation(pKFi);  // iterate -- afterwards to pull back once
-        //   it--;
+        EraseObservation(pKFi);  // iterate -- afterwards to pull back once it--;
       }
     }
   }
@@ -622,8 +609,7 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::
 
 }
 
-void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
-                        std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
+void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
   mpRefKF = mpKFid[mBackupRefKFId];
    
   if (!mpRefKF.lock()) {
@@ -631,8 +617,7 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
   }
   mpReplaced = nullptr;
   if (mBackupReplacedId >= 0) {
-    std::map<long unsigned int, std::shared_ptr<MapPoint>>::iterator it =
-        mpMPid.find(mBackupReplacedId);
+    std::map<long unsigned int, std::shared_ptr<MapPoint>>::iterator it = mpMPid.find(mBackupReplacedId);
     if (it != mpMPid.end()) mpReplaced = it->second;
   }
 

@@ -57,21 +57,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // Output welcome message
   std::cout << "Input sensor was set to: " << mSensor << std::endl;
   
-  {
-  std::cout << std::endl
-       << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, "
-          "Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of "
-          "Zaragoza."
-       << std::endl
-       << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel "
-          "and Juan D. Tardós, University of Zaragoza."
-       << std::endl
-       << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl
-       << "This is free software, and you are welcome to redistribute it"
-       << std::endl
-       << "under certain conditions. See LICENSE.txt." << std::endl
-       << std::endl;
-  }
+  // We're legally obligated to keep this line
+  std::cout << std::endl << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl << "This is free software, and you are welcome to redistribute it" << std::endl << "under certain conditions. See LICENSE.txt." << std::endl << std::endl;
   
   settings = std::make_shared<Settings>(strSettingsFile, mSensor);
   mStrLoadAtlasFromFile = settings->atlasLoadFile();
@@ -80,8 +67,6 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   bool activeLC = settings->activeLoopClosing();
 
   mStrVocabularyFilePath = strVocFile;
-
-  // bool loadedAtlas = false; // UNUSED
 
   bool isRead = false;
 
@@ -104,8 +89,6 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     std::cout << "Initialization of Atlas from scratch " << std::endl;
   } else {
     // Load the file with an earlier session
-    // clock_t start = clock();
-
     std::cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile << std::endl;
     isRead = LoadAtlas(FileType::BINARY_FILE);
 
@@ -113,25 +96,10 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
       std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
-    // mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
-
-    // std::cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " <<
-    // mpKeyFrameDatabase->mnNumWords << std::endl;
-
-    // loadedAtlas = true; // UNUSED
-
     mpAtlas->CreateNewMap();
-
-    // clock_t timeElapsed = clock() - start;
-    // unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
-    // std::cout << "Binary file read in " << msElapsed << " ms" << std::endl;
-
-    // usleep(10*1000*1000);
   }
 
-
-  // Initialize the Tracking thread
-  //(it will live in the main thread of execution, the one that called this constructor)
+  // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
@@ -140,10 +108,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     mpLocalMapper->setIsDoneVIBA(true);
   }
 
-  // if (settings)
   mpLocalMapper->mThFarPoints = settings->thFarPoints();
-  // else
-  //   mpLocalMapper->mThFarPoints = settings-> fsSettings["thFarPoints"];
   if (mpLocalMapper->mThFarPoints != 0) {
     std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
     mpLocalMapper->mbFarPoints = true;
@@ -152,8 +117,7 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   }
 
   // Initialize the Loop Closing thread and launch
-  // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());  // mSensor!=CameraType::MONOCULAR);
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -208,10 +172,6 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
 
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
-  // Eigen::Vector3f vel = mpTracker->mCurrentFrame.GetVelocity();
-
-  // std::cout << "out grabber" << std::endl;
-
   std::unique_lock<std::mutex> lock2(mMutexState);
   mTrackingState = mpTracker->mState;
   mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
@@ -220,9 +180,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   return Tcw;
 }
 
-RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
-                               double timestamp,
-                               const std::vector<IMU::Point>& vImuMeas) {
+RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
     std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
@@ -234,7 +192,6 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap,
     cv::Mat resizedIm;
     cv::resize(im, resizedIm, settings->newImSize());
     imToFeed = resizedIm;
-
     cv::resize(depthmap, imDepthToFeed, settings->newImSize());
   }
 
@@ -293,8 +250,9 @@ bool System::MapChanged() {
   if (n < curn) {
     n = curn;
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 System::~System() {
@@ -302,21 +260,6 @@ System::~System() {
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
-
-  // Wait until all thread have effectively stopped
-  /*while (!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() ||
-         mpLoopCloser->isRunningGBA()) {
-    if (!mpLocalMapper->isFinished())
-      std::cout << "mpLocalMapper is not finished" << std::endl;
-    if (!mpLoopCloser->isFinished())
-      std::cout << "mpLoopCloser is not finished" << std::endl;
-    if (mpLoopCloser->isRunningGBA()) {
-      std::cout << "mpLoopCloser is running GBA" << std::endl;
-      std::cout << "break anyway..." << std::endl;
-      // break;
-    }
-    usleep(5000);
-  }*/
 
   if (mptLocalMapping.joinable()) {
     mptLocalMapping.join();
@@ -355,20 +298,18 @@ double System::GetTimeFromIMUInit() {
 }
 
 bool System::isLost() {
-  return (mpAtlas->isImuInitialized() && (mpTracker->mState == TrackingState::LOST/* || (mpTracker->mState==TrackingState::RECENTLY_LOST)*/));
+  return (mpAtlas->isImuInitialized() && (mpTracker->mState == TrackingState::LOST));
 }
 
+// TODO: why is this just a hard-coded 0.1???
 bool System::isFinished() { return (GetTimeFromIMUInit() > 0.1); }
 
 float System::GetImageScale() { return mpTracker->GetImageScale(); }
 
 void System::SaveAtlas(int type) {
-  std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl;
-  std::cout << "trying to save " << std::endl;
+  std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
     std::cout << "not empty" << std::endl;
-    // clock_t start = clock();
-
     // Save the current session
     mpAtlas->PreSave();
     std::cout << "presaved" << std::endl;
@@ -394,8 +335,8 @@ void System::SaveAtlas(int type) {
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     std::string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
     std::cout << "Type is of: " << type << std::endl;
-    if (type == TEXT_FILE)  // File text
-    {
+
+    if (type == TEXT_FILE) {
       std::cout << "Starting to write the save text file " << std::endl;
 
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
@@ -408,8 +349,7 @@ void System::SaveAtlas(int type) {
       oa << strVocabularyChecksum;
       oa << *mpAtlas;
       std::cout << "End to write the save text file" << std::endl;
-    } else if (type == BINARY_FILE)  // File binary
-    {
+    } else if (type == BINARY_FILE) {
       std::cout << "Starting to write the save binary file" << std::endl;
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
       std::cerr << errno << std::endl;
@@ -438,8 +378,7 @@ bool System::LoadAtlas(int type) {
   pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
   pathLoadFileName = pathLoadFileName.append(".osa");
 
-  if (type == TEXT_FILE)  // File text
-  {
+  if (type == TEXT_FILE) {
     std::cout << "Starting to read the save text file " << std::endl;
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -452,8 +391,7 @@ bool System::LoadAtlas(int type) {
     ia >> *mpAtlas;
     std::cout << "End to load the save text file " << std::endl;
     isRead = true;
-  } else if (type == BINARY_FILE)  // File binary
-  {
+  } else if (type == BINARY_FILE) {
     std::cout << "Starting to read the save binary file" << std::endl;
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -470,14 +408,11 @@ bool System::LoadAtlas(int type) {
 
   if (isRead) {
     // Check if the vocabulary is the same
-    std::string strInputVocabularyChecksum =
-        CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
     if (strInputVocabularyChecksum.compare(strVocChecksum) != 0) {
-      std::cout << "The vocabulary load isn't the same which the load session was "
-              "created "
-           << std::endl;
+      std::cout << "The vocabulary load isn't the same which the load session was created " << std::endl;
       std::cout << "-Vocabulary name: " << strFileVoc << std::endl;
-      return false;  // Both are differents
+      return false;
     }
 
     mpAtlas->SetKeyFrameDababase(mpKeyFrameDatabase);
@@ -501,8 +436,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
 
   std::ifstream f(filename.c_str(), flags);
   if (!f.is_open()) {
-    std::cout << "[E] Unable to open the in file " << filename << " for Md5 hash."
-         << std::endl;
+    std::cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << std::endl;
     return checksum;
   }
 
@@ -516,7 +450,6 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   std::cout << "just initialized MD5" << std::endl;
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     MD5_Update(&md5Context, buffer, count);
-    // std::cout << buffer;
   }
   std::cout << "about to close" << std::endl;
 
@@ -533,11 +466,6 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   return checksum;
 }
 
-// DONT USE, the setter could be ignored depending on where in Track() you are
-void System::setTrackingState(TrackingState state) {
-  mpTracker->mState = state;
-}
-
 bool System::getHasMergedLocalMap() { 
   return mpLoopCloser->hasMergedLocalMap; 
 }
@@ -548,13 +476,10 @@ bool System::getIsDoneVIBA() {
 
 std::shared_ptr<Settings> System::getSettings() const { return settings; }
 
-
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }
 
-bool System::getIsLoopClosed() {
-  return mpLoopCloser->loopClosed;
-}
+bool System::getIsLoopClosed() { return mpLoopCloser->loopClosed; }
 
 void System::setIsLoopClosed(bool isLoopClosed) { mpLoopCloser->loopClosed = isLoopClosed; }
 

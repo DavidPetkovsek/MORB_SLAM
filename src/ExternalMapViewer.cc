@@ -49,8 +49,6 @@ void ExternalMapViewer::run() {
             int state;
             Sophus::SE3f currentPose;
 
-            // size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool);
-            // std::vector<uint8_t> binaryOutput(outputSize);
             while(true) {
                 if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
                     currentFrame = Frame(this->mpTracker->mLastFrame, true);
@@ -85,7 +83,6 @@ void ExternalMapViewer::run() {
 
     server.start();
     server.wait();
-    std::cout << "______________________________ITS OVER_____________________________" << std::endl;
 }
 
 std::vector<uint8_t> ExternalMapViewer::poseToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF) {

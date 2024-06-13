@@ -35,10 +35,7 @@
 
 namespace MORB_SLAM {
 
-Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-                       const std::vector<std::shared_ptr<MapPoint>> &vpMatched12,
-                       const bool bFixScale,
-                       std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP)
+Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale, std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP)
     : mnIterations(0),
       mnBestInliers(0),
       mbFixScale(bFixScale),
@@ -49,8 +46,6 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>p
     bDifferentKFs = true;
     vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>(vpMatched12.size(), pKF2);
     std::cout << "\033[22;34mEmpty Keyframe\n" << std::endl;
-  } else {
-    //std::cout << "\033[0:31mNot Empty\n" << std::endl;
   }
 
   mpKF1 = pKF1;
@@ -79,12 +74,10 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>p
   std::shared_ptr<KeyFrame>pKFm = pKF2;  // Default variable
   for (int i1 = 0; i1 < mN1; i1++) {
     if (vpMatched12[i1]) {
-      std::shared_ptr<MapPoint>pMP1 = vpKeyFrameMP1[i1];
-      std::shared_ptr<MapPoint>pMP2 = vpMatched12[i1];
+      std::shared_ptr<MapPoint> pMP1 = vpKeyFrameMP1[i1];
+      std::shared_ptr<MapPoint> pMP2 = vpMatched12[i1];
 
-      if (!pMP1) continue;
-
-      if (pMP1->isBad() || pMP2->isBad()) continue;
+      if (!pMP1 || pMP1->isBad() || pMP2->isBad()) continue;
 
       if (!bDifferentKFs) pKFm = vpKeyFrameMatchedMP[i1];
 
@@ -119,12 +112,10 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>p
 
   FromCameraToImage(mvX3Dc1, mvP1im1, pCamera1);
   FromCameraToImage(mvX3Dc2, mvP2im2, pCamera2);
-
   SetRansacParameters();
 }
 
-void Sim3Solver::SetRansacParameters(double probability, int minInliers,
-                                     int maxIterations) {
+void Sim3Solver::SetRansacParameters(double probability, int minInliers, int maxIterations) {
   mRansacProb = probability;
   mRansacMinInliers = minInliers;
   mRansacMaxIts = maxIterations;
@@ -138,19 +129,12 @@ void Sim3Solver::SetRansacParameters(double probability, int minInliers,
 
   // Set RANSAC iterations according to probability, epsilon, and max iterations
   int nIterations;
-
-  if (mRansacMinInliers == N)
-    nIterations = 1;
-  else
-    nIterations = std::ceil(std::log(1 - mRansacProb) / std::log(1 - std::pow(epsilon, 3)));
-
+  nIterations = (mRansacMinInliers == N) ? 1 : std::ceil(std::log(1 - mRansacProb) / std::log(1 - std::pow(epsilon, 3)));
   mRansacMaxIts = std::max(1, std::min(nIterations, mRansacMaxIts));
-
   mnIterations = 0;
 }
 
-Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore,
-                                    std::vector<bool> &vbInliers, int &nInliers) {
+Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers) {
   bNoMore = false;
   vbInliers = std::vector<bool>(mN1, false);
   nInliers = 0;
@@ -211,9 +195,7 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore,
   return Eigen::Matrix4f::Identity();
 }
 
-Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore,
-                                    std::vector<bool> &vbInliers, int &nInliers,
-                                    bool &bConverge) {
+Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers, bool &bConverge) {
   bNoMore = false;
   bConverge = false;
   vbInliers = std::vector<bool>(mN1, false);
@@ -286,17 +268,14 @@ Eigen::Matrix4f Sim3Solver::find(std::vector<bool> &vbInliers12, int &nInliers) 
   return iterate(mRansacMaxIts, bFlag, vbInliers12, nInliers);
 }
 
-void Sim3Solver::ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr,
-                                 Eigen::Vector3f &C) {
+void Sim3Solver::ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr, Eigen::Vector3f &C) {
   C = P.rowwise().sum();
   C = C / P.cols();
   for (int i = 0; i < P.cols(); i++) Pr.col(i) = P.col(i) - C;
 }
 
 bool Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
-  // Custom implementation of:
-  // Horn 1987, Closed-form solution of absolute orientataion using unit
-  // quaternions
+  // Custom implementation of: Horn 1987, Closed-form solution of absolute orientataion using unit quaternions
 
   // Step 1: Centroid and relative coordinates
 
@@ -359,8 +338,7 @@ bool Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
     double cvnom = Converter::toCvMat(Pr1).dot(Converter::toCvMat(P3));
     double nom = (Pr1.array() * P3.array()).sum();
     if (abs(nom - cvnom) > 1e-3)
-      std::cout << "sim3 solver: " << abs(nom - cvnom) << std::endl
-                << nom << std::endl;
+      std::cout << "sim3 solver: " << abs(nom - cvnom) << std::endl << nom << std::endl;
     Eigen::Array<float, 3, 3> aux_P3;
     aux_P3 = P3.array() * P3.array();
     double den = aux_P3.sum();
@@ -419,15 +397,11 @@ Eigen::Matrix4f Sim3Solver::GetEstimatedTransformation() { return mBestT12; }
 
 Eigen::Matrix3f Sim3Solver::GetEstimatedRotation() { return mBestRotation; }
 
-Eigen::Vector3f Sim3Solver::GetEstimatedTranslation() {
-  return mBestTranslation;
-}
+Eigen::Vector3f Sim3Solver::GetEstimatedTranslation() { return mBestTranslation; }
 
 float Sim3Solver::GetEstimatedScale() { return mBestScale; }
 
-void Sim3Solver::Project(const std::vector<Eigen::Vector3f> &vP3Dw,
-                         std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw,
-                         const std::shared_ptr<const GeometricCamera> &pCamera) {
+void Sim3Solver::Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, const std::shared_ptr<const GeometricCamera> &pCamera) {
   Eigen::Matrix3f Rcw = Tcw.block<3, 3>(0, 0);
   Eigen::Vector3f tcw = Tcw.block<3, 1>(0, 3);
 
@@ -441,9 +415,7 @@ void Sim3Solver::Project(const std::vector<Eigen::Vector3f> &vP3Dw,
   }
 }
 
-void Sim3Solver::FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc,
-                                   std::vector<Eigen::Vector2f> &vP2D,
-                                   const std::shared_ptr<const GeometricCamera> &pCamera) {
+void Sim3Solver::FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, const std::shared_ptr<const GeometricCamera> &pCamera) {
   vP2D.clear();
   vP2D.reserve(vP3Dc.size());
 
