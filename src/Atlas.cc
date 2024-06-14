@@ -59,11 +59,6 @@ void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   mpCurrentMap = pMap;
 }
 
-unsigned long int Atlas::GetLastInitKFid() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mnLastInitKFidMap;
-}
-
 void Atlas::AddKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   std::shared_ptr<Map> pMapKF = pKF->GetMap();
   pMapKF->AddKeyFrame(pKF);
@@ -142,11 +137,6 @@ std::vector<std::shared_ptr<KeyFrame>> Atlas::GetAllKeyFrames() {
 std::vector<std::shared_ptr<MapPoint>> Atlas::GetAllMapPoints() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   return mpCurrentMap->GetAllMapPoints();
-}
-
-std::vector<std::shared_ptr<MapPoint>> Atlas::GetReferenceMapPoints() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mpCurrentMap->GetReferenceMapPoints();
 }
 
 std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
@@ -252,38 +242,12 @@ void Atlas::PostLoad() {
   mvpBackupMaps.clear();
 }
 
-void Atlas::SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
+void Atlas::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 
-std::shared_ptr<KeyFrameDatabase> Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
+void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) { mpORBVocabulary = pORBVoc; }
 
-void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
-  mpORBVocabulary = pORBVoc;
-}
-
-std::shared_ptr<ORBVocabulary> Atlas::GetORBVocabulary() { return mpORBVocabulary; }
-
-long unsigned int Atlas::GetNumLivedKF() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  long unsigned int num = 0;
-  for (std::shared_ptr<Map> pMap_i : mspMaps) {
-    num += pMap_i->GetAllKeyFrames().size();
-  }
-  return num;
-}
-
-long unsigned int Atlas::GetNumLivedMP() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  long unsigned int num = 0;
-  for (std::shared_ptr<Map> pMap_i : mspMaps) {
-    num += pMap_i->GetAllMapPoints().size();
-  }
-  return num;
-}
-
-void Atlas::setUseGravityDirectionFromLastMap(bool is_true) {
-  mUseGravityDirectionFromLastMap = is_true;
-}
+void Atlas::setUseGravityDirectionFromLastMap(bool is_true) { mUseGravityDirectionFromLastMap = is_true; }
 
 }  // namespace MORB_SLAM

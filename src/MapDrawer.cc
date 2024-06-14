@@ -97,7 +97,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
 
   if (bDrawKF) {
     for (size_t i = 0; i < vpKFs.size(); i++) {
-      std::shared_ptr<KeyFrame>pKF = vpKFs[i];
+      std::shared_ptr<KeyFrame> pKF = vpKFs[i];
       Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
 
       glPushMatrix();
@@ -199,7 +199,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
 
     // Draw inertial links
     for (size_t i = 0; i < vpKFs.size(); i++) {
-      std::shared_ptr<KeyFrame>pKFi = vpKFs[i];
+      std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
       Eigen::Vector3f Ow = pKFi->GetCameraCenter();
       std::shared_ptr<KeyFrame>pNext = pKFi->mNextKF;
       if (pNext) {
@@ -221,7 +221,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
       std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
       for (size_t i = 0; i < vpKFs.size(); i++) {
-        std::shared_ptr<KeyFrame>pKF = vpKFs[i];
+        std::shared_ptr<KeyFrame> pKF = vpKFs[i];
         Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
         unsigned int index_color = pKF->mnOriginMapId;
 

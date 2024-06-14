@@ -144,8 +144,7 @@ ImuCamPose::ImuCamPose(Eigen::Matrix3d& _Rwc, Eigen::Vector3d& _twc, std::shared
   DR.setIdentity();
 }
 
-void ImuCamPose::SetParam(const std::vector<Eigen::Matrix3d>& _Rcw, const std::vector<Eigen::Vector3d>& _tcw,
-                          const std::vector<Eigen::Matrix3d>& _Rbc, const std::vector<Eigen::Vector3d>& _tbc, const double& _bf) {
+void ImuCamPose::SetParam(const std::vector<Eigen::Matrix3d>& _Rcw, const std::vector<Eigen::Vector3d>& _tcw, const std::vector<Eigen::Matrix3d>& _Rbc, const std::vector<Eigen::Vector3d>& _tbc, const double& _bf) {
   Rbc = _Rbc;
   tbc = _tbc;
   Rcw = _Rcw;
@@ -239,18 +238,6 @@ void ImuCamPose::UpdateW(const double* pu) {
     tcw[i] = Rcb[i] * tbw + tcb[i];
   }
 }
-
-InvDepthPoint::InvDepthPoint(double _rho, double _u, double _v, std::shared_ptr<KeyFrame> pHostKF)
-    : rho(_rho),
-      u(_u),
-      v(_v),
-      fx(pHostKF->fx),
-      fy(pHostKF->fy),
-      cx(pHostKF->cx),
-      cy(pHostKF->cy),
-      bf(pHostKF->mbf) {}
-
-void InvDepthPoint::Update(const double* pu) { rho += *pu; }
 
 bool VertexPose::read(std::istream& is) {
   std::vector<Eigen::Matrix<double, 3, 3> > Rcw;
@@ -752,10 +739,9 @@ Eigen::Vector3d LogSO3(const Eigen::Matrix3d& R) {
 }
 
 Eigen::Matrix3d InverseRightJacobianSO3(const Eigen::Vector3d& v) {
-  return InverseRightJacobianSO3(v[0], v[1], v[2]);
-}
-
-Eigen::Matrix3d InverseRightJacobianSO3(const double x, const double y, const double z) {
+  const double x = v[0];
+  const double y = v[1];
+  const double z = v[2];
   const double d2 = x * x + y * y + z * z;
   const double d = sqrt(d2);
 
@@ -768,10 +754,9 @@ Eigen::Matrix3d InverseRightJacobianSO3(const double x, const double y, const do
 }
 
 Eigen::Matrix3d RightJacobianSO3(const Eigen::Vector3d& v) {
-  return RightJacobianSO3(v[0], v[1], v[2]);
-}
-
-Eigen::Matrix3d RightJacobianSO3(const double x, const double y, const double z) {
+  const double x = v[0];
+  const double y = v[1];
+  const double z = v[2];
   const double d2 = x * x + y * y + z * z;
   const double d = sqrt(d2);
 
@@ -782,12 +767,6 @@ Eigen::Matrix3d RightJacobianSO3(const double x, const double y, const double z)
   } else {
     return Eigen::Matrix3d::Identity() - W * (1.0 - cos(d)) / d2 + W * W * (d - sin(d)) / (d2 * d);
   }
-}
-
-Eigen::Matrix3d Skew(const Eigen::Vector3d& w) {
-  Eigen::Matrix3d W;
-  W << 0.0, -w[2], w[1], w[2], 0.0, -w[0], -w[1], w[0], 0.0;
-  return W;
 }
 
 }  // namespace MORB_SLAM

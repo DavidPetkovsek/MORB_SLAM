@@ -35,29 +35,24 @@
 
 namespace MORB_SLAM {
 
-Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale, std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP)
+Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale, std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP)
     : mnIterations(0),
       mnBestInliers(0),
       mbFixScale(bFixScale),
       pCamera1(pKF1->mpCamera),
-      pCamera2(pKF2->mpCamera) {
+      pCamera2(pKF2->mpCamera),
+      N(0) {
   bool bDifferentKFs = false;
+  mN1 = vpMatched12.size();
+
   if (vpKeyFrameMatchedMP.empty()) {
     bDifferentKFs = true;
-    vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>(vpMatched12.size(), pKF2);
+    vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>(mN1, pKF2);
     std::cout << "\033[22;34mEmpty Keyframe\n" << std::endl;
   }
 
-  mpKF1 = pKF1;
-  mpKF2 = pKF2;
-
   std::vector<std::shared_ptr<MapPoint>> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
-  mN1 = vpMatched12.size();
-
-  mvpMapPoints1.reserve(mN1);
-  mvpMapPoints2.reserve(mN1);
-  mvpMatches12 = vpMatched12;
   mvnIndices1.reserve(mN1);
   mvX3Dc1.reserve(mN1);
   mvX3Dc2.reserve(mN1);
@@ -71,7 +66,7 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame> 
 
   size_t idx = 0;
 
-  std::shared_ptr<KeyFrame>pKFm = pKF2;  // Default variable
+  std::shared_ptr<KeyFrame> pKFm = pKF2;  // Default variable
   for (int i1 = 0; i1 < mN1; i1++) {
     if (vpMatched12[i1]) {
       std::shared_ptr<MapPoint> pMP1 = vpKeyFrameMP1[i1];
@@ -95,8 +90,7 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame> 
       mvnMaxError1.push_back(9.210 * sigmaSquare1);
       mvnMaxError2.push_back(9.210 * sigmaSquare2);
 
-      mvpMapPoints1.push_back(pMP1);
-      mvpMapPoints2.push_back(pMP2);
+      N++;
       mvnIndices1.push_back(i1);
 
       Eigen::Vector3f X3D1w = pMP1->GetWorldPos();
@@ -116,11 +110,8 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame> 
 }
 
 void Sim3Solver::SetRansacParameters(double probability, int minInliers, int maxIterations) {
-  mRansacProb = probability;
   mRansacMinInliers = minInliers;
   mRansacMaxIts = maxIterations;
-
-  N = mvpMapPoints1.size();  // number of correspondences
 
   mvbInliersi.resize(N);
 
@@ -129,70 +120,9 @@ void Sim3Solver::SetRansacParameters(double probability, int minInliers, int max
 
   // Set RANSAC iterations according to probability, epsilon, and max iterations
   int nIterations;
-  nIterations = (mRansacMinInliers == N) ? 1 : std::ceil(std::log(1 - mRansacProb) / std::log(1 - std::pow(epsilon, 3)));
+  nIterations = (mRansacMinInliers == N) ? 1 : std::ceil(std::log(1 - probability) / std::log(1 - std::pow(epsilon, 3)));
   mRansacMaxIts = std::max(1, std::min(nIterations, mRansacMaxIts));
   mnIterations = 0;
-}
-
-Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers) {
-  bNoMore = false;
-  vbInliers = std::vector<bool>(mN1, false);
-  nInliers = 0;
-
-  if (N < mRansacMinInliers) {
-    bNoMore = true;
-    return Eigen::Matrix4f::Identity();
-  }
-
-  std::vector<size_t> vAvailableIndices;
-
-  Eigen::Matrix3f P3Dc1i;
-  Eigen::Matrix3f P3Dc2i;
-
-  int nCurrentIterations = 0;
-  while (mnIterations < mRansacMaxIts && nCurrentIterations < nIterations) {
-    nCurrentIterations++;
-    mnIterations++;
-
-    vAvailableIndices = mvAllIndices;
-
-    // Get min set of points
-    for (short i = 0; i < 3; ++i) {
-      int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
-
-      int idx = vAvailableIndices[randi];
-
-      P3Dc1i.col(i) = mvX3Dc1[idx];
-      P3Dc2i.col(i) = mvX3Dc2[idx];
-
-      vAvailableIndices[randi] = vAvailableIndices.back();
-      vAvailableIndices.pop_back();
-    }
-
-    if(!ComputeSim3(P3Dc1i, P3Dc2i)) continue;
-
-    CheckInliers();
-
-    if (mnInliersi >= mnBestInliers) {
-      mvbBestInliers = mvbInliersi;
-      mnBestInliers = mnInliersi;
-      mBestT12 = mT12i;
-      mBestRotation = mR12i;
-      mBestTranslation = mt12i;
-      mBestScale = ms12i;
-
-      if (mnInliersi > mRansacMinInliers) {
-        nInliers = mnInliersi;
-        for (int i = 0; i < N; i++)
-          if (mvbInliersi[i]) vbInliers[mvnIndices1[i]] = true;
-        return mBestT12;
-      }
-    }
-  }
-
-  if (mnIterations >= mRansacMaxIts) bNoMore = true;
-
-  return Eigen::Matrix4f::Identity();
 }
 
 Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers, bool &bConverge) {
@@ -241,7 +171,6 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<
     if (mnInliersi >= mnBestInliers) {
       mvbBestInliers = mvbInliersi;
       mnBestInliers = mnInliersi;
-      mBestT12 = mT12i;
       mBestRotation = mR12i;
       mBestTranslation = mt12i;
       mBestScale = ms12i;
@@ -251,9 +180,9 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<
         for (int i = 0; i < N; i++)
           if (mvbInliersi[i]) vbInliers[mvnIndices1[i]] = true;
         bConverge = true;
-        return mBestT12;
+        return mT12i;
       } else {
-        bestSim3 = mBestT12;
+        bestSim3 = mT12i;
       }
     }
   }
@@ -261,11 +190,6 @@ Eigen::Matrix4f Sim3Solver::iterate(int nIterations, bool &bNoMore, std::vector<
   if (mnIterations >= mRansacMaxIts) bNoMore = true;
 
   return bestSim3;
-}
-
-Eigen::Matrix4f Sim3Solver::find(std::vector<bool> &vbInliers12, int &nInliers) {
-  bool bFlag;
-  return iterate(mRansacMaxIts, bFlag, vbInliers12, nInliers);
 }
 
 void Sim3Solver::ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr, Eigen::Vector3f &C) {
@@ -294,7 +218,7 @@ bool Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
   // Step 3: Compute N matrix
   double N11, N12, N13, N14, N22, N23, N24, N33, N34, N44;
 
-  Eigen::Matrix4f N;
+  Eigen::Matrix4f N_matrix;
 
   N11 = M(0, 0) + M(1, 1) + M(2, 2);
   N12 = M(1, 2) - M(2, 1);
@@ -307,11 +231,11 @@ bool Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
   N34 = M(1, 2) + M(2, 1);
   N44 = -M(0, 0) - M(1, 1) + M(2, 2);
 
-  N << N11, N12, N13, N14, N12, N22, N23, N24, N13, N23, N33, N34, N14, N24, N34, N44;
+  N_matrix << N11, N12, N13, N14, N12, N22, N23, N24, N13, N23, N33, N34, N14, N24, N34, N44;
 
   // Step 4: Eigenvector of the highest eigenvalue
   Eigen::EigenSolver<Eigen::Matrix4f> eigSolver;
-  eigSolver.compute(N);
+  eigSolver.compute(N_matrix);
 
   Eigen::Vector4f eval = eigSolver.eigenvalues().real();
   Eigen::Matrix4f evec = eigSolver.eigenvectors().real();  // evec[0] is the quaternion of the desired rotation
@@ -392,8 +316,6 @@ void Sim3Solver::CheckInliers() {
       mvbInliersi[i] = false;
   }
 }
-
-Eigen::Matrix4f Sim3Solver::GetEstimatedTransformation() { return mBestT12; }
 
 Eigen::Matrix3f Sim3Solver::GetEstimatedRotation() { return mBestRotation; }
 

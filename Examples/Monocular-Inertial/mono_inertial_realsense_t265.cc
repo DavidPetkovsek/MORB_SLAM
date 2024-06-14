@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     MORB_SLAM::System_ptr SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2],MORB_SLAM::CameraType::IMU_MONOCULAR, file_name);
     MORB_SLAM::Viewer viewer(SLAM, argv[2]);
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
 
     struct sigaction sigIntHandler;
 

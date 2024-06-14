@@ -664,13 +664,4 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
   return res;
 }
 
-// MORBSLAM Special
-// set state variables when skipping PoseOptimization (for when mState == RECENTLY_LOST)
-void Optimizer::SkipPoseOptimization(Frame* pFrame) {
-  pFrame->mImuBias = pFrame->mpLastKeyFrame->GetImuBias();
-  pFrame->mpcpi = pFrame->mpPrevFrame->mpcpi;
-}
-
-
-
 }  // namespace MORB_SLAM

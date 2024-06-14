@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
     // auto externalViewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, hostAddress, portNumber);
 
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
     
     std::vector<std::vector<float>> local_imu_measurements;
     std::vector<double> local_imu_timestamps;

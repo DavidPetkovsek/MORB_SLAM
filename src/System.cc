@@ -50,8 +50,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
-      mpAtlas(std::make_shared<Atlas>(0)),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
+      mpAtlas(std::make_shared<Atlas>(0)) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -172,11 +171,6 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
 
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
-  std::unique_lock<std::mutex> lock2(mMutexState);
-  mTrackingState = mpTracker->mState;
-  mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-  mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-
   return Tcw;
 }
 
@@ -204,11 +198,6 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
     mpTracker->GrabImuData(vImuMeas);
 
   RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
-
-  std::unique_lock<std::mutex> lock2(mMutexState);
-  mTrackingState = mpTracker->mState;
-  mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-  mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
   return Tcw;
 }
 
@@ -235,12 +224,6 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std
     mpTracker->GrabImuData(vImuMeas);
 
   MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
-
-  std::unique_lock<std::mutex> lock2(mMutexState);
-  mTrackingState = mpTracker->mState;
-  mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-  mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-
   return Tcw;
 }
 
@@ -273,38 +256,6 @@ System::~System() {
     SaveAtlas(FileType::BINARY_FILE);
   }
 }
-
-TrackingState System::GetTrackingState() {
-  std::unique_lock<std::mutex> lock(mMutexState);
-  return mTrackingState;
-}
-
-std::vector<std::shared_ptr<MapPoint>> System::GetTrackedMapPoints() {
-  std::unique_lock<std::mutex> lock(mMutexState);
-  return mTrackedMapPoints;
-}
-
-std::vector<cv::KeyPoint> System::GetTrackedKeyPointsUn() {
-  std::unique_lock<std::mutex> lock(mMutexState);
-  return mTrackedKeyPointsUn;
-}
-
-double System::GetTimeFromIMUInit() {
-  double aux = mpLocalMapper->GetCurrKFTime() - mpLocalMapper->mFirstTs;
-  if ((aux > 0.) && mpAtlas->isImuInitialized())
-    return mpLocalMapper->GetCurrKFTime() - mpLocalMapper->mFirstTs;
-  else
-    return 0.f;
-}
-
-bool System::isLost() {
-  return (mpAtlas->isImuInitialized() && (mpTracker->mState == TrackingState::LOST));
-}
-
-// TODO: why is this just a hard-coded 0.1???
-bool System::isFinished() { return (GetTimeFromIMUInit() > 0.1); }
-
-float System::GetImageScale() { return mpTracker->GetImageScale(); }
 
 void System::SaveAtlas(int type) {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
@@ -415,7 +366,7 @@ bool System::LoadAtlas(int type) {
       return false;
     }
 
-    mpAtlas->SetKeyFrameDababase(mpKeyFrameDatabase);
+    mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
     mpAtlas->PostLoad();
     return true;

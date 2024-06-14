@@ -37,12 +37,10 @@
 
 
 namespace MORB_SLAM {
-class EdgeSE3ProjectXYZOnlyPose
-    : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap> {
+class EdgeSE3ProjectXYZOnlyPose : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap> {
  public:
   
-
-  EdgeSE3ProjectXYZOnlyPose() {}
+  EdgeSE3ProjectXYZOnlyPose(){}
 
   bool read(std::istream& is);
 

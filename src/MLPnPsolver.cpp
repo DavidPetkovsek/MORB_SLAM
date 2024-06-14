@@ -212,7 +212,6 @@ namespace MORB_SLAM {
 	}
 
 	void MLPnPsolver::SetRansacParameters(double probability, int minInliers, int maxIterations, int minSet, float epsilon, float th2) {
-		mRansacProb = probability;
 	    mRansacMinInliers = minInliers;
 	    mRansacMaxIts = maxIterations;
 	    mRansacEpsilon = epsilon;
@@ -239,7 +238,7 @@ namespace MORB_SLAM {
 	    if(mRansacMinInliers == N)
 	        nIterations = 1;
 	    else
-	        nIterations = std::ceil(std::log(1-mRansacProb)/std::log(1-std::pow(mRansacEpsilon, 3)));
+	        nIterations = std::ceil(std::log(1-probability)/std::log(1-std::pow(mRansacEpsilon, 3)));
 
 	    mRansacMaxIts = std::max(1,std::min(nIterations, mRansacMaxIts));
 

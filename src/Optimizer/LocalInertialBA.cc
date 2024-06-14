@@ -231,7 +231,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
   // Delete bad optimizable KFs
   for (auto mit = optimizableKFsCounter.begin(); mit != optimizableKFsCounter.end(); mit++) {
-    std::shared_ptr<KeyFrame>pKFi = mit->first;
+    std::shared_ptr<KeyFrame> pKFi = mit->first;
 
     // if the most recent KF is marked for deletion, set a flag and do not optimize
     if(pKFi->mnId == pKF->mnId) {
@@ -277,7 +277,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
   // Delete bad MPs, remove their KFs from the fixedKFs list
   for (auto mit = fixedKFsVisibleMPs.begin(); mit != fixedKFsVisibleMPs.end(); mit++) {
-    std::shared_ptr<KeyFrame>pKFi = mit->first;
+    std::shared_ptr<KeyFrame> pKFi = mit->first;
 
     std::shared_ptr<MapPoint>pMP1 = mit->second.first;
     std::shared_ptr<MapPoint>pMP2 = mit->second.second;
@@ -624,7 +624,7 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
     //   // If the KF has few visual matches, delete that KF and do not optimize
     //   if(mit->second.first < 3) {
-    //     std::shared_ptr<KeyFrame>pKFi = mit->second.second;
+    //     std::shared_ptr<KeyFrame> pKFi = mit->second.second;
     //     if(!pKFi || (vpOptimizableKFs.back() && pKFi->mnId == vpOptimizableKFs.back()->mnId)) continue;
         
     //     if(pKFi->mnId != pKF->mnId) {

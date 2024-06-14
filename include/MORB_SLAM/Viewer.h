@@ -35,9 +35,9 @@
 namespace MORB_SLAM {
 
 class Viewer {
-  void newParameterLoader(const Settings& settings);
-  // Main thread function. Draw points, keyframes, the current camera pose and the last processed frame. Drawing is refreshed according to the camera fps. We use Pangolin.
-  void Run();
+void newParameterLoader(const Settings& settings);
+// Main thread function. Draw points, keyframes, the current camera pose and the last processed frame. Drawing is refreshed according to the camera fps. We use Pangolin.
+void Run();
  public:
 
   Viewer(const System_ptr &pSystem);
@@ -49,7 +49,6 @@ class Viewer {
   void close();
   bool isClosed() const;
   bool isOpen() const;
-
 
  private:
   bool Stop();

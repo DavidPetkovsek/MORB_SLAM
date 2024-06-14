@@ -184,7 +184,7 @@ void Viewer::Run() {
     menuShowGraph = true;
   }
 
-  float trackedImageScale = mpTracker->GetImageScale();
+  float trackedImageScale = 1.0;
 
   std::cout << "Starting the Viewer" << std::endl;
   while (isOpen()) {
