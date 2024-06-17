@@ -52,7 +52,6 @@ KeyFrame::KeyFrame()
       mnPlaceRecognitionWords(0),
       mPlaceRecognitionScore(0),
       mnBAGlobalForKF(0),
-      mnMergeCorrectedForKF(0),
       mnBALocalForMerge(0),
       fx(0),
       fy(0),
@@ -108,7 +107,6 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mnPlaceRecognitionWords(0),
       mPlaceRecognitionScore(0),
       mnBAGlobalForKF(0),
-      mnMergeCorrectedForKF(0),
       mnBALocalForMerge(0),
       fx(F.fx),
       fy(F.fy),
@@ -154,11 +152,8 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mbToBeErased(false),
       mbBad(false),
       mpMap(pMap),
-      mK_(F.mK_),
       mpCamera(F.mpCamera),
       mpCamera2(F.mpCamera2),
-      mvLeftToRightMatch(F.mvLeftToRightMatch),
-      mvRightToLeftMatch(F.mvRightToLeftMatch),
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
       NRight(F.Nright) {
@@ -247,11 +242,6 @@ Eigen::Matrix3f KeyFrame::GetImuRotation() {
   return (mTwc * mImuCalib.mTcb).rotationMatrix();
 }
 
-Sophus::SE3f KeyFrame::GetImuPose() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return mTwc * mImuCalib.mTcb;
-}
-
 Eigen::Matrix3f KeyFrame::GetRotation() {
   std::unique_lock<std::mutex> lock(mMutexPose);
   return mRcw;
@@ -272,7 +262,7 @@ bool KeyFrame::isVelocitySet() {
   return mbHasVelocity;
 }
 
-void KeyFrame::AddConnection(std::shared_ptr<KeyFrame>pKF, const int &weight) {
+void KeyFrame::AddConnection(std::shared_ptr<KeyFrame> pKF, const int &weight) {
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     if (!mConnectedKeyFrameWeights.count(pKF))
@@ -345,22 +335,12 @@ std::vector<std::shared_ptr<KeyFrame>> KeyFrame::GetCovisiblesByWeight(const int
   }
 }
 
-int KeyFrame::GetWeight(std::shared_ptr<KeyFrame>pKF) {
+int KeyFrame::GetWeight(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lock(mMutexConnections);
   if (mConnectedKeyFrameWeights.count(pKF))
     return mConnectedKeyFrameWeights[pKF];
   else
     return 0;
-}
-
-int KeyFrame::GetNumberMPs() {
-  std::unique_lock<std::mutex> lock(mMutexFeatures);
-  int numberMPs = 0;
-  for (size_t i = 0, iend = mvpMapPoints.size(); i < iend; i++) {
-    if (!mvpMapPoints[i]) continue;
-    numberMPs++;
-  }
-  return numberMPs;
 }
 
 void KeyFrame::AddMapPoint(std::shared_ptr<MapPoint>pMP, const size_t &idx) {
@@ -506,17 +486,17 @@ void KeyFrame::UpdateConnections(bool upParent) {
   }
 }
 
-void KeyFrame::AddChild(std::shared_ptr<KeyFrame>pKF) {
+void KeyFrame::AddChild(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   mspChildrens.insert(pKF);
 }
 
-void KeyFrame::EraseChild(std::shared_ptr<KeyFrame>pKF) {
+void KeyFrame::EraseChild(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   mspChildrens.erase(pKF);
 }
 
-void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame>pKF) {
+void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame> pKF) {
   std::shared_ptr<KeyFrame> self = shared_from_this();
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   if (pKF == self) {
@@ -538,7 +518,7 @@ std::shared_ptr<KeyFrame>KeyFrame::GetParent() {
   return mpParent;
 }
 
-bool KeyFrame::hasChild(std::shared_ptr<KeyFrame>pKF) {
+bool KeyFrame::hasChild(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   return mspChildrens.count(pKF);
 }
@@ -548,7 +528,7 @@ void KeyFrame::SetFirstConnection(bool bFirst) {
   mbFirstConnection = bFirst;
 }
 
-void KeyFrame::AddLoopEdge(std::shared_ptr<KeyFrame>pKF) {
+void KeyFrame::AddLoopEdge(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   mbNotErase = true;
   mspLoopEdges.insert(pKF);
@@ -557,17 +537,6 @@ void KeyFrame::AddLoopEdge(std::shared_ptr<KeyFrame>pKF) {
 std::set<std::shared_ptr<KeyFrame>> KeyFrame::GetLoopEdges() {
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   return mspLoopEdges;
-}
-
-void KeyFrame::AddMergeEdge(std::shared_ptr<KeyFrame>pKF) {
-  std::unique_lock<std::mutex> lockCon(mMutexConnections);
-  mbNotErase = true;
-  mspMergeEdges.insert(pKF);
-}
-
-std::set<std::shared_ptr<KeyFrame>> KeyFrame::GetMergeEdges() {
-  std::unique_lock<std::mutex> lockCon(mMutexConnections);
-  return mspMergeEdges;
 }
 
 void KeyFrame::SetNotErase() {
@@ -612,18 +581,22 @@ bool KeyFrame::SetBadFlag() {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
 
-    
+    if(mPrevKF) { 
+      mPrevKF->mNextKF = mNextKF;
+    }
+    if(mNextKF) {
+      if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
+        mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
+      }
+      mNextKF->mPrevKF = mPrevKF;
+    }
     mPrevKF = nullptr;
     mNextKF = nullptr;
-    // mpParent;
 
-    mvpLoopCandKFs.clear();
-    mvpMergeCandKFs.clear();
     mConnectedKeyFrameWeights.clear();
     mvpOrderedConnectedKeyFrames.clear();
-    // mspChildrens;
+    
     mspLoopEdges.clear();
-    mspMergeEdges.clear();
 
     // Update Spanning Tree
     std::set<std::shared_ptr<KeyFrame>> sParentCandidates;
@@ -637,7 +610,7 @@ bool KeyFrame::SetBadFlag() {
       std::shared_ptr<KeyFrame> pC;
       std::shared_ptr<KeyFrame> pP;
 
-      for (std::shared_ptr<KeyFrame>pKF : mspChildrens) {
+      for (std::shared_ptr<KeyFrame> pKF : mspChildrens) {
         if (pKF->isBad()) continue;
 
         // Check if a parent candidate is connected to the keyframe
@@ -668,12 +641,11 @@ bool KeyFrame::SetBadFlag() {
     // If a children has no covisibility links with any parent candidate, assign
     // to the original parent of this KF
     if (!mspChildrens.empty())
-      for (std::shared_ptr<KeyFrame>pKF : mspChildrens)
+      for (std::shared_ptr<KeyFrame> pKF : mspChildrens)
         pKF->ChangeParent(mpParent);
 
     if (mpParent) {
       mpParent->EraseChild(self);
-      mTcp = mTcw * mpParent->GetPoseInverse();
       mpParent = nullptr;
     }
     mbBad = true;
@@ -689,7 +661,7 @@ bool KeyFrame::isBad() {
   return mbBad;
 }
 
-void KeyFrame::EraseConnection(std::shared_ptr<KeyFrame>pKF) {
+void KeyFrame::EraseConnection(std::shared_ptr<KeyFrame> pKF) {
   bool bUpdate = false;
   {
     std::unique_lock<std::mutex> lock(mMutexConnections);
@@ -845,7 +817,7 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   // Save the id of the childrens KF
   mvBackupChildrensId.clear();
   mvBackupChildrensId.reserve(mspChildrens.size());
-  for (std::shared_ptr<KeyFrame>pKFi : mspChildrens) {
+  for (std::shared_ptr<KeyFrame> pKFi : mspChildrens) {
     if (spKF.find(pKFi) != spKF.end())
       mvBackupChildrensId.push_back(pKFi->mnId);
   }
@@ -853,17 +825,9 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   // Save the id of the loop edge KF
   mvBackupLoopEdgesId.clear();
   mvBackupLoopEdgesId.reserve(mspLoopEdges.size());
-  for (std::shared_ptr<KeyFrame>pKFi : mspLoopEdges) {
+  for (std::shared_ptr<KeyFrame> pKFi : mspLoopEdges) {
     if (spKF.find(pKFi) != spKF.end())
       mvBackupLoopEdgesId.push_back(pKFi->mnId);
-  }
-
-  // Save the id of the merge edge KF
-  mvBackupMergeEdgesId.clear();
-  mvBackupMergeEdgesId.reserve(mspMergeEdges.size());
-  for (std::shared_ptr<KeyFrame>pKFi : mspMergeEdges) {
-    if (spKF.find(pKFi) != spKF.end())
-      mvBackupMergeEdgesId.push_back(pKFi->mnId);
   }
 
   // Camera data
@@ -911,7 +875,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   // Conected KeyFrames with him weight
   mConnectedKeyFrameWeights.clear();
   for (std::map<long unsigned int, int>::const_iterator it = mBackupConnectedKeyFrameIdWeights.begin(), end = mBackupConnectedKeyFrameIdWeights.end(); it != end; ++it) {
-    std::shared_ptr<KeyFrame>pKFi = mpKFid[it->first];
+    std::shared_ptr<KeyFrame> pKFi = mpKFid[it->first];
     if (pKFi == nullptr) {
       continue;  // pKFi is not set, therefore discard this point.
     }
@@ -931,12 +895,6 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   mspLoopEdges.clear();
   for (std::vector<long unsigned int>::const_iterator it = mvBackupLoopEdgesId.begin(), end = mvBackupLoopEdgesId.end(); it != end; ++it) {
     mspLoopEdges.insert(mpKFid[*it]);
-  }
-
-  // Merge edge KeyFrame
-  mspMergeEdges.clear();
-  for (std::vector<long unsigned int>::const_iterator it = mvBackupMergeEdgesId.begin(), end = mvBackupMergeEdgesId.end(); it != end; ++it) {
-    mspMergeEdges.insert(mpKFid[*it]);
   }
 
   // Camera data
@@ -1081,23 +1039,8 @@ Eigen::Vector3f KeyFrame::GetRightCameraCenter() {
   return (mTwc * mTlr).translation();
 }
 
-Eigen::Matrix<float, 3, 3> KeyFrame::GetRightRotation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+void KeyFrame::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) { mpORBvocabulary = pORBVoc; }
 
-  return (mTrl.so3() * mTcw.so3()).matrix();
-}
-
-Eigen::Vector3f KeyFrame::GetRightTranslation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return (mTrl * mTcw).translation();
-}
-
-void KeyFrame::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
-  mpORBvocabulary = pORBVoc;
-}
-
-void KeyFrame::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
-  mpKeyFrameDB = pKFDB;
-}
+void KeyFrame::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) { mpKeyFrameDB = pKFDB; }
 
 }  // namespace MORB_SLAM

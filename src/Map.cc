@@ -28,14 +28,11 @@ namespace MORB_SLAM {
 long unsigned int Map::nNextId = 0;
 
 Map::Map()
-    : mpFirstRegionKF(nullptr),
-      mbFail(false),
-      mbImuInitialized(false),
+    : mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnMaxKFid(0),
       mnBigChangeIdx(0),
-      mHasTumbnail(false),
       mbBad(false),
       mbIMU_BA1(false),
       mbIMU_BA2(false) {
@@ -43,15 +40,12 @@ Map::Map()
 }
 
 Map::Map(int initKFid)
-    : mpFirstRegionKF(nullptr),
-      mbFail(false),
-      mbImuInitialized(false),
+    : mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnInitKFid(initKFid),
       mnMaxKFid(initKFid),
       mnBigChangeIdx(0),
-      mHasTumbnail(false),
       mbBad(false),
       mbIMU_BA1(false),
       mbIMU_BA2(false) {
@@ -164,11 +158,6 @@ long unsigned int Map::GetInitKFid() {
   return mnInitKFid;
 }
 
-void Map::SetInitKFid(long unsigned int initKFif) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  mnInitKFid = initKFif;
-}
-
 long unsigned int Map::GetMaxKFid() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mnMaxKFid;
@@ -226,35 +215,27 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
   mnMapChange++;
 }
 
-void Map::SetIniertialBA1() {
+void Map::SetInertialBA1() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA1 = true;
 }
 
-void Map::SetIniertialBA2() {
+void Map::SetInertialBA2() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA2 = true;
 }
 
-bool Map::GetIniertialBA1() {
+bool Map::GetInertialBA1() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA1;
 }
 
-bool Map::GetIniertialBA2() {
+bool Map::GetInertialBA2() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA2;
 }
 
 void Map::ChangeId(long unsigned int nId) { mnId = nId; }
-
-unsigned int Map::GetLowerKFID() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  if (mpKFlowerID) {
-    return mpKFlowerID->mnId;
-  }
-  return 0;
-}
 
 int Map::GetMapChangeIndex() {
   std::unique_lock<std::mutex> lock(mMutexMap);

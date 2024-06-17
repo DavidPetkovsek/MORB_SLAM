@@ -49,7 +49,6 @@ class MapPoint : public std::enable_shared_from_this<MapPoint> {
     void serialize(Archive & ar, const unsigned int version) {
         ar & mnId;
         ar & mnFirstKFid;
-        ar & mnFirstFrame;
         ar & nObs;
 
         // Protected variables
@@ -69,7 +68,7 @@ class MapPoint : public std::enable_shared_from_this<MapPoint> {
     }
 
 
-public:
+ public:
     
     MapPoint();
 
@@ -104,7 +103,6 @@ public:
     void IncreaseVisible(int n=1);
     void IncreaseFound(int n=1);
     float GetFoundRatio();
-    inline int GetFound(){ return mnFound; }
 
     void ComputeDistinctiveDescriptors();
 
@@ -114,29 +112,25 @@ public:
 
     float GetMinDistanceInvariance();
     float GetMaxDistanceInvariance();
-    int PredictScale(const float &currentDist, std::shared_ptr<KeyFrame>pKF);
+    int PredictScale(const float &currentDist, std::shared_ptr<KeyFrame> pKF);
     int PredictScale(const float &currentDist, Frame* pF);
 
     std::shared_ptr<Map> GetMap();
     void UpdateMap(std::shared_ptr<Map> pMap);
 
-    void PrintObservations();
-
     void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF,std::set<std::shared_ptr<MapPoint>>& spMP);
     void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid);
 
-public:
+ public:
     long unsigned int mnId;
     static long unsigned int nNextId;
     long int mnFirstKFid;
-    long int mnFirstFrame;
     int nObs;
 
     // Variables used by the tracking
     float mTrackProjX;
     float mTrackProjY;
     float mTrackDepth;
-    float mTrackDepthR;
     float mTrackProjXR;
     float mTrackProjYR;
     bool mbTrackInView, mbTrackInViewR;
@@ -150,7 +144,6 @@ public:
     long unsigned int mnFuseCandidateForKF;
 
     // Variables used by loop closing
-    long unsigned int mnLoopPointForKF;
     long unsigned int mnCorrectedByKF;
     long unsigned int mnCorrectedReference;
     Eigen::Vector3f mPosGBA;
@@ -161,19 +154,11 @@ public:
     Eigen::Vector3f mPosMerge;
     Eigen::Vector3f mNormalVectorMerge;
 
-
-    // Fopr inverse depth optimization
-    double mInvDepth;
-    double mInitU;
-    double mInitV;
-
     static std::mutex mGlobalMutex;
-
-    unsigned int mnOriginMapId;
 
     static long unsigned int nMPsInMemory;
 
-protected:
+ protected:
 
     // Position in absolute coordinates
     Eigen::Vector3f mWorldPos;
@@ -214,7 +199,6 @@ protected:
     std::mutex mMutexPos;
     std::mutex mMutexFeatures;
     std::mutex mMutexMap;
-
 };
 
 } //namespace ORB_SLAM

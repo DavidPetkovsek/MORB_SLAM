@@ -33,13 +33,11 @@ std::mutex MapPoint::mGlobalMutex;
 
 MapPoint::MapPoint()
     : mnFirstKFid(0),
-      mnFirstFrame(0),
       nObs(0),
       mnTrackReferenceForFrame(0),
       mnLastFrameSeen(0),
       mnBALocalForKF(0),
       mnFuseCandidateForKF(0),
-      mnLoopPointForKF(0),
       mnCorrectedByKF(0),
       mnCorrectedReference(0),
       mnBAGlobalForKF(0),
@@ -52,17 +50,14 @@ MapPoint::MapPoint()
 
 MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<Map> pMap)
     : mnFirstKFid(pRefKF->mnId),
-      mnFirstFrame(pRefKF->mnFrameId),
       nObs(0),
       mnTrackReferenceForFrame(0),
       mnLastFrameSeen(0),
       mnBALocalForKF(0),
       mnFuseCandidateForKF(0),
-      mnLoopPointForKF(0),
       mnCorrectedByKF(0),
       mnCorrectedReference(0),
       mnBAGlobalForKF(0),
-      mnOriginMapId(pMap->GetId()),
       mpRefKF(pRefKF),
       mnVisible(1),
       mnFound(1),
@@ -86,17 +81,14 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF,
 
 MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<KeyFrame> pRefKF, std::shared_ptr<KeyFrame> pHostKF, std::shared_ptr<Map> pMap)
     : mnFirstKFid(pRefKF->mnId),
-      mnFirstFrame(pRefKF->mnFrameId),
       nObs(0),
       mnTrackReferenceForFrame(0),
       mnLastFrameSeen(0),
       mnBALocalForKF(0),
       mnFuseCandidateForKF(0),
-      mnLoopPointForKF(0),
       mnCorrectedByKF(0),
       mnCorrectedReference(0),
       mnBAGlobalForKF(0),
-      mnOriginMapId(pMap->GetId()),
       mpRefKF(pRefKF),
       mnVisible(1),
       mnFound(1),
@@ -105,9 +97,6 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
       mfMinDistance(0),
       mfMaxDistance(0),
       mpMap(pMap) {
-  mInvDepth = invDepth;
-  mInitU = (double)uv_init.x;
-  mInitV = (double)uv_init.y;
 
   mNormalVector.setZero();
 
@@ -120,17 +109,14 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
 
 MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame* pFrame, const int& idxF)
     : mnFirstKFid(-1),
-      mnFirstFrame(pFrame->mnId),
       nObs(0),
       mnTrackReferenceForFrame(0),
       mnLastFrameSeen(0),
       mnBALocalForKF(0),
       mnFuseCandidateForKF(0),
-      mnLoopPointForKF(0),
       mnCorrectedByKF(0),
       mnCorrectedReference(0),
       mnBAGlobalForKF(0),
-      mnOriginMapId(pMap->GetId()),
       mnVisible(1),
       mnFound(1),
       mbBad(false),
@@ -555,15 +541,6 @@ int MapPoint::PredictScale(const float& currentDist, Frame* pF) {
     nScale = pF->mnScaleLevels - 1;
 
   return nScale;
-}
-
-void MapPoint::PrintObservations() {
-  std::cout << "MP_OBS: MP " << mnId << std::endl;
-  for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = mObservations.begin(), mend = mObservations.end(); mit != mend; mit++) {
-    if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
-      std::cout << "--OBS in KF " << pKFi->mnId << " in map " << pKFi->GetMap()->GetId() << std::endl;
-    }
-  }
 }
 
 std::shared_ptr<Map> MapPoint::GetMap() {

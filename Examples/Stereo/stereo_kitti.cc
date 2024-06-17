@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     MORB_SLAM::System_ptr SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2],MORB_SLAM::CameraType::STEREO);
     MORB_SLAM::Viewer viewer(SLAM, argv[2]);
 
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

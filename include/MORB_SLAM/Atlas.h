@@ -45,9 +45,6 @@ class Frame;
 class KannalaBrandt8;
 class Pinhole;
 
-// BOOST_CLASS_EXPORT_GUID(Pinhole, "Pinhole")
-// BOOST_CLASS_EXPORT_GUID(KannalaBrandt8, "KannalaBrandt8")
-
 class Atlas {
   friend class boost::serialization::access;
 
@@ -79,8 +76,6 @@ class Atlas {
   void CreateNewMap();
   void ChangeMap(std::shared_ptr<Map> pMap);
 
-  unsigned long int GetLastInitKFid();
-
   // Method for change components in the current map
   void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
   void AddMapPoint(std::shared_ptr<MapPoint> pMP);
@@ -99,7 +94,6 @@ class Atlas {
   // Method for get data in current map
   std::vector<std::shared_ptr<KeyFrame>> GetAllKeyFrames();
   std::vector<std::shared_ptr<MapPoint>> GetAllMapPoints();
-  std::vector<std::shared_ptr<MapPoint>> GetReferenceMapPoints();
 
   std::vector<std::shared_ptr<Map>> GetAllMaps();
 
@@ -121,15 +115,9 @@ class Atlas {
   void PreSave();
   void PostLoad();
 
-  void SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB);
-  std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();
+  void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
-  std::shared_ptr<ORBVocabulary> GetORBVocabulary();
-
-  long unsigned int GetNumLivedKF();
-
-  long unsigned int GetNumLivedMP();
 
   bool UseGravityDirectionFromLastMap() const { return mUseGravityDirectionFromLastMap; }
   void setUseGravityDirectionFromLastMap(bool is_true);
@@ -137,8 +125,7 @@ class Atlas {
  protected:
   std::set<std::shared_ptr<Map>> mspMaps;
   std::set<std::shared_ptr<Map>> mspBadMaps;
-  // Its necessary change the container from set to vector because libboost 1.58
-  // and Ubuntu 16.04 have an error with this cointainer
+  // Its necessary change the container from set to vector because libboost 1.58 and Ubuntu 16.04 have an error with this cointainer
   std::vector<std::shared_ptr<Map>> mvpBackupMaps;
 
   std::shared_ptr<Map> mpCurrentMap;

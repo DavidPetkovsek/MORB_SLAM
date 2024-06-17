@@ -43,11 +43,9 @@
 namespace MORB_SLAM
 {
 
-class Verbose
-{
-public:
-    enum eLevel
-    {
+class Verbose {
+ public:
+    enum eLevel {
         VERBOSITY_QUIET=0,
         VERBOSITY_NORMAL=1,
         VERBOSITY_VERBOSE=2,
@@ -76,17 +74,15 @@ class LoopClosing;
 class Settings;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
-class System
-{
-public:
-
+class System {
+ public:
     // File type
     enum FileType{
         TEXT_FILE=0,
         BINARY_FILE=1,
     };
 
-public:
+ public:
     
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const std::string &strVocFile, const std::string &strSettingsFile, const CameraType sensor);
@@ -107,27 +103,13 @@ public:
     // Returns the camera pose (empty if tracking fails).
     MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
-    // Returns true if there have been a big map change (loop closure, global BA)
-    // since last call to this function
+    // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
     virtual ~System();
-
-    // Information from most recent processed frame
-    // You can call this right after TrackMonocular (or stereo or RGBD)
-    TrackingState GetTrackingState();
-    std::vector<std::shared_ptr<MapPoint>> GetTrackedMapPoints();
-    std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
-
-    // For debugging
-    double GetTimeFromIMUInit();
-    bool isLost();
-    bool isFinished();
-
-    float GetImageScale();
 
     void ForceLost();
 
@@ -179,13 +161,6 @@ private:
     std::jthread mptLocalMapping;
     std::jthread mptLoopClosing;
 
-    // Tracking state
-    TrackingState mTrackingState;
-    std::vector<std::shared_ptr<MapPoint>> mTrackedMapPoints;
-    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
-    std::mutex mMutexState;
-
-    //
     std::string mStrLoadAtlasFromFile;
     std::string mStrSaveAtlasToFile;
 

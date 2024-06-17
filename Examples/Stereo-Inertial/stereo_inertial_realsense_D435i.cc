@@ -98,7 +98,7 @@ static rs2_option get_sensor_option(const rs2::sensor& sensor)
 MORB_SLAM::StereoPacket sendImageAndImuData(const cv::Mat& imLeft, const cv::Mat& imRight,
                             const float& im_timestamp, std::vector<MORB_SLAM::IMU::Point>& vImuMeas, MORB_SLAM::System_ptr SLAM) {
 
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
 
     std::cout << "image scale: " << imageScale << std::endl;
 
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
 
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
 
     double timestamp;
     cv::Mat im, imRight;

@@ -63,7 +63,7 @@ class Tracking {
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
 
   // Load new settings
-  // The focal lenght should be similar or scale prediction will fail when projecting points
+  // The focal length should be similar or scale prediction will fail when projecting points
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool& flag);
@@ -76,17 +76,8 @@ class Tracking {
   //--
   int GetMatchesInliers();
 
-  float GetImageScale();
-
   Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
   void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
-
-#ifdef REGISTER_LOOP
-  void RequestStop();
-  bool isStopped();
-  void Release();
-  bool stopRequested();
-#endif
 
  public:
 
@@ -101,7 +92,6 @@ class Tracking {
   Frame mLastFrame;
 
   // Initialization Variables (Monocular)
-  std::vector<int> mvIniLastMatches;
   std::vector<int> mvIniMatches;
   std::vector<cv::Point2f> mvbPrevMatched;
   std::vector<cv::Point3f> mvIniP3D;
@@ -119,7 +109,7 @@ class Tracking {
   Sophus::SE3f mReturnPose;
 
   // Lists used to recover the full camera trajectory at the end of the execution. Basically we store the reference keyframe for each frame and its relative transformation
-protected:
+ protected:
 
   Sophus::SE3f mRelativeFramePose;
 
@@ -240,19 +230,10 @@ public:
 
   // Calibration matrix
   cv::Mat mK;
-  Eigen::Matrix3f mK_;
   cv::Mat mDistCoef;
   float mbf;
-  float mImageScale;
 
-  float mImuFreq;
-  bool mInsertKFsLost;
-
-  // New KeyFrame rules (according to fps)
-  int mMinFrames;
-  int mMaxFrames;
-
-  int mnFramesToResetIMU;
+  int mFPS;
 
   // Threshold close/far points
   // Points seen as close by the stereo/RGBD sensor are considered reliable and inserted from just one frame. Far points requiere a match in two keyframes.
@@ -269,18 +250,13 @@ public:
   unsigned int mnLastKeyFrameId;
   unsigned int mnLastRelocFrameId;
   double mTimeStampLost;
-  double time_recently_lost;
-
-  unsigned int mnFirstFrameId;
-  unsigned int mnInitialFrameId;
+  double time_recently_lost; //TODO: read from settings
 
   bool mbCreatedMap;
 
   // Motion Model
   bool mbHasPrevDeltaFramePose{false};
   Sophus::SE3f mPrevDeltaFramePose;
-
-  std::list<std::shared_ptr<MapPoint>> mlpTemporalPoints;
 
   std::shared_ptr<const GeometricCamera> mpCamera;
   std::shared_ptr<const GeometricCamera> mpCamera2;
@@ -297,15 +273,6 @@ public:
   std::mutex mMutexReset;
   bool mbReset;
   bool mbResetActiveMap;
-
-#ifdef REGISTER_LOOP
-  bool Stop();
-
-  bool mbStopped;
-  bool mbStopRequested;
-  bool mbNotStop;
-  std::mutex mMutexStop;
-#endif
 };
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 typedef std::weak_ptr<Tracking> Tracking_wptr;

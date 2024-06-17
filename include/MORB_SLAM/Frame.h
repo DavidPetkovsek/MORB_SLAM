@@ -102,15 +102,9 @@ public:
 
     Eigen::Matrix<float,3,1> GetImuPosition() const;
     Eigen::Matrix<float,3,3> GetImuRotation();
-    //UNUSED
-    Sophus::SE3<float> GetImuPose();
 
     Sophus::SE3f GetRelativePoseTrl();
     Sophus::SE3f GetRelativePoseTlr();
-    //UNUSED
-    Eigen::Matrix3f GetRelativePoseTlr_rotation();
-    //UNUSED
-    Eigen::Vector3f GetRelativePoseTlr_translation();
 
     void SetNewBias(const IMU::Bias &b);
 
@@ -147,37 +141,18 @@ public:
     void UpdatePoseMatrices();
 
     // Returns the camera center.
-    inline Eigen::Vector3f GetCameraCenter(){
-        return mOw;
-    }
+    inline Eigen::Vector3f GetCameraCenter(){ return mOw; }
 
-    // Returns inverse of rotation
-    inline Eigen::Matrix3f GetRotationInverse(){
-        return mRwc;
-    }
+    //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
+    inline Sophus::SE3<float> GetPose() const { return mTcw; }
 
-    inline Sophus::SE3<float> GetPose() const {
-        //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
-        return mTcw;
-    }
+    inline Eigen::Matrix3f GetRwc() const { return mRwc; }
 
-    inline Eigen::Matrix3f GetRwc() const {
-        return mRwc;
-    }
+    inline Eigen::Vector3f GetOw() const { return mOw; }
 
-    inline Eigen::Vector3f GetOw() const {
-        return mOw;
-    }
+    inline bool HasPose() const { return mbHasPose; }
 
-    inline bool HasPose() const {
-        return mbHasPose;
-    }
-
-    inline bool HasVelocity() const {
-        return mbHasVelocity;
-    }
-
-
+    inline bool HasVelocity() const { return mbHasVelocity; }
 
 private:
     //Sophus/Eigen migration
@@ -187,10 +162,6 @@ private:
     Eigen::Matrix<float,3,3> mRcw; // rotation matrix of mTcw (pose)
     Eigen::Matrix<float,3,1> mtcw; // translation of mTcw (pose)
     bool mbHasPose; // if mTcw (pose) has been set
-
-    //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
-    //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()
-    //Twc_ not necessary as Sophus has a method for easily computing the inverse pose: Tcw_.inverse()
 
     // Below is not set if there is no need for this (ie we are kannalabrandt8 fisheye)
     Sophus::SE3<float> mTlr, mTrl; // mtlr: Transformation matrix from right camera to left camera     mTrl: Inverse of mTlr
@@ -212,13 +183,11 @@ public:
     std::shared_ptr<ORBextractor> mpORBextractorLeft;
     std::shared_ptr<ORBextractor> mpORBextractorRight;
 
-
     // Frame timestamp.
     double mTimeStamp;
 
     // Calibration matrix and OpenCV distortion parameters.
     cv::Mat mK;
-    Eigen::Matrix3f mK_;
     static float fx;
     static float fy;
     static float cx;
@@ -262,14 +231,11 @@ public:
     // MapPoints associated to keypoints, nullptr pointer if no association.
     // Flag to identify outlier associations.
     std::vector<bool> mvbOutlier;
-    int mnCloseMPs;
 
     // Keypoints are assigned to cells in a grid to reduce matching complexity when projecting MapPoints.
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
-
-    IMU::Bias mPredBias;
 
     // IMU bias
     IMU::Bias mImuBias;
@@ -330,6 +296,10 @@ private:
     //Stereo fisheye
     void ComputeStereoFishEyeMatches();
 
+    //For stereo fisheye matching
+    static cv::BFMatcher BFmatcher;
+
+    cv::Mat imgLeft, imgRight;
 public:
     Camera_ptr camera; 
     std::shared_ptr<const GeometricCamera> mpCamera, mpCamera2;
@@ -342,9 +312,6 @@ public:
     //For stereo matching
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
 
-    //For stereo fisheye matching
-    static cv::BFMatcher BFmatcher;
-
     //Triangulated stereo observations using as reference the left camera. These are computed during ComputeStereoFishEyeMatches
     std::vector<Eigen::Vector3f> mvStereo3Dpoints;
 
@@ -352,8 +319,6 @@ public:
     std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
-
-    cv::Mat imgLeft, imgRight;
 };
 
 }// namespace ORB_SLAM

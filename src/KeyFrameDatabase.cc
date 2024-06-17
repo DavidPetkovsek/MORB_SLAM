@@ -286,13 +286,6 @@ std::vector<std::shared_ptr<KeyFrame>> KeyFrameDatabase::DetectRelocalizationCan
   return vpRelocCandidates;
 }
 
-void KeyFrameDatabase::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
-  mpVoc = std::move(pORBVoc);
-
-  mvInvertedFile.clear();
-  mvInvertedFile.resize(mpVoc->size());
-}
-
 size_t KeyFrameDatabase::GetMemoryUsage() {
     size_t totalMemory = 0;
 

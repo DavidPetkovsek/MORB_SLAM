@@ -77,7 +77,6 @@ Frame::Frame(const Frame &frame)
       mpORBextractorRight(frame.mpORBextractorRight),
       mTimeStamp(frame.mTimeStamp),
       mK(frame.mK.clone()),
-      mK_(Converter::toMatrix3f(frame.mK)),
       mDistCoef(frame.mDistCoef.clone()),
       mbf(frame.mbf),
       mb(frame.mb),
@@ -94,8 +93,6 @@ Frame::Frame(const Frame &frame)
       mDescriptors(frame.mDescriptors.clone()),
       mDescriptorsRight(frame.mDescriptorsRight.clone()),
       mvbOutlier(frame.mvbOutlier),
-      mnCloseMPs(frame.mnCloseMPs),
-      mPredBias(frame.mPredBias),
       mImuBias(frame.mImuBias),
       mImuCalib(frame.mImuCalib),
       mpImuPreintegrated(frame.mpImuPreintegrated),
@@ -160,7 +157,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpORBextractorRight(extractorRight),
       mTimeStamp(timeStamp),
       mK(K.clone()),
-      mK_(Converter::toMatrix3f(K)),
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
@@ -248,7 +244,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpORBextractorRight(nullptr),
       mTimeStamp(timeStamp),
       mK(K.clone()),
-      mK_(Converter::toMatrix3f(K)),
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
@@ -338,7 +333,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpORBextractorRight(nullptr),
       mTimeStamp(timeStamp),
       mK(pCamera->toK()),
-      mK_(pCamera->toK_()),
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
@@ -392,7 +386,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
   // Set no stereo information
   mvuRight = std::vector<float>(N, -1);
   mvDepth = std::vector<float>(N, -1);
-  mnCloseMPs = 0;
 
   mvpMapPoints = std::vector<std::shared_ptr<MapPoint>>(N, nullptr);
 
@@ -435,7 +428,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpORBextractorRight(extractorRight),
       mTimeStamp(timeStamp),
       mK(K.clone()),
-      mK_(Converter::toMatrix3f(K)),
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
@@ -603,17 +595,9 @@ Eigen::Matrix<float, 3, 3> Frame::GetImuRotation() {
   return mRwc * mImuCalib.mTcb.rotationMatrix();
 }
 
-Sophus::SE3<float> Frame::GetImuPose() {
-  return mTcw.inverse() * mImuCalib.mTcb;
-}
-
 Sophus::SE3f Frame::GetRelativePoseTrl() { return mTrl; }
 
 Sophus::SE3f Frame::GetRelativePoseTlr() { return mTlr; }
-
-Eigen::Matrix3f Frame::GetRelativePoseTlr_rotation() { return mTlr.rotationMatrix(); }
-
-Eigen::Vector3f Frame::GetRelativePoseTlr_translation() { return mTlr.translation(); }
 
 bool Frame::isInFrustum(std::shared_ptr<MapPoint>pMP, float viewingCosLimit) {
   if (Nleft == -1) {
@@ -1094,7 +1078,6 @@ void Frame::ComputeStereoFishEyeMatches() {
   mvDepth = std::vector<float>(Nleft, -1.0f);
   mvuRight = std::vector<float>(Nleft, -1);
   mvStereo3Dpoints = std::vector<Eigen::Vector3f>(Nleft);
-  mnCloseMPs = 0;
 
   // Perform a brute force between Keypoint in the left and right image
   std::vector<std::vector<cv::DMatch>> matches;
@@ -1185,7 +1168,6 @@ bool Frame::isInFrustumChecks(std::shared_ptr<MapPoint>pMP, float viewingCosLimi
     pMP->mTrackProjYR = uv(1);
     pMP->mnTrackScaleLevelR = nPredictedLevel;
     pMP->mTrackViewCosR = viewCos;
-    pMP->mTrackDepthR = Pc_dist;
   } else {
     pMP->mTrackProjX = uv(0);
     pMP->mTrackProjY = uv(1);

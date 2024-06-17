@@ -412,11 +412,6 @@ void Settings::readIMU(cv::FileStorage& fSettings) {
 
   cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
   Tbc_ = Converter::toSophus(cvTbc);
-
-  insertKFsWhenLost_ = readParameter<bool>(fSettings, "IMU.InsertKFsWhenLost", found, false);
-  if (!found) {
-    insertKFsWhenLost_ = true;
-  }
 }
 
 void Settings::readRGBD(cv::FileStorage& fSettings) {

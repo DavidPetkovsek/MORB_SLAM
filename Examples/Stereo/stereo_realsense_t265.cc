@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     MORB_SLAM::System_ptr SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2],MORB_SLAM::CameraType::STEREO, /*0, */file_name);
     MORB_SLAM::Viewer viewer(SLAM, argv[2]);
-    float imageScale = SLAM->GetImageScale();
+    float imageScale = 1.0;
 
     cv::Mat imLeft, imRight;
     vector<MORB_SLAM::IMU::Point> vImuMeas;

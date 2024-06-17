@@ -51,8 +51,7 @@ class KeyFrameDatabase {
 
  public:
   
-
-  KeyFrameDatabase() {}
+  KeyFrameDatabase(){}
   KeyFrameDatabase(std::shared_ptr<ORBVocabulary> voc);
 
   void add(std::shared_ptr<KeyFrame> pKF);
@@ -70,7 +69,6 @@ class KeyFrameDatabase {
 
   void PreSave();
   void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpKFid);
-  void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
 
   size_t GetMemoryUsage();
 
@@ -82,7 +80,7 @@ class KeyFrameDatabase {
   std::vector<std::list<std::shared_ptr<KeyFrame>> > mvInvertedFile;
 
   // For save relation without pointer, this is necessary for save/load function
-  std::vector<std::list<long unsigned int> > mvBackupInvertedFileId;
+  std::vector<std::list<long unsigned int>> mvBackupInvertedFileId;
 
   // Mutex
   std::mutex mMutex;

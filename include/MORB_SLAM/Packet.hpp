@@ -9,15 +9,14 @@
 
 namespace MORB_SLAM{
 
-struct Packet{
+struct Packet {
     std::optional<Sophus::SE3f> pose;
 
     Packet();
     Packet(const Sophus::SE3f &pose);
     virtual ~Packet();
 };
-struct InertialPacket{
-};
+struct InertialPacket{};
 
 struct StereoPacket : public Packet, public InertialPacket {
     cv::Mat imgLeft;

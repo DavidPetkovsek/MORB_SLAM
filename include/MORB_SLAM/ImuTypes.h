@@ -227,8 +227,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
 
     
     integrable() {}
-    integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_, const float &t_)
-        : a(a_), w(w_), t(t_) {}
+    integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_, const float &t_) : a(a_), w(w_), t(t_) {}
     Eigen::Vector3f a, w;
     float t;
   };
