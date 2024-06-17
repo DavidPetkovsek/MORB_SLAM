@@ -251,17 +251,6 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
     // Delete KFi by merging its previous and next KFs (code taken from LocalMapping's KeyFrameCulling function)
     if(pKFi->SetBadFlag()) {
       std::cout << "LocalInertialBA: Deleting KeyFrame " << pKFi->mnId << std::endl;
-      if(pKFi->mNextKF) {
-        if(pKFi->mpImuPreintegrated && pKFi->mNextKF->mpImuPreintegrated) {
-          pKFi->mNextKF->mpImuPreintegrated->MergePrevious(pKFi->mpImuPreintegrated);
-        }
-        pKFi->mNextKF->mPrevKF = pKFi->mPrevKF;
-      }
-      if(pKFi->mPrevKF) { 
-        pKFi->mPrevKF->mNextKF = pKFi->mNextKF;
-      }
-      pKFi->mNextKF = nullptr;
-      pKFi->mPrevKF = nullptr;
     }
   }
 
