@@ -841,7 +841,6 @@ void Optimizer::OptimizeEssentialGraph4DoF(
       Tij(3, 3) = 1.;
 
       Edge4DoF* e = new Edge4DoF(Tij);
-      std::cout << nIDj << std::endl;
       e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
                           optimizer.vertex(nIDi)));
       e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
