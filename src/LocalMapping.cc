@@ -764,13 +764,6 @@ void LocalMapping::KeyFrameCulling() {
         }
 
         if (nRedundantObservations > redundant_th * nMPs) { // David comment: if the number of redundant map points are above the threshold and other requirements (mark for memory leak?) and do not do more than 100 or 20 maybe 
-            if (mbInertial) {
-                pKF->mNextKF->mpImuPreintegrated->MergePrevious(pKF->mpImuPreintegrated);
-                pKF->mNextKF->mPrevKF = pKF->mPrevKF;
-                pKF->mPrevKF->mNextKF = pKF->mNextKF;
-                pKF->mNextKF = nullptr;
-                pKF->mPrevKF = nullptr;
-            }
             pKF->SetBadFlag();
         }
 

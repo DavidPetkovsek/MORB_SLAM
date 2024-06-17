@@ -581,7 +581,15 @@ bool KeyFrame::SetBadFlag() {
     std::unique_lock<std::mutex> lock(mMutexConnections);
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
 
-    
+    if(mPrevKF) { 
+      mPrevKF->mNextKF = mNextKF;
+    }
+    if(mNextKF) {
+      if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
+        mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
+      }
+      mNextKF->mPrevKF = mPrevKF;
+    }
     mPrevKF = nullptr;
     mNextKF = nullptr;
 
