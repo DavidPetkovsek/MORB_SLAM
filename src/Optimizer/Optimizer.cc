@@ -33,8 +33,6 @@
 
 namespace MORB_SLAM {
 
-
-
 int Optimizer::PoseOptimization(Frame* pFrame) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolver_6_3::LinearSolverType* linearSolver;
