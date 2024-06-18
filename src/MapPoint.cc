@@ -250,7 +250,7 @@ void MapPoint::EraseObservation(std::shared_ptr<KeyFrame> pKF) {
       mObservations.erase(wpKF);
       if(std::shared_ptr<KeyFrame> shared_mpRefKF = mpRefKF.lock()) {
         if (shared_mpRefKF == pKF) {
-          while(!mObservations.empty() && !(mObservations.begin()->first).lock())
+          while(!mObservations.empty() && mObservations.begin()->first.expired())
             mObservations.erase(mObservations.begin());
           if(!mObservations.empty())
             mpRefKF = mObservations.begin()->first;
