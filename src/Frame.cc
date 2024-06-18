@@ -668,67 +668,6 @@ bool Frame::isInFrustum(std::shared_ptr<MapPoint>pMP, float viewingCosLimit) {
   }
 }
 
-bool Frame::ProjectPointDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &kp, float &u, float &v) {
-  // 3D in absolute coordinates
-  Eigen::Vector3f P = pMP->GetWorldPos();
-
-  // 3D in camera coordinates
-  const Eigen::Vector3f Pc = mRcw * P + mtcw;
-  const float &PcX = Pc(0);
-  const float &PcY = Pc(1);
-  const float &PcZ = Pc(2);
-
-  // Check positive depth
-  if (PcZ < 0.0f) {
-    std::cout << "Negative depth: " << PcZ << std::endl;
-    return false;
-  }
-
-  // Project in image and check it is not outside
-  const float invz = 1.0f / PcZ;
-  u = fx * PcX * invz + cx;
-  v = fy * PcY * invz + cy;
-
-  if (u < mnMinX || u > mnMaxX) return false;
-  if (v < mnMinY || v > mnMaxY) return false;
-
-  float u_distort, v_distort;
-
-  float x = (u - cx) * invfx;
-  float y = (v - cy) * invfy;
-  float r2 = x * x + y * y;
-  float k1 = mDistCoef.at<float>(0);
-  float k2 = mDistCoef.at<float>(1);
-  float p1 = mDistCoef.at<float>(2);
-  float p2 = mDistCoef.at<float>(3);
-  float k3 = 0;
-  if (mDistCoef.total() == 5) {
-    k3 = mDistCoef.at<float>(4);
-  }
-
-  // Radial distorsion
-  float x_distort = x * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-  float y_distort = y * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-
-  // Tangential distorsion
-  x_distort = x_distort + (2 * p1 * x * y + p2 * (r2 + 2 * x * x));
-  y_distort = y_distort + (p1 * (r2 + 2 * y * y) + 2 * p2 * x * y);
-
-  u_distort = x_distort * fx + cx;
-  v_distort = y_distort * fy + cy;
-
-  u = u_distort;
-  v = v_distort;
-
-  kp = cv::Point2f(u, v);
-
-  return true;
-}
-
-Eigen::Vector3f Frame::inRefCoordinates(Eigen::Vector3f pCw) {
-  return mRcw * pCw + mtcw;
-}
-
 std::vector<size_t> Frame::GetFeaturesInArea(const float &x, const float &y, const float &r, const int minLevel, const int maxLevel, const bool bRight) const {
   std::vector<size_t> vIndices;
   vIndices.reserve(N);

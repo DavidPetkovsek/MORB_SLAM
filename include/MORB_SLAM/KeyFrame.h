@@ -237,7 +237,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Eigen::Vector3f GetAccBias();
   IMU::Bias GetImuBias();
 
-  bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
   bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
   void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam);

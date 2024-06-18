@@ -111,12 +111,6 @@ public:
     // Check if a MapPoint is in the frustum of the camera and fill variables of the MapPoint to be used by the tracking
     bool isInFrustum(std::shared_ptr<MapPoint> pMP, float viewingCosLimit);
 
-    //UNUSED
-    bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v);
-
-    //UNUSED
-    Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
-
     // Compute the cell of a keypoint (return false if outside the grid)
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
