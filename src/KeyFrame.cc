@@ -548,7 +548,8 @@ void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame>pKF) {
   }
 
   mpParent = pKF;
-  pKF->AddChild(self);
+  if(pKF)
+    pKF->AddChild(self);
 }
 
 std::set<std::shared_ptr<KeyFrame>> KeyFrame::GetChilds() {
