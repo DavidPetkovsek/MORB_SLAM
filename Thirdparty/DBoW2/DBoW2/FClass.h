@@ -22,8 +22,7 @@ namespace DBoW2 {
  * parameter F when creating Templated structures
  * (TemplatedVocabulary, TemplatedDatabase, ...)
  */
-class FClass
-{
+class FClass {
   class TDescriptor;
   typedef const TDescriptor *pDescriptor;
   
@@ -32,8 +31,7 @@ class FClass
    * @param descriptors
    * @param mean mean descriptor
    */
-  virtual void meanValue(const std::vector<pDescriptor> &descriptors, 
-    TDescriptor &mean) = 0;
+  virtual void meanValue(const std::vector<pDescriptor> &descriptors, TDescriptor &mean) = 0;
   
   /**
    * Calculates the distance between two descriptors
@@ -62,8 +60,7 @@ class FClass
    * @param descriptors
    * @param mat (out) NxL 32F matrix
    */
-  static void toMat32F(const std::vector<TDescriptor> &descriptors, 
-    cv::Mat &mat);
+  static void toMat32F(const std::vector<TDescriptor> &descriptors, cv::Mat &mat);
 };
 
 } // namespace DBoW2

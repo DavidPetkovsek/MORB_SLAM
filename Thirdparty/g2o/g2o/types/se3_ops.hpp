@@ -28,8 +28,7 @@
 
 namespace g2o {
 
-  Eigen::Matrix3d skew(const Eigen::Vector3d&v)
-  {
+  Eigen::Matrix3d skew(const Eigen::Vector3d&v) {
     Eigen::Matrix3d m;
     m.fill(0.);
     m(0,1)  = -v(2);
@@ -41,8 +40,7 @@ namespace g2o {
     return m;
   }
 
-  Eigen::Vector3d deltaR(const Eigen::Matrix3d& R)
-  {
+  Eigen::Vector3d deltaR(const Eigen::Matrix3d& R) {
     Eigen::Vector3d v;
     v(0)=R(2,1)-R(1,2);
     v(1)=R(0,2)-R(2,0);
@@ -50,16 +48,14 @@ namespace g2o {
     return v;
   }
 
-  Eigen::Vector2d project(const Eigen::Vector3d& v)
-  {
+  Eigen::Vector2d project(const Eigen::Vector3d& v) {
     Eigen::Vector2d res;
     res(0) = v(0)/v(2);
     res(1) = v(1)/v(2);
     return res;
   }
 
-  Eigen::Vector3d project(const Eigen::Vector4d& v)
-  {
+  Eigen::Vector3d project(const Eigen::Vector4d& v) {
     Eigen::Vector3d res;
     res(0) = v(0)/v(3);
     res(1) = v(1)/v(3);
@@ -67,8 +63,7 @@ namespace g2o {
     return res;
   }
 
-  Eigen::Vector3d unproject(const Eigen::Vector2d& v)
-  {
+  Eigen::Vector3d unproject(const Eigen::Vector2d& v) {
     Eigen::Vector3d res;
     res(0) = v(0);
     res(1) = v(1);
@@ -76,8 +71,7 @@ namespace g2o {
     return res;
   }
 
-  Eigen::Vector4d unproject(const Eigen::Vector3d& v)
-  {
+  Eigen::Vector4d unproject(const Eigen::Vector3d& v) {
     Eigen::Vector4d res;
     res(0) = v(0);
     res(1) = v(1);

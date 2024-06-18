@@ -31,8 +31,7 @@ namespace g2o {
 template <int D, typename T>
 BaseVertex<D, T>::BaseVertex() :
   OptimizableGraph::Vertex(),
-  _hessian(0, D, D)
-{
+  _hessian(0, D, D) {
   _dimension = D;
 }
 
@@ -53,8 +52,7 @@ void BaseVertex<D, T>::clearQuadraticForm() {
 }
 
 template <int D, typename T>
-void BaseVertex<D, T>::mapHessianMemory(double* d)
-{
+void BaseVertex<D, T>::mapHessianMemory(double* d) {
   new (&_hessian) HessianBlockType(d, D, D);
 }
 

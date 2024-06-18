@@ -20,8 +20,7 @@ const double GeneralScoring::LOG_EPS = log(DBL_EPSILON); // FLT_EPSILON
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double L1Scoring::score(const BowVector &v1, const BowVector &v2) const
-{
+double L1Scoring::score(const BowVector &v1, const BowVector &v2) const {
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -31,35 +30,27 @@ double L1Scoring::score(const BowVector &v1, const BowVector &v2) const
   
   double score = 0;
   
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       score += fabs(vi - wi) - fabs(vi) - fabs(wi);
       
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
     }
-    else
-    {
+    else {
       // move v2 forward
       v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
     }
   }
   
-  // ||v - w||_{L1} = 2 + Sum(|v_i - w_i| - |v_i| - |w_i|) 
-  //		for all i | v_i != 0 and w_i != 0 
+  // ||v - w||_{L1} = 2 + Sum(|v_i - w_i| - |v_i| - |w_i|) for all i | v_i != 0 and w_i != 0 
   // (Nister, 2006)
   // scaled_||v - w||_{L1} = 1 - 0.5 * ||v - w||_{L1}
   score = -score/2.0;
@@ -70,8 +61,7 @@ double L1Scoring::score(const BowVector &v1, const BowVector &v2) const
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double L2Scoring::score(const BowVector &v1, const BowVector &v2) const
-{
+double L2Scoring::score(const BowVector &v1, const BowVector &v2) const {
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -81,35 +71,26 @@ double L2Scoring::score(const BowVector &v1, const BowVector &v2) const
   
   double score = 0;
   
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       score += vi * wi;
       
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
+    } else {
       // move v2 forward
       v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
     }
   }
   
-  // ||v - w||_{L2} = sqrt( 2 - 2 * Sum(v_i * w_i) )
-	//		for all i | v_i != 0 and w_i != 0 )
+  // ||v - w||_{L2} = sqrt( 2 - 2 * Sum(v_i * w_i) ) for all i | v_i != 0 and w_i != 0 )
 	// (Nister, 2006)
 	if(score >= 1) // rounding errors
 	  score = 1.0;
@@ -122,9 +103,7 @@ double L2Scoring::score(const BowVector &v1, const BowVector &v2) const
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2) 
-  const
-{
+double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2) const {
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -135,14 +114,11 @@ double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2)
   double score = 0;
   
   // all the items are taken into account
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       // (v-w)^2/(v+w) - v - w = -4 vw/(v+w)
       // we move the -4 out
       if(vi + wi != 0.0) score += vi * wi / (vi + wi);
@@ -150,14 +126,10 @@ double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2)
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       v1_it = v1.lower_bound(v2_it->first);
-    }
-    else
-    {
+    } else {
       // move v2 forward
       v2_it = v2.lower_bound(v1_it->first);
     }
@@ -172,8 +144,7 @@ double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2)
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double KLScoring::score(const BowVector &v1, const BowVector &v2) const
-{ 
+double KLScoring::score(const BowVector &v1, const BowVector &v2) const { 
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -185,30 +156,23 @@ double KLScoring::score(const BowVector &v1, const BowVector &v2) const
   
   // all the items or v are taken into account
   
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       if(vi != 0 && wi != 0) score += vi * log(vi/wi);
       
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       score += vi * (log(vi) - LOG_EPS);
       ++v1_it;
-    }
-    else
-    {
+    } else {
       // move v2_it forward, do not add any score
       v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
     }
   }
   
@@ -223,9 +187,7 @@ double KLScoring::score(const BowVector &v1, const BowVector &v2) const
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double BhattacharyyaScoring::score(const BowVector &v1, 
-  const BowVector &v2) const
-{
+double BhattacharyyaScoring::score(const BowVector &v1, const BowVector &v2) const {
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -235,30 +197,22 @@ double BhattacharyyaScoring::score(const BowVector &v1,
   
   double score = 0;
   
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       score += sqrt(vi * wi);
       
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
+    } else {
       // move v2 forward
       v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
     }
   }
 
@@ -268,9 +222,7 @@ double BhattacharyyaScoring::score(const BowVector &v1,
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-double DotProductScoring::score(const BowVector &v1, 
-  const BowVector &v2) const
-{
+double DotProductScoring::score(const BowVector &v1, const BowVector &v2) const {
   BowVector::const_iterator v1_it, v2_it;
   const BowVector::const_iterator v1_end = v1.end();
   const BowVector::const_iterator v2_end = v2.end();
@@ -280,30 +232,22 @@ double DotProductScoring::score(const BowVector &v1,
   
   double score = 0;
   
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
+  while(v1_it != v1_end && v2_it != v2_end) {
     const WordValue& vi = v1_it->second;
     const WordValue& wi = v2_it->second;
     
-    if(v1_it->first == v2_it->first)
-    {
+    if(v1_it->first == v2_it->first) {
       score += vi * wi;
       
       // move v1 and v2 forward
       ++v1_it;
       ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
+    } else if(v1_it->first < v2_it->first) {
       // move v1 forward
       v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
+    } else {
       // move v2 forward
       v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
     }
   }
 

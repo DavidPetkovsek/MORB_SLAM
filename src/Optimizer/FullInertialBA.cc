@@ -33,11 +33,7 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal,
-                               const long unsigned int nLoopId,
-                               bool* pbStopFlag, bool bInit, ImuInitializater::ImuInitType priorG,
-                               ImuInitializater::ImuInitType priorA, Eigen::VectorXd* vSingVal,
-                               bool* bHess) {
+void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool* pbStopFlag, bool bInit, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, Eigen::VectorXd* vSingVal, bool* bHess) {
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
   const std::vector<std::shared_ptr<MapPoint>> vpMPs = pMap->GetAllMapPoints();
@@ -46,13 +42,11 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
   g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
-  g2o::OptimizationAlgorithmLevenberg* solver =
-      new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
   solver->setUserLambdaInit(1e-5);
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
@@ -71,8 +65,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     pIncKF = pKFi;
     bool bFixed = false;
     if (bFixLocal) {
-      bFixed = (pKFi->mnBALocalForKF >= (maxKFid - 1)) ||
-               (pKFi->mnBAFixedForKF >= (maxKFid - 1));
+      bFixed = (pKFi->mnBALocalForKF >= (maxKFid - 1)) || (pKFi->mnBAFixedForKF >= (maxKFid - 1));
       if (!bFixed) nNonFixed++;
       VP->setFixed(bFixed);
     }
@@ -126,8 +119,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
       if (pKFi->bImu && pKFi->mPrevKF->bImu) {
         pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
         g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
-        g2o::HyperGraph::Vertex* VV1 =
-            optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
+        g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
 
         g2o::HyperGraph::Vertex* VG1;
         g2o::HyperGraph::Vertex* VA1;
@@ -144,20 +136,16 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
         }
 
         g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
-        g2o::HyperGraph::Vertex* VV2 =
-            optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1);
+        g2o::HyperGraph::Vertex* VV2 = optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1);
 
         if (!bInit) {
           if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2 || !VG2 || !VA2) {
-            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1
-                 << ", " << VP2 << ", " << VV2 << ", " << VG2 << ", " << VA2
-                 << std::endl;
+            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << ", " << VG2 << ", " << VA2 << std::endl;
             continue;
           }
         } else {
           if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2) {
-            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1
-                 << ", " << VP2 << ", " << VV2 << std::endl;
+            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << std::endl;
             continue;
           }
         }
@@ -180,9 +168,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           EdgeGyroRW* egr = new EdgeGyroRW();
           egr->setVertex(0, VG1);
           egr->setVertex(1, VG2);
-          Eigen::Matrix3d InfoG = pKFi->mpImuPreintegrated->C.block<3, 3>(9, 9)
-                                      .cast<double>()
-                                      .inverse();
+          Eigen::Matrix3d InfoG = pKFi->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
           egr->setInformation(InfoG);
           egr->computeError();
           optimizer.addEdge(egr);
@@ -190,10 +176,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
           EdgeAccRW* ear = new EdgeAccRW();
           ear->setVertex(0, VA1);
           ear->setVertex(1, VA2);
-          Eigen::Matrix3d InfoA =
-              pKFi->mpImuPreintegrated->C.block<3, 3>(12, 12)
-                  .cast<double>()
-                  .inverse();
+          Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
           ear->setInformation(InfoA);
           ear->computeError();
           optimizer.addEdge(ear);
@@ -253,23 +236,18 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
         if (!pKFi->isBad()) {
           const int leftIndex = std::get<0>(mit->second);
           cv::KeyPoint kpUn;
-
-          if (leftIndex != -1 && pKFi->mvuRight[std::get<0>(mit->second)] < 0)  // Monocular observation
-          {
+          // Monocular observation
+          if (leftIndex != -1 && pKFi->mvuRight[std::get<0>(mit->second)] < 0) {
             kpUn = pKFi->mvKeysUn[leftIndex];
             Eigen::Matrix<double, 2, 1> obs;
             obs << kpUn.pt.x, kpUn.pt.y;
 
             EdgeMono* e = new EdgeMono(0);
 
-            g2o::OptimizableGraph::Vertex* VP =
-                dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                    optimizer.vertex(pKFi->mnId));
-            if (bAllFixed)
-              if (!VP->fixed()) bAllFixed = false;
+            g2o::OptimizableGraph::Vertex* VP = dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId));
+            if (bAllFixed && !VP->fixed()) bAllFixed = false;
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(id)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
             e->setVertex(1, VP);
             e->setMeasurement(obs);
             const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
@@ -281,8 +259,8 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
             rk->setDelta(thHuberMono);
 
             optimizer.addEdge(e);
-          } else if (leftIndex != -1 && pKFi->mvuRight[leftIndex] >= 0)  // stereo observation
-          {
+          // stereo observation
+          } else if (leftIndex != -1 && pKFi->mvuRight[leftIndex] >= 0) {
             kpUn = pKFi->mvKeysUn[leftIndex];
             const float kp_ur = pKFi->mvuRight[leftIndex];
             Eigen::Matrix<double, 3, 1> obs;
@@ -290,14 +268,10 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
             EdgeStereo* e = new EdgeStereo(0);
 
-            g2o::OptimizableGraph::Vertex* VP =
-                dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                    optimizer.vertex(pKFi->mnId));
-            if (bAllFixed)
-              if (!VP->fixed()) bAllFixed = false;
+            g2o::OptimizableGraph::Vertex* VP = dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId));
+            if (bAllFixed && !VP->fixed()) bAllFixed = false;
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(id)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
             e->setVertex(1, VP);
             e->setMeasurement(obs);
             const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
@@ -310,8 +284,8 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
             optimizer.addEdge(e);
           }
-
-          if (pKFi->mpCamera2) {  // Monocular right observation
+          // Monocular right observation
+          if (pKFi->mpCamera2) {
             int rightIndex = std::get<1>(mit->second);
 
             if (rightIndex != -1 && rightIndex < static_cast<int>(pKFi->mvKeysRight.size())) {
@@ -323,14 +297,10 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
               EdgeMono* e = new EdgeMono(1);
 
-              g2o::OptimizableGraph::Vertex* VP =
-                  dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                      optimizer.vertex(pKFi->mnId));
-              if (bAllFixed)
-                if (!VP->fixed()) bAllFixed = false;
+              g2o::OptimizableGraph::Vertex* VP = dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId));
+              if (bAllFixed && !VP->fixed()) bAllFixed = false;
 
-              e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                  optimizer.vertex(id)));
+              e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
               e->setVertex(1, VP);
               e->setMeasurement(obs);
               const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
@@ -352,30 +322,26 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     }
   }
 
-  if (pbStopFlag)
-    if (*pbStopFlag) return;
+  if (pbStopFlag && *pbStopFlag) return;
 
   optimizer.initializeOptimization();
   optimizer.optimize(its);
 
   // Recover optimized data
-  // Keyframes
+  // KeyFrames
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
     VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
     if (nLoopId == 0) {
-      Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(),
-                       VP->estimate().tcw[0].cast<float>());
+      Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
       pKFi->SetPose(Tcw);
     } else {
-      pKFi->mTcwGBA = Sophus::SE3f(VP->estimate().Rcw[0].cast<float>(),
-                                   VP->estimate().tcw[0].cast<float>());
+      pKFi->mTcwGBA = Sophus::SE3f(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
       pKFi->mnBAGlobalForKF = nLoopId;
     }
     if (pKFi->bImu) {
-      VertexVelocity* VV = static_cast<VertexVelocity*>(
-          optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1));
+      VertexVelocity* VV = static_cast<VertexVelocity*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1));
       if (nLoopId == 0) {
         pKFi->SetVelocity(VV->estimate().cast<float>());
       } else {
@@ -385,10 +351,8 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
       VertexGyroBias* VG;
       VertexAccBias* VA;
       if (!bInit) {
-        VG = static_cast<VertexGyroBias*>(
-            optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 2));
-        VA = static_cast<VertexAccBias*>(
-            optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 3));
+        VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 2));
+        VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 3));
       } else {
         VG = static_cast<VertexGyroBias*>(optimizer.vertex(4 * maxKFid + 2));
         VA = static_cast<VertexAccBias*>(optimizer.vertex(4 * maxKFid + 3));
@@ -410,8 +374,7 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
     if (vbNotIncludedMP[i]) continue;
 
     std::shared_ptr<MapPoint> pMP = vpMPs[i];
-    g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(
-        optimizer.vertex(pMP->mnId + iniMPid + 1));
+    g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId + iniMPid + 1));
 
     if (nLoopId == 0) {
       pMP->SetWorldPos(vPoint->estimate().cast<float>());
@@ -424,6 +387,5 @@ void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bF
 
   pMap->IncreaseChangeIndex();
 }
-
 
 }  // namespace MORB_SLAM

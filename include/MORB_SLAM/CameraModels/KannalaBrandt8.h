@@ -58,7 +58,6 @@ class KannalaBrandt8 : public GeometricCamera {
     mnId = nNextId++;
     mnType = CAM_FISHEYE;
   }
-
   KannalaBrandt8(const std::vector<float> _vParameters, const float _precision)
       : GeometricCamera(_vParameters),
         mvLappingArea(2, 0),
@@ -81,38 +80,19 @@ class KannalaBrandt8 : public GeometricCamera {
   virtual Eigen::Vector2f project(const Eigen::Vector3f& v3D) const override;
   virtual Eigen::Vector2f projectMat(const cv::Point3f& p3D) const override;
 
-  virtual float uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D) const override;
-
   virtual Eigen::Vector3f unprojectEig(const cv::Point2f& p2D) const override;
   virtual cv::Point3f unproject(const cv::Point2f& p2D) const override;
 
   virtual Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d& v3D) const override;
 
-  virtual bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1,
-                               const std::vector<cv::KeyPoint>& vKeys2,
-                               const std::vector<int>& vMatches12,
-                               Sophus::SE3f& T21,
-                               std::vector<cv::Point3f>& vP3D,
-                               std::vector<bool>& vbTriangulated) const override;
+  virtual bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const std::vector<int>& vMatches12, Sophus::SE3f& T21, std::vector<cv::Point3f>& vP3D, std::vector<bool>& vbTriangulated) const override;
 
   virtual cv::Mat toK() const override;
   virtual Eigen::Matrix3f toK_() const override;
 
-  virtual bool epipolarConstrain(const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint& kp1,
-                         const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12,
-                         const Eigen::Vector3f& t12, const float sigmaLevel,
-                         const float unc) const override;
+  virtual bool epipolarConstrain(const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) const override;
 
-  float TriangulateMatches(const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint& kp1,
-                           const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12,
-                           const Eigen::Vector3f& t12, const float sigmaLevel,
-                           const float unc, Eigen::Vector3f& p3D) const;
-
-  virtual bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2,
-                           GeometricCamera* pOther, Sophus::SE3f& Tcw1,
-                           Sophus::SE3f& Tcw2, const float sigmaLevel1,
-                           const float sigmaLevel2,
-                           Eigen::Vector3f& x3Dtriangulated) const override;
+  float TriangulateMatches(const std::shared_ptr<const GeometricCamera> &pCamera2, const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc, Eigen::Vector3f& p3D) const;
 
   friend std::ostream& operator<<(std::ostream& os, const KannalaBrandt8& kb);
   friend std::istream& operator>>(std::istream& is, KannalaBrandt8& kb);
@@ -129,15 +109,6 @@ class KannalaBrandt8 : public GeometricCamera {
   std::vector<int> mvLappingArea;
   const float precision;
 
-  // Parameters vector corresponds to
-  //[fx, fy, cx, cy, k0, k1, k2, k3]
-
-  // TwoViewReconstruction* tvr;
-
-  void Triangulate(const cv::Point2f& p1, const cv::Point2f& p2,
-                   const Eigen::Matrix<float, 3, 4>& Tcw1,
-                   const Eigen::Matrix<float, 3, 4>& Tcw2,
-                   Eigen::Vector3f& x3D) const;
+  void Triangulate(const cv::Point2f& p1, const cv::Point2f& p2, const Eigen::Matrix<float, 3, 4>& Tcw1, const Eigen::Matrix<float, 3, 4>& Tcw2, Eigen::Vector3f& x3D) const;
 };
 }  // namespace MORB_SLAM
-
