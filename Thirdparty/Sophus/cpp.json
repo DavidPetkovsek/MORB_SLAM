@@ -1,0 +1,19 @@
+{
+    "dependencies":[
+        {
+            "name":"eigen3",
+            "cmake":{
+                "package":"Eigen3",
+                "public-libs":["Eigen3::Eigen"]
+            }
+        }
+    ],
+    "dirs":{
+        "include": "sophus"
+    },
+    "cmake":[
+        {
+            "public-defs":["-D_USE_MATH_DEFINES"]
+        }
+    ]
+}

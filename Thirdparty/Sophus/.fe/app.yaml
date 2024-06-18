@@ -1,18 +1,8 @@
 compatibility: ^1.0.0-alpha.1
-cpp-deps: !!set
-  eigen3: null
-cpp-deps/eigen3/package: Eigen3
-cpp-deps/eigen3/public_libs: !!set
-  Eigen3::Eigen: null
-cpp-public-defs: !!set
-  -D_USE_MATH_DEFINES: null
 dependencies: {}
 description: C++ implementation of Lie Groups using Eigen.
 docker-base: alpine
 icon: null
-include: sophus
 name: null
-private_include: null
 slug: morb_sophus
-src: null
 version: 1.1.0
