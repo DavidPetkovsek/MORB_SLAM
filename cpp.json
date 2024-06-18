@@ -1,0 +1,92 @@
+{
+    "dependencies":[
+        {
+            "name":"boost-regex",
+            "cmake":{
+                "before-find-package":[
+                    "set(Boost_NO_SYSTEM_PATHS ON)",
+                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
+                ],
+                "package":{
+                    "name":"Boost",
+                    "package-components":["regex"]
+                },
+                "public-libs":["Boost::regex"]
+            }
+        },
+        {
+            "name":"boost-serialization",
+            "cmake":{
+                "before-find-package":[
+                    "set(Boost_NO_SYSTEM_PATHS ON)",
+                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
+                ],
+                "package":{
+                    "name":"Boost",
+                    "package-components":["serialization"]
+                },
+                "public-libs":["Boost::serialization"]
+            }
+        },
+        {
+            "name":"eigen3",
+            "cmake":{
+                "package":"Eigen3",
+                "public-libs":["Eigen3::Eigen"]
+            }
+        },
+        {
+            "name":"ixwebsocket",
+            "cmake":{
+                "package":"ixwebsocket",
+                "private-libs":["ixwebsocket::ixwebsocket"]
+            }
+        },
+        {
+            "name":"opencv4",
+            "cmake":{
+                "package":"OpenCV",
+                "public-libs":["${OpenCV_LIBS}"]
+            }
+        },
+        {
+            "name":"openssl",
+            "cmake":{
+                "package":"OpenSSL",
+                "private-libs":["OpenSSL::SSL"]
+            }
+        },
+        {
+            "name":"pangolin",
+            "cmake":{
+                "package":"Pangolin",
+                "private-libs":["${Pangolin_LIBRARIES}"]
+            }
+        }
+    ],
+    "dirs":{
+        "include": "include",
+        "src": "src"
+    },
+    "vcpkg-overlay-ports":[
+        "vcpkg_overlay_ports/libcap"
+    ],
+    "cmake":[
+        {
+            "package":"Threads",
+            "public-libs":["Threads::Threads"],
+            "public-defs":["-DFactoryEngine"]
+        }
+    ],
+    "system-deps":{
+        "apt":[
+            "bison", "autoconf", "libtool", "curl", "pkg-config", "libxi-dev", "libxtst-dev", "libxrandr-dev", "nasm", "libgl-dev", "libxmu-dev", "libglu1-mesa-dev", "libudev-dev"
+        ],
+        "python":[
+            {
+                "interpreter":"/usr/bin/python3",
+                "requirements":["jinja2"]
+            }
+        ]
+    }
+}
