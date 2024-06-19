@@ -746,7 +746,7 @@ void Tracking::StereoInitialization() {
         mpAtlas->RemoveBadMaps();
 
         if(!mHasGlobalOriginPose) {
-          Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix() * mGlobalOriginPose.rotationMatrix().inverse();
+          Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix().inverse() * mGlobalOriginPose.rotationMatrix();
           Eigen::Vector3f outputTranslation = mGlobalOriginPose.rotationMatrix().inverse()*mGlobalOriginPose.translation() - mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
           mInitialFramePose = Sophus::SE3f(outputRotation, outputTranslation);
           mHasGlobalOriginPose = true;
