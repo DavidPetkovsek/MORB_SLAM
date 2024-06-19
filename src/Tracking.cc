@@ -2322,7 +2322,7 @@ Sophus::SE3f Tracking::GetPoseRelativeToBase(Sophus::SE3f initialPose) {
   return Sophus::SE3f(initialPose.rotationMatrix(), translation1);
 }
 
-void Tracking::RequestReset() {
+void Tracking::RequestSystemReset() {
   std::unique_lock<std::mutex> lock(mMutexReset);
   mbReset = true;
 }

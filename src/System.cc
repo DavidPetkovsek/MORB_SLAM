@@ -558,4 +558,6 @@ bool System::getIsLoopClosed() {
 
 void System::setIsLoopClosed(bool isLoopClosed) { mpLoopCloser->loopClosed = isLoopClosed; }
 
+void System::RequestSystemReset() { mpTracker->RequestSystemReset(); }
+
 }  // namespace MORB_SLAM

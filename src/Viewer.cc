@@ -280,7 +280,7 @@ void Viewer::Run() {
       bFollow = true;
       menuFollowCamera = true;
       // mpTracker->RequestResetActiveMap();
-      mpTracker->RequestReset();
+      mpTracker->RequestSystemReset();
       menuReset = false;
     }
 

@@ -153,7 +153,7 @@ public:
 
   // Reset the system (clear Atlas or the active map)
   void CheckTrackingReset();
-  void RequestReset();
+  void RequestSystemReset();
   // bool ResetRequested();
   // void Reset(bool bLocMap = false);
   void RequestResetActiveMap();
