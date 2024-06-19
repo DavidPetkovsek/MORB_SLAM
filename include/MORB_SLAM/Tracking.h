@@ -270,6 +270,8 @@ public:
 
   bool mForcedLost;
 
+  std::shared_ptr<Map> mpRelocalizationTargetMap;
+
   // Reset flag
   std::mutex mMutexReset;
   bool mbReset;

@@ -732,8 +732,17 @@ void Tracking::StereoInitialization() {
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   }
 
-  // Set Frame pose to the default pose
-  mCurrentFrame.SetPose(getStereoInitDefaultPose());
+  //TODO Add setting for relocalization attempt
+  if(mpAtlas->CountMaps() > 1 && true && Relocalization()) {
+      std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap();
+      mpAtlas->ChangeMap(mpRelocalizationTargetMap);
+      mpAtlas->SetMapBad(pCurrentMap);
+      mpAtlas->RemoveBadMaps();
+  } else {
+    // Set Frame pose to the default pose
+    mCurrentFrame.SetPose(getStereoInitDefaultPose());
+  }
+
   if (mSensor.isInertial()) {
     Eigen::Vector3f Vwb0;
     Vwb0.setZero();
@@ -1667,6 +1676,7 @@ bool Tracking::Relocalization() {
     }
   }
 
+  std::shared_ptr<Map> relocMap;
   // Alternatively perform some iterations of P4P RANSAC until we found a camera pose supported by enough inliers
   bool bMatch = false;
   ORBmatcher matcher2(0.9, true);
@@ -1745,6 +1755,7 @@ bool Tracking::Relocalization() {
 
         // If the pose is supported by enough inliers stop ransacs and continue
         if (nGood >= 50) {
+          relocMap = vpCandidateKFs[i]->GetMap();
           bMatch = true;
           break;
         }
@@ -1756,6 +1767,7 @@ bool Tracking::Relocalization() {
     return false;
   } else {
     mnLastRelocFrameId = mCurrentFrame.mnId;
+    mpRelocalizationTargetMap = relocMap;
     std::cout << "Relocalized!!" << std::endl;
     return true;
   }
