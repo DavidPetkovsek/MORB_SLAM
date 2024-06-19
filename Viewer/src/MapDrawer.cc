@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/MapDrawer.h"
+#include "MORB_VIEWER/MapDrawer.h"
 
 #include <pangolin/pangolin.h>
 

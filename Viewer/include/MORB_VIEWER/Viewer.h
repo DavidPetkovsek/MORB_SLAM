@@ -27,8 +27,8 @@
 
 #include "MORB_SLAM/Tracking.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/FrameDrawer.h"
-#include "MORB_SLAM/MapDrawer.h"
+#include "MORB_VIEWER/FrameDrawer.h"
+#include "MORB_VIEWER/MapDrawer.h"
 #include "MORB_SLAM/Settings.h"
 #include "MORB_SLAM/Packet.hpp"
 

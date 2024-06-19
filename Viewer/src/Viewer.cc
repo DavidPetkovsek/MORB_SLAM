@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/Viewer.h"
+#include "MORB_VIEWER/Viewer.h"
 
 #include <pangolin/pangolin.h>
 

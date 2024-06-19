@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <MORB_SLAM/System.h>
-#include <MORB_SLAM/Viewer.h>
+#include <MORB_VIEWER/Viewer.h>
 #include <MORB_SLAM/ExternalMapViewer.h>
 
 #include <csignal>
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     ix::initNetSystem();
     ix::WebSocket webSocket;
     //set to the address of the websocket host sending the IMU data
-    std::string url("ws://172.26.0.1:8765");
+    std::string url("ws://192.168.144.1:8765");
     webSocket.setUrl(url);
     std::cout << "Connecting to " << url << std::endl;
 

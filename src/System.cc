@@ -23,7 +23,6 @@
 
 #include <openssl/md5.h>
 #include <opencv2/opencv.hpp>
-#include <pangolin/pangolin.h>
 
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include <boost/archive/binary_iarchive.hpp>
