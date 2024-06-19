@@ -195,8 +195,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
     cvtColor(im, im, cv::COLOR_GRAY2BGR);
 
   // Draw
-  if (state == TrackingState::NOT_INITIALIZED)  // INITIALIZING
-  {
+  if (state == TrackingState::NOT_INITIALIZED) {
     for (unsigned int i = 0; i < vMatches.size(); i++) {
       if (vMatches[i] >= 0) {
         cv::Point2f pt1, pt2;
@@ -211,8 +210,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
         cv::line(im, pt1, pt2, cv::Scalar(0, 255, 0));
       }
     }
-  } else if (state == TrackingState::OK)  // TRACKING
-  {
+  } else if (state == TrackingState::OK) {
     mnTracked = 0;
     mnTrackedVO = 0;
     const float r = 5;
