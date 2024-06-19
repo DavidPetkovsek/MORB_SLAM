@@ -128,6 +128,9 @@ class System {
 
     void RequestSystemReset();
 
+    Sophus::SE3f GetInitialFramePose();
+    bool HasInitialFramePose();
+
 private:
 
     void SaveAtlas(int type);

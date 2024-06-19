@@ -108,6 +108,10 @@ class Tracking {
 
   Sophus::SE3f mReturnPose;
 
+  bool mHasGlobalOriginPose = false;
+  Sophus::SE3f mGlobalOriginPose;
+  Sophus::SE3f mInitialFramePose;
+
   // Lists used to recover the full camera trajectory at the end of the execution. Basically we store the reference keyframe for each frame and its relative transformation
  protected:
 

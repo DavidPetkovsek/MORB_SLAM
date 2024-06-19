@@ -64,7 +64,9 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mbReset(false),
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
-      mbDeactivateLocalizationMode(false) {
+      mbDeactivateLocalizationMode(false),
+      mGlobalOriginPose(Sophus::SE3f()),
+      mInitialFramePose(Sophus::SE3f()) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -742,6 +744,13 @@ void Tracking::StereoInitialization() {
         mpAtlas->ChangeMap(mpRelocalizationTargetMap);
         mpAtlas->SetMapBad(pCurrentMap);
         mpAtlas->RemoveBadMaps();
+
+        if(!mHasGlobalOriginPose) {
+          Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix() * mGlobalOriginPose.rotationMatrix().inverse();
+          Eigen::Vector3f outputTranslation = mGlobalOriginPose.rotationMatrix().inverse()*mGlobalOriginPose.translation() - mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
+          mInitialFramePose = Sophus::SE3f(outputRotation, outputTranslation);
+          mHasGlobalOriginPose = true;
+        }
       }
   } else {
     // Set Frame pose to the default pose
