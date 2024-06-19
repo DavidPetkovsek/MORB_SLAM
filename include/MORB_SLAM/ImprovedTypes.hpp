@@ -19,7 +19,7 @@ public:
   static const TrackingState OK;
   static const TrackingState RECENTLY_LOST;
   static const TrackingState LOST;
-  static const std::array<TrackingState, 7> STATES;
+  static const std::array<TrackingState, 6> STATES;
 
   bool operator==(const TrackingState &other) const { return id == other.id; }
   bool operator!=(const TrackingState& other) const { return !(*this == other); }
