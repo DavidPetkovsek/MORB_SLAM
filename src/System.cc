@@ -263,10 +263,7 @@ System::~System() {
   }
 }
 
-TrackingState System::GetTrackingState() {
-  std::unique_lock<std::mutex> lock(mMutexState);
-  return mTrackingState;
-}
+TrackingState System::GetTrackingState() { return mTrackingState; }
 
 void System::SaveAtlas(int type) {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
