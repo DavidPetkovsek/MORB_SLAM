@@ -275,7 +275,7 @@ void Viewer::Run() {
       bLocalizationMode = false;
       bFollow = true;
       menuFollowCamera = true;
-      mpTracker->RequestReset();
+      mpTracker->RequestSystemReset();
       menuReset = false;
     }
 

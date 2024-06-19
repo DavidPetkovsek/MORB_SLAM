@@ -126,6 +126,8 @@ class System {
     bool getIsLoopClosed();
     void setIsLoopClosed(bool isLoopClosed);
 
+    void RequestSystemReset();
+
 private:
 
     void SaveAtlas(int type);

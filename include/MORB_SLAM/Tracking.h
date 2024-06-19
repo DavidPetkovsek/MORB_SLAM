@@ -136,7 +136,8 @@ public:
 
   // Reset the system (clear Atlas or the active map)
   void CheckTrackingReset();
-  void RequestReset();
+  
+  void RequestSystemReset();
   void RequestResetActiveMap();
 
   bool fastIMUInitEnabled() const { return mFastInit; }
