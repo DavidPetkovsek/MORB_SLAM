@@ -19,7 +19,6 @@ public:
   static const TrackingState OK;
   static const TrackingState RECENTLY_LOST;
   static const TrackingState LOST;
-  static const TrackingState OK_KLT;
   static const std::array<TrackingState, 7> STATES;
 
   bool operator==(const TrackingState &other) const { return id == other.id; }
