@@ -50,7 +50,8 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
-      mpAtlas(std::make_shared<Atlas>(0)) {
+      mpAtlas(std::make_shared<Atlas>(0)),
+      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -171,6 +172,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
 
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
+  mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
@@ -198,6 +200,8 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
     mpTracker->GrabImuData(vImuMeas);
 
   RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
+
+  mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
@@ -224,6 +228,8 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std
     mpTracker->GrabImuData(vImuMeas);
 
   MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
+
+  mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
@@ -255,6 +261,11 @@ System::~System() {
     Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     SaveAtlas(FileType::BINARY_FILE);
   }
+}
+
+TrackingState System::GetTrackingState() {
+  std::unique_lock<std::mutex> lock(mMutexState);
+  return mTrackingState;
 }
 
 void System::SaveAtlas(int type) {

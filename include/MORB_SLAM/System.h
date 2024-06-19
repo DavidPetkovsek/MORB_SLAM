@@ -111,6 +111,8 @@ class System {
     // This function must be called before saving the trajectory.
     virtual ~System();
 
+    TrackingState GetTrackingState();
+
     void ForceLost();
 
     friend Viewer;
@@ -160,6 +162,8 @@ private:
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::jthread mptLocalMapping;
     std::jthread mptLoopClosing;
+
+    TrackingState mTrackingState;
 
     std::string mStrLoadAtlasFromFile;
     std::string mStrSaveAtlasToFile;
