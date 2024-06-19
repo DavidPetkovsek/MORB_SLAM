@@ -735,9 +735,14 @@ void Tracking::StereoInitialization() {
   //TODO Add setting for relocalization attempt
   if(mpAtlas->CountMaps() > 1 && true && Relocalization()) {
       std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap();
-      mpAtlas->ChangeMap(mpRelocalizationTargetMap);
-      mpAtlas->SetMapBad(pCurrentMap);
-      mpAtlas->RemoveBadMaps();
+      
+      {
+        std::unique_lock<std::mutex> mergeLock(mpRelocalizationTargetMap->mMutexMapUpdate);
+
+        mpAtlas->ChangeMap(mpRelocalizationTargetMap);
+        mpAtlas->SetMapBad(pCurrentMap);
+        mpAtlas->RemoveBadMaps();
+      }
   } else {
     // Set Frame pose to the default pose
     mCurrentFrame.SetPose(getStereoInitDefaultPose());
