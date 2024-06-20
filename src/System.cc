@@ -257,19 +257,14 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
-
-  if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
-    SaveAtlas(FileType::BINARY_FILE);
-  }
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
-void System::SaveAtlas(int type) {
+void System::SaveAtlas(int type) const {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
-    std::cout << "not empty" << std::endl;
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     // Save the current session
     mpAtlas->PreSave();
     std::cout << "presaved" << std::endl;
@@ -387,7 +382,7 @@ bool System::LoadAtlas(int type) {
   return false;
 }
 
-std::string System::CalculateCheckSum(std::string filename, int type) {
+std::string System::CalculateCheckSum(std::string filename, int type) const {
   std::string checksum = "";
 
   unsigned char c[MD5_DIGEST_LENGTH];
