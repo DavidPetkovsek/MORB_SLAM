@@ -183,12 +183,12 @@ std::shared_ptr<Map> Atlas::GetCurrentMap(bool waitForGoodMap) {
 void Atlas::SetMapBad(std::shared_ptr<Map> pMap) {
   pMap->SetBad();
   mspBadMaps.insert(pMap);
+  mspMaps.erase(pMap);
 }
 
 void Atlas::RemoveBadMaps() {
   mspBadMaps.clear();
 }
-
 
 void Atlas::SetImuInitialized() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
@@ -209,11 +209,9 @@ void Atlas::PreSave() {
       return elem1->GetId() < elem2->GetId();
     }
   };
-  std::copy(mspMaps.begin(), mspMaps.end(), std::back_inserter(mvpBackupMaps));
-  sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
-  std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
 
-  for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
+  mvpBackupMaps.clear();
+  for (std::shared_ptr<Map> pMi : mspMaps) {
     if (!pMi || pMi->IsBad())
       continue;
 
@@ -222,6 +220,13 @@ void Atlas::PreSave() {
       SetMapBad(pMi);
       continue;
     }
+    mvpBackupMaps.push_back(pMi);
+  }
+
+  sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
+  std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
+
+  for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
     pMi->PreSave(spCams, pMi);
   }
   RemoveBadMaps();
