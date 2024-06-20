@@ -37,12 +37,15 @@
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
 #include "MORB_SLAM/Settings.h"
-#include "MORB_SLAM/System.h"
+#include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
+
+class LocalMapping;
+class LoopClosing;
 
 class Tracking {
  public:
