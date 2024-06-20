@@ -88,6 +88,9 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
 
   mBaseTranslation.setZero();
   mPreTeleportTranslation.setZero();
+
+  if(mpAtlas->CountMaps() > 1)
+    mGlobalOriginPose = mpAtlas->GetAllMaps()[0]->GetOriginKF()->GetPose();
 }
 
 Tracking::~Tracking() {}
