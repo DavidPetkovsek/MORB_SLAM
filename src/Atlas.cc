@@ -85,11 +85,13 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
       if (pCam_i->IsEqual(pCam)) {
         bAlreadyInMap = true;
         index_cam = i;
+        break;
       }
     } else if (pCam->GetType() == GeometricCamera::CAM_FISHEYE) {
       if (pCam_i->IsEqual(pCam)) {
         bAlreadyInMap = true;
         index_cam = i;
+        break;
       }
     }
   }
