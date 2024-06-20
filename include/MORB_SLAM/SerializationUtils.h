@@ -36,8 +36,7 @@
 namespace MORB_SLAM {
 
 template <class Archive>
-void serializeSophusSE3(Archive& ar, Sophus::SE3f& T,
-                        const unsigned int version) {
+void serializeSophusSE3(Archive& ar, Sophus::SE3f& T, const unsigned int version) {
   Eigen::Vector4f quat;
   Eigen::Vector3f transl;
 
@@ -55,24 +54,6 @@ void serializeSophusSE3(Archive& ar, Sophus::SE3f& T,
     T = Sophus::SE3f(q, transl);
   }
 }
-
-/*template <class Archive, size_t dim>
-void serializeDiagonalMatrix(Archive &ar, Eigen::DiagonalMatrix<float, dim> &D,
-const unsigned int version)
-{
-    Eigen::Matrix<float,dim,dim> dense;
-    if(Archive::is_saving::value)
-    {
-        dense = D.toDenseMatrix();
-    }
-
-    ar & boost::serialization::make_array(dense.data(), dense.size());
-
-    if (Archive::is_loading::value)
-    {
-        D = dense.diagonal().asDiagonal();
-    }
-}*/
 
 template <class Archive>
 void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int version) {
@@ -102,8 +83,7 @@ void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int version) {
 }
 
 template <class Archive>
-void serializeMatrix(Archive& ar, const cv::Mat& mat,
-                     const unsigned int version) {
+void serializeMatrix(Archive& ar, const cv::Mat& mat, const unsigned int version) {
   cv::Mat matAux = mat;
 
   serializeMatrix(ar, matAux, version);
@@ -116,8 +96,7 @@ void serializeMatrix(Archive& ar, const cv::Mat& mat,
 }
 
 template <class Archive>
-void serializeVectorKeyPoints(Archive& ar, const std::vector<cv::KeyPoint>& vKP,
-                              const unsigned int version) {
+void serializeVectorKeyPoints(Archive& ar, const std::vector<cv::KeyPoint>& vKP, const unsigned int version) {
   int NumEl;
 
   if (Archive::is_saving::value) {

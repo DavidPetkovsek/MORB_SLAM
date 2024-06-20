@@ -51,17 +51,13 @@ class Map;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 
-class LoopClosing
-{
-public:
-
-    typedef std::pair<std::set<std::shared_ptr<KeyFrame>>,int> ConsistentGroup;
-    typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>,
-        Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3> > > KeyFrameAndPose;
+class LoopClosing {
+ public:
+    typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>, Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3>>> KeyFrameAndPose;
 
     bool hasMergedLocalMap;
 
-public:
+ public:
 
     bool loopClosed = false;
 
@@ -74,7 +70,7 @@ public:
     // Main function
     void Run();
 
-    void InsertKeyFrame(std::shared_ptr<KeyFrame>pKF);
+    void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
 
     void RequestReset();
     void RequestResetActiveMap(std::shared_ptr<Map> pMap);
@@ -86,32 +82,27 @@ public:
         std::unique_lock<std::mutex> lock(mMutexGBA);
         return mbRunningGBA;
     }
-    bool isFinishedGBA(){
-        std::unique_lock<std::mutex> lock(mMutexGBA);
-        return mbFinishedGBA;
-    }
 
     void RequestFinish();
-
-    bool isFinished();
 
 protected:
 
     bool CheckNewKeyFrames();
 
-
     //Methods to implement the new place recognition algorithm
     bool NewDetectCommonRegions();
+
     bool DetectAndReffineSim3FromLastKF(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
                                         std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
-    bool DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFrame>> &vpBowCand, std::shared_ptr<KeyFrame> &pMatchedKF, std::shared_ptr<KeyFrame> &pLastCurrentKF, g2o::Sim3 &g2oScw,
-                                     int &nNumCoincidences, std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
-    bool DetectCommonRegionsFromLastKF(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
-                                            std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
-    int FindMatchesByProjection(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKFw, g2o::Sim3 &g2oScw,
-                                std::set<std::shared_ptr<MapPoint>> &spMatchedMPinOrigin, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints,
-                                std::vector<std::shared_ptr<MapPoint>> &vpMatchedMapPoints);
 
+    bool DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFrame>> &vpBowCand, std::shared_ptr<KeyFrame> &pMatchedKF, std::shared_ptr<KeyFrame> &pLastCurrentKF, g2o::Sim3 &g2oScw,
+                                    int &nNumCoincidences, std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
+
+    bool DetectCommonRegionsFromLastKF(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
+                                        std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMPs);
+
+    int FindMatchesByProjection(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKFw, g2o::Sim3 &g2oScw, std::set<std::shared_ptr<MapPoint>> &spMatchedMPinOrigin,
+                                std::vector<std::shared_ptr<MapPoint>> &vpMapPoints, std::vector<std::shared_ptr<MapPoint>> &vpMatchedMapPoints);
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints);
     void SearchAndFuse(const std::vector<std::shared_ptr<KeyFrame>> &vConectedKFs, std::vector<std::shared_ptr<MapPoint>> &vpMapPoints);
@@ -121,8 +112,6 @@ protected:
     void MergeLocal();
     void MergeLocal2();
 
-    void CheckObservations(std::set<std::shared_ptr<KeyFrame>> &spKFsMap1, std::set<std::shared_ptr<KeyFrame>> &spKFsMap2);
-
     void ResetIfRequested();
     bool mbResetRequested;
     bool mbResetActiveMapRequested;
@@ -130,37 +119,23 @@ protected:
     std::mutex mMutexReset;
 
     bool CheckFinish();
-    void SetFinish();
     bool mbFinishRequested;
-    bool mbFinished;
     std::mutex mMutexFinish;
 
     Atlas_ptr mpAtlas;
     Tracking_ptr mpTracker;
-
     std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
-    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
-
     std::shared_ptr<LocalMapping> mpLocalMapper;
 
     std::list<std::shared_ptr<KeyFrame>> mlpLoopKeyFrameQueue;
 
     std::mutex mMutexLoopQueue;
 
-    // Loop detector parameters
-    float mnCovisibilityConsistencyTh;
-
     // Loop detector variables
     std::shared_ptr<KeyFrame> mpCurrentKF;
     std::shared_ptr<KeyFrame> mpLastCurrentKF;
-    std::shared_ptr<KeyFrame> mpMatchedKF;
-    std::vector<ConsistentGroup> mvConsistentGroups;
-    std::vector<std::shared_ptr<KeyFrame>> mvpEnoughConsistentCandidates;
-    std::vector<std::shared_ptr<KeyFrame>> mvpCurrentConnectedKFs;
-    std::vector<std::shared_ptr<MapPoint>> mvpCurrentMatchedPoints;
     std::vector<std::shared_ptr<MapPoint>> mvpLoopMapPoints;
     cv::Mat mScw;
-    g2o::Sim3 mg2oScw;
 
     //-------
     std::shared_ptr<Map> mpLastMap;
@@ -179,19 +154,16 @@ protected:
     int mnMergeNumNotFound;
     std::shared_ptr<KeyFrame> mpMergeLastCurrentKF;
     g2o::Sim3 mg2oMergeSlw;
-    g2o::Sim3 mg2oMergeSmw;
     g2o::Sim3 mg2oMergeScw;
     std::shared_ptr<KeyFrame> mpMergeMatchedKF;
     std::vector<std::shared_ptr<MapPoint>> mvpMergeMPs;
     std::vector<std::shared_ptr<MapPoint>> mvpMergeMatchedMPs;
-    std::vector<std::shared_ptr<KeyFrame>> mvpMergeConnectedKFs;
 
     g2o::Sim3 mSold_new;
     //-------
 
     // Variables related to Global Bundle Adjustment
     bool mbRunningGBA;
-    bool mbFinishedGBA;
     bool mbStopGBA;
     std::mutex mMutexGBA;
     std::jthread mpThreadGBA;
@@ -199,29 +171,12 @@ protected:
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
 
-
     int mnFullBAIdx;
 
-
-
-    std::vector<double> vdPR_CurrentTime;
-    std::vector<double> vdPR_MatchedTime;
-    std::vector<int> vnPR_TypeRecogn;
-
-    //DEBUG
-    std::string mstrFolderSubTraj;
-    int mnNumCorrection;
-    int mnCorrectionGBA;
-
-
     // To (de)activate LC
-    bool mbActiveLC = true;
+    bool mbActiveLC;
 
     bool mbInertial;
-
-#ifdef REGISTER_LOOP
-    std::string mstrFolderLoop;
-#endif
 };
 
 } //namespace ORB_SLAM

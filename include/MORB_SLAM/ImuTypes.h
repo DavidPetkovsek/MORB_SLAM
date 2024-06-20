@@ -47,12 +47,8 @@ const float GRAVITY_VALUE = 9.81;
 // IMU measurement (gyro, accelerometer and timestamp)
 class Point {
  public:
-  Point(const float &acc_x, const float &acc_y, const float &acc_z,
-        const float &ang_vel_x, const float &ang_vel_y, const float &ang_vel_z,
-        const double &timestamp)
-      : a(acc_x, acc_y, acc_z),
-        w(ang_vel_x, ang_vel_y, ang_vel_z),
-        t(timestamp) {}
+  Point(const float &acc_x, const float &acc_y, const float &acc_z, const float &ang_vel_x, const float &ang_vel_y, const float &ang_vel_z, const double &timestamp)
+      : a(acc_x, acc_y, acc_z), w(ang_vel_x, ang_vel_y, ang_vel_z), t(timestamp) {}
   Point(const cv::Point3f Acc, const cv::Point3f Gyro, const double &timestamp)
       : a(Acc.x, Acc.y, Acc.z), w(Gyro.x, Gyro.y, Gyro.z), t(timestamp) {}
   Point(const Eigen::Vector3f Acc, const Eigen::Vector3f  Gyro, const double &timestamp)
@@ -62,7 +58,6 @@ class Point {
   Eigen::Vector3f a; //acceleration
   Eigen::Vector3f w; //angular velocity
   double t; //timestamp
-  
 };
 
 // IMU biases (gyro and accelerometer)
@@ -73,7 +68,6 @@ class Bias {
     ar &bax;
     ar &bay;
     ar &baz;
-
     ar &bwx;
     ar &bwy;
     ar &bwz;
@@ -81,22 +75,15 @@ class Bias {
 
  public:
   Bias() : bax(0), bay(0), baz(0), bwx(0), bwy(0), bwz(0) {}
-  Bias(const float &b_acc_x, const float &b_acc_y, const float &b_acc_z,
-       const float &b_ang_vel_x, const float &b_ang_vel_y,
-       const float &b_ang_vel_z)
-      : bax(b_acc_x),
-        bay(b_acc_y),
-        baz(b_acc_z),
-        bwx(b_ang_vel_x),
-        bwy(b_ang_vel_y),
-        bwz(b_ang_vel_z) {}
+  Bias(const float &b_acc_x, const float &b_acc_y, const float &b_acc_z, const float &b_ang_vel_x, const float &b_ang_vel_y, const float &b_ang_vel_z)
+      : bax(b_acc_x), bay(b_acc_y), baz(b_acc_z), bwx(b_ang_vel_x), bwy(b_ang_vel_y), bwz(b_ang_vel_z) {}
   void CopyFrom(Bias &b);
+
   friend std::ostream &operator<<(std::ostream &out, const Bias &b);
 
  public:
   float bax, bay, baz;
   float bwx, bwy, bwz;
-  
 };
 
 // IMU calibration (Tbc, Tcb, noise)
@@ -107,27 +94,20 @@ class Calib {
     serializeSophusSE3(ar, mTcb, version);
     serializeSophusSE3(ar, mTbc, version);
 
-    ar &boost::serialization::make_array(Cov.diagonal().data(),
-                                         Cov.diagonal().size());
-    ar &boost::serialization::make_array(CovWalk.diagonal().data(),
-                                         CovWalk.diagonal().size());
-
+    ar &boost::serialization::make_array(Cov.diagonal().data(), Cov.diagonal().size());
+    ar &boost::serialization::make_array(CovWalk.diagonal().data(), CovWalk.diagonal().size());
     ar &mbIsSet;
   }
 
  public:
-  Calib(const Sophus::SE3<float> &Tbc, const float &ng, const float &na,
-        const float &ngw, const float &naw) {
+  Calib(const Sophus::SE3<float> &Tbc, const float &ng, const float &na, const float &ngw, const float &naw) {
     Set(Tbc, ng, na, ngw, naw);
   }
 
   Calib(const Calib &calib);
   Calib(): mbIsSet{false} {}
 
-  // void Set(const cv::Mat &cvTbc, const float &ng, const float &na, const
-  // float &ngw, const float &naw);
-  void Set(const Sophus::SE3<float> &sophTbc, const float &ng, const float &na,
-           const float &ngw, const float &naw);
+  void Set(const Sophus::SE3<float> &sophTbc, const float &ng, const float &na, const float &ngw, const float &naw);
 
   bool mbIsSet;
  public:
@@ -143,8 +123,7 @@ class Calib {
 class IntegratedRotation {
  public:
   IntegratedRotation() {}
-  IntegratedRotation(const Eigen::Vector3f &angVel, const Bias &imuBias,
-                     const float &time);
+  IntegratedRotation(const Eigen::Vector3f &angVel, const Bias &imuBias, const float &time);
 
  public:
   float deltaT;  // integration time
@@ -161,10 +140,8 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
     ar &dT;
     ar &boost::serialization::make_array(C.data(), C.size());
     ar &boost::serialization::make_array(Info.data(), Info.size());
-    ar &boost::serialization::make_array(Nga.diagonal().data(),
-                                         Nga.diagonal().size());
-    ar &boost::serialization::make_array(NgaWalk.diagonal().data(),
-                                         NgaWalk.diagonal().size());
+    ar &boost::serialization::make_array(Nga.diagonal().data(), Nga.diagonal().size());
+    ar &boost::serialization::make_array(NgaWalk.diagonal().data(), NgaWalk.diagonal().size());
     ar &b;
     ar &boost::serialization::make_array(dR.data(), dR.size());
     ar &boost::serialization::make_array(dV.data(), dV.size());
@@ -176,7 +153,6 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
     ar &boost::serialization::make_array(JPa.data(), JPa.size());
     ar &boost::serialization::make_array(avgA.data(), avgA.size());
     ar &boost::serialization::make_array(avgW.data(), avgW.size());
-
     ar &bu;
     ar &boost::serialization::make_array(db.data(), db.size());
     ar &mvMeasurements;
@@ -189,8 +165,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   ~Preintegrated();
   void CopyFrom(std::shared_ptr<Preintegrated> pImuPre);
   void Initialize(const Bias &b_);
-  void IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
-                               const Eigen::Vector3f &angVel, const float &dt);
+  void IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt);
   void Reintegrate();
   void MergePrevious(std::shared_ptr<Preintegrated> pPrev);
   void SetNewBias(const Bias &bu_);
@@ -252,9 +227,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
 
     
     integrable() {}
-    integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_,
-               const float &t_)
-        : a(a_), w(w_), t(t_) {}
+    integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_, const float &t_) : a(a_), w(w_), t(t_) {}
     Eigen::Vector3f a, w;
     float t;
   };
@@ -265,12 +238,10 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
 };
 
 // Lie Algebra Functions
-Eigen::Matrix3f RightJacobianSO3(const float &x, const float &y,
-                                 const float &z);
+Eigen::Matrix3f RightJacobianSO3(const float &x, const float &y, const float &z);
 Eigen::Matrix3f RightJacobianSO3(const Eigen::Vector3f &v);
 
-Eigen::Matrix3f InverseRightJacobianSO3(const float &x, const float &y,
-                                        const float &z);
+Eigen::Matrix3f InverseRightJacobianSO3(const float &x, const float &y, const float &z);
 Eigen::Matrix3f InverseRightJacobianSO3(const Eigen::Vector3f &v);
 
 Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f &R);

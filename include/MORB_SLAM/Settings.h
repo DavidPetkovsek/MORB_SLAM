@@ -39,8 +39,6 @@ namespace MORB_SLAM {
 
 class System;
 
-// TODO: change to double instead of float
-
 class Settings {
  public:
   /*
@@ -48,36 +46,19 @@ class Settings {
    */
   enum CameraModelType { PinHole = 0, Rectified = 1, KannalaBrandt = 2 };
 
-  /*
-   * Constructor from file
-   */
+  /* Constructor from file */
   Settings(const std::string& configFile, const CameraType& sensor);
 
-  /*
-   * Ostream operator overloading to dump settings to the terminal
-   */
+  /* Ostream operator overloading to dump settings to the terminal */
   friend std::ostream& operator<<(std::ostream& output, const Settings& s);
 
-  /*
-   * Getter methods
-   */
+  /* Getter methods */
   CameraModelType cameraModelType() const { return cameraModelType_; }
   std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
   std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
-  cv::Mat camera1DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
-    // cv::Mat distortionMat(vPinHoleDistorsion1_.size(), 1, CV_32F);
-    // std::copy(vPinHoleDistorsion1_.begin(), vPinHoleDistorsion1_.end(), distortionMat.ptr<float>());
 
-    // return distortionMat;
-  }
-  cv::Mat camera2DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data());
-    // cv::Mat distortionMat(vPinHoleDistorsion2_.size(), 1, CV_32F);
-    // std::copy(vPinHoleDistorsion2_.begin(), vPinHoleDistorsion2_.end(), distortionMat.ptr<float>());
-
-    // return distortionMat;
-  }
+  cv::Mat camera1DistortionCoef() { return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data()); }
+  cv::Mat camera2DistortionCoef() { return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data()); }
 
   const Sophus::SE3f &Tlr() const { return Tlr_; }
   float bf() const { return bf_; }
@@ -97,7 +78,6 @@ class Settings {
   float accWalk() const { return accWalk_; }
   float imuFrequency() const { return imuFrequency_; }
   const Sophus::SE3f &Tbc() const { return Tbc_; }
-  bool insertKFsWhenLost() const { return insertKFsWhenLost_; }
 
   float depthMapFactor() const { return depthMapFactor_; }
 
@@ -134,8 +114,7 @@ class Settings {
 
  private:
   template <typename T>
-  T readParameter(cv::FileStorage& fSettings, const std::string& name,
-                  bool& found, const bool required = true) {
+  T readParameter(cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required = true) {
     cv::FileNode node = fSettings[name];
     if (node.empty()) {
       if (required) {
@@ -168,9 +147,7 @@ class Settings {
   CameraType sensor_;
   CameraModelType cameraModelType_;
 
-  /*
-   * Visual stuff
-   */
+  /* Visual stuff */
   std::shared_ptr<GeometricCamera> calibration1_, calibration2_;  // Camera calibration
   std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
 
@@ -185,37 +162,26 @@ class Settings {
   float thDepth_;
   float bf_, b_;
 
-  /*
-   * Rectification stuff
-   */
+  /* Rectification stuff */
   cv::Mat M1l_, M2l_;
   cv::Mat M1r_, M2r_;
 
-  /*
-   * Inertial stuff
-   */
+  /* Inertial stuff */
   float noiseGyro_, noiseAcc_;
   float gyroWalk_, accWalk_;
   float imuFrequency_;
   Sophus::SE3f Tbc_;
-  bool insertKFsWhenLost_;
 
-  /*
-   * RGBD stuff
-   */
+  /* RGBD stuff */
   float depthMapFactor_;
 
-  /*
-   * ORB stuff
-   */
+  /* ORB stuff */
   int nFeatures_;
   float scaleFactor_;
   int nLevels_;
   int initThFAST_, minThFAST_;
 
-  /*
-   * Viewer stuff
-   */
+  /* Viewer stuff */
   float keyFrameSize_;
   float keyFrameLineWidth_;
   float graphLineWidth_;
@@ -225,14 +191,10 @@ class Settings {
   float viewPointX_, viewPointY_, viewPointZ_, viewPointF_;
   float imageViewerScale_;
 
-  /*
-   * Save & load maps
-   */
+  /* Save & load maps */
   std::string sLoadFrom_, sSaveto_;
 
-  /*
-   * Other stuff
-   */
+  /* Other stuff */
   float thFarPoints_;
   bool activeLoopClosing_;
   bool fastIMUInit_;

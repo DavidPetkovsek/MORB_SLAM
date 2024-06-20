@@ -21,7 +21,7 @@ protected:
     std::shared_ptr<std::promise<T>> promise;
     std::shared_future<T> future;
 
-   ManagedFuture(): promise{std::make_shared<std::promise<T>>()}, future{promise->get_future()} {} // make default constructor protected
+    ManagedFuture(): promise{std::make_shared<std::promise<T>>()}, future{promise->get_future()} {} // make default constructor protected
 public:
     virtual ~ManagedFuture(){}
 

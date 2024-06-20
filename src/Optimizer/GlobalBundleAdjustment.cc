@@ -33,34 +33,21 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations,
-                                       bool* pbStopFlag,
-                                       const unsigned long nLoopKF,
-                                       const bool bRobust) {
+void Optimizer::GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust) {
   std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
   std::vector<std::shared_ptr<MapPoint>> vpMP = pMap->GetAllMapPoints();
-  BundleAdjustment(vpKFs, vpMP, nIterations, pbStopFlag, nLoopKF, bRobust);
-}
 
-void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& vpKFs,
-                                 const std::vector<std::shared_ptr<MapPoint>>& vpMP, int nIterations,
-                                 bool* pbStopFlag, const unsigned long nLoopKF,
-                                 const bool bRobust) {
   std::vector<bool> vbNotIncludedMP;
   vbNotIncludedMP.resize(vpMP.size());
-
-  std::shared_ptr<Map> pMap = vpKFs[0]->GetMap();
 
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolver_6_3::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
 
   g2o::BlockSolver_6_3* solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
 
-  g2o::OptimizationAlgorithmLevenberg* solver =
-      new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
 
@@ -68,44 +55,13 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
 
   long unsigned int maxKFid = 0;
 
-  const int nExpectedSize = (vpKFs.size()) * vpMP.size();
-
-  std::vector<MORB_SLAM::EdgeSE3ProjectXYZ*> vpEdgesMono;
-  vpEdgesMono.reserve(nExpectedSize);
-
-  std::vector<MORB_SLAM::EdgeSE3ProjectXYZToBody*> vpEdgesBody;
-  vpEdgesBody.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFMono;
-  vpEdgeKFMono.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFBody;
-  vpEdgeKFBody.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeMono;
-  vpMapPointEdgeMono.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeBody;
-  vpMapPointEdgeBody.reserve(nExpectedSize);
-
-  std::vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
-  vpEdgesStereo.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<KeyFrame>> vpEdgeKFStereo;
-  vpEdgeKFStereo.reserve(nExpectedSize);
-
-  std::vector<std::shared_ptr<MapPoint>> vpMapPointEdgeStereo;
-  vpMapPointEdgeStereo.reserve(nExpectedSize);
-
   // Set KeyFrame vertices
-
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKF = vpKFs[i];
     if (pKF->isBad()) continue;
     g2o::VertexSE3Expmap* vSE3 = new g2o::VertexSE3Expmap();
     Sophus::SE3<float> Tcw = pKF->GetPose();
-    vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                   Tcw.translation().cast<double>()));
+    vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
     vSE3->setId(pKF->mnId);
     vSE3->setFixed(pKF->mnId == pMap->GetInitKFid());
     optimizer.addVertex(vSE3);
@@ -132,8 +88,7 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
     // SET EDGES
     for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::const_iterator mit = observations.begin(); mit != observations.end(); mit++) {
       if(std::shared_ptr<KeyFrame> pKF = (mit->first).lock()) {
-        if (pKF->isBad() || pKF->mnId > maxKFid) continue;
-        if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKF->mnId) == nullptr)
+        if (pKF->isBad() || pKF->mnId > maxKFid || optimizer.vertex(id) == nullptr || optimizer.vertex(pKF->mnId) == nullptr)
           continue;
         nEdges++;
 
@@ -147,10 +102,8 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
 
           MORB_SLAM::EdgeSE3ProjectXYZ* e = new MORB_SLAM::EdgeSE3ProjectXYZ();
 
-          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(id)));
-          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(pKF->mnId)));
+          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
           e->setMeasurement(obs);
           const float& invSigma2 = pKF->mvInvLevelSigma2[kpUn.octave];
           e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
@@ -165,12 +118,8 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
 
           optimizer.addEdge(e);
 
-          vpEdgesMono.push_back(e);
-          vpEdgeKFMono.push_back(pKF);
-          vpMapPointEdgeMono.push_back(pMP);
-        } else if (leftIndex != -1 &&
-                  pKF->mvuRight[leftIndex] >= 0)  // Stereo observation
-        {
+        // Stereo observation
+        } else if (leftIndex != -1 && pKF->mvuRight[leftIndex] >= 0) {
           const cv::KeyPoint& kpUn = pKF->mvKeysUn[leftIndex];
 
           Eigen::Matrix<double, 3, 1> obs;
@@ -179,10 +128,8 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
 
           g2o::EdgeStereoSE3ProjectXYZ* e = new g2o::EdgeStereoSE3ProjectXYZ();
 
-          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(id)));
-          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                              optimizer.vertex(pKF->mnId)));
+          e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+          e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
           e->setMeasurement(obs);
           const float& invSigma2 = pKF->mvInvLevelSigma2[kpUn.octave];
           Eigen::Matrix3d Info = Eigen::Matrix3d::Identity() * invSigma2;
@@ -201,10 +148,6 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
           e->bf = pKF->mbf;
 
           optimizer.addEdge(e);
-
-          vpEdgesStereo.push_back(e);
-          vpEdgeKFStereo.push_back(pKF);
-          vpMapPointEdgeStereo.push_back(pMP);
         }
 
         if (pKF->mpCamera2) {
@@ -217,13 +160,10 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
             cv::KeyPoint kp = pKF->mvKeysRight[rightIndex];
             obs << kp.pt.x, kp.pt.y;
 
-            MORB_SLAM::EdgeSE3ProjectXYZToBody* e =
-                new MORB_SLAM::EdgeSE3ProjectXYZToBody();
+            MORB_SLAM::EdgeSE3ProjectXYZToBody* e = new MORB_SLAM::EdgeSE3ProjectXYZToBody();
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(id)));
-            e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(pKF->mnId)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+            e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
             e->setMeasurement(obs);
             const float& invSigma2 = pKF->mvInvLevelSigma2[kp.octave];
             e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
@@ -233,15 +173,11 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
             rk->setDelta(thHuber2D);
 
             Sophus::SE3f Trl = pKF->GetRelativePoseTrl();
-            e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(),
-                                  Trl.translation().cast<double>());
+            e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(), Trl.translation().cast<double>());
 
             e->pCamera = pKF->mpCamera2;
 
             optimizer.addEdge(e);
-            vpEdgesBody.push_back(e);
-            vpEdgeKFBody.push_back(pKF);
-            vpMapPointEdgeBody.push_back(pMP);
           }
         }
       }
@@ -262,70 +198,18 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
   Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_NORMAL);
 
   // Recover optimized data
-  // Keyframes
+  // KeyFrames
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKF = vpKFs[i];
     if (pKF->isBad()) continue;
-    g2o::VertexSE3Expmap* vSE3 =
-        static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
+    g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
 
     g2o::SE3Quat SE3quat = vSE3->estimate();
     if (nLoopKF == pMap->GetOriginKF()->mnId) {
-      pKF->SetPose(Sophus::SE3f(SE3quat.rotation().cast<float>(),
-                                SE3quat.translation().cast<float>()));
+      pKF->SetPose(Sophus::SE3f(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>()));
     } else {
-      pKF->mTcwGBA =
-          Sophus::SE3d(SE3quat.rotation(), SE3quat.translation()).cast<float>();
+      pKF->mTcwGBA = Sophus::SE3d(SE3quat.rotation(), SE3quat.translation()).cast<float>();
       pKF->mnBAGlobalForKF = nLoopKF;
-
-      Sophus::SE3f mTwc = pKF->GetPoseInverse();
-      Sophus::SE3f mTcGBA_c = pKF->mTcwGBA * mTwc;
-      Eigen::Vector3f vector_dist = mTcGBA_c.translation();
-      double dist = vector_dist.norm();
-      if (dist > 1) {
-        int numMonoBadPoints = 0, numMonoOptPoints = 0;
-        int numStereoBadPoints = 0, numStereoOptPoints = 0;
-        std::vector<std::shared_ptr<MapPoint>> vpMonoMPsOpt, vpStereoMPsOpt;
-
-        for (size_t i2 = 0, iend = vpEdgesMono.size(); i2 < iend; i2++) {
-          MORB_SLAM::EdgeSE3ProjectXYZ* e = vpEdgesMono[i2];
-          std::shared_ptr<MapPoint> pMP = vpMapPointEdgeMono[i2];
-          std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i2];
-
-          if (pKF != pKFedge) {
-            continue;
-          }
-
-          if (pMP->isBad()) continue;
-
-          if (e->chi2() > 5.991 || !e->isDepthPositive()) {
-            numMonoBadPoints++;
-
-          } else {
-            numMonoOptPoints++;
-            vpMonoMPsOpt.push_back(pMP);
-          }
-        }
-
-        for (size_t i2 = 0, iend = vpEdgesStereo.size(); i2 < iend; i2++) {
-          g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i2];
-          std::shared_ptr<MapPoint> pMP = vpMapPointEdgeStereo[i2];
-          std::shared_ptr<KeyFrame> pKFedge = vpEdgeKFMono[i2];
-
-          if (pKF != pKFedge) {
-            continue;
-          }
-
-          if (pMP->isBad()) continue;
-
-          if (e->chi2() > 7.815 || !e->isDepthPositive()) {
-            numStereoBadPoints++;
-          } else {
-            numStereoOptPoints++;
-            vpStereoMPsOpt.push_back(pMP);
-          }
-        }
-      }
     }
   }
 
@@ -336,8 +220,7 @@ void Optimizer::BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>>& v
     std::shared_ptr<MapPoint> pMP = vpMP[i];
 
     if (pMP->isBad()) continue;
-    g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(
-        optimizer.vertex(pMP->mnId + maxKFid + 1));
+    g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId + maxKFid + 1));
 
     if (nLoopKF == pMap->GetOriginKF()->mnId) {
       pMP->SetWorldPos(vPoint->estimate().cast<float>());

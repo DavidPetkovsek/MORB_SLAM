@@ -107,8 +107,8 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
       cv::line(im, pt1, pt2, standardColor, 5);
     }
 
-  } else if (state == TrackingState::OK)  // TRACKING
-  {
+  // TRACKING
+  } else if (state == TrackingState::OK) {
     mnTracked = 0;
     mnTrackedVO = 0;
     const float r = 5;
@@ -138,9 +138,8 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
           cv::rectangle(im, pt1, pt2, standardColor);
           cv::circle(im, point, 2, standardColor, -1);
           mnTracked++;
-        } else  // This is match to a "visual odometry" MapPoint created in the
-                // last frame
-        {
+        // This is match to a "visual odometry" MapPoint created in the last frame
+        } else {
           cv::rectangle(im, pt1, pt2, odometryColor);
           cv::circle(im, point, 2, odometryColor, -1);
           mnTrackedVO++;
@@ -196,8 +195,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
     cvtColor(im, im, cv::COLOR_GRAY2BGR);
 
   // Draw
-  if (state == TrackingState::NOT_INITIALIZED)  // INITIALIZING
-  {
+  if (state == TrackingState::NOT_INITIALIZED) {
     for (unsigned int i = 0; i < vMatches.size(); i++) {
       if (vMatches[i] >= 0) {
         cv::Point2f pt1, pt2;
@@ -212,8 +210,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
         cv::line(im, pt1, pt2, cv::Scalar(0, 255, 0));
       }
     }
-  } else if (state == TrackingState::OK)  // TRACKING
-  {
+  } else if (state == TrackingState::OK) {
     mnTracked = 0;
     mnTrackedVO = 0;
     const float r = 5;
@@ -245,9 +242,8 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
           cv::rectangle(im, pt1, pt2, cv::Scalar(0, 255, 0));
           cv::circle(im, point, 2, cv::Scalar(0, 255, 0), -1);
           mnTracked++;
-        } else  // This is match to a "visual odometry" MapPoint created in the
-                // last frame
-        {
+        // This is match to a "visual odometry" MapPoint created in the last frame
+        } else {
           cv::rectangle(im, pt1, pt2, cv::Scalar(255, 0, 0));
           cv::circle(im, point, 2, cv::Scalar(255, 0, 0), -1);
           mnTrackedVO++;
@@ -276,8 +272,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, TrackingState nState, cv::Mat &imTex
     int nMaps = mpAtlas->CountMaps();
     int nKFs = mpAtlas->KeyFramesInMap();
     int nMPs = mpAtlas->MapPointsInMap();
-    s << "Maps: " << nMaps << ", KFs: " << nKFs << ", MPs: " << nMPs
-      << ", Matches: " << mnTracked;
+    s << "Maps: " << nMaps << ", KFs: " << nKFs << ", MPs: " << nMPs << ", Matches: " << mnTracked;
     if (mnTrackedVO > 0) s << ", + VO matches: " << mnTrackedVO;
   } else if (nState == TrackingState::LOST) {
     s << " TRACK LOST. TRYING TO RELOCALIZE ";
@@ -286,15 +281,12 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, TrackingState nState, cv::Mat &imTex
   }
 
   int baseline = 0;
-  cv::Size textSize =
-      cv::getTextSize(s.str(), cv::FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+  cv::Size textSize = cv::getTextSize(s.str(), cv::FONT_HERSHEY_PLAIN, 1, 1, &baseline);
 
   imText = cv::Mat(im.rows + textSize.height + 10, im.cols, im.type());
   im.copyTo(imText.rowRange(0, im.rows).colRange(0, im.cols));
-  imText.rowRange(im.rows, imText.rows) =
-      cv::Mat::zeros(textSize.height + 10, im.cols, im.type());
-  cv::putText(imText, s.str(), cv::Point(5, imText.rows - 5),
-              cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 255), 1, 8);
+  imText.rowRange(im.rows, imText.rows) = cv::Mat::zeros(textSize.height + 10, im.cols, im.type());
+  cv::putText(imText, s.str(), cv::Point(5, imText.rows - 5), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 255, 255), 1, 8);
 }
 
 void FrameDrawer::Update(const Tracking_ptr &pTracker, const Packet &pose) {

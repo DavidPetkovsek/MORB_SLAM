@@ -21,15 +21,12 @@
 namespace DBoW2 {
 
 /// Vector of nodes with indexes of local features
-class FeatureVector: 
-  public std::map<NodeId, std::vector<unsigned int> >
-{
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const int version)
-    {
-        ar & boost::serialization::base_object<std::map<NodeId, std::vector<unsigned int> > >(*this);
-    }
+class FeatureVector: public std::map<NodeId, std::vector<unsigned int>> {
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive& ar, const int version) {
+      ar & boost::serialization::base_object<std::map<NodeId, std::vector<unsigned int> > >(*this);
+  }
 
 public:
 

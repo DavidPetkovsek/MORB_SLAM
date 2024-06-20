@@ -76,27 +76,16 @@ class LocalMapping {
   inline void setIsDoneVIBA(bool viba) { isDoneVIBA = viba; }
 
   bool IsInitializing();
-  double GetCurrKFTime();
-  std::shared_ptr<KeyFrame> GetCurrKF();
 
   Sophus::SE3f GetPoseReverseAxisFlip();
 
-  std::mutex mMutexImuInit;
-
-  Eigen::MatrixXd mcovInertial;
   Eigen::Matrix3d mRwg;
   Eigen::Vector3d mbg;
   Eigen::Vector3d mba;
   double mScale;
 
-  unsigned int mInitSect;
-  unsigned int mIdxInit;
-  unsigned int mnKFs;
   double mFirstTs;
-  int mnMatchesInliers;
 
-  bool mbNotBA1;
-  bool mbNotBA2;
   bool mbBadImu;
 
   // not consider far points (clouds)
@@ -118,7 +107,6 @@ class LocalMapping {
   void ResetIfRequested();
   bool mbResetRequested;
   bool mbResetRequestedActiveMap;
-  std::shared_ptr<Map> mpMapToReset;
   std::mutex mMutexReset;
 
   bool CheckFinish();
@@ -150,9 +138,7 @@ class LocalMapping {
   bool mbAcceptKeyFrames;
   std::mutex mMutexAccept;
 
-  void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, 
-                    ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A,
-                    bool bFirst = false);
+  void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A, bool bFirst = false);
   void ScaleRefinement();
 
   bool bInitializing;

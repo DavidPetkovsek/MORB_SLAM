@@ -46,16 +46,13 @@ class Map
     friend class boost::serialization::access;
 
     template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
+    void serialize(Archive &ar, const unsigned int version) {
         ar & mnId;
         ar & mnInitKFid;
         ar & mnMaxKFid;
         ar & mnBigChangeIdx;
 
         // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
-        //ar & mspKeyFrames;
-        //ar & mspMapPoints;
         ar & mvpBackupKeyFrames;
         ar & mvpBackupMapPoints;
 
@@ -93,12 +90,9 @@ public:
     long unsigned int GetId();
 
     long unsigned int GetInitKFid();
-    void SetInitKFid(long unsigned int initKFif);
     long unsigned int GetMaxKFid();
 
     std::shared_ptr<KeyFrame> GetOriginKF();
-
-    bool HasThumbnail();
 
     void SetBad();
     bool IsBad();
@@ -115,35 +109,23 @@ public:
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
-    void SetIniertialBA1();
-    void SetIniertialBA2();
-    bool GetIniertialBA1();
-    bool GetIniertialBA2();
+    void SetInertialBA1();
+    void SetInertialBA2();
+    bool GetInertialBA1();
+    bool GetInertialBA2();
 
-    void PrintEssentialGraph();
     bool CheckEssentialGraph();
     void ChangeId(long unsigned int nId);
 
-    unsigned int GetLowerKFID();
-
     void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc/*, std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKeyFrameId*/, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
-
-    void printReprojectionError(std::list<std::shared_ptr<KeyFrame>> &lpLocalWindowKFs, std::shared_ptr<KeyFrame> mpCurrentKF, std::string &name, std::string &name_folder);
+    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
 
     std::vector<std::shared_ptr<KeyFrame>> mvpKeyFrameOrigins;
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
-    std::shared_ptr<KeyFrame> mpFirstRegionKF;
     std::mutex mMutexMapUpdate;
 
     // This avoid that two points are created simultaneously in separate threads (id conflict)
     std::mutex mMutexPointCreation;
-
-    bool mbFail;
-
-    // Size of the thumbnail (always in power of 2)
-    static const int THUMB_WIDTH = 512;
-    static const int THUMB_HEIGHT = 512;
 
     static long unsigned int nNextId;
 
@@ -181,7 +163,6 @@ protected:
     // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
 
-    bool mHasTumbnail;
     bool mbBad = false;
 
     bool mbIMU_BA1;

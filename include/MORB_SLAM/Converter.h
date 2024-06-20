@@ -43,8 +43,11 @@ class Converter {
   
   static std::vector<cv::Mat> toDescriptorVector(const cv::Mat &Descriptors);
 
+  // UNUSED
   static g2o::SE3Quat toSE3Quat(const cv::Mat &cvT);
+  // UNUSED
   static g2o::SE3Quat toSE3Quat(const Sophus::SE3f &T);
+  // UNUSED
   static g2o::SE3Quat toSE3Quat(const g2o::Sim3 &gSim3);
 
   // TODO templetize these functions
@@ -56,25 +59,31 @@ class Converter {
   static cv::Mat toCvMat(const Eigen::Matrix3d &m);
   static cv::Mat toCvMat(const Eigen::Matrix<double, 3, 1> &m);
   static cv::Mat toCvMat(const Eigen::Matrix<float, 3, 1> &m);
+  // ALL toCvMat UNUSED EXCEPT THIS ONE
   static cv::Mat toCvMat(const Eigen::Matrix<float, 3, 3> &m);
-
   static cv::Mat toCvMat(const Eigen::MatrixXf &m);
   static cv::Mat toCvMat(const Eigen::MatrixXd &m);
 
-  static cv::Mat toCvSE3(const Eigen::Matrix<double, 3, 3> &R,
-                         const Eigen::Matrix<double, 3, 1> &t);
+  // UNUSED
+  static cv::Mat toCvSE3(const Eigen::Matrix<double, 3, 3> &R, const Eigen::Matrix<double, 3, 1> &t);
+  // UNUSED
   static cv::Mat tocvSkewMatrix(const cv::Mat &v);
 
   static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Mat &cvVector);
   static Eigen::Matrix<float, 3, 1> toVector3f(const cv::Mat &cvVector);
   static Eigen::Matrix<double, 3, 1> toVector3d(const cv::Point3f &cvPoint);
   static Eigen::Matrix<double, 3, 3> toMatrix3d(const cv::Mat &cvMat3);
+  //UNUSED
   static Eigen::Matrix<double, 4, 4> toMatrix4d(const cv::Mat &cvMat4);
   static Eigen::Matrix<float, 3, 3> toMatrix3f(const cv::Mat &cvMat3);
+  //UNUSED
   static Eigen::Matrix<float, 4, 4> toMatrix4f(const cv::Mat &cvMat4);
-  static std::vector<float> toQuaternion(const cv::Mat &M);
 
+  //UNUSED
+  static std::vector<float> toQuaternion(const cv::Mat &M);
+  //UNUSED
   static bool isRotationMatrix(const cv::Mat &R);
+  //UNUSED
   static std::vector<float> toEuler(const cv::Mat &R);
 
   // TODO: Sophus migration, to be deleted in the future

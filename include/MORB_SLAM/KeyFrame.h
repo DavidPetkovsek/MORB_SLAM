@@ -69,47 +69,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& const_cast<int&>(mnGridRows);
     ar& const_cast<float&>(mfGridElementWidthInv);
     ar& const_cast<float&>(mfGridElementHeightInv);
-
-    // Variables of tracking
-    // ar & mnTrackReferenceForFrame;
-    // ar & mnFuseTargetForKF;
-    // Variables of local mapping
-    // ar & mnBALocalForKF;
-    // ar & mnBAFixedForKF;
-    // Variables used by KeyFrameDatabase
-    // ar & mnLoopQuery;
-    // ar & mnLoopWords;
-    // ar & mLoopScore;
-    // ar & mnRelocQuery;
-    // ar & mnRelocWords;
-    // ar & mRelocScore;
-    // ar & mnMergeQuery;
-    // ar & mnMergeWords;
-    // ar & mMergeScore;
-    // ar & mnPlaceRecognitionQuery;
-    // ar & mnPlaceRecognitionWords;
-    // ar & mPlaceRecognitionScore;
-    // Variables of loop closing
-    // serializeMatrix(ar,mTcwGBA,version);
-    // serializeMatrix(ar,mTcwBefGBA,version);
-    // serializeMatrix(ar,mVwbGBA,version);
-    // serializeMatrix(ar,mVwbBefGBA,version);
-    // ar & mBiasGBA;
-    // ar & mnBAGlobalForKF;
-    // Variables of Merging
-    // serializeMatrix(ar,mTcwMerge,version);
-    // serializeMatrix(ar,mTcwBefMerge,version);
-    // serializeMatrix(ar,mTwcBefMerge,version);
-    // serializeMatrix(ar,mVwbMerge,version);
-    // serializeMatrix(ar,mVwbBefMerge,version);
-    // ar & mBiasMerge;
-    // ar & mnMergeCorrectedForKF;
-    // ar & mnMergeForKF;
-    // ar & mfScaleMerge;
-    // ar & mnBALocalForMerge;
-
-    // Scale
-    ar& mfScale;
     // Calibration parameters
     ar& const_cast<float&>(fx);
     ar& const_cast<float&>(fy);
@@ -132,8 +91,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     // BOW
     ar& mBowVec;
     ar& mFeatVec;
-    // Pose relative to parent
-    serializeSophusSE3<Archive>(ar, mTcp, version);
     // Scale
     ar& const_cast<int&>(mnScaleLevels);
     ar& const_cast<float&>(mfScaleFactor);
@@ -146,7 +103,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& const_cast<int&>(mnMinY);
     ar& const_cast<int&>(mnMaxX);
     ar& const_cast<int&>(mnMaxY);
-    ar& boost::serialization::make_array(mK_.data(), mK_.size());
     // Pose
     serializeSophusSE3<Archive>(ar, mTcw, version);
     // MapPointsId associated to keypoints
@@ -160,7 +116,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& mBackupParentId;
     ar& mvBackupChildrensId;
     ar& mvBackupLoopEdgesId;
-    ar& mvBackupMergeEdgesId;
     // Bad flags
     ar& mbNotErase;
     ar& mbToBeErased;
@@ -173,8 +128,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& mnBackupIdCamera2;
 
     // Fisheye variables
-    ar& mvLeftToRightMatch;
-    ar& mvRightToLeftMatch;
     ar& const_cast<int&>(NLeft);
     ar& const_cast<int&>(NRight);
     serializeSophusSE3<Archive>(ar, mTlr, version);
@@ -210,7 +163,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   Eigen::Vector3f GetImuPosition();
   Eigen::Matrix3f GetImuRotation();
-  Sophus::SE3f GetImuPose();
   Eigen::Matrix3f GetRotation();
   Eigen::Vector3f GetTranslation();
   Eigen::Vector3f GetVelocity();
@@ -244,12 +196,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   void AddLoopEdge(std::shared_ptr<KeyFrame> pKF);
   std::set<std::shared_ptr<KeyFrame>> GetLoopEdges();
 
-  // Merge Edges
-  void AddMergeEdge(std::shared_ptr<KeyFrame> pKF);
-  std::set<std::shared_ptr<KeyFrame>> GetMergeEdges();
-
   // MapPoint observation functions
-  int GetNumberMPs();
   void AddMapPoint(std::shared_ptr<MapPoint> pMP, const size_t& idx);
   void EraseMapPointMatch(const int& idx);
   void EraseMapPointMatch(std::shared_ptr<MapPoint> pMP);
@@ -260,9 +207,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<MapPoint> GetMapPoint(const size_t& idx);
 
   // KeyPoint functions
-  std::vector<size_t> GetFeaturesInArea(const float& x, const float& y,
-                                        const float& r,
-                                        const bool bRight = false) const;
+  std::vector<size_t> GetFeaturesInArea(const float& x, const float& y, const float& r, const bool bRight = false) const;
   bool UnprojectStereo(int i, Eigen::Vector3f& x3D);
 
   // Image
@@ -281,29 +226,21 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   static bool weightComp(int a, int b) { return a > b; }
 
-  static bool lId(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2) {
-    return pKF1->mnId < pKF2->mnId;
-  }
+  static bool lId(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2) { return pKF1->mnId < pKF2->mnId; }
 
   std::shared_ptr<Map> GetMap();
   void UpdateMap(std::shared_ptr<Map> pMap);
 
   void SetNewBias(const IMU::Bias& b);
+
   Eigen::Vector3f GetGyroBias();
-
   Eigen::Vector3f GetAccBias();
-
   IMU::Bias GetImuBias();
 
-  bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
-  bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u,
-                             float& v);
+  bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
-  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP,
-               std::set<std::shared_ptr<const GeometricCamera>>& spCam);
-  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid,
-                std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid,
-                std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
+  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam);
+  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
@@ -312,8 +249,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   static long unsigned int nKFsInMemory;
 
-  // The following variables are accesed from only 1 thread or never change (no
-  // mutex needed).
+  // The following variables are accesed from only 1 thread or never change (no mutex needed).
  public:
 
   bool isPartiallyConstructed{false};
@@ -368,14 +304,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3f mTcwBefMerge;
   Sophus::SE3f mTwcBefMerge;
   Eigen::Vector3f mVwbMerge;
-  Eigen::Vector3f mVwbBefMerge;
-  IMU::Bias mBiasMerge;
-  long unsigned int mnMergeCorrectedForKF;
-  long unsigned int mnMergeForKF;
-  float mfScaleMerge;
   long unsigned int mnBALocalForMerge;
-
-  float mfScale;
 
   // Calibration parameters
   const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth;
@@ -394,9 +323,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   // BoW
   DBoW2::BowVector mBowVec;
   DBoW2::FeatureVector mFeatVec;
-
-  // Pose relative to parent (this is computed when bad flag is activated)
-  Sophus::SE3f mTcp;
 
   // Scale
   const int mnScaleLevels;
@@ -421,14 +347,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   unsigned int mnOriginMapId;
 
-  std::vector<std::shared_ptr<KeyFrame>> mvpLoopCandKFs;
-  std::vector<std::shared_ptr<KeyFrame>> mvpMergeCandKFs;
-
-  // bool mbHasHessian;
-  // cv::Mat mHessianPose;
-
-  // The following variables need to be accessed trough a mutex to be thread
-  // safe.
+  // The following variables need to be accessed trough a mutex to be thread safe.
  protected:
   // sophus poses
   Sophus::SE3<float> mTcw;
@@ -459,7 +378,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<ORBVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
-  std::vector<std::vector<std::vector<size_t> > > mGrid;
+  std::vector<std::vector<std::vector<size_t>>> mGrid;
+  std::vector<std::vector<std::vector<size_t>>> mGridRight;
 
   std::map<std::shared_ptr<KeyFrame>, int> mConnectedKeyFrameWeights;
   std::vector<std::shared_ptr<KeyFrame>> mvpOrderedConnectedKeyFrames;
@@ -472,12 +392,10 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<KeyFrame> mpParent;
   std::set<std::shared_ptr<KeyFrame>> mspChildrens;
   std::set<std::shared_ptr<KeyFrame>> mspLoopEdges;
-  std::set<std::shared_ptr<KeyFrame>> mspMergeEdges;
   // For save relation without pointer, this is necessary for save/load function
   long long int mBackupParentId;
   std::vector<long unsigned int> mvBackupChildrensId;
   std::vector<long unsigned int> mvBackupLoopEdgesId;
-  std::vector<long unsigned int> mvBackupMergeEdgesId;
 
   // Bad flags
   bool mbNotErase;
@@ -494,9 +412,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   // Backup for Cameras
   unsigned int mnBackupIdCamera, mnBackupIdCamera2;
 
-  // Calibration
-  Eigen::Matrix3f mK_;
-
   // Mutex
   std::mutex mMutexPose;  // for pose, velocity and biases
   std::mutex mMutexConnections;
@@ -506,9 +421,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
  public:
   std::shared_ptr<const GeometricCamera> mpCamera, mpCamera2;
 
-  // Indexes of stereo observations correspondences
-  std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
-
   Sophus::SE3f GetRelativePoseTrl();
   Sophus::SE3f GetRelativePoseTlr();
 
@@ -517,16 +429,10 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   const int NLeft, NRight;
 
-  std::vector<std::vector<std::vector<size_t> > > mGridRight;
-
   Sophus::SE3<float> GetRightPose();
   Sophus::SE3<float> GetRightPoseInverse();
 
   Eigen::Vector3f GetRightCameraCenter();
-  Eigen::Matrix<float, 3, 3> GetRightRotation();
-  Eigen::Vector3f GetRightTranslation();
-
-   std::vector<std::shared_ptr<MapPoint>> mvAllMPs;
 
 };
 

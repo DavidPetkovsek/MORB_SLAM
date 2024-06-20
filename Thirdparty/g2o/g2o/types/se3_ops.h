@@ -31,15 +31,12 @@
 #include <Eigen/Geometry>
 
 namespace g2o {
-  
-
   inline Eigen::Matrix3d skew(const Eigen::Vector3d&v);
   inline Eigen::Vector3d deltaR(const Eigen::Matrix3d& R);
   inline Eigen::Vector2d project(const Eigen::Vector3d&);
   inline Eigen::Vector3d project(const Eigen::Vector4d&);
   inline Eigen::Vector3d unproject(const Eigen::Vector2d&);
   inline Eigen::Vector4d unproject(const Eigen::Vector3d&);
-
 } // end namespace g2o
 
 #include "g2o/types/se3_ops.hpp"

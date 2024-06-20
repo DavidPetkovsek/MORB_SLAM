@@ -43,11 +43,9 @@
 namespace MORB_SLAM
 {
 
-class Verbose
-{
-public:
-    enum eLevel
-    {
+class Verbose {
+ public:
+    enum eLevel {
         VERBOSITY_QUIET=0,
         VERBOSITY_NORMAL=1,
         VERBOSITY_VERBOSE=2,
@@ -58,13 +56,11 @@ public:
     static eLevel th;
 
 public:
-    static void PrintMess(std::string str, eLevel lev)
-    {
+    static void PrintMess(std::string str, eLevel lev) {
         std::cout << "Level: " << lev << " | " << str << std::endl;
     }
 
-    static void SetTh(eLevel _th)
-    {
+    static void SetTh(eLevel _th) {
         th = _th;
     }
 };
@@ -78,17 +74,15 @@ class LoopClosing;
 class Settings;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
-class System
-{
-public:
-
+class System {
+ public:
     // File type
     enum FileType{
         TEXT_FILE=0,
         BINARY_FILE=1,
     };
 
-public:
+ public:
     
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const std::string &strVocFile, const std::string &strSettingsFile, const CameraType sensor);
@@ -109,8 +103,7 @@ public:
     // Returns the camera pose (empty if tracking fails).
     MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
 
-    // Returns true if there have been a big map change (loop closure, global BA)
-    // since last call to this function
+    // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();
 
     // All threads will be requested to finish.
@@ -118,22 +111,7 @@ public:
     // This function must be called before saving the trajectory.
     virtual ~System();
 
-    // TODO: Save/Load functions
-    // SaveMap(const std::string &filename);
-    // LoadMap(const std::string &filename);
-
-    // Information from most recent processed frame
-    // You can call this right after TrackMonocular (or stereo or RGBD)
     TrackingState GetTrackingState();
-    std::vector<std::shared_ptr<MapPoint>> GetTrackedMapPoints();
-    std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
-
-    // For debugging
-    double GetTimeFromIMUInit();
-    bool isLost();
-    bool isFinished();
-
-    float GetImageScale();
 
     void ForceLost();
 
@@ -143,12 +121,12 @@ public:
     bool getHasMergedLocalMap();
     bool getIsDoneVIBA();
 
-    void setTrackingState(TrackingState state);
-
     std::shared_ptr<Settings> getSettings() const;
 
     bool getIsLoopClosed();
     void setIsLoopClosed(bool isLoopClosed);
+
+    void RequestSystemReset();
 
 private:
 
@@ -168,7 +146,6 @@ private:
     std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
-    //Map* mpMap;
     Atlas_ptr mpAtlas;
 
     // Tracker. It receives a frame and computes the associated camera pose.
@@ -188,13 +165,8 @@ private:
     std::jthread mptLocalMapping;
     std::jthread mptLoopClosing;
 
-    // Tracking state
     TrackingState mTrackingState;
-    std::vector<std::shared_ptr<MapPoint>> mTrackedMapPoints;
-    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
-    std::mutex mMutexState;
 
-    //
     std::string mStrLoadAtlasFromFile;
     std::string mStrSaveAtlasToFile;
 

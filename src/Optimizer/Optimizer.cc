@@ -33,19 +33,15 @@
 
 namespace MORB_SLAM {
 
-
-
 int Optimizer::PoseOptimization(Frame* pFrame) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolver_6_3::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
 
   g2o::BlockSolver_6_3* solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
 
-  g2o::OptimizationAlgorithmLevenberg* solver =
-      new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
   optimizer.setAlgorithm(solver);
 
   int nInitialCorrespondences = 0;
@@ -53,8 +49,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
   // Set Frame vertex
   g2o::VertexSE3Expmap* vSE3 = new g2o::VertexSE3Expmap();
   Sophus::SE3<float> Tcw = pFrame->GetPose();
-  vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                 Tcw.translation().cast<double>()));
+  vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
   vSE3->setId(0);
   vSE3->setFixed(false);
   optimizer.addVertex(vSE3);
@@ -95,11 +90,9 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
             const cv::KeyPoint& kpUn = pFrame->mvKeysUn[i];
             obs << kpUn.pt.x, kpUn.pt.y;
 
-            MORB_SLAM::EdgeSE3ProjectXYZOnlyPose* e =
-                new MORB_SLAM::EdgeSE3ProjectXYZOnlyPose();
+            MORB_SLAM::EdgeSE3ProjectXYZOnlyPose* e = new MORB_SLAM::EdgeSE3ProjectXYZOnlyPose();
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(0)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
             e->setMeasurement(obs);
             const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
             e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
@@ -115,8 +108,8 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
 
             vpEdgesMono.push_back(e);
             vnIndexEdgeMono.push_back(i);
-          } else  // Stereo observation
-          {
+          // Stereo observation
+          } else {
             nInitialCorrespondences++;
             pFrame->mvbOutlier[i] = false;
 
@@ -125,11 +118,9 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
             const float& kp_ur = pFrame->mvuRight[i];
             obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
-            g2o::EdgeStereoSE3ProjectXYZOnlyPose* e =
-                new g2o::EdgeStereoSE3ProjectXYZOnlyPose();
+            g2o::EdgeStereoSE3ProjectXYZOnlyPose* e = new g2o::EdgeStereoSE3ProjectXYZOnlyPose();
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(0)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
             e->setMeasurement(obs);
             const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
             Eigen::Matrix3d Info = Eigen::Matrix3d::Identity() * invSigma2;
@@ -151,14 +142,14 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
             vpEdgesStereo.push_back(e);
             vnIndexEdgeStereo.push_back(i);
           }
-        }
         // SLAM with respect a rigid body
-        else {
+        } else {
           nInitialCorrespondences++;
 
           cv::KeyPoint kpUn;
 
-          if (i < pFrame->Nleft) {  // Left camera observation
+          // Left camera observation
+          if (i < pFrame->Nleft) {
             kpUn = pFrame->mvKeys[i];
 
             pFrame->mvbOutlier[i] = false;
@@ -166,11 +157,9 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
             Eigen::Matrix<double, 2, 1> obs;
             obs << kpUn.pt.x, kpUn.pt.y;
 
-            MORB_SLAM::EdgeSE3ProjectXYZOnlyPose* e =
-                new MORB_SLAM::EdgeSE3ProjectXYZOnlyPose();
+            MORB_SLAM::EdgeSE3ProjectXYZOnlyPose* e = new MORB_SLAM::EdgeSE3ProjectXYZOnlyPose();
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(0)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
             e->setMeasurement(obs);
             const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
             e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
@@ -194,11 +183,9 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
 
             pFrame->mvbOutlier[i] = false;
 
-            MORB_SLAM::EdgeSE3ProjectXYZOnlyPoseToBody* e =
-                new MORB_SLAM::EdgeSE3ProjectXYZOnlyPoseToBody();
+            MORB_SLAM::EdgeSE3ProjectXYZOnlyPoseToBody* e = new MORB_SLAM::EdgeSE3ProjectXYZOnlyPoseToBody();
 
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(
-                                optimizer.vertex(0)));
+            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
             e->setMeasurement(obs);
             const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave];
             e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
@@ -210,9 +197,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
             e->pCamera = pFrame->mpCamera2;
             e->Xw = pMP->GetWorldPos().cast<double>();
 
-            e->mTrl = g2o::SE3Quat(
-                pFrame->GetRelativePoseTrl().unit_quaternion().cast<double>(),
-                pFrame->GetRelativePoseTrl().translation().cast<double>());
+            e->mTrl = g2o::SE3Quat(pFrame->GetRelativePoseTrl().unit_quaternion().cast<double>(), pFrame->GetRelativePoseTrl().translation().cast<double>());
 
             optimizer.addEdge(e);
 
@@ -236,8 +221,7 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
   int nBad = 0;
   for (size_t it = 0; it < 4; it++) {
     Tcw = pFrame->GetPose();
-    vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),
-                                   Tcw.translation().cast<double>()));
+    vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
 
     optimizer.initializeOptimization(0);
     optimizer.optimize(its[it]);
@@ -316,31 +300,23 @@ int Optimizer::PoseOptimization(Frame* pFrame) {
   }
 
   // Recover optimized pose and return number of inliers
-  g2o::VertexSE3Expmap* vSE3_recov =
-      static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(0));
+  g2o::VertexSE3Expmap* vSE3_recov = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(0));
   g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
-  Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(),
-                          SE3quat_recov.translation().cast<float>());
+  Sophus::SE3<float> pose(SE3quat_recov.rotation().cast<float>(), SE3quat_recov.translation().cast<float>());
   pFrame->SetPose(pose);
 
   return nInitialCorrespondences - nBad;
 }
 
-int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2,
-                            std::vector<std::shared_ptr<MapPoint>>& vpMatches1, g2o::Sim3& g2oS12,
-                            const float th2, const bool bFixScale,
-                            Eigen::Matrix<double, 7, 7>& mAcumHessian,
-                            const bool bAllPoints) {
+int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, std::vector<std::shared_ptr<MapPoint>>& vpMatches1, g2o::Sim3& g2oS12, const float th2, const bool bFixScale, Eigen::Matrix<double, 7, 7>& mAcumHessian, const bool bAllPoints) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
 
-  linearSolver =
-      new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+  linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
 
   g2o::BlockSolverX* solver_ptr = new g2o::BlockSolverX(linearSolver);
 
-  g2o::OptimizationAlgorithmLevenberg* solver =
-      new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
   optimizer.setAlgorithm(solver);
 
   // Camera poses
@@ -365,22 +341,14 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
   std::vector<MORB_SLAM::EdgeSim3ProjectXYZ*> vpEdges12;
   std::vector<MORB_SLAM::EdgeInverseSim3ProjectXYZ*> vpEdges21;
   std::vector<size_t> vnIndexEdge;
-  std::vector<bool> vbIsInKF2;
 
   vnIndexEdge.reserve(2 * N);
   vpEdges12.reserve(2 * N);
   vpEdges21.reserve(2 * N);
-  vbIsInKF2.reserve(2 * N);
 
   const float deltaHuber = sqrt(th2);
 
   int nCorrespondences = 0;
-  int nBadMPs = 0;
-  int nInKF2 = 0;
-  int nOutKF2 = 0;
-  int nMatchWithoutMP = 0;
-
-  std::vector<int> vIdsOnlyInKF2;
 
   for (int i = 0; i < N; i++) {
     if (!vpMatches1[i]) continue;
@@ -414,12 +382,9 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
         vPoint2->setFixed(true);
         optimizer.addVertex(vPoint2);
       } else {
-        nBadMPs++;
         continue;
       }
     } else {
-      nMatchWithoutMP++;
-
       // TODO The 3D position in KF1 doesn't exist
       if (!pMP2->isBad()) {
         g2o::VertexSBAPointXYZ* vPoint2 = new g2o::VertexSBAPointXYZ();
@@ -429,8 +394,6 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
         vPoint2->setId(id2);
         vPoint2->setFixed(true);
         optimizer.addVertex(vPoint2);
-
-        vIdsOnlyInKF2.push_back(id2);
       }
       continue;
     }
@@ -455,10 +418,8 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
 
     MORB_SLAM::EdgeSim3ProjectXYZ* e12 = new MORB_SLAM::EdgeSim3ProjectXYZ();
 
-    e12->setVertex(
-        0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id2)));
-    e12->setVertex(
-        1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
+    e12->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id2)));
+    e12->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
     e12->setMeasurement(obs1);
     const float& invSigmaSquare1 = pKF1->mvInvLevelSigma2[kpUn1.octave];
     e12->setInformation(Eigen::Matrix2d::Identity() * invSigmaSquare1);
@@ -471,13 +432,9 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
     // Set edge x2 = S21*X1
     Eigen::Matrix<double, 2, 1> obs2;
     cv::KeyPoint kpUn2;
-    bool inKF2;
     if (i2 >= 0) {
       kpUn2 = pKF2->mvKeysUn[i2];
       obs2 << kpUn2.pt.x, kpUn2.pt.y;
-      inKF2 = true;
-
-      nInKF2++;
     } else {
       float invz = 1 / P3D2c(2);
       float x = P3D2c(0) * invz;
@@ -485,18 +442,12 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
 
       obs2 << x, y;
       kpUn2 = cv::KeyPoint(cv::Point2f(x, y), pMP2->mnTrackScaleLevel);
-
-      inKF2 = false;
-      nOutKF2++;
     }
 
-    MORB_SLAM::EdgeInverseSim3ProjectXYZ* e21 =
-        new MORB_SLAM::EdgeInverseSim3ProjectXYZ();
+    MORB_SLAM::EdgeInverseSim3ProjectXYZ* e21 = new MORB_SLAM::EdgeInverseSim3ProjectXYZ();
 
-    e21->setVertex(
-        0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id1)));
-    e21->setVertex(
-        1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
+    e21->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id1)));
+    e21->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
     e21->setMeasurement(obs2);
     float invSigmaSquare2 = pKF2->mvInvLevelSigma2[kpUn2.octave];
     e21->setInformation(Eigen::Matrix2d::Identity() * invSigmaSquare2);
@@ -509,8 +460,6 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
     vpEdges12.push_back(e12);
     vpEdges21.push_back(e21);
     vnIndexEdge.push_back(i);
-
-    vbIsInKF2.push_back(inKF2);
   }
 
   // Optimize!
@@ -519,7 +468,6 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
 
   // Check inliers
   int nBad = 0;
-  int nBadOutKF2 = 0;
   for (size_t i = 0; i < vpEdges12.size(); i++) {
     MORB_SLAM::EdgeSim3ProjectXYZ* e12 = vpEdges12[i];
     MORB_SLAM::EdgeInverseSim3ProjectXYZ* e21 = vpEdges21[i];
@@ -533,10 +481,6 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
       vpEdges12[i] = static_cast<MORB_SLAM::EdgeSim3ProjectXYZ*>(nullptr);
       vpEdges21[i] = static_cast<MORB_SLAM::EdgeInverseSim3ProjectXYZ*>(nullptr);
       nBad++;
-
-      if (!vbIsInKF2[i]) {
-        nBadOutKF2++;
-      }
       continue;
     }
 
@@ -545,13 +489,9 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
     e21->setRobustKernel(0);
   }
 
-  int nMoreIterations;
-  if (nBad > 0)
-    nMoreIterations = 10;
-  else
-    nMoreIterations = 5;
-
   if (nCorrespondences - nBad < 10) return 0;
+
+  int nMoreIterations = (nBad > 0) ? 10 : 5;
 
   // Optimize again only with inliers
   optimizer.initializeOptimization();
@@ -576,15 +516,13 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
   }
 
   // Recover optimized Sim3
-  g2o::VertexSim3Expmap* vSim3_recov =
-      static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
+  g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
   g2oS12 = vSim3_recov->estimate();
 
   return nIn;
 }
 
-Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
-                                       const int& start, const int& end) {
+Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H, const int& start, const int& end) {
   // Goal
   // a  | ab | ac       a*  | 0 | ac*
   // ba | b  | bc  -->  0   | 0 | 0
@@ -620,21 +558,16 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
   Hn.block(a + c, a + c, b, b) = H.block(a, a, b, b);
 
   // Perform marginalization (Schur complement)
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(
-      Hn.block(a + c, a + c, b, b), Eigen::ComputeThinU | Eigen::ComputeThinV);
-  Eigen::JacobiSVD<Eigen::MatrixXd>::SingularValuesType singularValues_inv =
-      svd.singularValues();
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(Hn.block(a + c, a + c, b, b), Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::JacobiSVD<Eigen::MatrixXd>::SingularValuesType singularValues_inv = svd.singularValues();
   for (int i = 0; i < b; ++i) {
     if (singularValues_inv(i) > 1e-6)
       singularValues_inv(i) = 1.0 / singularValues_inv(i);
     else
       singularValues_inv(i) = 0;
   }
-  Eigen::MatrixXd invHb = svd.matrixV() * singularValues_inv.asDiagonal() *
-                          svd.matrixU().transpose();
-  Hn.block(0, 0, a + c, a + c) =
-      Hn.block(0, 0, a + c, a + c) -
-      Hn.block(0, a + c, a + c, b) * invHb * Hn.block(a + c, 0, b, a + c);
+  Eigen::MatrixXd invHb = svd.matrixV() * singularValues_inv.asDiagonal() * svd.matrixU().transpose();
+  Hn.block(0, 0, a + c, a + c) = Hn.block(0, 0, a + c, a + c) - Hn.block(0, a + c, a + c, b) * invHb * Hn.block(a + c, 0, b, a + c);
   Hn.block(a + c, a + c, b, b) = Eigen::MatrixXd::Zero(b, b);
   Hn.block(0, a + c, a + c, b) = Eigen::MatrixXd::Zero(a + c, b);
   Hn.block(a + c, 0, b, a + c) = Eigen::MatrixXd::Zero(b, a + c);
@@ -663,14 +596,5 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd& H,
 
   return res;
 }
-
-// MORBSLAM Special
-// set state variables when skipping PoseOptimization (for when mState == RECENTLY_LOST)
-void Optimizer::SkipPoseOptimization(Frame* pFrame) {
-  pFrame->mImuBias = pFrame->mpLastKeyFrame->GetImuBias();
-  pFrame->mpcpi = pFrame->mpPrevFrame->mpcpi;
-}
-
-
 
 }  // namespace MORB_SLAM

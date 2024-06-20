@@ -15,8 +15,7 @@
 namespace DBoW2 {
 
 /// Base class of scoring functions
-class GeneralScoring
-{
+class GeneralScoring {
 public:
   /**
    * Computes the score between two vectors. Vectors must be sorted and 
@@ -66,8 +65,7 @@ public:
      * @param norm (out) if true, norm to use
      * @return true iff vectors must be normalized \
      */ \
-    virtual inline bool mustNormalize(LNorm &norm) const  \
-      { norm = NORM; return MUSTNORMALIZE; } \
+    virtual inline bool mustNormalize(LNorm &norm) const { norm = NORM; return MUSTNORMALIZE; } \
   }
   
 /// L1 Scoring object

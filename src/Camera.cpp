@@ -3,9 +3,7 @@
 namespace MORB_SLAM{
 
 Camera::Camera(CameraType type, const std::string &name): ljobs{}, rjobs{}, name{name}, type{type},
-    shouldStop{false}, lthread{&Camera::threadExec, this, &ljobs}, rthread{&Camera::threadExec, this, &rjobs} {
-
-}
+    shouldStop{false}, lthread{&Camera::threadExec, this, &ljobs}, rthread{&Camera::threadExec, this, &rjobs} {}
 
 Camera::~Camera(){
     std::cout << "Entered Camera destructor" << std::endl;

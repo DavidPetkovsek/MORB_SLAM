@@ -1,0 +1,43 @@
+{
+    "dependencies":[
+        {
+            "name":"boost-regex",
+            "cmake":{
+                "before-find-package":[
+                    "set(Boost_NO_SYSTEM_PATHS ON)",
+                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
+                ],
+                "package":{
+                    "name":"Boost",
+                    "package-components":["regex"]
+                },
+                "public-libs":["Boost::regex"]
+            }
+        },
+        {
+            "name":"boost-serialization",
+            "cmake":{
+                "before-find-package":[
+                    "set(Boost_NO_SYSTEM_PATHS ON)",
+                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
+                ],
+                "package":{
+                    "name":"Boost",
+                    "package-components":["serialization"]
+                },
+                "public-libs":["Boost::serialization"]
+            }
+        },
+        {
+            "name":"opencv4",
+            "default-features": false,
+            "cmake":{
+                "package":"OpenCV",
+                "public-libs":["${OpenCV_LIBS}"]
+            }
+        }
+    ],
+    "vcpkg-overlay-ports":[
+        "vcpkg_overlay_ports/libcap"
+    ]
+}

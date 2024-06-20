@@ -57,93 +57,50 @@ class LoopClosing;
 
 class Optimizer {
  public:
-  void static BundleAdjustment(const std::vector<std::shared_ptr<KeyFrame>> &vpKF,
-                               const std::vector<std::shared_ptr<MapPoint>> &vpMP,
-                               int nIterations = 5, bool *pbStopFlag = nullptr,
-                               const unsigned long nLoopKF = 0,
-                               const bool bRobust = true);
-  void static GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations = 5,
-                                     bool *pbStopFlag = nullptr,
-                                     const unsigned long nLoopKF = 0,
-                                     const bool bRobust = true);
-  void static FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal = false,
-                             const unsigned long nLoopKF = 0,
-                             bool *pbStopFlag = nullptr, bool bInit = false,
-                             ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, 
-                             ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A,
-                             Eigen::VectorXd *vSingVal = nullptr,
-                             bool *bHess = nullptr);
 
-  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame>pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial);
+  void static GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations = 5, bool *pbStopFlag = nullptr, const unsigned long nLoopKF = 0, const bool bRobust = true);
+  
+  void static FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal = false, const unsigned long nLoopKF = 0, bool *pbStopFlag = nullptr, bool bInit = false,
+                             ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A,
+                             Eigen::VectorXd *vSingVal = nullptr, bool *bHess = nullptr);
+
+  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial);
 
   int static PoseOptimization(Frame *pFrame);
   int static PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit = false);
   int static PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit = false);
-  void static SkipPoseOptimization(Frame* pFrame);
 
-  // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise
-  // (mono)
-  void static OptimizeEssentialGraph(
-      std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame>pLoopKF, std::shared_ptr<KeyFrame>pCurKF,
-      const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-      const LoopClosing::KeyFrameAndPose &CorrectedSim3,
-      const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>> > &LoopConnections,
-      const bool &bFixScale);
-  void static OptimizeEssentialGraph(std::shared_ptr<KeyFrame>pCurKF,
-                                     std::vector<std::shared_ptr<KeyFrame>> &vpFixedKFs,
-                                     std::vector<std::shared_ptr<KeyFrame>> &vpFixedCorrectedKFs,
-                                     std::vector<std::shared_ptr<KeyFrame>> &vpNonFixedKFs,
-                                     std::vector<std::shared_ptr<MapPoint>> &vpNonCorrectedMPs);
+  // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
+  void static OptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame>pLoopKF, std::shared_ptr<KeyFrame>pCurKF, const LoopClosing::KeyFrameAndPose &NonCorrectedSim3, const LoopClosing::KeyFrameAndPose &CorrectedSim3,
+                                    const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>> > &LoopConnections, const bool &bFixScale);
+
+  void static OptimizeEssentialGraph(std::shared_ptr<KeyFrame>pCurKF, std::vector<std::shared_ptr<KeyFrame>> &vpFixedKFs, std::vector<std::shared_ptr<KeyFrame>> &vpFixedCorrectedKFs,
+                                     std::vector<std::shared_ptr<KeyFrame>> &vpNonFixedKFs, std::vector<std::shared_ptr<MapPoint>> &vpNonCorrectedMPs);
 
   // For inertial loopclosing
-  void static OptimizeEssentialGraph4DoF(
-      std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame>pLoopKF, std::shared_ptr<KeyFrame>pCurKF,
-      const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-      const LoopClosing::KeyFrameAndPose &CorrectedSim3,
-      const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>> > &LoopConnections);
+  void static OptimizeEssentialGraph4DoF(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame>pLoopKF, std::shared_ptr<KeyFrame>pCurKF, const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
+                                        const LoopClosing::KeyFrameAndPose &CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>> > &LoopConnections);
 
   // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
-  // (NEW)
-  static int OptimizeSim3(std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-                          std::vector<std::shared_ptr<MapPoint>> &vpMatches1,
-                          g2o::Sim3 &g2oS12, const float th2,
-                          const bool bFixScale,
-                          Eigen::Matrix<double, 7, 7> &mAcumHessian,
-                          const bool bAllPoints = false);
+  static int OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, std::vector<std::shared_ptr<MapPoint>> &vpMatches1, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale, Eigen::Matrix<double, 7, 7> &mAcumHessian, const bool bAllPoints = false);
 
   // For inertial systems
-
   void static LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge = false, bool bRecInit = false);
-  void static MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_ptr<KeyFrame> pMergeKF,
-                              bool *pbStopFlag, std::shared_ptr<Map> pMap,
-                              LoopClosing::KeyFrameAndPose &corrPoses);
+  void static MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_ptr<KeyFrame> pMergeKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, LoopClosing::KeyFrameAndPose &corrPoses);
 
   // Local BA in welding area when two maps are merged
-  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame>pMainKF,
-                                    std::vector<std::shared_ptr<KeyFrame>> vpAdjustKF,
-                                    std::vector<std::shared_ptr<KeyFrame>> vpFixedKF,
-                                    bool *pbStopFlag);
+  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame>pMainKF, std::vector<std::shared_ptr<KeyFrame>> vpAdjustKF, std::vector<std::shared_ptr<KeyFrame>> vpFixedKF, bool *pbStopFlag);
 
   // Marginalize block element (start:end,start:end). Perform Schur complement.
   // Marginalized elements are filled with zeros.
-  static Eigen::MatrixXd Marginalize(const Eigen::MatrixXd &H, const int &start,
-                                     const int &end);
+  static Eigen::MatrixXd Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end);
 
   // Inertial pose-graph
-  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg,
-                                   double &scale, Eigen::Vector3d &bg,
-                                   Eigen::Vector3d &ba, bool bMono,
-                                   bool bFixedVel = false, bool bGauss = false,
-                                   ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, 
-                                   ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A);
-  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d &bg,
-                                   Eigen::Vector3d &ba,
-                                   ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G,
-                                   ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A);
-  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg,
-                                   double &scale);
+  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bMono, bool bFixedVel = false, bool bGauss = false,
+                                   ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A);
 
-  ;
+  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A);
+  void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale);
 };
 
 }  // namespace MORB_SLAM

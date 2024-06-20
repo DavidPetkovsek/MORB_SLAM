@@ -1,0 +1,22 @@
+{
+    "dependencies":[
+        {
+            "name":"eigen3",
+            "cmake":{
+                "package":"Eigen3",
+                "public-libs":["Eigen3::Eigen"]
+            }
+        },
+        {
+            "name":"opencv4",
+            "default-features": false,
+            "cmake":{
+                "package":"OpenCV",
+                "public-libs":["${OpenCV_LIBS}"]
+            }
+        }
+    ],
+    "vcpkg-overlay-ports":[
+        "vcpkg_overlay_ports/libcap"
+    ]
+}

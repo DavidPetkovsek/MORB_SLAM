@@ -35,8 +35,7 @@ public:
    * @param descriptors
    * @param mean mean descriptor
    */
-  static void meanValue(const std::vector<pDescriptor> &descriptors,
-    TDescriptor &mean);
+  static void meanValue(const std::vector<pDescriptor> &descriptors, TDescriptor &mean);
 
   /**
    * Calculates the distance between two descriptors
@@ -65,11 +64,9 @@ public:
    * @param descriptors
    * @param mat (out) NxL 32F matrix
    */
-  static void toMat32F(const std::vector<TDescriptor> &descriptors,
-    cv::Mat &mat);
+  static void toMat32F(const std::vector<TDescriptor> &descriptors, cv::Mat &mat);
 
-  static void toMat8U(const std::vector<TDescriptor> &descriptors,
-    cv::Mat &mat);
+  static void toMat8U(const std::vector<TDescriptor> &descriptors, cv::Mat &mat);
 
 };
 

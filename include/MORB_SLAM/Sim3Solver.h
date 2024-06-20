@@ -31,55 +31,32 @@ namespace MORB_SLAM {
 class Sim3Solver {
  public:
   
-  Sim3Solver(
-      std::shared_ptr<KeyFrame>pKF1, std::shared_ptr<KeyFrame>pKF2,
-      const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale = true,
-      const std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>());
+  Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale = true, const std::vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>());
 
-  void SetRansacParameters(double probability = 0.99, int minInliers = 6,
-                           int maxIterations = 300);
+  void SetRansacParameters(double probability = 0.99, int minInliers = 6, int maxIterations = 300);
 
-  Eigen::Matrix4f find(std::vector<bool> &vbInliers12, int &nInliers);
+  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers, bool &bConverge);
 
-  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore,
-                          std::vector<bool> &vbInliers, int &nInliers);
-  Eigen::Matrix4f iterate(int nIterations, bool &bNoMore,
-                          std::vector<bool> &vbInliers, int &nInliers,
-                          bool &bConverge);
-
-  Eigen::Matrix4f GetEstimatedTransformation();
   Eigen::Matrix3f GetEstimatedRotation();
   Eigen::Vector3f GetEstimatedTranslation();
   float GetEstimatedScale();
 
  protected:
-  void ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr,
-                       Eigen::Vector3f &C);
+  void ComputeCentroid(Eigen::Matrix3f &P, Eigen::Matrix3f &Pr, Eigen::Vector3f &C);
 
   bool ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2);
 
   void CheckInliers();
 
-  void Project(const std::vector<Eigen::Vector3f> &vP3Dw,
-               std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw,
-               const std::shared_ptr<const GeometricCamera> &pCamera);
-  void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc,
-                         std::vector<Eigen::Vector2f> &vP2D,
-                         const std::shared_ptr<const GeometricCamera> &pCamera);
+  void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, const std::shared_ptr<const GeometricCamera> &pCamera);
+  void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, const std::shared_ptr<const GeometricCamera> &pCamera);
 
  protected:
-  // KeyFrames and matches
-  std::shared_ptr<KeyFrame>mpKF1;
-  std::shared_ptr<KeyFrame>mpKF2;
 
   std::vector<Eigen::Vector3f> mvX3Dc1;
   std::vector<Eigen::Vector3f> mvX3Dc2;
-  std::vector<std::shared_ptr<MapPoint>> mvpMapPoints1;
-  std::vector<std::shared_ptr<MapPoint>> mvpMapPoints2;
-  std::vector<std::shared_ptr<MapPoint>> mvpMatches12;
+
   std::vector<size_t> mvnIndices1;
-  std::vector<size_t> mvSigmaSquare1;
-  std::vector<size_t> mvSigmaSquare2;
   std::vector<size_t> mvnMaxError1;
   std::vector<size_t> mvnMaxError2;
 
@@ -99,7 +76,6 @@ class Sim3Solver {
   int mnIterations;
   std::vector<bool> mvbBestInliers;
   int mnBestInliers;
-  Eigen::Matrix4f mBestT12;
   Eigen::Matrix3f mBestRotation;
   Eigen::Vector3f mBestTranslation;
   float mBestScale;
@@ -114,22 +90,11 @@ class Sim3Solver {
   std::vector<Eigen::Vector2f> mvP1im1;
   std::vector<Eigen::Vector2f> mvP2im2;
 
-  // RANSAC probability
-  double mRansacProb;
-
   // RANSAC min inliers
   int mRansacMinInliers;
 
   // RANSAC max iterations
   int mRansacMaxIts;
-
-  // Threshold inlier/outlier. e = dist(Pi,T_ij*Pj)^2 < 5.991*mSigma2
-  float mTh;
-  float mSigma2;
-
-  // Calibration
-  // cv::Mat mK1;
-  // cv::Mat mK2;
 
   std::shared_ptr<const GeometricCamera> pCamera1, pCamera2;
 };

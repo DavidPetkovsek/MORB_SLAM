@@ -28,14 +28,11 @@ namespace MORB_SLAM {
 long unsigned int Map::nNextId = 0;
 
 Map::Map()
-    : mpFirstRegionKF(nullptr),
-      mbFail(false),
-      mbImuInitialized(false),
+    : mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnMaxKFid(0),
       mnBigChangeIdx(0),
-      mHasTumbnail(false),
       mbBad(false),
       mbIMU_BA1(false),
       mbIMU_BA2(false) {
@@ -43,15 +40,12 @@ Map::Map()
 }
 
 Map::Map(int initKFid)
-    : mpFirstRegionKF(nullptr),
-      mbFail(false),
-      mbImuInitialized(false),
+    : mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnInitKFid(initKFid),
       mnMaxKFid(initKFid),
       mnBigChangeIdx(0),
-      mHasTumbnail(false),
       mbBad(false),
       mbIMU_BA1(false),
       mbIMU_BA2(false) {
@@ -60,12 +54,8 @@ Map::Map(int initKFid)
 
 Map::~Map() {
   std::scoped_lock<std::mutex> lock(mMutexMap);
-  // TODO: erase all points from memory
   mspMapPoints.clear();
-
-  // TODO: erase all keyframes from memory
   mspKeyFrames.clear();
-
   mvpReferenceMapPoints.clear();
   mvpKeyFrameOrigins.clear();
 }
@@ -105,9 +95,6 @@ bool Map::isImuInitialized() {
 void Map::EraseMapPoint(std::shared_ptr<MapPoint> pMP) {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mspMapPoints.erase(pMP);
-
-  // TODO: This only erase the pointer.
-  // Delete the MapPoint
 }
 
 void Map::EraseKeyFrame(std::shared_ptr<KeyFrame> pKF) {
@@ -115,17 +102,13 @@ void Map::EraseKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   mspKeyFrames.erase(pKF);
   if (mspKeyFrames.size() > 0) {
     if (pKF->mnId == mpKFlowerID->mnId) {
-      std::vector<std::shared_ptr<KeyFrame>> vpKFs =
-          std::vector<std::shared_ptr<KeyFrame>>(mspKeyFrames.begin(), mspKeyFrames.end());
+      std::vector<std::shared_ptr<KeyFrame>> vpKFs = std::vector<std::shared_ptr<KeyFrame>>(mspKeyFrames.begin(), mspKeyFrames.end());
       sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
       mpKFlowerID = vpKFs[0];
     }
   } else {
     mpKFlowerID = 0;
   }
-
-  // TODO: This only erase the pointer.
-  // Delete the MapPoint
 }
 
 void Map::SetReferenceMapPoints(const std::vector<std::shared_ptr<MapPoint>>& vpMPs) {
@@ -145,13 +128,11 @@ int Map::GetLastBigChangeIdx() {
 
 std::vector<std::shared_ptr<KeyFrame>> Map::GetAllKeyFrames() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  // std::cout << "Size of mspKeyFrames: " << mspKeyFrames.size() << std::endl;
   return std::vector<std::shared_ptr<KeyFrame>>(mspKeyFrames.begin(), mspKeyFrames.end());
 }
 
 std::vector<std::shared_ptr<MapPoint>> Map::GetAllMapPoints() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  // std::cout << "Size of mspMapPoints: " << mspMapPoints.size() << std::endl;
   return std::vector<std::shared_ptr<MapPoint>>(mspMapPoints.begin(), mspMapPoints.end());
 }
 
@@ -171,14 +152,10 @@ std::vector<std::shared_ptr<MapPoint>> Map::GetReferenceMapPoints() {
 }
 
 long unsigned int Map::GetId() { return mnId; }
+
 long unsigned int Map::GetInitKFid() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mnInitKFid;
-}
-
-void Map::SetInitKFid(long unsigned int initKFif) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  mnInitKFid = initKFif;
 }
 
 long unsigned int Map::GetMaxKFid() {
@@ -190,14 +167,10 @@ std::shared_ptr<KeyFrame> Map::GetOriginKF() { return mpKFinitial; }
 
 void Map::clear() {
   std::scoped_lock<std::mutex> lock(mMutexMap);
-  //    for(std::set<std::shared_ptr<MapPoint>>::iterator sit=mspMapPoints.begin(),
-  //    send=mspMapPoints.end(); sit!=send; sit++)
-  //        delete *sit;
 
   for (std::set<std::shared_ptr<KeyFrame>>::iterator sit = mspKeyFrames.begin(), send = mspKeyFrames.end(); sit != send; sit++) {
     std::shared_ptr<KeyFrame> pKF = *sit;
     pKF->UpdateMap(nullptr);
-    //        delete *sit;
   }
 
   mspMapPoints.clear();
@@ -242,35 +215,27 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
   mnMapChange++;
 }
 
-void Map::SetIniertialBA1() {
+void Map::SetInertialBA1() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA1 = true;
 }
 
-void Map::SetIniertialBA2() {
+void Map::SetInertialBA2() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA2 = true;
 }
 
-bool Map::GetIniertialBA1() {
+bool Map::GetInertialBA1() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA1;
 }
 
-bool Map::GetIniertialBA2() {
+bool Map::GetInertialBA2() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA2;
 }
 
 void Map::ChangeId(long unsigned int nId) { mnId = nId; }
-
-unsigned int Map::GetLowerKFID() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  if (mpKFlowerID) {
-    return mpKFlowerID->mnId;
-  }
-  return 0;
-}
 
 int Map::GetMapChangeIndex() {
   std::unique_lock<std::mutex> lock(mMutexMap);
@@ -313,7 +278,6 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
       nMPWithoutObs++;
     }
     std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> mpObs = pMPi->GetObservations();
-    // std::cout << "getting observations" << std::endl;
     for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator it = mpObs.begin(), end = mpObs.end(); it != end; ++it) {
       if(std::shared_ptr<KeyFrame> pKF = (it->first).lock()) {
         if ((pKF->GetMap() != sharedMap) || pKF->isBad()) {
@@ -368,11 +332,11 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   }
 }
 
-void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc /*, std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKeyFrameId*/,
+void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc,
     std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
 
   if(this != sharedMap.get()){
-  throw std::runtime_error("The shared map is not equivalent to this");
+    throw std::runtime_error("The shared map is not equivalent to this");
   }
 
   std::scoped_lock<std::mutex> lock(mMutexMap);

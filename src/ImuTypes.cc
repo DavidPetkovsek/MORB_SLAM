@@ -193,9 +193,7 @@ void Preintegrated::Reintegrate() {
     IntegrateNewMeasurement(aux[i].a, aux[i].w, aux[i].t);
 }
 
-void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
-                                            const Eigen::Vector3f &angVel,
-                                            const float &dt) {
+void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt) {
   mvMeasurements.push_back(integrable(acceleration, angVel, dt));
 
   // A is the Jacobian Matrix of the the robot state variables wrt each other (θ_x, θ_y, θ_z, v_x, v_y, v_z, p_x, p_y, p_z)
@@ -324,8 +322,7 @@ void Preintegrated::SetNewBias(const Bias &bu_) {
 
 IMU::Bias Preintegrated::GetDeltaBias(const Bias &b_) {
   std::unique_lock<std::mutex> lock(mMutex);
-  return IMU::Bias(b_.bax - b.bax, b_.bay - b.bay, b_.baz - b.baz,
-                   b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz);
+  return IMU::Bias(b_.bax - b.bax, b_.bay - b.bay, b_.baz - b.baz, b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz);
 }
 
 Eigen::Matrix3f Preintegrated::GetDeltaRotation(const Bias &b_) {

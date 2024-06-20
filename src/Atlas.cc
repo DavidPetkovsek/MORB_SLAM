@@ -42,11 +42,9 @@ void Atlas::CreateNewMap() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   std::cout << "Creation of new Map with id: " << Map::nNextId << std::endl;
   if (mpCurrentMap) {
-    //If it's not a new Atlas, and there aren't 0 KFs in the current map
+    //If it's not a new Atlas and there aren't 0 KFs in the current map, set the he map's init KF ID to the current map's maximum KF ID + 1
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-      // The map's init KF ID is one after the current map's maximum KF ID
-      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  
-
+      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;
     std::cout << "Stored Map with ID: " << mpCurrentMap->GetId() << std::endl;
   }
   std::cout << "Creation of new Map with last KF id: " << mnLastInitKFidMap << std::endl;
@@ -59,11 +57,6 @@ void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   std::cout << "Change to Map with id: " << pMap->GetId() << std::endl;
   mpCurrentMap = pMap;
-}
-
-unsigned long int Atlas::GetLastInitKFid() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mnLastInitKFidMap;
 }
 
 void Atlas::AddKeyFrame(std::shared_ptr<KeyFrame> pKF) {
@@ -84,7 +77,9 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
     std::shared_ptr<const GeometricCamera> pCam_i = mvpCameras[i];
     if (!pCam) std::cout << "Not pCam" << std::endl;
     if (!pCam_i) std::cout << "Not pCam_i" << std::endl;
-    if (pCam->GetType() != pCam_i->GetType()) continue;
+    
+    if (pCam->GetType() != pCam_i->GetType())
+      continue;
 
     if (pCam->GetType() == GeometricCamera::CAM_PINHOLE) {
       if (pCam_i->IsEqual(pCam)) {
@@ -144,11 +139,6 @@ std::vector<std::shared_ptr<MapPoint>> Atlas::GetAllMapPoints() {
   return mpCurrentMap->GetAllMapPoints();
 }
 
-std::vector<std::shared_ptr<MapPoint>> Atlas::GetReferenceMapPoints() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mpCurrentMap->GetReferenceMapPoints();
-}
-
 std::vector<std::shared_ptr<Map>> Atlas::GetAllMaps() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
   struct compFunctor {
@@ -173,12 +163,6 @@ void Atlas::clearMap() {
 
 void Atlas::clearAtlas() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  /*for(std::set<Map*>::iterator it=mspMaps.begin(), send=mspMaps.end();
-  it!=send; it++)
-  {
-      (*it)->clear();
-      delete *it;
-  }*/
   mspMaps.clear();
   mpCurrentMap = nullptr;
   mnLastInitKFidMap = 0;
@@ -195,18 +179,11 @@ std::shared_ptr<Map> Atlas::GetCurrentMap(bool waitForGoodMap) {
 }
 
 void Atlas::SetMapBad(std::shared_ptr<Map> pMap) {
-  // mspMaps.erase(pMap);
   pMap->SetBad();
-
   mspBadMaps.insert(pMap);
 }
 
 void Atlas::RemoveBadMaps() {
-  /*for(Map* pMap : mspBadMaps)
-  {
-      delete pMap;
-      pMap = nullptr;
-  }*/
   mspBadMaps.clear();
 }
 
@@ -223,7 +200,7 @@ bool Atlas::isImuInitialized() {
 
 void Atlas::PreSave() {
   if (mpCurrentMap && !mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  // The init KF is the next of current maximum
+      mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  // The init KF ID is 1 greater than the current maximum
 
   struct compFunctor {
     inline bool operator()(std::shared_ptr<Map> elem1, std::shared_ptr<Map> elem2) {
@@ -235,7 +212,8 @@ void Atlas::PreSave() {
   std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
 
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
-    if (!pMi || pMi->IsBad()) continue;
+    if (!pMi || pMi->IsBad())
+      continue;
 
     if (pMi->GetAllKeyFrames().size() == 0) {
       // Empty map, erase before of save it.
@@ -264,54 +242,12 @@ void Atlas::PostLoad() {
   mvpBackupMaps.clear();
 }
 
-void Atlas::SetKeyFrameDababase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
+void Atlas::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB) {
   mpKeyFrameDB = pKFDB;
 }
 
-std::shared_ptr<KeyFrameDatabase> Atlas::GetKeyFrameDatabase() { return mpKeyFrameDB; }
+void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) { mpORBVocabulary = pORBVoc; }
 
-void Atlas::SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc) {
-  mpORBVocabulary = pORBVoc;
-}
-
-std::shared_ptr<ORBVocabulary> Atlas::GetORBVocabulary() { return mpORBVocabulary; }
-
-long unsigned int Atlas::GetNumLivedKF() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  long unsigned int num = 0;
-  for (std::shared_ptr<Map> pMap_i : mspMaps) {
-    num += pMap_i->GetAllKeyFrames().size();
-  }
-
-  return num;
-}
-
-long unsigned int Atlas::GetNumLivedMP() {
-  std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  long unsigned int num = 0;
-  for (std::shared_ptr<Map> pMap_i : mspMaps) {
-    num += pMap_i->GetAllMapPoints().size();
-  }
-
-  return num;
-}
-
-// UNUSED
-// std::map<long unsigned int, std::shared_ptr<KeyFrame>> Atlas::GetAtlasKeyframes() {
-//   std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpIdKFs;
-//   for (std::shared_ptr<Map>  pMap_i : mvpBackupMaps) {
-//     std::vector<std::shared_ptr<KeyFrame>> vpKFs_Mi = pMap_i->GetAllKeyFrames();
-
-//     for (std::shared_ptr<KeyFrame> pKF_j_Mi : vpKFs_Mi) {
-//       mpIdKFs[pKF_j_Mi->mnId] = pKF_j_Mi;
-//     }
-//   }
-
-//   return mpIdKFs;
-// }
-
-void Atlas::setUseGravityDirectionFromLastMap(bool is_true) {
-  mUseGravityDirectionFromLastMap = is_true;
-}
+void Atlas::setUseGravityDirectionFromLastMap(bool is_true) { mUseGravityDirectionFromLastMap = is_true; }
 
 }  // namespace MORB_SLAM

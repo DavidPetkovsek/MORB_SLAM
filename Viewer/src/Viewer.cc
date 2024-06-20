@@ -42,7 +42,7 @@ Viewer::Viewer(const System_ptr &pSystem)
       mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
-      mbClosed(false){
+      mbClosed(false) {
     newParameterLoader(*pSystem->getSettings());
     std::cout << "Creating Viewer thread" << std::endl;
     mptViewer = std::jthread(&Viewer::Run, this);
@@ -70,18 +70,15 @@ void Viewer::newParameterLoader(const Settings &settings) {
   mViewpointZ = settings.viewPointZ();
   mViewpointF = settings.viewPointF();
 
-  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO ||
-        mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) &&
-        settings.cameraModelType() == Settings::KannalaBrandt){
+  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && settings.cameraModelType() == Settings::KannalaBrandt) {
     both = true;
     mpFrameDrawer.both = true;
   }
 }
 
 void Viewer::update(const Packet &pose){
-  if(mpTracker->mState != TrackingState::NOT_INITIALIZED){
+  if(mpTracker->mState != TrackingState::NOT_INITIALIZED) {
     mpFrameDrawer.Update(mpTracker, pose);
-    // if(pose.pose)
     mpMapDrawer.SetCurrentCameraPose(mpTracker->mCurrentFrame.GetPose());
   }
 }
@@ -168,8 +165,7 @@ void Viewer::Run() {
 
   pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
   // Define Camera Render Object (for view / scene browsing)
-  pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000),
-      pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
+  pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000), pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
 
   // Add named OpenGL viewport to window and provide 3D Handler
   pangolin::View &d_cam = pangolin::CreateDisplay().SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f).SetHandler(new pangolin::Handler3D(s_cam));
@@ -188,7 +184,7 @@ void Viewer::Run() {
     menuShowGraph = true;
   }
 
-  float trackedImageScale = mpTracker->GetImageScale();
+  float trackedImageScale = 1.0;
 
   std::cout << "Starting the Viewer" << std::endl;
   while (isOpen()) {
@@ -279,8 +275,7 @@ void Viewer::Run() {
       bLocalizationMode = false;
       bFollow = true;
       menuFollowCamera = true;
-      // mpTracker->RequestResetActiveMap();
-      mpTracker->RequestReset();
+      mpTracker->RequestSystemReset();
       menuReset = false;
     }
 
