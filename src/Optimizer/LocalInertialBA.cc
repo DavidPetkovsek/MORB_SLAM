@@ -63,6 +63,11 @@ void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag,
 
   int N = vpOptimizableKFs.size();
 
+  if(N <= 2) {
+    std::cout << "LocalInertialBA: Not enough recent KFs. Did not optimize" << std::endl;
+    return;
+  }
+
   // the Local MapPoints list stores every MapPoint viewable from one of the Optimizable KeyFrames
   std::list<std::shared_ptr<MapPoint>> lLocalMapPoints;
   for (int i = 0; i < N; i++) {
