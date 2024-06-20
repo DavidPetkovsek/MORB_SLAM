@@ -1226,7 +1226,7 @@ bool Tracking::TrackLocalMap() {
 
   if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS) {
     Optimizer::PoseOptimization(&mCurrentFrame);
-  } else if(mbMapUpdated) {
+  } else if(mbMapUpdated || mCurrentFrame.mpPrevFrame->mpcpi == nullptr) {
     Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
   } else {
     Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
