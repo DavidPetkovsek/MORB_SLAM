@@ -85,8 +85,6 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // Create KeyFrame Database
   mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
-  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
-
   if (mStrLoadAtlasFromFile.empty()) {
     std::cout << "Initialization of Atlas from scratch " << std::endl;
   } else {
@@ -100,6 +98,8 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     }
     mpAtlas->CreateNewMap();
   }
+
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
 
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
@@ -373,9 +373,6 @@ bool System::LoadAtlas(int type) {
     mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
     mpAtlas->PostLoad();
-
-    if(mpAtlas->CountMaps() > 0)
-      mpTracker->mGlobalOriginPose = mpAtlas->GetAllMaps()[0]->GetOriginKF()->GetPose();
 
     return true;
   }
