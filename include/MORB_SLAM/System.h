@@ -109,13 +109,13 @@ class System {
     Sophus::SE3f GetInitialFramePose();
     bool HasInitialFramePose();
 
-    void SaveAtlas(int type);
-    
+    void SaveAtlas(int type) const;
+
 private:
 
     bool LoadAtlas(int type);
 
-    std::string CalculateCheckSum(std::string filename, int type);
+    std::string CalculateCheckSum(std::string filename, int type) const;
 
     // Input sensor
     CameraType mSensor;
