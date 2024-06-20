@@ -131,9 +131,10 @@ class System {
     Sophus::SE3f GetInitialFramePose();
     bool HasInitialFramePose();
 
+    void SaveAtlas(int type);
+    
 private:
 
-    void SaveAtlas(int type);
     bool LoadAtlas(int type);
 
     std::string CalculateCheckSum(std::string filename, int type);
