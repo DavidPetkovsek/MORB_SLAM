@@ -341,21 +341,26 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
 
   std::scoped_lock<std::mutex> lock(mMutexMap);
 
-  std::copy(mvpBackupMapPoints.begin(), mvpBackupMapPoints.end(), std::inserter(mspMapPoints, mspMapPoints.begin()));
-  std::copy(mvpBackupKeyFrames.begin(), mvpBackupKeyFrames.end(), std::inserter(mspKeyFrames, mspKeyFrames.begin()));
+  mspMapPoints.clear();
+  for(auto pMP : mvpBackupMapPoints)
+    if (pMP && !pMP->isBad())
+      mspMapPoints.insert(pMP);
+  mvpBackupMapPoints.clear();
+
+  mspKeyFrames.clear();
+  for(auto pKF : mvpBackupKeyFrames)
+    if (pKF && !pKF->isBad())
+      mspKeyFrames.insert(pKF);
+  mvpBackupKeyFrames.clear();
 
   std::map<long unsigned int, std::shared_ptr<MapPoint>> mpMapPointId;
   for (std::shared_ptr<MapPoint> pMPi : mspMapPoints) {
-    if (!pMPi || pMPi->isBad()) continue;
-
     pMPi->UpdateMap(sharedMap);
     mpMapPointId[pMPi->mnId] = pMPi;
   }
 
   std::map<long unsigned int, std::shared_ptr<KeyFrame>> mpKeyFrameId;
   for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
-    if (!pKFi || pKFi->isBad()) continue;
-
     pKFi->UpdateMap(sharedMap);
     pKFi->SetORBVocabulary(pORBVoc);
     pKFi->SetKeyFrameDatabase(pKFDB);
@@ -364,14 +369,10 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
 
   // References reconstruction between different instances
   for (std::shared_ptr<MapPoint> pMPi : mspMapPoints) {
-    if (!pMPi || pMPi->isBad()) continue;
-
     pMPi->PostLoad(mpKeyFrameId, mpMapPointId);
   }
 
   for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
-    if (!pKFi || pKFi->isBad()) continue;
-
     pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams);
     pKFDB->add(pKFi);
   }
@@ -389,8 +390,6 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
   for (size_t i = 0; i < mvBackupKeyFrameOriginsId.size(); ++i) {
     mvpKeyFrameOrigins.push_back(mpKeyFrameId[mvBackupKeyFrameOriginsId[i]]);
   }
-
-  mvpBackupMapPoints.clear();
 }
 
 }  // namespace MORB_SLAM
