@@ -69,20 +69,20 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
 
   bool isRead = false;
 
-    // Load ORB Vocabulary
-    std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
+  // Load ORB Vocabulary
+  std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
 
-    mpVocabulary = std::make_shared<ORBVocabulary>();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    if (!bVocLoad) {
-      std::cerr << "Wrong path to vocabulary. " << std::endl;
-      std::cerr << "Failed to open at: " << strVocFile << std::endl;
-      throw std::invalid_argument("Failed to open at: " + strVocFile);
-    }
-    std::cout << "Vocabulary loaded!" << std::endl << std::endl;
+  mpVocabulary = std::make_shared<ORBVocabulary>();
+  bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+  if (!bVocLoad) {
+    std::cerr << "Wrong path to vocabulary. " << std::endl;
+    std::cerr << "Failed to open at: " << strVocFile << std::endl;
+    throw std::invalid_argument("Failed to open at: " + strVocFile);
+  }
+  std::cout << "Vocabulary loaded!" << std::endl << std::endl;
 
-    // Create KeyFrame Database
-    mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
+  // Create KeyFrame Database
+  mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
     std::cout << "Initialization of Atlas from scratch " << std::endl;
@@ -98,8 +98,9 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
     mpAtlas->CreateNewMap();
   }
 
-  // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
+
+  // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
   
   // Do not axis flip when loading from existing atlas
@@ -255,19 +256,14 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
-
-  if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
-    SaveAtlas(FileType::BINARY_FILE);
-  }
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
-void System::SaveAtlas(int type) {
+void System::SaveAtlas(int type) const {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
-    std::cout << "not empty" << std::endl;
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     // Save the current session
     mpAtlas->PreSave();
     std::cout << "presaved" << std::endl;
@@ -376,12 +372,13 @@ bool System::LoadAtlas(int type) {
     mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
     mpAtlas->PostLoad();
+
     return true;
   }
   return false;
 }
 
-std::string System::CalculateCheckSum(std::string filename, int type) {
+std::string System::CalculateCheckSum(std::string filename, int type) const {
   std::string checksum = "";
 
   unsigned char c[MD5_DIGEST_LENGTH];
@@ -442,5 +439,9 @@ bool System::getIsLoopClosed() { return mpLoopCloser->loopClosed; }
 void System::setIsLoopClosed(bool isLoopClosed) { mpLoopCloser->loopClosed = isLoopClosed; }
 
 void System::RequestSystemReset() { mpTracker->RequestSystemReset(); }
+
+Sophus::SE3f System::GetInitialFramePose() { return mpTracker->mInitialFramePose; }
+
+bool System::HasInitialFramePose() { return mpTracker->mHasGlobalOriginPose; }
 
 }  // namespace MORB_SLAM

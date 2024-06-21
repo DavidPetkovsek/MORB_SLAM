@@ -35,6 +35,9 @@
 namespace MORB_SLAM {
 
 class Viewer {
+
+typedef std::shared_ptr<System> System_ptr;
+
 void newParameterLoader(const Settings& settings);
 // Main thread function. Draw points, keyframes, the current camera pose and the last processed frame. Drawing is refreshed according to the camera fps. We use Pangolin.
 void Run();
@@ -59,6 +62,8 @@ void Run();
   Atlas_ptr mpAtlas;
   std::jthread mptViewer;
   bool both;
+
+  std::shared_ptr<const System> mpSystem;
 
   // 1/fps in ms
   double mT;

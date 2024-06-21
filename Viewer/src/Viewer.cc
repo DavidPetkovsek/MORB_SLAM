@@ -37,7 +37,8 @@
 namespace MORB_SLAM {
 
 Viewer::Viewer(const System_ptr &pSystem)
-    : mpAtlas(pSystem->mpAtlas),
+    : mpSystem(pSystem),
+      mpAtlas(pSystem->mpAtlas),
       mpFrameDrawer(pSystem->mpAtlas),
       mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
       mpTracker(pSystem->mpTracker),
@@ -279,8 +280,10 @@ void Viewer::Run() {
       menuReset = false;
     }
 
-    if (menuStop)
-      break;
+    if (menuStop) {
+      mpSystem->SaveAtlas(1);
+      menuStop = false;
+    }
   }
 
   close();

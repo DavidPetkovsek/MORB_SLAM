@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
     int x = 0;
     int y = 0;
     bool doTheBonk = false;
+    bool isFirstLoop = true;
 
     webSocket.start();
 
@@ -146,6 +147,13 @@ int main(int argc, char **argv) {
 
 
         MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp, imu_points);
+
+        if(isFirstLoop && SLAM->HasInitialFramePose()) {
+            Sophus::SE3f outputPose = SLAM->GetInitialFramePose();
+            std::cout << outputPose.rotationMatrix() << std::endl;
+            std::cout << outputPose.translation() << std::endl;
+            isFirstLoop = false;
+        }
 
         // if(sophusPose.pose) {
         //     sophusPose.pose = sophusPose.pose->inverse();

@@ -37,12 +37,15 @@
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
 #include "MORB_SLAM/Settings.h"
-#include "MORB_SLAM/System.h"
+#include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
+
+class LocalMapping;
+class LoopClosing;
 
 class Tracking {
  public:
@@ -107,6 +110,10 @@ class Tracking {
   bool mLockPreTeleportTranslation;
 
   Sophus::SE3f mReturnPose;
+
+  bool mHasGlobalOriginPose = false;
+  Sophus::SE3f mGlobalOriginPose;
+  Sophus::SE3f mInitialFramePose;
 
   // Lists used to recover the full camera trajectory at the end of the execution. Basically we store the reference keyframe for each frame and its relative transformation
  protected:
@@ -269,6 +276,8 @@ public:
   void newParameterLoader(Settings& settings);
 
   bool mForcedLost;
+
+  std::shared_ptr<Map> mpRelocalizationTargetMap;
 
   // Reset flag
   std::mutex mMutexReset;

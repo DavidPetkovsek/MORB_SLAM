@@ -594,10 +594,11 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::
 
 void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
   mpRefKF = mpKFid[mBackupRefKFId];
-   
-  if (!mpRefKF.lock()) {
+
+  if (mpRefKF.expired()) {
     std::cout << "ERROR: MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << std::endl;
   }
+
   mpReplaced = nullptr;
   if (mBackupReplacedId >= 0) {
     std::map<long unsigned int, std::shared_ptr<MapPoint>>::iterator it = mpMPid.find(mBackupReplacedId);
@@ -605,12 +606,11 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
   }
 
   mObservations.clear();
-
   for (std::map<long unsigned int, int>::const_iterator it = mBackupObservationsId1.begin(), end = mBackupObservationsId1.end(); it != end; ++it) {
     std::weak_ptr<KeyFrame> pKFi = mpKFid[it->first];
     std::map<long unsigned int, int>::const_iterator it2 = mBackupObservationsId2.find(it->first);
     std::tuple<int, int> indexes = std::tuple<int, int>(it->second, it2->second);
-    if (pKFi.lock()) {
+    if (!pKFi.expired()) {
       mObservations[pKFi] = indexes;
     }
   }

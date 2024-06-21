@@ -64,7 +64,9 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mbReset(false),
       mbResetActiveMap(false),
       mbActivateLocalizationMode(false),
-      mbDeactivateLocalizationMode(false) {
+      mbDeactivateLocalizationMode(false),
+      mGlobalOriginPose(Sophus::SE3f()),
+      mInitialFramePose(Sophus::SE3f()) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -86,6 +88,9 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
 
   mBaseTranslation.setZero();
   mPreTeleportTranslation.setZero();
+
+  if(mpAtlas->CountMaps() > 1)
+    mGlobalOriginPose = mpAtlas->GetAllMaps()[0]->GetOriginKF()->GetPose();
 }
 
 Tracking::~Tracking() {}
@@ -732,8 +737,29 @@ void Tracking::StereoInitialization() {
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   }
 
-  // Set Frame pose to the default pose
-  mCurrentFrame.SetPose(getStereoInitDefaultPose());
+  //TODO Add setting for relocalization attempt
+  if(mpAtlas->CountMaps() > 1 && true && Relocalization()) {
+      std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap();
+      
+      {
+        std::unique_lock<std::mutex> mergeLock(mpRelocalizationTargetMap->mMutexMapUpdate);
+
+        mpAtlas->ChangeMap(mpRelocalizationTargetMap);
+        mpAtlas->SetMapBad(pCurrentMap);
+        mpAtlas->RemoveBadMaps();
+
+        if(!mHasGlobalOriginPose) {
+          Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix().inverse() * mGlobalOriginPose.rotationMatrix();
+          Eigen::Vector3f outputTranslation = mGlobalOriginPose.rotationMatrix().inverse()*mGlobalOriginPose.translation() - mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
+          mInitialFramePose = Sophus::SE3f(outputRotation, outputTranslation);
+          mHasGlobalOriginPose = true;
+        }
+      }
+  } else {
+    // Set Frame pose to the default pose
+    mCurrentFrame.SetPose(getStereoInitDefaultPose());
+  }
+
   if (mSensor.isInertial()) {
     Eigen::Vector3f Vwb0;
     Vwb0.setZero();
@@ -1203,7 +1229,7 @@ bool Tracking::TrackLocalMap() {
 
   if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS) {
     Optimizer::PoseOptimization(&mCurrentFrame);
-  } else if(mbMapUpdated) {
+  } else if(mbMapUpdated || mCurrentFrame.mpPrevFrame->mpcpi == nullptr) {
     Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
   } else {
     Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
@@ -1667,6 +1693,7 @@ bool Tracking::Relocalization() {
     }
   }
 
+  std::shared_ptr<Map> relocMap;
   // Alternatively perform some iterations of P4P RANSAC until we found a camera pose supported by enough inliers
   bool bMatch = false;
   ORBmatcher matcher2(0.9, true);
@@ -1745,6 +1772,7 @@ bool Tracking::Relocalization() {
 
         // If the pose is supported by enough inliers stop ransacs and continue
         if (nGood >= 50) {
+          relocMap = vpCandidateKFs[i]->GetMap();
           bMatch = true;
           break;
         }
@@ -1756,6 +1784,7 @@ bool Tracking::Relocalization() {
     return false;
   } else {
     mnLastRelocFrameId = mCurrentFrame.mnId;
+    mpRelocalizationTargetMap = relocMap;
     std::cout << "Relocalized!!" << std::endl;
     return true;
   }

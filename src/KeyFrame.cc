@@ -612,7 +612,7 @@ bool KeyFrame::SetBadFlag() {
       std::shared_ptr<KeyFrame> pP;
 
       for (std::shared_ptr<KeyFrame> pKF : mspChildrens) {
-        if (pKF->isBad()) continue;
+        if (!pKF || pKF->isBad()) continue;
 
         // Check if a parent candidate is connected to the keyframe
         std::vector<std::shared_ptr<KeyFrame>> vpConnected = pKF->GetVectorCovisibleKeyFrames();
@@ -641,9 +641,12 @@ bool KeyFrame::SetBadFlag() {
 
     // If a children has no covisibility links with any parent candidate, assign
     // to the original parent of this KF
-    if (!mspChildrens.empty())
-      for (std::shared_ptr<KeyFrame> pKF : mspChildrens)
+    if (!mspChildrens.empty()) {
+      for (std::shared_ptr<KeyFrame> pKF : mspChildrens) {
+        if (!pKF || pKF->isBad()) continue;
         pKF->ChangeParent(mpParent);
+      }
+    }
 
     if (mpParent) {
       mpParent->EraseChild(self);

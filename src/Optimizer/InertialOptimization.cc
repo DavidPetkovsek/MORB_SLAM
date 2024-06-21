@@ -255,7 +255,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
-      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
+      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !pKFi->mpImuPreintegrated) continue;
 
       pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
