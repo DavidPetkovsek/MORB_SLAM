@@ -31,6 +31,7 @@ target_link_libraries( ${TARGET_NAME} PUBLIC Threads::Threads )
 target_link_libraries( ${TARGET_NAME} PUBLIC Eigen3::Eigen )
 target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
 target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
+target_link_libraries( ${TARGET_NAME} PUBLIC OpenSSL::SSL)
 target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::${PROJECT_NAME} )
 target_link_libraries( ${TARGET_NAME} PRIVATE ${Pangolin_LIBRARIES} )
 
