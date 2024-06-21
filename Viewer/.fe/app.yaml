@@ -1,12 +1,10 @@
-backend-dir: null
+backend-dir: no-server
 compatibility: ^1.0.0-alpha.1
-cpp-deps: !!set {}
 dependencies: {}
-description: null
+description: MORB_SLAM Map Viewer and the Current Frame Displayer
 docker-base: alpine
-frontend-dir: null
+frontend-dir: no-server
 icon: null
-include: null
 name: null
 private_include: null
 slug: morb_viewer
