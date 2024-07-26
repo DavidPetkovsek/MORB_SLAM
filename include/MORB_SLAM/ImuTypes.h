@@ -47,17 +47,45 @@ const float GRAVITY_VALUE = 9.81;
 // IMU measurement (gyro, accelerometer and timestamp)
 class Point {
  public:
+ 
+  template <class Archive>
+  void serialize(Archive &ar, const unsigned int version) {
+    ar &boost::serialization::make_array(a.data(), a.size());
+    ar &boost::serialization::make_array(w.data(), w.size());
+    ar &t;
+    ar &hasAccel;
+    ar &hasGyro;
+  }
+
   Point(const float &acc_x, const float &acc_y, const float &acc_z, const float &ang_vel_x, const float &ang_vel_y, const float &ang_vel_z, const double &timestamp)
       : a(acc_x, acc_y, acc_z), w(ang_vel_x, ang_vel_y, ang_vel_z), t(timestamp) {}
   Point(const cv::Point3f Acc, const cv::Point3f Gyro, const double &timestamp)
       : a(Acc.x, Acc.y, Acc.z), w(Gyro.x, Gyro.y, Gyro.z), t(timestamp) {}
-  Point(const Eigen::Vector3f Acc, const Eigen::Vector3f  Gyro, const double &timestamp)
+  Point(const Eigen::Vector3f Acc, const Eigen::Vector3f Gyro, const double &timestamp)
       : a(Acc), w(Gyro), t(timestamp) {}
+  
+  // for boost
+  Point()
+      : hasAccel(false), hasGyro(false) {}
+  Point(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_, const double &t_, const bool &hasAccel_, const bool &hasGyro_)
+      : a(a_), w(w_), t(t_), hasAccel(hasAccel_), hasGyro(hasGyro_) {}
+
+  Point(const Eigen::Vector3f data, const double &timestamp, const bool isAccel): t(timestamp) {
+    if(isAccel) {
+      a = data;
+      hasGyro = false;
+    } else {
+      w = data;
+      hasAccel = false;
+    }
+  }
 
  public:
   Eigen::Vector3f a; //acceleration
   Eigen::Vector3f w; //angular velocity
   double t; //timestamp
+  bool hasAccel{true};
+  bool hasGyro{true};
 };
 
 // IMU biases (gyro and accelerometer)
@@ -165,7 +193,13 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   ~Preintegrated();
   void CopyFrom(std::shared_ptr<Preintegrated> pImuPre);
   void Initialize(const Bias &b_);
+
   void IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt);
+  void IntegrateMeasurements(const std::vector<IMU::Point> &datapoints);
+
+  void IntegrateNewGyroMeasurement(const Eigen::Vector3f &angVel, const float &dt);
+  void IntegrateNewAccelMeasurement(const Eigen::Vector3f &acceleration, const float &dt);
+  
   void Reintegrate();
   void MergePrevious(std::shared_ptr<Preintegrated> pPrev);
   void SetNewBias(const Bias &bu_);
@@ -217,22 +251,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   // This is used to compute the updated values of the preintegration
   Eigen::Matrix<float, 6, 1> db;
 
-  struct integrable {
-    template <class Archive>
-    void serialize(Archive &ar, const unsigned int version) {
-      ar &boost::serialization::make_array(a.data(), a.size());
-      ar &boost::serialization::make_array(w.data(), w.size());
-      ar &t;
-    }
-
-    
-    integrable() {}
-    integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_, const float &t_) : a(a_), w(w_), t(t_) {}
-    Eigen::Vector3f a, w;
-    float t;
-  };
-
-  std::vector<integrable> mvMeasurements;
+  std::vector<Point> mvMeasurements;
 
   std::mutex mMutex;
 };

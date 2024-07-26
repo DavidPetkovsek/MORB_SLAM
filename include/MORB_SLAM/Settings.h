@@ -76,7 +76,8 @@ class Settings {
   float noiseAcc() const { return noiseAcc_; }
   float gyroWalk() const { return gyroWalk_; }
   float accWalk() const { return accWalk_; }
-  float imuFrequency() const { return imuFrequency_; }
+  float accFrequency() const { return accFrequency_; }
+  float gyroFrequency() const { return gyroFrequency_; }
   const Sophus::SE3f &Tbc() const { return Tbc_; }
 
   float depthMapFactor() const { return depthMapFactor_; }
@@ -169,7 +170,8 @@ class Settings {
   /* Inertial stuff */
   float noiseGyro_, noiseAcc_;
   float gyroWalk_, accWalk_;
-  float imuFrequency_;
+  float accFrequency_;
+  float gyroFrequency_;
   Sophus::SE3f Tbc_;
 
   /* RGBD stuff */

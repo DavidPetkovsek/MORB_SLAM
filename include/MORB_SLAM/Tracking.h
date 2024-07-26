@@ -200,6 +200,8 @@ public:
   // Queue of IMU measurements between frames
   std::list<IMU::Point> mlQueueImuData;
 
+  std::vector<IMU::Point> mvImuData;
+
   // Vector of IMU measurements from previous to current frame (to be filled by PreintegrateIMU)
   std::mutex mMutexImuQueue;
 

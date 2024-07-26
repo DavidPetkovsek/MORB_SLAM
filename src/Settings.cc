@@ -408,7 +408,8 @@ void Settings::readIMU(cv::FileStorage& fSettings) {
   noiseAcc_ = readParameter<float>(fSettings, "IMU.NoiseAcc", found);
   gyroWalk_ = readParameter<float>(fSettings, "IMU.GyroWalk", found);
   accWalk_ = readParameter<float>(fSettings, "IMU.AccWalk", found);
-  imuFrequency_ = readParameter<float>(fSettings, "IMU.Frequency", found);
+  accFrequency_ = readParameter<float>(fSettings, "IMU.AccFrequency", found);
+  gyroFrequency_ = readParameter<float>(fSettings, "IMU.GyroFrequency", found);
 
   cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
   Tbc_ = Converter::toSophus(cvTbc);
@@ -598,7 +599,8 @@ std::ostream& operator<<(std::ostream& output, const Settings& settings) {
     output << "\t-Accelerometer noise: " << settings.noiseAcc_ << std::endl;
     output << "\t-Gyro walk: " << settings.gyroWalk_ << std::endl;
     output << "\t-Accelerometer walk: " << settings.accWalk_ << std::endl;
-    output << "\t-IMU frequency: " << settings.imuFrequency_ << std::endl;
+    output << "\t-IMU frequency: " << settings.accFrequency_ << std::endl;
+    output << "\t-IMU frequency: " << settings.gyroFrequency_ << std::endl;
   }
 
   if (settings.sensor_ == MORB_SLAM::CameraType::RGBD || settings.sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
