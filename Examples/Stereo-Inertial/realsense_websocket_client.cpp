@@ -25,7 +25,6 @@ int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
 
     {
-
     ix::initNetSystem();
     ix::WebSocket webSocket;
     //set to the address of the websocket host sending the IMU data
@@ -56,7 +55,6 @@ int main(int argc, char **argv) {
     std::mutex imu_mutex;
     std::condition_variable cond_image_rec;
 
-
     webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &imu_timestamp, &imu_timestamps, &imu, &imu_measurements, timestamp_size, image_size, imu_size, &imu_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
                 std::unique_lock<std::mutex> lock(imu_mutex);
@@ -75,13 +73,11 @@ int main(int argc, char **argv) {
                     imu_measurements.push_back(imu);
                     imu_timestamps.push_back(imu_timestamp);
                 }
-            }
-            else if(msg->type == ix::WebSocketMessageType::Open) {
+            } else if(msg->type == ix::WebSocketMessageType::Open) {
                 std::cout << "Connected to the Realsense websocket" << std::endl;
                 connected = true;
                 webSocket.send("gimme");
-            }
-            else if(msg->type == ix::WebSocketMessageType::Error) {
+            } else if(msg->type == ix::WebSocketMessageType::Error) {
                 std::cout << "Connection error: " << msg->errorInfo.reason << std::endl;
             }
         }
@@ -95,8 +91,6 @@ int main(int argc, char **argv) {
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
     // auto externalViewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, hostAddress, portNumber);
-
-    float imageScale = 1.0;
     
     std::vector<std::vector<float>> local_imu_measurements;
     std::vector<double> local_imu_timestamps;
@@ -104,8 +98,6 @@ int main(int argc, char **argv) {
     cv::Mat local_right_img(cv::Size(848, 480), CV_8UC1);
     double local_img_timestamp;
 
-    int x = 0;
-    int y = 0;
     bool doTheBonk = false;
     bool isFirstLoop = true;
 
@@ -138,14 +130,6 @@ int main(int argc, char **argv) {
             imu_points.push_back(new_point);
         }
 
-        if(imageScale != 1.f) {
-            int width = local_left_img.cols * imageScale;
-            int height = local_left_img.rows * imageScale;
-            cv::resize(local_left_img, local_left_img, cv::Size(width, height));
-            cv::resize(local_right_img, local_right_img, cv::Size(width, height));
-        }
-
-
         MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp, imu_points);
 
         if(isFirstLoop && SLAM->HasInitialFramePose()) {
@@ -155,30 +139,12 @@ int main(int argc, char **argv) {
             isFirstLoop = false;
         }
 
-        // if(sophusPose.pose) {
-        //     sophusPose.pose = sophusPose.pose->inverse();
-        // }
-        
-        // externalViewer->pushValues((x+y)/100.0, y/100.0, 0);
-        
-        if(doTheBonk) {
-            y++;
-            if(y%600 == 0) {
-                std::cout << "____________________________________________________________________________________" << std::endl;
-            }
-            if(y > 700) {
-                SLAM->ForceLost();
-                // x += 500;
-                y = 0;
-            }
-        }
-
         viewer->update(sophusPose);
         // if(sophusPose.pose.has_value())
-        // Sophus::Vector3f rotated_translation = sophusPose.pose->rotationMatrix().inverse()*sophusPose.pose->translation();
-        // std::cout << "accel" << rotated_translation[0] << " " << rotated_translation[1] << " " << rotated_translation[2] << std::endl;
+        //     Sophus::Vector3f pose_translation = sophusPose.pose->translation();
         imu_points.clear();
     }
+
     std::cout << "Stopping WebSocket" << std::endl;
     webSocket.stop();
     std::cout << "Stopping Viewer" << std::endl;
@@ -186,12 +152,7 @@ int main(int argc, char **argv) {
     std::cout << "Stopping SLAM" << std::endl;
     SLAM.reset();
     std::cout << "Done ( :" << std::endl;
-    
-    
     }
-
-
     std::cout << "Done 2 ( :" << std::endl;
-
     return 0;
 }
