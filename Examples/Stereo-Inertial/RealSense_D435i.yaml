@@ -5,7 +5,7 @@
 #--------------------------------------------------------------------------------------------
 
 System.FastIMUInit: "ON"
-System.StationaryIMUInit: "OFF"
+System.StationaryIMUInit: "ON"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters (calibration and biases vary from camera to camera)
@@ -37,9 +37,9 @@ IMU.T_b_c1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: f
-   data: [1.0, 0.0, 0.0, -0.005,
-          0.0, 1.0, 0.0, -0.005,
-          0.0, 0.0, 1.0, 0.0117,
+   data: [1.0, 0.0, 0.0, 0.00552,
+          0.0, 1.0, 0.0, -0.00510,
+          0.0, 0.0, 1.0, -0.01174,
           0.0, 0.0, 0.0, 1.0]
 
 # IMU noise (Use those from VINS-mono)
@@ -47,7 +47,8 @@ IMU.NoiseGyro:  0.008449 # 1e-3 # rad/s^0.5 # 1e-3 2.44e-4
 IMU.NoiseAcc: 0.01066 # 1e-2 # m/s^1.5 # 1e-2 1.47e-3
 IMU.GyroWalk: 0.000754 # rad/s^1.5  1e-6 
 IMU.AccWalk: 0.00930 # m/s^2.5  1e-4 
-IMU.Frequency: 200.0
+IMU.AccFrequency: 250.0
+IMU.GyroFrequency: 200.0
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
