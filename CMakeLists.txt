@@ -206,6 +206,23 @@ else()
     message(STATUS "** Realsense websocket client will not compile because ixwebsocket was not found")
 endif()
 
+if(ixwebsocket_FOUND)
+    set(TARGET_NAME external_IMU)
+    add_executable(${TARGET_NAME} Examples/Stereo-Inertial/external_IMU.cpp)
+    target_link_libraries( ${TARGET_NAME} PUBLIC ixwebsocket::ixwebsocket ) 
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::${PROJECT_NAME} )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::DBoW2 )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::g2o )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${PROJECT_NAME}::sophus )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Threads::Threads )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Eigen3::Eigen )
+    target_link_libraries( ${TARGET_NAME} PUBLIC Boost::serialization Boost::regex )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${OpenCV_LIBS} )
+    target_link_libraries( ${TARGET_NAME} PUBLIC ${Pangolin_LIBRARIES} )
+else()
+    message(STATUS "** Realsense websocket client will not compile because ixwebsocket was not found")
+endif()
+
 
 ######################################################################
 #                                                                    #
