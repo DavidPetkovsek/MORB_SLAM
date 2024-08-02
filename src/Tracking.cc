@@ -1933,17 +1933,18 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr
       Vwb1 + Gz * t12 + Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
   }
 
-  if (mCurrentFrame.mpImuPreintegrated) {
+  std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = mCurrentFrame.mpImuPreintegrated;
+  if (currFramePreintegrated) {
     const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
     const Eigen::Vector3f twb1 = mCurrentFrame.mpLastKeyFrame->GetImuPosition();
     const Eigen::Matrix3f Rwb1 = mCurrentFrame.mpLastKeyFrame->GetImuRotation();
     const Eigen::Vector3f Vwb1 = mCurrentFrame.mpLastKeyFrame->GetVelocity();
-    float t12 = mCurrentFrame.mpImuPreintegrated->dT;
+    float t12 = currFramePreintegrated->dT;
 
     mCurrentFrame.SetImuPoseVelocity(
-        IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaRotation()),
-        twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
-        Vwb1 + Gz * t12 + Rwb1 * mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+        IMU::NormalizeRotation(Rwb1 * currFramePreintegrated->GetUpdatedDeltaRotation()),
+        twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * currFramePreintegrated->GetUpdatedDeltaPosition(),
+        Vwb1 + Gz * t12 + Rwb1 * currFramePreintegrated->GetUpdatedDeltaVelocity());
   }
 }
 
