@@ -23,51 +23,95 @@ void sigHandler(int sigNum) {
     // exit(sigNum);
 }
 
-std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Eigen::Vector3f>& all_data_measurements, std::vector<double>& all_timestamps, double prev_frame_timestamp, double curr_frame_timestamp, bool isAccel) {
+void dumpInfo(std::vector<double>& all_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp) {
+    std::cout << "Previous Timestamp: " << std::format("{}", prev_frame_timestamp) << std::endl;
+    for(auto point : all_timestamps) {
+        std::cout << std::format("{}", point) << std::endl;
+    }
+    std::cout << "Current Timestamp: " << std::format("{}", curr_frame_timestamp) << std::endl;
+    std::cout << "_______________" << std::endl;
+}
+
+std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Eigen::Vector3f>& all_data_measurements, std::vector<double>& all_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp, const bool isAccel) {
     std::vector<MORB_SLAM::IMU::Point> output;
+
+    size_t n = all_timestamps.size();
+    if(n == 0) {
+        std::string imuType = isAccel ? "Accel" : "Gyro";
+        std::cout << "No " << imuType << " measurements" << std::endl;
+        std::cout << "_______________" << std::endl;
+        return output;
+    }
 
     std::vector<Eigen::Vector3f> data_measurements;
     std::vector<double> timestamps;
     
-    size_t n = all_timestamps.size();
+    bool preMeasurement = false;
     int idx = 0;
 
-    if(n >= 2 && all_timestamps[0] < prev_frame_timestamp && all_timestamps[1] >= prev_frame_timestamp) {
-        timestamps.push_back(all_timestamps[0]);
-        data_measurements.push_back(all_data_measurements[0]);
-        timestamps.push_back(all_timestamps[1]);
-        data_measurements.push_back(all_data_measurements[1]);
-        idx = 2;
+    // set idx to the first index with a timestamp after the previous frame
+    for(; idx < n && all_timestamps[idx] <= prev_frame_timestamp; idx++) {}
+
+    if(idx == n) {
+        std::string imuType = isAccel ? "Accel" : "Gyro";
+        std::cout << "All " << imuType << " measurements are before the previous frame" << std::endl;
+        // dumpInfo(all_timestamps, prev_frame_timestamp, curr_frame_timestamp);
+        all_data_measurements.clear();
+        all_timestamps.clear();
+        return output;
     }
 
-    for(; idx < n && all_timestamps[idx] <= curr_frame_timestamp; idx++) {
-        if(all_timestamps[idx] >= prev_frame_timestamp) {
-            timestamps.push_back(all_timestamps[idx]);
-            data_measurements.push_back(all_data_measurements[idx]);
-        }
+    // add the IMU measurement before the previous frame timestamp to interpolate IMU measurement
+    if(idx > 0) {
+        timestamps.push_back(all_timestamps[idx-1]);
+        data_measurements.push_back(all_data_measurements[idx-1]);
+        preMeasurement = true;
     }
 
+    // add all IMU measurements between the two frames
+    for(; idx < n && all_timestamps[idx] < curr_frame_timestamp; idx++) {
+        timestamps.push_back(all_timestamps[idx]);
+        data_measurements.push_back(all_data_measurements[idx]);
+        // num_valid_measurements++;
+    }
+
+    // Case where all imu measurements occur after the current frame's timestep
+    if(timestamps.empty()) {
+        std::string imuType = isAccel ? "Accel" : "Gyro";
+        std::cout << "All " << imuType << " measurements are after the current frame" << std::endl;
+        // dumpInfo(all_timestamps, prev_frame_timestamp, curr_frame_timestamp);
+        return output;
+    } else if(timestamps.size() == 1 && preMeasurement) {
+        std::string imuType = isAccel ? "Accel" : "Gyro";
+        std::cout << "No " << imuType << " measurements are between the previous and current frames" << std::endl;
+        // dumpInfo(all_timestamps, prev_frame_timestamp, curr_frame_timestamp);
+        all_timestamps.erase(all_timestamps.begin(), std::next(all_timestamps.begin(), idx));
+        all_data_measurements.erase(all_data_measurements.begin(), std::next(all_data_measurements.begin(), idx));
+        return output;
+    }
+
+    // add the IMU measurement after the current frame timestamp to interpolate IMU measurement
     if(idx != n) {
         timestamps.push_back(all_timestamps[idx]);
         data_measurements.push_back(all_data_measurements[idx]);
     }
 
+    // remove all measurements from the global list that are before the IMU measurement right before the current frame
     if(idx > 1) {
         all_timestamps.erase(all_timestamps.begin(), std::next(all_timestamps.begin(), idx-1));
         all_data_measurements.erase(all_data_measurements.begin(), std::next(all_data_measurements.begin(), idx-1));
     }
 
-    Eigen::Vector3f data;
+    Eigen::Vector3f data = data_measurements[0];
     double tstep = curr_frame_timestamp-prev_frame_timestamp;
     n = timestamps.size();
 
-    if(n == 0) {
-        std::cout << "No datapoints" << std::endl;
-        return output;
-    } else if(n == 1) {
-        output.push_back(MORB_SLAM::IMU::Point(data_measurements[0], tstep, isAccel));
+    if(n == 1) {
+        output.push_back(MORB_SLAM::IMU::Point(data, tstep, isAccel));
         return output;
     } else if(n == 2) {
+        // point-slope form of the line between the two IMU points, evaluated at t = avg(t_prevFrame, t_currFrame)
+        // data = data_measurements[0] + (data_measurements[1] - data_measurements[0])*(prev_frame_timestamp + tstep/2 - timestamps[0])/(timestamps[1]-timestamps[0]);
         data = (data_measurements[0] + data_measurements[1]) * 0.5f;
         output.push_back(MORB_SLAM::IMU::Point(data, tstep, isAccel));
         return output;
@@ -77,20 +121,28 @@ std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Eigen::Vector3f>& 
         tstep = timestamps[i+1] - timestamps[i];
 
         if(tstep == 0) {
-            std::cout << "Two IMU points have the same timestamp. Skipping iteration." << std::endl;
-            continue;
-        }
-
-        if (i == 0) { // first iteration
-            double timeFromLastFrameToFirstIMUTimestamp = timestamps[0] - prev_frame_timestamp;
-            data = (data_measurements[1] + data_measurements[0] - (data_measurements[1] - data_measurements[0]) * (timeFromLastFrameToFirstIMUTimestamp / tstep)) * 0.5f;
-            tstep = timestamps[1] - prev_frame_timestamp;
-        } else if (i < (n - 2)) {
-            data = (data_measurements[i] + data_measurements[i+1]) * 0.5f;
-        } else { // last iteration
-            double timeFromeLastIMUTimestampToCurrentFrame = curr_frame_timestamp - timestamps[i+1];
-            data = (data_measurements[i+1] + data_measurements[i] + (data_measurements[i+1] - data_measurements[i]) * (timeFromeLastIMUTimestampToCurrentFrame / tstep)) * 0.5f;
-            tstep = curr_frame_timestamp - timestamps[i];
+            std::cout << "Warning: Two IMU points have the same timestamp." << std::endl;
+            if (i == 0) { // first iteration
+                data = (data_measurements[0] + data_measurements[1]) * 0.5f;
+                tstep = timestamps[1] - prev_frame_timestamp;
+            } else if (i < (n - 2)) {
+                continue;
+            } else { // last iteration
+                data = (data_measurements[i] + data_measurements[i+1]) * 0.5f;
+                tstep = curr_frame_timestamp - timestamps[i];
+            }
+        } else {
+            if (i == 0) { // first iteration
+                double timeFromLastFrameToFirstIMUTimestamp = timestamps[0] - prev_frame_timestamp;
+                data = (data_measurements[1] + data_measurements[0] - (data_measurements[1] - data_measurements[0]) * (timeFromLastFrameToFirstIMUTimestamp / tstep)) * 0.5f;
+                tstep = timestamps[1] - prev_frame_timestamp;
+            } else if (i < (n - 2)) {
+                data = (data_measurements[i] + data_measurements[i+1]) * 0.5f;
+            } else { // last iteration
+                double timeFromeLastIMUTimestampToCurrentFrame = curr_frame_timestamp - timestamps[i+1];
+                data = (data_measurements[i+1] + data_measurements[i] + (data_measurements[i+1] - data_measurements[i]) * (timeFromeLastIMUTimestampToCurrentFrame / tstep)) * 0.5f;
+                tstep = curr_frame_timestamp - timestamps[i];
+            }
         }
 
         if(tstep == 0) {
@@ -104,7 +156,7 @@ std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Eigen::Vector3f>& 
     return output;
 }
 
-std::vector<MORB_SLAM::IMU::Point> CombineIMU(std::vector<MORB_SLAM::IMU::Point> accel_points, std::vector<MORB_SLAM::IMU::Point> gyro_points) {
+std::vector<MORB_SLAM::IMU::Point> CombineIMU(std::vector<MORB_SLAM::IMU::Point>& accel_points, std::vector<MORB_SLAM::IMU::Point>& gyro_points, const double timeConversion=1.0) {
     std::vector<MORB_SLAM::IMU::Point> imu_points;
 
     auto accel_itr = accel_points.begin();
@@ -113,6 +165,7 @@ std::vector<MORB_SLAM::IMU::Point> CombineIMU(std::vector<MORB_SLAM::IMU::Point>
     double net_gyro_timestamp = 0;
 
     bool accel_next;
+    const bool convertTimestamps = timeConversion != 1.0;
 
     while(accel_itr != accel_points.end() || gyro_itr != gyro_points.end()) {
 
@@ -127,12 +180,14 @@ std::vector<MORB_SLAM::IMU::Point> CombineIMU(std::vector<MORB_SLAM::IMU::Point>
         }
 
         if(accel_next) {
-            imu_points.push_back(*accel_itr);
+            if(convertTimestamps) accel_itr->t *= timeConversion;
             net_accel_timestamp += accel_itr->t;
+            imu_points.push_back(*accel_itr);
             accel_itr++;
         } else {
-            imu_points.push_back(*gyro_itr);
+            if(convertTimestamps) gyro_itr->t *= timeConversion;
             net_gyro_timestamp += gyro_itr->t;
+            imu_points.push_back(*gyro_itr);
             gyro_itr++;
         }
     }
@@ -153,8 +208,6 @@ int main(int argc, char **argv) {
 
     cv::Mat left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat right_img(cv::Size(848, 480), CV_8UC1);
-    // TODO make img/imu timestamps std::chrono so you can read in either sec or ms
-    // For now it's just seconds
     double img_timestamp;
     
     Eigen::Vector3f accel(3);
@@ -167,21 +220,22 @@ int main(int argc, char **argv) {
     std::vector<double> accel_timestamps;
     std::vector<double> gyro_timestamps;
 
-    int image_size = left_img.total()*left_img.elemSize();
-    int timestamp_size = sizeof(double);
-    int imu_size = sizeof(float)*3;
+    const int image_size = left_img.total()*left_img.elemSize();
+    const int timestamp_size = sizeof(double);
+    const int imu_size = sizeof(float)*3;
 
     bool connected = false;
     bool new_img = false;
 
     std::mutex imu_mutex;
+    std::mutex accel_mutex;
+    std::mutex gyro_mutex;
     std::condition_variable cond_image_rec;
 
-    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &imu_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
+    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &imu_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
-                std::unique_lock<std::mutex> lock(imu_mutex);
-
                 if(msg->str.data()[0] == 1) {
+                    std::unique_lock<std::mutex> lock(imu_mutex);
                     std::memcpy(&img_timestamp, msg->str.data()+1, timestamp_size);
                     std::memcpy((char *)left_img.data, msg->str.data()+1+timestamp_size, image_size);
                     std::memcpy((char *)right_img.data, msg->str.data()+1+image_size+timestamp_size, image_size);
@@ -190,11 +244,13 @@ int main(int argc, char **argv) {
                     lock.unlock();
                     cond_image_rec.notify_all();
                 } else if(msg->str.data()[0] == 2) {
+                    std::unique_lock<std::mutex> lock(accel_mutex);
                     std::memcpy(&accel_timestamp, msg->str.data()+1, timestamp_size);
                     std::memcpy(accel.data(), msg->str.data()+1+timestamp_size, imu_size);
                     accel_measurements.push_back(accel);
                     accel_timestamps.push_back(accel_timestamp);
                 } else if(msg->str.data()[0] == 3) {
+                    std::unique_lock<std::mutex> lock(gyro_mutex);
                     std::memcpy(&gyro_timestamp, msg->str.data()+1, timestamp_size);
                     std::memcpy(gyro.data(), msg->str.data()+1+timestamp_size, imu_size);
                     gyro_measurements.push_back(gyro);
@@ -212,8 +268,8 @@ int main(int argc, char **argv) {
     
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::string hostAddress = "0.0.0.0";
-    int portNumber = 9002;
+    const std::string hostAddress = "0.0.0.0";
+    const int portNumber = 9002;
 
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
@@ -225,16 +281,25 @@ int main(int argc, char **argv) {
     cv::Mat local_left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat local_right_img(cv::Size(848, 480), CV_8UC1);
     double local_img_timestamp;
+    double prev_img_timestamp;
 
-    bool doTheBonk = false;
-    bool isFirstLoop = true;
-
-    double prev_img_timestamp = -1;
+    double time_unit_to_seconds_conversion_factor = 0.001;
+    double slam_timestamp;
 
     webSocket.start();
 
     while(!exitSLAM && !connected) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    {
+        std::unique_lock<std::mutex> lk(imu_mutex);
+        while(!new_img)
+            cond_image_rec.wait(lk);
+
+        prev_img_timestamp = img_timestamp;
+
+        new_img = false;
     }
 
     while(!exitSLAM) {
@@ -243,53 +308,42 @@ int main(int argc, char **argv) {
             while(!new_img)
                 cond_image_rec.wait(lk);
 
-            local_accel_measurements.insert(local_accel_measurements.end(), accel_measurements.begin(), accel_measurements.end());
-            local_accel_timestamps.insert(local_accel_timestamps.end(), accel_timestamps.begin(), accel_timestamps.end());
-            local_gyro_measurements.insert(local_gyro_measurements.end(), gyro_measurements.begin(), gyro_measurements.end());
-            local_gyro_timestamps.insert(local_gyro_timestamps.end(), gyro_timestamps.begin(), gyro_timestamps.end());
             local_img_timestamp = img_timestamp;
             local_left_img = left_img.clone();
             local_right_img = right_img.clone();
 
-            accel_measurements.clear();
-            accel_timestamps.clear();
-            gyro_measurements.clear();
-            gyro_timestamps.clear();
-
             new_img = false;
         }
 
+        {
+            std::unique_lock<std::mutex> lk(accel_mutex);
+            local_accel_measurements.insert(local_accel_measurements.end(), accel_measurements.begin(), accel_measurements.end());
+            local_accel_timestamps.insert(local_accel_timestamps.end(), accel_timestamps.begin(), accel_timestamps.end());
+
+            accel_measurements.clear();
+            accel_timestamps.clear();
+        }
+
+        {
+            std::unique_lock<std::mutex> lk(gyro_mutex);
+            local_gyro_measurements.insert(local_gyro_measurements.end(), gyro_measurements.begin(), gyro_measurements.end());
+            local_gyro_timestamps.insert(local_gyro_timestamps.end(), gyro_timestamps.begin(), gyro_timestamps.end());
+
+            gyro_measurements.clear();
+            gyro_timestamps.clear();
+        }
 
         std::vector<MORB_SLAM::IMU::Point> accel_points = InterpolateIMU(local_accel_measurements, local_accel_timestamps, prev_img_timestamp, local_img_timestamp, true);
         std::vector<MORB_SLAM::IMU::Point> gyro_points = InterpolateIMU(local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, false);
 
-        std::vector<MORB_SLAM::IMU::Point> imu_points = CombineIMU(accel_points, gyro_points);
+        std::vector<MORB_SLAM::IMU::Point> imu_points;
+        if(!accel_points.empty() && !gyro_points.empty())
+            imu_points = CombineIMU(accel_points, gyro_points, time_unit_to_seconds_conversion_factor);
 
-        // std::cout << "PREVIOUS FRAME TIMESTAMP: " << prev_img_timestamp << std::endl;
-        // for(auto itr = imu_points.begin(); itr != imu_points.end(); itr++) {
-        //     std::string point_type = itr->hasAccel ? "Accel" : "Gyro";
-        //     Eigen::Vector3f point_data = itr->hasAccel ? itr->a : itr->w;
-            
-        //     std::cout << point_type << " w/ dt = " << itr->t << ": " << point_data[0] << ", " << point_data[1] << ", " << point_data[2] << std::endl;
-        // }
-        // std::cout << "CURRENT FRAME TIMESTAMP: " << local_img_timestamp << std::endl;
-        // std::cout << "______________________________" << std::endl << std::endl;
-
-        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp, imu_points);
-
-        // if(isFirstLoop && SLAM->HasInitialFramePose()) {
-        //     Sophus::SE3f outputPose = SLAM->GetInitialFramePose();
-        //     std::cout << outputPose.rotationMatrix() << std::endl;
-        //     std::cout << outputPose.translation() << std::endl;
-        //     isFirstLoop = false;
-        // }
+        slam_timestamp = local_img_timestamp*time_unit_to_seconds_conversion_factor;
+        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_timestamp, imu_points);
 
         viewer->update(sophusPose);
-
-        // if(sophusPose.pose.has_value()) {
-        //     Sophus::Vector3f pose_translation = sophusPose.pose->translation();
-        //     std::cout << pose_translation[0] << ", " << pose_translation[1] << ", " << pose_translation[2] << std::endl;
-        // }
 
         prev_img_timestamp = local_img_timestamp;
         imu_points.clear();
