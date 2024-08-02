@@ -195,6 +195,23 @@ std::vector<MORB_SLAM::IMU::Point> CombineIMU(std::vector<MORB_SLAM::IMU::Point>
     return imu_points;
 }
 
+std::pair<double, std::vector<MORB_SLAM::IMU::Point>> ProcessIMU(std::vector<Eigen::Vector3f>& accel_measurements, std::vector<double>& accel_timestamps, std::vector<Eigen::Vector3f>& gyro_measurements, std::vector<double>& gyro_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp, const double timeConversion=1) {
+    std::pair<double, std::vector<MORB_SLAM::IMU::Point>> imu_data;
+
+    std::vector<MORB_SLAM::IMU::Point> accel_points = InterpolateIMU(accel_measurements, accel_timestamps, prev_frame_timestamp, curr_frame_timestamp, true);
+    std::vector<MORB_SLAM::IMU::Point> gyro_points = InterpolateIMU(gyro_measurements, gyro_timestamps, prev_frame_timestamp, curr_frame_timestamp, false);
+
+    if(timeConversion == 1.0)
+        imu_data.first = curr_frame_timestamp;
+    else
+        imu_data.first = curr_frame_timestamp*timeConversion;
+
+    if(!accel_points.empty() && !gyro_points.empty())
+        imu_data.second = CombineIMU(accel_points, gyro_points, timeConversion);
+
+    return imu_data;
+}
+
 int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
 
@@ -265,14 +282,18 @@ int main(int argc, char **argv) {
             }
         }
     );
-    
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Settings
+////////////////////////////////////////////////////////////////////////////////////////////////////////
     const std::string hostAddress = "0.0.0.0";
     const int portNumber = 9002;
+    const double time_unit_to_seconds_conversion_factor = 0.001;
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+
+    std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
      
     std::vector<Eigen::Vector3f> local_accel_measurements;
     std::vector<double> local_accel_timestamps;
@@ -282,9 +303,6 @@ int main(int argc, char **argv) {
     cv::Mat local_right_img(cv::Size(848, 480), CV_8UC1);
     double local_img_timestamp;
     double prev_img_timestamp;
-
-    double time_unit_to_seconds_conversion_factor = 0.001;
-    double slam_timestamp;
 
     webSocket.start();
 
@@ -333,20 +351,12 @@ int main(int argc, char **argv) {
             gyro_timestamps.clear();
         }
 
-        std::vector<MORB_SLAM::IMU::Point> accel_points = InterpolateIMU(local_accel_measurements, local_accel_timestamps, prev_img_timestamp, local_img_timestamp, true);
-        std::vector<MORB_SLAM::IMU::Point> gyro_points = InterpolateIMU(local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, false);
+        slam_data = ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
 
-        std::vector<MORB_SLAM::IMU::Point> imu_points;
-        if(!accel_points.empty() && !gyro_points.empty())
-            imu_points = CombineIMU(accel_points, gyro_points, time_unit_to_seconds_conversion_factor);
-
-        slam_timestamp = local_img_timestamp*time_unit_to_seconds_conversion_factor;
-        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_timestamp, imu_points);
-
+        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
         viewer->update(sophusPose);
 
         prev_img_timestamp = local_img_timestamp;
-        imu_points.clear();
     }
 
     std::cout << "Stopping WebSocket" << std::endl;
