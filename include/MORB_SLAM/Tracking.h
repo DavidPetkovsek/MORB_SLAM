@@ -198,17 +198,10 @@ public:
   std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
   // Queue of IMU measurements between frames
-  std::list<IMU::Point> mlQueueImuData;
-
   std::vector<IMU::Point> mvImuData;
-
-  // Vector of IMU measurements from previous to current frame (to be filled by PreintegrateIMU)
-  std::mutex mMutexImuQueue;
 
   // Imu calibration parameters
   std::shared_ptr<IMU::Calib> mpImuCalib;
-
-  // Last Bias Estimation (at keyframe creation)
 
   // In case of performing only localization, this flag is true when there are no matches to points in the map. Still tracking will continue if there are
   // enough matches with temporal points. In that case we are doing visual odometry. The system will try to do relocalization to recover "zero-drift" localization to the map.

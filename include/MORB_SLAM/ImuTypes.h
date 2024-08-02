@@ -180,7 +180,6 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
     ar &boost::serialization::make_array(JPg.data(), JPg.size());
     ar &boost::serialization::make_array(JPa.data(), JPa.size());
     ar &boost::serialization::make_array(avgA.data(), avgA.size());
-    ar &boost::serialization::make_array(avgW.data(), avgW.size());
     ar &bu;
     ar &boost::serialization::make_array(db.data(), db.size());
     ar &mvMeasurements;
@@ -194,8 +193,8 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   void CopyFrom(std::shared_ptr<Preintegrated> pImuPre);
   void Initialize(const Bias &b_);
 
-  void IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt);
-  void IntegrateMeasurements(const std::vector<IMU::Point> &datapoints);
+  void IntegrateNewIMUMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt);
+  bool IntegrateMeasurements(const std::vector<IMU::Point> &datapoints);
 
   void IntegrateNewGyroMeasurement(const Eigen::Vector3f &angVel, const float &dt);
   void IntegrateNewAccelMeasurement(const Eigen::Vector3f &acceleration, const float &dt);
@@ -242,7 +241,7 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   Eigen::Matrix3f dR;
   Eigen::Vector3f dV, dP;
   Eigen::Matrix3f JRg, JVg, JVa, JPg, JPa;
-  Eigen::Vector3f avgA, avgW;
+  Eigen::Vector3f avgA;
 
  private:
   // Updated bias

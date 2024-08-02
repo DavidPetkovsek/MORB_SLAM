@@ -265,10 +265,7 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
 }
 
 void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
-  std::scoped_lock<std::mutex> lock(mMutexImuQueue);
   mvImuData = imuMeasurements;
-  // for(auto &point : imuMeasurements)
-  //   mlQueueImuData.emplace_back(point); // copy ctor
 }
 
 void Tracking::PreintegrateIMU() {
@@ -283,91 +280,17 @@ void Tracking::PreintegrateIMU() {
     return;
   }
 
-  // std::vector<IMU::Point> frameIMUDataList;
-  // frameIMUDataList.reserve(mlQueueImuData.size());
-  // // Fill frameIMUDataList with data for this frame from the global imu data queue
-  // {
-  //   std::scoped_lock<std::mutex> lock(mMutexImuQueue);
-  //   auto itr = mlQueueImuData.begin();
-  //   // iterate until the end of the queue or until we hit a timestamp that is newer than current frame
-  //   for(; itr != mlQueueImuData.end() && itr->t < mCurrentFrame.mTimeStamp; ++itr)
-  //     if(itr->t >= mCurrentFrame.mpPrevFrame->mTimeStamp) // ignore measurements before the previous frame
-  //       frameIMUDataList.emplace_back(*itr); // add to local vector (via copy)
-  //   // If there are points to remove (we found imu measurements to use)
-  //   if(!frameIMUDataList.empty() && itr != mlQueueImuData.begin())
-  //     mlQueueImuData.erase(mlQueueImuData.begin(), --itr); // erase them from the global queue since they are now copied locally
-  // }
-
-  // // Fails if there's 0 or 1 measurement
-  // const int n = static_cast<int>(frameIMUDataList.size()) - 1;
-  // if (n <= 0) {
-  //   std::cout << "Empty IMU measurements vector!!!" << std::endl;
-  //   mCurrentFrame.setIntegrated();
-  //   return;
-  // }
-
   std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
+  bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuData);
 
-  // SUS math is being used here
-  // points are not equally distributed and are being interpolated. There may not be any benefit to anything this if statement is doing in the below for loop
-  // NOTE: this does actually help smooth out the IMU measurements, testing without this interpolation gave worse results.
-
-  // // we get here only if there are at least 2 measurements
-  // for (int i = 0; i < n; i++) { // iterates until the second to last element
-  //   float tstep;
-  //   float dt = frameIMUDataList[i + 1].t - frameIMUDataList[i].t;
-  //   Eigen::Vector3f acc, angVel;
-  //   if ((i == 0) && i < (n - 1)) { // first iteration but not the last iteration
-  //     float timeFromLastFrameToFirstIMUFrame = frameIMUDataList[0].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
-  //     acc = (frameIMUDataList[0].a + frameIMUDataList[1].a - (frameIMUDataList[1].a - frameIMUDataList[0].a) * (timeFromLastFrameToFirstIMUFrame / dt)) * 0.5f;
-  //     angVel = (frameIMUDataList[0].w + frameIMUDataList[1].w - (frameIMUDataList[1].w - frameIMUDataList[0].w) * (timeFromLastFrameToFirstIMUFrame / dt)) * 0.5f;
-  //     tstep = frameIMUDataList[1].t - mCurrentFrame.mpPrevFrame->mTimeStamp;
-  //   } else if (i < (n - 1)) { // not the first nor the last iteration
-  //     acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a) * 0.5f;
-  //     angVel = (frameIMUDataList[i].w + frameIMUDataList[i + 1].w) * 0.5f;
-  //     tstep = dt;
-  //   } else if ((i > 0) && (i == (n - 1))) { // not the first but is the last iteration
-  //     float timeFromeLastIMUFrameToCurrentFrame = frameIMUDataList[i + 1].t - mCurrentFrame.mTimeStamp;
-  //     acc = (frameIMUDataList[i].a + frameIMUDataList[i + 1].a - (frameIMUDataList[i + 1].a - frameIMUDataList[i].a) * (timeFromeLastIMUFrameToCurrentFrame / dt)) * 0.5f;
-  //     angVel = (frameIMUDataList[i].w + frameIMUDataList[i + 1].w - (frameIMUDataList[i + 1].w - frameIMUDataList[i].w) * (timeFromeLastIMUFrameToCurrentFrame / dt)) * 0.5f;
-  //     tstep = mCurrentFrame.mTimeStamp - frameIMUDataList[i].t;
-  //   } else if ((i == 0) && (i == (n - 1))) { // both the first and the last iteration
-  //     // there are two measurements but we ignore the second for fun TODO: dont?
-  //     acc = frameIMUDataList[0].a;
-  //     angVel = frameIMUDataList[0].w;
-  //     tstep = mCurrentFrame.mTimeStamp - mCurrentFrame.mpPrevFrame->mTimeStamp;
-  //   }
-
-  //   if (dt == 0 || tstep == 0) {
-  //     std::cout << "WARNING: a PreintegrateIMU datapoint has dt=0, skipping iteration" << std::endl;
-  //     continue;
-  //   }
-
-  //   //Prediction steps of the EKF
-  //   mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc, angVel, tstep);
-  //   pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc, angVel, tstep);
-  //   testcomp->IntegrateNewAccelMeasurement(acc, tstep);
-  //   testcomp->IntegrateNewGyroMeasurement(angVel, tstep);
-  // }
-
-  mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuData);
-  pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuData);
-  // for(auto itr = mvImuData.begin(); itr != mvImuData.end(); itr++) {
-  //   IMU::Point datapoint = *itr;
-  //   if(datapoint.hasAccel) {
-  //     mpImuPreintegratedFromLastKF->IntegrateNewAccelMeasurement(datapoint.a, datapoint.t);
-  //     pImuPreintegratedFromLastFrame->IntegrateNewAccelMeasurement(datapoint.a, datapoint.t);
-  //   } else {
-  //     mpImuPreintegratedFromLastKF->IntegrateNewGyroMeasurement(datapoint.w, datapoint.t);
-  //     pImuPreintegratedFromLastFrame->IntegrateNewGyroMeasurement(datapoint.w, datapoint.t);
-  //   }
-  // }
-
-  // std::cout << mpImuPreintegratedFromLastKF->C << std::endl;
-
-  mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
-  mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-  mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
+  if(hasPreintKF) {
+    mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuData);
+    mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+    mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
+  } else {
+    Verbose::PrintMess("mvImuData is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
+  }
   mCurrentFrame.setIntegrated();
 }
 
@@ -378,13 +301,14 @@ bool Tracking::PredictStateIMU() {
     return false;
   }
 
+  const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+
   //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
   if (mbMapUpdated && mpLastKeyFrame) {
     const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
     const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
     const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
 
-    const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
     const float t12 = mpImuPreintegratedFromLastKF->dT;
     IMU::Bias b = mpLastKeyFrame->GetImuBias();
 
@@ -400,7 +324,6 @@ bool Tracking::PredictStateIMU() {
     const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
     const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
 
-    const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
     const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
     IMU::Bias b = mLastFrame.mImuBias;
 
@@ -438,8 +361,6 @@ void Tracking::Track() {
     if (mLastFrame.mTimeStamp > mCurrentFrame.mTimeStamp) {
       mForcedLost = false;
       std::cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << std::endl;
-      std::scoped_lock<std::mutex> lock(mMutexImuQueue);
-      mlQueueImuData.clear();
       CreateMapInAtlas();
       return;
     }
