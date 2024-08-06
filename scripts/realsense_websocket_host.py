@@ -54,7 +54,6 @@ async def do_polling(websocket):
             accel_frame = accel_pipeline.wait_for_frames(20000)
             gyro_frame = gyro_pipeline.wait_for_frames(20000)
             cam_frame = cams_pipeline.wait_for_frames(20000)
-            t0 = cam_frame.timestamp
 
             while True:
                 accel_frame = accel_pipeline.poll_for_frames()
@@ -68,21 +67,21 @@ async def do_polling(websocket):
                 if gyro_frame:
                     real_gyro = gyro_frame
                     send_gyro = True
-                
-                if cam_frame:
-                    timestamp = struct.pack('<d', (cam_frame.timestamp-t0)/1000)
-                    left_cam = np.asarray(cam_frame[0].get_data(), dtype=np.uint8).tobytes()
-                    right_cam = np.asarray(cam_frame[1].get_data(), dtype=np.uint8).tobytes()
-                    cam_frame = None
-                    await websocket.send(bytes([1])+timestamp+left_cam+right_cam)
 
                 if send_accel and send_gyro:
-                    timestamp = struct.pack('<d', ((real_accel.timestamp+real_gyro.timestamp)/2-t0)/1000)
+                    timestamp = struct.pack('<d', (real_accel.timestamp+real_gyro.timestamp)/2)
                     a = parse_data(real_accel[0].as_motion_frame().get_motion_data())
                     w = parse_data(real_gyro[0].as_motion_frame().get_motion_data())
                     await websocket.send(bytes([2])+timestamp+a+w)
                     send_accel = False
                     send_gyro = False
+                
+                if cam_frame:
+                    timestamp = struct.pack('<d', cam_frame.timestamp)
+                    left_cam = np.asarray(cam_frame[0].get_data(), dtype=np.uint8).tobytes()
+                    right_cam = np.asarray(cam_frame[1].get_data(), dtype=np.uint8).tobytes()
+                    cam_frame = None
+                    await websocket.send(bytes([1])+timestamp+left_cam+right_cam)
 
         finally:
             cams_pipeline.stop()
@@ -92,5 +91,6 @@ async def do_polling(websocket):
 
 async def main():
    async with serve(do_polling, "0.0.0.0", 8765, ping_interval=None):
-       await asyncio.Future()
+        print("Hosting Websocket")
+        await asyncio.Future()
 asyncio.run(main())
