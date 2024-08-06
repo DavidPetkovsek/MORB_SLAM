@@ -55,15 +55,15 @@ int main(int argc, char **argv) {
     bool connected = false;
     bool new_img = false;
 
-    std::mutex imu_mutex;
+    std::mutex img_mutex;
     std::mutex accel_mutex;
     std::mutex gyro_mutex;
     std::condition_variable cond_image_rec;
 
-    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &imu_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
+    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &img_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
                 if(msg->str.data()[0] == 1) {
-                    std::unique_lock<std::mutex> lock(imu_mutex);
+                    std::unique_lock<std::mutex> lock(img_mutex);
                     std::memcpy(&img_timestamp, msg->str.data()+1, timestamp_size);
                     std::memcpy((char *)left_img.data, msg->str.data()+1+timestamp_size, image_size);
                     std::memcpy((char *)right_img.data, msg->str.data()+1+image_size+timestamp_size, image_size);
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     }
 
     {
-        std::unique_lock<std::mutex> lk(imu_mutex);
+        std::unique_lock<std::mutex> lk(img_mutex);
         while(!new_img)
             cond_image_rec.wait(lk);
 
@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 
     while(!exitSLAM) {
         {
-            std::unique_lock<std::mutex> lk(imu_mutex);
+            std::unique_lock<std::mutex> lk(img_mutex);
             while(!new_img)
                 cond_image_rec.wait(lk);
 
@@ -163,11 +163,11 @@ int main(int argc, char **argv) {
         }
 
         slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
+        prev_img_timestamp = local_img_timestamp;
 
         MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
-        viewer->update(sophusPose);
 
-        prev_img_timestamp = local_img_timestamp;
+        viewer->update(sophusPose);
     }
 
     std::cout << "Stopping WebSocket" << std::endl;

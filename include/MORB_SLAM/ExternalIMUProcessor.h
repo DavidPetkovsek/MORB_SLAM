@@ -41,6 +41,8 @@ namespace IMUProcessor{
  * @return a pair of the current frame's timestamp in seconds, and a vector of all accelerometer and gyro points created by CombineIMU
  */
 std::pair<double, std::vector<MORB_SLAM::IMU::Point>> ProcessIMU(std::vector<Eigen::Vector3f>& accel_measurements, std::vector<double>& accel_timestamps, std::vector<Eigen::Vector3f>& gyro_measurements, std::vector<double>& gyro_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp, const double timeConversion=1.0);
+// Overload that supports combining the accel and gyro measurements
+std::pair<double, std::vector<MORB_SLAM::IMU::Point>> ProcessIMU(std::vector<Vector6f>& imu_measurements, std::vector<double>& imu_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp, const double timeConversion=1.0);
 
 /**
  * Interpolates the IMU data between datapoints.
@@ -58,6 +60,8 @@ std::pair<double, std::vector<MORB_SLAM::IMU::Point>> ProcessIMU(std::vector<Eig
  * @return a vector of the interpolated IMU points. The points are in chronological order. Returns an empty vector if there are no valid IMU Measurements.
  */
 std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Eigen::Vector3f>& all_data_measurements, std::vector<double>& all_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp, const bool isAccel);
+// Overload that supports combining the accel and gyro measurements
+std::vector<MORB_SLAM::IMU::Point> InterpolateIMU(std::vector<Vector6f>& all_data_measurements, std::vector<double>& all_timestamps, const double prev_frame_timestamp, const double curr_frame_timestamp);
 
 /**
  * Combines the accelerometer and gyro measurement vectors into one vector.
