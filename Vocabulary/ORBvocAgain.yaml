@@ -1,0 +1,194 @@
+%YAML:1.0
+# Cropped example of what the ORB Vocabulary looks like
+---
+vocabulary:
+   k: 10
+   L: 6
+   scoringType: 0
+   weightingType: 0
+   nodes:
+      - { nodeId:1, parentId:0, weight:0.,
+          descriptor:"252 188 188 242 169 109 85 143 187 191 164 25 222 255 72 27 129 215 237 16 58 111 219 51 219 211 85 127 192 112 134 34 " }
+      - { nodeId:2, parentId:0, weight:0.,
+          descriptor:"93 125 221 103 180 14 111 184 112 234 255 76 215 115 153 115 22 196 124 110 233 240 249 46 237 239 101 20 104 243 66 33 " }
+      - { nodeId:3, parentId:0, weight:0.,
+          descriptor:"58 185 58 250 93 221 82 239 143 13 252 9 46 221 102 16 200 187 215 80 78 43 250 245 251 221 0 123 83 14 238 202 " }
+      - { nodeId:4, parentId:0, weight:0.,
+          descriptor:"193 156 191 245 160 238 61 55 190 251 86 116 253 55 128 123 167 119 127 8 177 220 179 103 205 255 126 192 136 192 129 121 " }
+      - { nodeId:5, parentId:0, weight:0.,
+          descriptor:"61 101 105 111 84 95 79 248 85 224 253 10 83 89 157 48 88 204 22 234 201 178 125 190 119 205 165 52 119 187 82 224 " }
+      - { nodeId:6, parentId:0, weight:0.,
+          descriptor:"10 188 178 154 255 245 184 199 159 95 92 183 172 254 102 204 239 59 191 145 182 75 178 243 31 87 158 235 150 76 173 223 " }
+      - { nodeId:7, parentId:0, weight:0.,
+          descriptor:"27 223 99 205 118 146 239 117 93 72 94 230 121 206 182 100 126 171 23 237 197 184 37 255 54 109 170 128 63 142 113 253 " }
+      - { nodeId:8, parentId:0, weight:0.,
+          descriptor:"222 95 254 254 47 86 127 248 189 206 214 167 111 255 55 83 254 245 255 231 236 199 171 238 243 251 239 147 39 247 45 83 " }
+      - { nodeId:9, parentId:0, weight:0.,
+          descriptor:"111 180 240 83 253 127 254 218 123 255 61 60 202 252 223 190 159 206 247 30 183 114 255 242 63 95 85 255 199 255 222 247 " }
+      - { nodeId:10, parentId:0, weight:0.,
+          descriptor:"2 205 6 159 220 131 174 239 30 1 218 2 224 234 48 64 121 235 59 193 114 187 11 255 60 38 143 64 21 90 177 136 " }
+      - { nodeId:975464, parentId:10, weight:0.,
+          descriptor:"0 32 70 141 76 139 232 72 46 161 242 2 164 138 48 64 106 173 106 129 2 251 195 213 148 32 155 0 21 8 113 136 " }
+      - { nodeId:975465, parentId:10, weight:0.,
+          descriptor:"2 205 6 158 221 133 190 239 158 17 200 3 236 234 60 64 217 107 59 193 114 107 90 255 61 54 159 107 16 90 177 138 " }
+      - { nodeId:975466, parentId:10, weight:0.,
+          descriptor:"132 237 134 159 220 171 174 238 30 179 219 18 224 234 121 65 121 239 106 243 114 243 203 255 60 38 207 108 149 123 177 128 " }
+      - { nodeId:975467, parentId:10, weight:0.,
+          descriptor:"34 205 2 158 212 131 174 231 22 0 88 2 96 232 48 64 120 106 19 195 82 186 10 255 56 36 142 72 21 26 240 136 " }
+      - { nodeId:975468, parentId:10, weight:0.,
+          descriptor:"150 205 198 158 222 162 174 239 156 130 219 210 109 234 57 65 127 231 63 227 240 247 15 239 188 38 239 128 149 121 177 128 " }
+      - { nodeId:975469, parentId:10, weight:0.,
+          descriptor:"148 205 6 158 156 131 6 236 150 130 202 2 98 226 41 65 121 230 106 226 104 195 11 191 184 166 207 16 16 123 176 8 " }
+      - { nodeId:975470, parentId:10, weight:0.,
+          descriptor:"16 141 78 175 148 131 238 239 22 1 218 131 241 107 56 64 121 235 31 229 122 187 77 191 248 231 175 192 53 138 240 136 " }
+      - { nodeId:975471, parentId:10, weight:0.,
+          descriptor:"16 141 27 191 146 195 39 231 190 1 202 2 245 243 32 64 240 123 11 192 82 153 18 127 249 166 142 64 16 2 165 170 " }
+      - { nodeId:975472, parentId:10, weight:0.,
+          descriptor:"130 205 150 159 150 162 190 231 188 3 90 18 236 234 32 65 103 111 59 129 112 221 3 255 60 38 222 128 20 112 161 136 " }
+      - { nodeId:975473, parentId:10, weight:0.,
+          descriptor:"2 141 2 155 212 163 170 231 30 1 90 18 172 234 48 64 123 43 19 145 50 152 0 255 44 38 158 192 148 72 177 136 " }
+      - { nodeId:1071238, parentId:975473, weight:0.,
+          descriptor:"2 141 2 159 148 163 174 231 30 3 90 18 232 234 48 64 121 107 19 145 50 152 9 255 44 38 158 192 148 72 177 136 " }
+      - { nodeId:1071239, parentId:975473, weight:0.,
+          descriptor:"0 173 16 153 244 169 160 199 30 17 88 16 164 162 96 64 203 43 2 16 18 184 66 247 44 22 30 96 144 72 129 136 " }
+      - { nodeId:1071240, parentId:975473, weight:0.,
+          descriptor:"34 173 98 219 212 163 234 231 31 1 120 18 40 234 52 64 123 171 19 145 50 186 0 255 60 30 158 192 213 72 241 136 " }
+      - { nodeId:1071241, parentId:975473, weight:0.,
+          descriptor:"0 140 130 153 212 171 168 103 62 3 74 82 181 162 32 64 121 42 34 152 50 152 65 95 12 38 154 64 148 72 177 136 " }
+      - { nodeId:1071242, parentId:975473, weight:0.,
+          descriptor:"2 141 18 153 246 131 190 231 30 1 90 130 172 238 48 64 255 59 19 129 114 152 0 255 44 54 158 194 20 72 161 137 " }
+      - { nodeId:1071243, parentId:975473, weight:0.,
+          descriptor:"3 141 34 155 212 179 174 231 94 65 88 151 168 232 54 64 249 43 19 149 182 184 4 255 44 30 158 194 157 76 249 204 " }
+      - { nodeId:1071244, parentId:975473, weight:0.,
+          descriptor:"2 143 11 187 246 163 170 231 30 1 90 231 181 234 176 64 127 43 19 149 146 152 13 255 44 6 190 192 157 74 177 153 " }
+      - { nodeId:1071245, parentId:975473, weight:0.,
+          descriptor:"1 141 27 251 244 167 171 247 30 9 88 82 180 251 48 96 221 59 19 153 51 184 91 255 109 142 190 192 156 72 177 169 " }
+      - { nodeId:1071246, parentId:975473, weight:0.,
+          descriptor:"134 136 130 155 84 163 170 194 30 3 81 18 172 202 48 72 123 43 19 145 50 188 10 247 12 6 154 192 149 9 49 128 " }
+      - { nodeId:1071247, parentId:975473, weight:0.,
+          descriptor:"2 141 2 153 84 129 168 103 28 1 90 2 172 138 48 64 106 43 19 129 82 152 0 255 36 36 154 192 20 8 177 136 " }
+      - { nodeId:1080996, parentId:1071247, weight:0.,
+          descriptor:"2 141 2 153 85 199 184 103 28 1 88 3 172 154 48 64 232 43 147 129 82 152 16 255 45 52 154 67 20 12 181 138 " }
+      - { nodeId:1080997, parentId:1071247, weight:0.,
+          descriptor:"2 141 42 185 22 195 185 103 28 5 90 131 181 143 48 64 106 59 19 129 18 152 0 255 229 37 154 193 21 8 181 202 " }
+      - { nodeId:1080998, parentId:1071247, weight:0.,
+          descriptor:"3 137 19 153 116 129 168 103 142 1 88 66 188 130 48 64 234 43 18 137 83 152 2 253 36 52 186 200 28 8 161 136 " }
+      - { nodeId:1080999, parentId:1071247, weight:0.,
+          descriptor:"2 136 18 153 118 128 184 71 190 1 82 2 172 138 48 64 230 59 19 145 2 152 2 245 4 52 154 192 20 0 33 137 " }
+      - { nodeId:1081000, parentId:1071247, weight:0.,
+          descriptor:"2 143 2 153 86 129 168 103 156 1 90 131 172 138 48 64 110 43 19 133 86 152 6 255 36 36 154 192 21 12 177 136 " }
+      - { nodeId:1081001, parentId:1071247, weight:0.,
+          descriptor:"2 141 11 153 84 133 168 103 28 1 90 18 180 138 48 64 232 43 19 129 114 184 16 255 37 54 154 64 20 8 177 136 " }
+      - { nodeId:1081002, parentId:1071247, weight:0.,
+          descriptor:"0 141 18 137 86 128 168 103 44 1 90 2 172 130 32 64 98 43 2 128 82 152 0 221 36 36 154 64 20 0 161 136 " }
+      - { nodeId:1081003, parentId:1071247, weight:0.,
+          descriptor:"2 133 2 136 148 128 44 103 4 1 90 2 40 34 32 64 72 35 19 128 82 136 0 221 32 36 138 192 20 8 176 8 " }
+      - { nodeId:1081004, parentId:1071247, weight:0.,
+          descriptor:"2 141 2 157 20 130 172 103 28 1 90 2 44 170 48 64 106 43 19 129 114 152 0 255 36 38 154 192 20 8 177 136 " }
+      - { nodeId:1081005, parentId:1071247, weight:0.,
+          descriptor:"2 129 2 137 84 129 168 103 12 1 90 2 172 138 48 64 106 43 19 145 18 184 0 213 44 52 154 192 21 8 177 136 " }
+      - { nodeId:1081973, parentId:1081005, weight:0.,
+          descriptor:"18 5 80 129 166 41 236 7 9 32 58 10 142 40 52 0 42 131 23 1 80 48 0 192 164 152 14 144 101 88 209 0 " }
+      - { nodeId:1081974, parentId:1081005, weight:0.,
+          descriptor:"2 129 2 153 20 129 168 71 62 1 90 2 172 138 48 64 104 43 19 145 18 152 67 213 12 52 154 192 20 8 177 136 " }
+      - { nodeId:1081975, parentId:1081005, weight:0.,
+          descriptor:"2 129 50 137 116 129 184 103 12 1 88 2 172 138 52 64 234 43 19 129 210 184 0 213 36 60 154 194 21 8 177 137 " }
+      - { nodeId:1081976, parentId:1081005, weight:0.,
+          descriptor:"2 129 96 137 212 137 168 103 76 1 88 2 136 8 52 64 106 11 19 145 210 184 64 213 44 24 138 192 85 8 241 128 " }
+
+   words:
+      - { wordId:0, nodeId:51 }
+      - { wordId:1, nodeId:52 }
+      - { wordId:2, nodeId:53 }
+      - { wordId:3, nodeId:54 }
+      - { wordId:4, nodeId:55 }
+      - { wordId:5, nodeId:56 }
+      - { wordId:6, nodeId:57 }
+      - { wordId:7, nodeId:58 }
+      - { wordId:8, nodeId:59 }
+      - { wordId:9, nodeId:60 }
+      - { wordId:10, nodeId:61 }
+      - { wordId:11, nodeId:62 }
+      - { wordId:12, nodeId:63 }
+      - { wordId:13, nodeId:64 }
+      - { wordId:14, nodeId:65 }
+      - { wordId:15, nodeId:66 }
+      - { wordId:16, nodeId:67 }
+      - { wordId:17, nodeId:68 }
+      - { wordId:18, nodeId:69 }
+      - { wordId:19, nodeId:70 }
+      - { wordId:20, nodeId:71 }
+      - { wordId:21, nodeId:72 }
+      - { wordId:22, nodeId:73 }
+      - { wordId:23, nodeId:74 }
+      - { wordId:24, nodeId:75 }
+      - { wordId:25, nodeId:76 }
+      - { wordId:26, nodeId:77 }
+      - { wordId:27, nodeId:78 }
+      - { wordId:28, nodeId:79 }
+      - { wordId:29, nodeId:80 }
+      - { wordId:30, nodeId:81 }
+      - { wordId:31, nodeId:82 }
+      - { wordId:32, nodeId:83 }
+      - { wordId:33, nodeId:84 }
+      - { wordId:34, nodeId:85 }
+      - { wordId:35, nodeId:86 }
+      - { wordId:36, nodeId:87 }
+      - { wordId:37, nodeId:88 }
+      - { wordId:38, nodeId:89 }
+      - { wordId:39, nodeId:90 }
+      - { wordId:40, nodeId:91 }
+      - { wordId:41, nodeId:92 }
+      - { wordId:42, nodeId:93 }
+      - { wordId:43, nodeId:94 }
+      - { wordId:44, nodeId:95 }
+      - { wordId:45, nodeId:96 }
+      - { wordId:46, nodeId:97 }
+      - { wordId:47, nodeId:98 }
+      - { wordId:48, nodeId:99 }
+      - { wordId:49, nodeId:100 }
+      - { wordId:50, nodeId:101 }
+      - { wordId:51, nodeId:102 }
+      - { wordId:52, nodeId:103 }
+      - { wordId:53, nodeId:104 }
+      - { wordId:54, nodeId:105 }
+      - { wordId:55, nodeId:106 }
+      - { wordId:56, nodeId:107 }
+      - { wordId:57, nodeId:108 }
+      - { wordId:58, nodeId:109 }
+      - { wordId:59, nodeId:110 }
+      - { wordId:60, nodeId:111 }
+      - { wordId:61, nodeId:112 }
+      - { wordId:62, nodeId:113 }
+      - { wordId:63, nodeId:114 }
+      - { wordId:64, nodeId:115 }
+      - { wordId:65, nodeId:116 }
+      - { wordId:66, nodeId:117 }
+      - { wordId:67, nodeId:118 }
+      - { wordId:68, nodeId:119 }
+      - { wordId:69, nodeId:120 }
+      - { wordId:70, nodeId:121 }
+      - { wordId:71, nodeId:122 }
+      - { wordId:72, nodeId:123 }
+      - { wordId:73, nodeId:124 }
+      - { wordId:74, nodeId:125 }
+      - { wordId:75, nodeId:126 }
+      - { wordId:76, nodeId:127 }
+      - { wordId:77, nodeId:128 }
+      - { wordId:78, nodeId:129 }
+      - { wordId:79, nodeId:130 }
+      - { wordId:80, nodeId:131 }
+      - { wordId:81, nodeId:132 }
+      - { wordId:82, nodeId:133 }
+      - { wordId:83, nodeId:134 }
+      - { wordId:84, nodeId:135 }
+      - { wordId:85, nodeId:136 }
+      - { wordId:86, nodeId:137 }
+      - { wordId:87, nodeId:138 }
+      - { wordId:88, nodeId:139 }
+      - { wordId:89, nodeId:140 }
+      - { wordId:90, nodeId:141 }
+      - { wordId:91, nodeId:142 }
+      - { wordId:92, nodeId:143 }
+      - { wordId:93, nodeId:144 }
+      - { wordId:94, nodeId:145 }
