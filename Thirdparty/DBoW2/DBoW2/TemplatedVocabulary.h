@@ -1214,8 +1214,6 @@ bool TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
         m_nodes[nid].children.reserve(m_k);
       }
     }
-    m_nodes.shrink_to_fit();
-    m_words.shrink_to_fit();
 
     return true;
 }
