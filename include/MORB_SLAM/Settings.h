@@ -106,6 +106,7 @@ class Settings {
   bool activeLoopClosing() const { return activeLoopClosing_; }
   bool fastIMUInit() const { return fastIMUInit_; }
   bool stationaryIMUInit() const { return stationaryIMUInit_; }
+  bool newMapRelocalization() const { return newMapRelocalization_; }
 
   const cv::Mat &M1l() const { return M1l_; }
   const cv::Mat &M2l() const { return M2l_; }
@@ -199,6 +200,7 @@ class Settings {
   bool activeLoopClosing_;
   bool fastIMUInit_;
   bool stationaryIMUInit_;
+  bool newMapRelocalization_;
 };
 }  // namespace MORB_SLAM
 

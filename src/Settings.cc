@@ -468,6 +468,9 @@ void Settings::readOtherParameters(cv::FileStorage& fSettings) {
   if (!found) fastIMUInit_ = false;
   stationaryIMUInit_ = readParameter<bool>(fSettings, "System.StationaryIMUInit", found, false);
   if (!found) stationaryIMUInit_ = false;
+  newMapRelocalization_ = readParameter<bool>(fSettings, "System.NewMapRelocalization", found, false);
+  if (!found) newMapRelocalization_ = false;
+
 }
 
 void Settings::precomputeRectificationMaps() {
