@@ -48,6 +48,9 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
+// Used to validate that the structure of the saved atlas is consistent. If any of the boost::serialize functions gets changed in code, or if any saved value changes datatype, increment this value
+const int ATLAS_FORMAT_VERSION = 0;
+
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
