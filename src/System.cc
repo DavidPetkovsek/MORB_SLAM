@@ -48,9 +48,6 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-// Used to validate that the structure of the saved atlas is consistent. If any of the boost::serialize functions gets changed in code, or if any saved value changes datatype, increment this value
-const int ATLAS_FORMAT_VERSION = 0;
-
 System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
     : mSensor(sensor),
       mpAtlas(std::make_shared<Atlas>(0)),
@@ -305,6 +302,7 @@ void System::SaveAtlas(int type) const {
 
       oa << strVocabularyName;
       oa << strVocabularyChecksum;
+      oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
       std::cout << "End to write the save text file" << std::endl;
     } else if (type == BINARY_FILE) {
@@ -320,6 +318,8 @@ void System::SaveAtlas(int type) const {
       std::cout << "streamed name" << std::endl;
       oa << strVocabularyChecksum;
       std::cout << "streamed checksum" << std::endl;
+      oa << SERIALIZED_ATLAS_FORMAT_VERSION;
+      std::cout << "streamed atlas format version" << std::endl;
       oa << *mpAtlas;
       std::cout << "End to write save binary file" << std::endl;
     } else {
@@ -329,7 +329,7 @@ void System::SaveAtlas(int type) const {
 }
 
 bool System::LoadAtlas(int type) {
-  std::string strFileVoc, strVocChecksum;
+  std::string strFileVoc, strVocChecksum, strSerializedAtlasFormatVersion;
   bool isRead = false;
 
   std::string pathLoadFileName = "/";
@@ -346,6 +346,11 @@ bool System::LoadAtlas(int type) {
     boost::archive::text_iarchive ia(ifs);
     ia >> strFileVoc;
     ia >> strVocChecksum;
+    ia >> strSerializedAtlasFormatVersion;
+    if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
+      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
+    }
     ia >> *mpAtlas;
     std::cout << "End to load the save text file " << std::endl;
     isRead = true;
@@ -359,6 +364,11 @@ bool System::LoadAtlas(int type) {
     boost::archive::binary_iarchive ia(ifs);
     ia >> strFileVoc;
     ia >> strVocChecksum;
+    ia >> strSerializedAtlasFormatVersion;
+    if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
+      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
+    }
     ia >> *mpAtlas;
     std::cout << "End to load the save binary file" << std::endl;
     isRead = true;

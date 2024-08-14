@@ -37,6 +37,10 @@
 #include "MORB_SLAM/CameraModels/Pinhole.h"
 
 namespace MORB_SLAM {
+
+// Used to validate that the format of the saved atlas is correct. If any of the boost::serialize functions gets changed in code, or if any saved value changes datatype, increment the version number
+const std::string SERIALIZED_ATLAS_FORMAT_VERSION = "v1.0";
+
 class Map;
 class MapPoint;
 class KeyFrame;
