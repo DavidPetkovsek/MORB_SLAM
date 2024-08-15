@@ -91,4 +91,4 @@ Viewer.ViewpointF: 500.0
 # System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
 # System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
 # System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/expos"
-System.LoadAtlasFromFile: "/home/sorourke/MORB_SLAM/atlases/expos"
+# System.LoadAtlasFromFile: "/home/sorourke/MORB_SLAM/atlases/expos"
