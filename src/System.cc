@@ -383,7 +383,6 @@ std::string System::CalculateCheckSum(std::string filename, int type) const {
   std::string checksum = "";
 
   unsigned int md5_digest_len = EVP_MD_size(EVP_md5());
-  // unsigned char c[MD5_DIGEST_LENGTH];
   unsigned char *md5_digest;
 
   std::ios_base::openmode flags = std::ios::in;
@@ -398,28 +397,21 @@ std::string System::CalculateCheckSum(std::string filename, int type) const {
     return checksum;
   }
 
-  // MD5_CTX md5Context;
   EVP_MD_CTX *mdctx;
   
   char buffer[1024];
-  // unsigned char* buffer;
 
-  std::cout << "buffer generated" << std::endl;
-
-  // MD5_Init(&md5Context);
   mdctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
 
   std::cout << "just initialized MD5" << std::endl;
   while (int count = f.readsome(buffer, sizeof(buffer))) {
-    // MD5_Update(&md5Context, buffer, count);
     EVP_DigestUpdate(mdctx, buffer, count);
   }
   std::cout << "about to close" << std::endl;
 
   f.close();
 
-  // MD5_Final(c, &md5Context);
   md5_digest = (unsigned char *)OPENSSL_malloc(md5_digest_len);
   EVP_DigestFinal_ex(mdctx, md5_digest, &md5_digest_len);
   EVP_MD_CTX_free(mdctx);
