@@ -85,5 +85,10 @@ Viewer.ViewpointF: 500.0
 #--------------------------------------------------------------------------------------------
 # Map/Atlas IO
 #--------------------------------------------------------------------------------------------
-# System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/atlas_v0"
-System.LoadAtlasFromFile: "/home/sorourke/MORB_SLAM/atlases/atlas_v0"
+
+# Save/load Map
+# System.LoadAtlasFromFile: "/home/landson/MORB_SLAM/trial"
+# System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
+# System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
+# System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/expos"
+# System.LoadAtlasFromFile: "/home/sorourke/MORB_SLAM/atlases/expos"
