@@ -437,7 +437,7 @@ void KeyFrame::UpdateConnections(bool upParent) {
   // In case no keyframe counter is over threshold add the one with maximum counter
   int nmax = 0;
   std::shared_ptr<KeyFrame> pKFmax = nullptr;
-  int th = 15;
+  const int th = 15;
 
   std::vector<std::pair<int, std::shared_ptr<KeyFrame>>> vPairs;
   vPairs.reserve(KFcounter.size());

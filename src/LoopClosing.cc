@@ -363,9 +363,9 @@ bool LoopClosing::DetectAndReffineSim3FromLastKF(std::shared_ptr<KeyFrame> pCurr
   std::set<std::shared_ptr<MapPoint>> spAlreadyMatchedMPs;
   nNumProjMatches = FindMatchesByProjection(pCurrentKF, pMatchedKF, gScw, spAlreadyMatchedMPs, vpMPs, vpMatchedMPs);
 
-  int nProjMatches = 30;
-  int nProjOptMatches = 50;
-  int nProjMatchesRep = 100;
+  const int nProjMatches = 30;
+  const int nProjOptMatches = 50;
+  const int nProjMatchesRep = 100;
 
   if (nNumProjMatches >= nProjMatches) {
     Sophus::SE3d mTwm = pMatchedKF->GetPoseInverse().cast<double>();
@@ -396,16 +396,14 @@ bool LoopClosing::DetectAndReffineSim3FromLastKF(std::shared_ptr<KeyFrame> pCurr
 
 bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFrame>>& vpBowCand, std::shared_ptr<KeyFrame>& pMatchedKF2, std::shared_ptr<KeyFrame>& pLastCurrentKF, g2o::Sim3& g2oScw,
                                             int& nNumCoincidences, std::vector<std::shared_ptr<MapPoint>>& vpMPs, std::vector<std::shared_ptr<MapPoint>>& vpMatchedMPs) {
-  int nBoWMatches = 20; // lower this and try again
-  int nBoWInliers = 15;
-  int nSim3Inliers = 20;
-  int nProjMatches = 50;
-  int nProjOptMatches = 100; //80;
+  const int nBoWMatches = 20; // lower this and try again
+  const int nBoWInliers = 15;
+  const int nSim3Inliers = 20;
+  const int nProjMatches = 50;
+  const int nProjOptMatches = 100; //80;
+  const int nNumCovisibles = 10;
 
   std::set<std::shared_ptr<KeyFrame>> spConnectedKeyFrames = mpCurrentKF->GetConnectedKeyFrames();
-
-  int nNumCovisibles = 10;
-
   ORBmatcher matcherBoW(0.8, true);
   ORBmatcher matcher(0.75, true);
 
@@ -416,10 +414,6 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFram
   g2o::Sim3 g2oBestScw;
   std::vector<std::shared_ptr<MapPoint>> vpBestMapPoints;
   std::vector<std::shared_ptr<MapPoint>> vpBestMatchedMapPoints;
-
-  int numCandidates = vpBowCand.size();
-  std::vector<int> vnStage(numCandidates, 0);
-  std::vector<int> vnMatchesStage(numCandidates, 0);
 
   int index = 0;
   for (std::shared_ptr<KeyFrame> pKFi : vpBowCand) {
@@ -477,8 +471,6 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFram
     }
 
     if (numBoWMatches >= nBoWMatches) { // TODO pick a good threshold
-      // Geometric validation
-
       // Scale is not fixed if the cam is IMU_MONO and the IMU's unititialized
       bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->GetInertialBA2());
 
@@ -588,11 +580,6 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFram
                 }
               }
 
-              if (nNumKFs < 3) {
-                vnStage[index] = 8;
-                vnMatchesStage[index] = nNumKFs;
-              }
-
               if (nBestMatchesReproj < numProjOptMatches) {
                 nBestMatchesReproj = numProjOptMatches;
                 nBestNumCoindicendes = nNumKFs;
@@ -632,7 +619,7 @@ bool LoopClosing::DetectCommonRegionsFromLastKF(std::shared_ptr<KeyFrame> pCurre
 
 int LoopClosing::FindMatchesByProjection(std::shared_ptr<KeyFrame> pCurrentKF, std::shared_ptr<KeyFrame> pMatchedKFw, g2o::Sim3& g2oScw,
     std::set<std::shared_ptr<MapPoint>>& spMatchedMPinOrigin, std::vector<std::shared_ptr<MapPoint>>& vpMapPoints, std::vector<std::shared_ptr<MapPoint>>& vpMatchedMapPoints) {
-  int nNumCovisibles = 10;
+  const int nNumCovisibles = 10;
   std::vector<std::shared_ptr<KeyFrame>> vpCovKFm = pMatchedKFw->GetBestCovisibilityKeyFrames(nNumCovisibles);
   int nInitialCov = vpCovKFm.size();
   vpCovKFm.push_back(pMatchedKFw);
@@ -853,7 +840,7 @@ void LoopClosing::CorrectLoop() {
 
 void LoopClosing::MergeLocal() {
   std::cout << "MERGE LOCAL MAP" << std::endl;
-  int numTemporalKFs = 25;  // Temporal KFs in the local window if the map is inertial.
+  const int numTemporalKFs = 25;  // Temporal KFs in the local window if the map is inertial.
 
   // Relationship to rebuild the essential graph, it is used two times, first in the local window and later in the rest of the map
   std::shared_ptr<KeyFrame> pNewChild;
@@ -1570,15 +1557,11 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
   else
     Optimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
 
-  int idx = mnFullBAIdx;
-
   // Update all MapPoints and KeyFrames
   // Local Mapping was active during BA, that means that there might be new keyframes not included in the Global BA and they are not consistent with the updated map.
   // We need to propagate the correction through the spanning tree
   {
     std::unique_lock<std::mutex> lock(mMutexGBA);
-    if (idx != mnFullBAIdx) return;
-
     if (!bImuInit && pActiveMap->isImuInitialized()) return;
 
     if (!mbStopGBA) {

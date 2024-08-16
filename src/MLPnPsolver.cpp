@@ -401,13 +401,8 @@ namespace MORB_SLAM {
         // 3. fill the design matrix A
         //////////////////////////////////////
         const int rowsA = 2 * numberCorrespondences;
-        int colsA = 12;
-        Eigen::MatrixXd A;
-        if (planar) {
-            colsA = 9;
-            A = Eigen::MatrixXd(rowsA, 9);
-        } else
-            A = Eigen::MatrixXd(rowsA, 12);
+        const int colsA = planar ? 9 : 12;
+        Eigen::MatrixXd A(rowsA, colsA);
         A.setZero();
 
         // fill design matrix

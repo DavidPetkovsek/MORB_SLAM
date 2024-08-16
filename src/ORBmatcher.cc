@@ -35,6 +35,7 @@
 
 namespace MORB_SLAM {
 
+// TODO: Make these Settings?
 const int ORBmatcher::TH_HIGH = 100;
 const int ORBmatcher::TH_LOW = 50;
 const int ORBmatcher::HISTO_LENGTH = 30;
