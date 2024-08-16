@@ -151,6 +151,7 @@ void Tracking::newParameterLoader(Settings& settings) {
 
   mFastInit = settings.fastIMUInit();
   mStationaryInit = settings.stationaryIMUInit();
+  mNewMapRelocalization = settings.newMapRelocalization();
 
   // IMU parameters
   Sophus::SE3f Tbc = settings.Tbc();
@@ -737,24 +738,23 @@ void Tracking::StereoInitialization() {
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   }
 
-  //TODO Add setting for relocalization attempt
-  if(mpAtlas->CountMaps() > 1 && true && Relocalization()) {
-      std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap();
-      
-      {
-        std::unique_lock<std::mutex> mergeLock(mpRelocalizationTargetMap->mMutexMapUpdate);
+  // This if statement runs Relocalization() only if there's an existing map and relocalization is enabled 
+  if(mpAtlas->CountMaps() > 1 && newMapRelocalizationEnabled() && Relocalization(true)) {
+    std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap();
+    {
+      std::unique_lock<std::mutex> mergeLock(mpRelocalizationTargetMap->mMutexMapUpdate);
 
-        mpAtlas->ChangeMap(mpRelocalizationTargetMap);
-        mpAtlas->SetMapBad(pCurrentMap);
-        mpAtlas->RemoveBadMaps();
+      mpAtlas->ChangeMap(mpRelocalizationTargetMap);
+      mpAtlas->SetMapBad(pCurrentMap);
+      mpAtlas->RemoveBadMaps();
 
-        if(!mHasGlobalOriginPose) {
-          Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix().inverse() * mGlobalOriginPose.rotationMatrix();
-          Eigen::Vector3f outputTranslation = mGlobalOriginPose.rotationMatrix().inverse()*mGlobalOriginPose.translation() - mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
-          mInitialFramePose = Sophus::SE3f(outputRotation, outputTranslation);
-          mHasGlobalOriginPose = true;
-        }
+      if(!mHasGlobalOriginPose) {
+        Eigen::Matrix3f outputRotation = mCurrentFrame.GetPose().rotationMatrix().inverse() * mGlobalOriginPose.rotationMatrix();
+        Eigen::Vector3f outputTranslation = mGlobalOriginPose.rotationMatrix().inverse()*mGlobalOriginPose.translation() - mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
+        mInitialFramePose = Sophus::SE3f(outputRotation, outputTranslation);
+        mHasGlobalOriginPose = true;
       }
+    }
   } else {
     // Set Frame pose to the default pose
     mCurrentFrame.SetPose(getStereoInitDefaultPose());
@@ -1644,14 +1644,20 @@ void Tracking::UpdateLocalKeyFrames() {
   }
 }
 
-bool Tracking::Relocalization() {
+bool Tracking::Relocalization(bool isNewMap) {
   Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
   // Compute Bag of Words Vector
   mCurrentFrame.ComputeBoW();
 
   // Relocalization is performed when tracking is lost
   // Track Lost: Query KeyFrame Database for keyframe candidates for relocalization
-  std::vector<std::shared_ptr<KeyFrame>> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
+  std::vector<std::shared_ptr<KeyFrame>> vpCandidateKFs;
+  
+  // If relocalization was run on map creation, don't check that mCurrentFrame is in the current Map
+  if(isNewMap)
+    vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, nullptr);
+  else
+    vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
 
   if (vpCandidateKFs.empty()) {
     Verbose::PrintMess("There are not candidates", Verbose::VERBOSITY_NORMAL);

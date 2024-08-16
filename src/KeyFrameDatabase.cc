@@ -275,7 +275,8 @@ std::vector<std::shared_ptr<KeyFrame>> KeyFrameDatabase::DetectRelocalizationCan
     const float& si = pair.first;
     if (si > minScoreToRetain) {
       std::shared_ptr<KeyFrame> pKFi = pair.second;
-      if (false && pKFi->GetMap() != pMap) continue;
+      if (pMap && pKFi->GetMap() != pMap) continue;
+      
       if (!spAlreadyAddedKF.count(pKFi)) {
         vpRelocCandidates.push_back(pKFi);
         spAlreadyAddedKF.insert(pKFi);
