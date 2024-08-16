@@ -68,6 +68,7 @@ void LocalMapping::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 void LocalMapping::Run() {
     mbFinished = false;
 
+    //TODO: make these settings
     const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
     const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
@@ -264,9 +265,7 @@ void LocalMapping::CreateNewMapPoints() {
         }
     }
 
-    float th = 0.6f;
-    ORBmatcher matcher(th, false);
-
+    ORBmatcher matcher(0.6, false);
     Sophus::SE3<float> sophTcw1 = mpCurrentKeyFrame->GetPose();
     Eigen::Matrix<float, 3, 4> eigTcw1 = sophTcw1.matrix3x4();
     Eigen::Matrix<float, 3, 3> Rcw1 = eigTcw1.block<3, 3>(0, 0);
@@ -675,7 +674,7 @@ void LocalMapping::KeyFrameCulling() {
 
     std::vector<std::shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
-    float redundant_th = (!mbInertial || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threashold
+    float redundant_th = (!mbInertial || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threshold
 
     int count = 0;
     int numChecked = 0;

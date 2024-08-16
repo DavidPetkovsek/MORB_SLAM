@@ -36,7 +36,7 @@ namespace MORB_SLAM {
 // used in LocalMapping::InitializeIMU()
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale, Eigen::Vector3d& bg, Eigen::Vector3d& ba, bool bMono, bool bFixedVel, bool bGauss, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
   Verbose::PrintMess("start inertial optimization", Verbose::VERBOSITY_NORMAL);
-  int its = 200;
+  const int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
@@ -183,7 +183,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 
 // used in LoopClosing
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d& bg, Eigen::Vector3d& ba, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
-  int its = 200;  // Check number of iterations
+  const int its = 200;  // Check number of iterations
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 
@@ -321,7 +321,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
 
 // used in LocalMapping::ScaleRefinement()
 void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale) {
-  int its = 10;
+  const int its = 10;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
 

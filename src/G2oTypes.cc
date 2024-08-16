@@ -31,11 +31,7 @@ ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
   Rwb = pKF->GetImuRotation().cast<double>();
 
   // Load camera poses
-  int num_cams;
-  if (pKF->mpCamera2)
-    num_cams = 2;
-  else
-    num_cams = 1;
+  const int num_cams = pKF->mpCamera2 ? 2 : 1;
 
   tcw.resize(num_cams);
   Rcw.resize(num_cams);
