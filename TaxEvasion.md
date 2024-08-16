@@ -13,7 +13,7 @@
 
 ### TODO
 4. Inertial Bundle Adjustment System Overhaul
-    - 
+    - One of the biggest issue with MORB-SLAM was that when a KeyFrame was created with bad image data (e.x. there's something blocking the camera), the system would still try to optimize its pose around this bad data. This would cause the system to fly off in a random direction when the camera was obscured. We reworked how the Bundle Adjustments are performed, so the system now deletes a KF if it has very few MapPoint matches with other KFs. We also do a similar thing for bad MPs that a viewed by very few KFs. This has substantially increased the accuracy of MORB-SLAM, as the Bundle Adjustments now ignore bad outlier data.
 
 5. Converted all Pointers to Shared Pointers
     - The previous structure of MORB-SLAM was using raw pointers to store most objects (KeyFrames, MapPoints, etc.). These objects were also never freed from memory, causing the system to constantly leak memory. In testing, MORB-SLAM would use up 20GB of memory in 35 minutes. After replacing these pointers with shared pointers and freeing them from memory once deleted, it would only use 20MB of memory in 35 minutes. 
