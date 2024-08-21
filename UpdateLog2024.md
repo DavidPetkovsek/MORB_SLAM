@@ -32,9 +32,10 @@
 10. Allow the Tracking State to be Manually Set to Lost
     - There was no system in place to reset MORB-SLAM's tracking without deleting the current map. By implementing this change, we allow the user to tell MORB-SLAM to create a new map when they detect that the tracking is inconsistent with the physical motion of the camera.
 
-11. Added the FastIMUInit and StationaryIMUInit Options to Settings
+11. Added Settings:
     - Enabling FastIMUInit allows the system to be initiallized faster than without it. This is useful in cases where you need less downtime between starting the system and reporting its first pose.
     - Enabling StationaryIMUInit disables the requirement of the camera being in motion to initialize the IMU. This makes it easier to use MORB-SLAM on devices that aren't always in motion.
+    - Enabling NewMapRelocalization allows the system to continue tracking on a loaded/old Map whenever a new Map is created.
 
 12. Merging IMU Measurements Optimization
     - Modify the Merge IMU Measurements function, changing the runtime from O(n) to O(1).
