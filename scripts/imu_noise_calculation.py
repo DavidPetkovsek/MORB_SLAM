@@ -7,6 +7,11 @@ from statistics import stdev, covariance
 import math
 import matplotlib.pyplot as plt
 
+### NOTE:
+    # Works best with the camera on a fixed surface (floor, windowsill, etc.) as opposed to a desk, to minimize noise
+    # N should be > 100000 for good results
+    # The walk noise calculations may be incorrect? It's pretty variable and may not be good unless measured over a few hours.
+
 def init_accel():
     pipeline = rs.pipeline()
     config = rs.config()
