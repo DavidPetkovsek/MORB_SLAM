@@ -1557,11 +1557,15 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
   else
     Optimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
 
+  int idx = mnFullBAIdx;
+    
   // Update all MapPoints and KeyFrames
   // Local Mapping was active during BA, that means that there might be new keyframes not included in the Global BA and they are not consistent with the updated map.
   // We need to propagate the correction through the spanning tree
   {
     std::unique_lock<std::mutex> lock(mMutexGBA);
+    if (idx != mnFullBAIdx) return;
+
     if (!bImuInit && pActiveMap->isImuInitialized()) return;
 
     if (!mbStopGBA) {
