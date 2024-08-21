@@ -11,7 +11,6 @@
 3. Implemented Relocalization on Map Load
     - The Relocalization function in MORB-SLAM was only used in non-inertial SLAM modes to recalculate where the current Frame is within the Map. We repurposed it to be used when loading/creating a new Map, which allows the tracking to pick up where it left off in the previous Map, skipping the initialization steps.
 
-### TODO
 4. Inertial Bundle Adjustment System Overhaul
     - One of the biggest issue with MORB-SLAM was that when a KeyFrame was created with bad image data (e.x. there's something blocking the camera), the system would still try to optimize its pose around this bad data. This would cause the system to fly off in a random direction when the camera was obscured. We reworked how the Bundle Adjustments are performed, so the system now deletes a KF if it has very few MapPoint matches with other KFs. We also do a similar thing for bad MPs that a viewed by very few KFs. This has substantially increased the accuracy of MORB-SLAM, as the Bundle Adjustments now ignore bad outlier data.
 
