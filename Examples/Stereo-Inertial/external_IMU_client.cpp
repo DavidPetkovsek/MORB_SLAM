@@ -15,24 +15,27 @@
 
 #include <csignal>
 
+// Settings
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+    const std::string websocket_host_address = "ws://172.26.0.1:8765";
+    const double time_unit_to_seconds_conversion_factor = 0.001;
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool exitSLAM = false;
 
 void sigHandler(int sigNum) {
     std::cout << "\nClosing SLAM w/ CTRL+C" << std::endl;
     exitSLAM = true;
-    // exit(sigNum);
+    exit(sigNum);
 }
 
 int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
-
     {
     ix::initNetSystem();
     ix::WebSocket webSocket;
-    //set to the address of the websocket host sending the IMU data
-    std::string url("ws://172.26.0.1:8765");
-    webSocket.setUrl(url);
-    std::cout << "Connecting to " << url << std::endl;
+    webSocket.setUrl(websocket_host_address);
+    std::cout << "Connecting to " << websocket_host_address << std::endl;
 
     cv::Mat left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat right_img(cv::Size(848, 480), CV_8UC1);
@@ -93,13 +96,6 @@ int main(int argc, char **argv) {
             }
         }
     );
-
-// Settings
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-    const std::string hostAddress = "0.0.0.0";
-    const int portNumber = 9002;
-    const double time_unit_to_seconds_conversion_factor = 0.001;
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
