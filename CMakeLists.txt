@@ -223,6 +223,11 @@ else()
     message(STATUS "** Realsense websocket client will not compile because ixwebsocket was not found")
 endif()
 
+add_executable(test_stereo_inertial_euroc Testing/Stereo-Inertial/EuRoC/test_stereo_inertial_euroc.cpp)
+target_link_libraries( test_stereo_inertial_euroc PUBLIC ${PROJECT_NAME}::${PROJECT_NAME} )
+
+add_executable(test_stereo_inertial_recordings Testing/Stereo-Inertial/Recordings/test_stereo_inertial_recordings.cpp)
+target_link_libraries( test_stereo_inertial_recordings PUBLIC ${PROJECT_NAME}::${PROJECT_NAME} )
 
 ######################################################################
 #                                                                    #

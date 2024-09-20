@@ -1,0 +1,7 @@
+evo==1.30.0
+matplotlib==3.9.2
+numpy==2.1.1
+pandas==2.2.3
+pyrealsense2==2.55.1.6486
+websockets==13.1
+opencv-python==4.10.0.84
