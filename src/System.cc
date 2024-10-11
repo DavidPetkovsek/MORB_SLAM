@@ -48,10 +48,11 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
-    : mSensor(sensor),
+System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings)
+    : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
+      mTrackingState(TrackingState::SYSTEM_NOT_READY),
+      settings(camSettings) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -60,7 +61,6 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   // We're legally obligated to keep this line
   std::cout << std::endl << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl << "This is free software, and you are welcome to redistribute it" << std::endl << "under certain conditions. See LICENSE.txt." << std::endl << std::endl;
   
-  settings = std::make_shared<Settings>(strSettingsFile, mSensor);
   mStrLoadAtlasFromFile = settings->atlasLoadFile();
   mStrSaveAtlasToFile = settings->atlasSaveFile();
 
@@ -446,7 +446,7 @@ bool System::getIsDoneVIBA() {
   return mpLocalMapper->getIsDoneVIBA();
 }
 
-std::shared_ptr<Settings> System::getSettings() const { return settings; }
+std::shared_ptr<CameraSettings> System::getSettings() const { return settings; }
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }

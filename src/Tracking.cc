@@ -41,7 +41,7 @@
 namespace MORB_SLAM {
 
 Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
-                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<Settings> settings)
+                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
@@ -95,7 +95,7 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
 
 Tracking::~Tracking() {}
 
-void Tracking::newParameterLoader(Settings& settings) {
+void Tracking::newParameterLoader(CameraSettings& settings) {
   mpCamera = settings.camera1();
   mpCamera = mpAtlas->AddCamera(mpCamera);
 
@@ -111,7 +111,7 @@ void Tracking::newParameterLoader(Settings& settings) {
   mK.at<float>(0, 2) = mpCamera->getParameter(2);
   mK.at<float>(1, 2) = mpCamera->getParameter(3);
 
-  if (mSensor.hasMulticam() && settings.cameraModelType() == Settings::KannalaBrandt) {
+  if (mSensor.hasMulticam() && settings.cameraModelType() == CameraSettings::KannalaBrandt) {
     mpCamera2 = settings.camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 

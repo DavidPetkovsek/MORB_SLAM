@@ -12,9 +12,10 @@
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalMapViewer.h>
-#include "MORB_SLAM/ExternalIMUProcessor.h"
+#include <MORB_SLAM/ExternalIMUProcessor.h>
+#include <MORB_SLAM/CameraSettings.hpp>
 
-#include "MORB_SLAM/ImuTypes.h"
+#include <MORB_SLAM/ImuTypes.h>
 
 
 bool load_images(const std::filesystem::path &path_left_images, const std::filesystem::path &path_right_images, const std::filesystem::path &path_cam_csv,
@@ -22,7 +23,7 @@ bool load_images(const std::filesystem::path &path_left_images, const std::files
 
 bool load_imu(const std::filesystem::path &path_imu, std::vector<double> &v_timestamp_imu, std::vector<cv::Point3f> &v_acc, std::vector<cv::Point3f> &v_gyro);
 
-void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std::vector<std::string> &v_img_paths, double frame_rate);
+void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std::vector<std::string> &v_img_paths, float frame_rate);
 
 void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f &pose, double timestamp);
 
@@ -109,24 +110,25 @@ int main(int argc, char **argv)
 
     std::cout << "The first imu measurement to be considered is at index " << first_imu_idx << std::endl;
 
+    // Create CameraSettings object
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+
     // Write the image sequences to a video, if a video doesn't exist
     std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
     std::filesystem::path output_vid_path_right = path_to_seq / "stereo_right.avi";
-    double frame_rate;
-    camera_settings["Camera.fps"] >> frame_rate;
 
     if(!std::filesystem::exists(output_vid_path_left)) {
         std::cout << "Creating a video using the left image sequence: " << output_vid_path_left << std::endl;
-        write_imgs_to_video(output_vid_path_left, v_str_image_left, frame_rate);
+        write_imgs_to_video(output_vid_path_left, v_str_image_left, cam_settings->fps());
     }
 
     if (!std::filesystem::exists(output_vid_path_right)) {
         std::cout << "Creating a video using the right image sequence: " << output_vid_path_right << std::endl;
-        write_imgs_to_video(output_vid_path_right, v_str_image_right, frame_rate);
+        write_imgs_to_video(output_vid_path_right, v_str_image_right, cam_settings->fps());
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
@@ -184,8 +186,6 @@ int main(int argc, char **argv)
             usleep((T - duration_s) * 1e6); // usleep uses microseconds
         }
     }
-
-    camera_settings.release();
 
     if(b_results_file) {
         results_file.close();
@@ -287,7 +287,7 @@ bool load_imu(const std::filesystem::path &path_imu, std::vector<double> &v_time
     return true;
 }
 
-void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std::vector<std::string> &v_img_paths, double frame_rate) {
+void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std::vector<std::string> &v_img_paths, float frame_rate) {
     cv::VideoWriter vid_writer;
     cv::Mat first_img = cv::imread(v_img_paths[0]);
     if (first_img.empty()) {

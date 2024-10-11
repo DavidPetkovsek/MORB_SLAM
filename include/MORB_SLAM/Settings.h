@@ -21,103 +21,37 @@
 
 #pragma once
 
-// Flag to activate the measurement of time in each process (track,localmap,
-// place recognition).
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include <string>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
-#include "MORB_SLAM/CameraModels/GeometricCamera.h"
-#include "MORB_SLAM/ImprovedTypes.hpp"
+#include <opencv2/core/core.hpp>
+#include <iostream>
+
 
 namespace MORB_SLAM {
 
-class System;
 
 class Settings {
- public:
-  /*
-   * Enum for the different camera types implemented
-   */
-  enum CameraModelType { PinHole = 0, Rectified = 1, KannalaBrandt = 2 };
+public:
+  static cv::FileStorage loadFile(const std::string configFile) {
+    cv::FileStorage fSettings(configFile, cv::FileStorage::READ);
+    if (!fSettings.isOpened()) {
+      std::cerr << "[ERROR]: could not open configuration file at: " << configFile << std::endl;
+      std::cerr << "Aborting..." << std::endl;
+      throw std::invalid_argument("[ERROR]: could not open configuration file at: " + configFile);
+    } else {
+      std::cout << "Loading settings from " << configFile << std::endl;
+      return fSettings;
+    }
+  }
 
-  /* Constructor from file */
-  Settings(const std::string& configFile, const CameraType& sensor);
-
-  /* Ostream operator overloading to dump settings to the terminal */
-  friend std::ostream& operator<<(std::ostream& output, const Settings& s);
-
-  /* Getter methods */
-  CameraModelType cameraModelType() const { return cameraModelType_; }
-  std::shared_ptr<const GeometricCamera> camera1() const { return std::const_pointer_cast<const GeometricCamera>(calibration1_); }
-  std::shared_ptr<const GeometricCamera> camera2() const { return std::const_pointer_cast<const GeometricCamera>(calibration2_); }
-
-  cv::Mat camera1DistortionCoef() { return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data()); }
-  cv::Mat camera2DistortionCoef() { return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion2_.data()); }
-
-  const Sophus::SE3f &Tlr() const { return Tlr_; }
-  float bf() const { return bf_; }
-  float b() const { return b_; }
-  float thDepth() const { return thDepth_; }
-
-  bool needToUndistort() const { return bNeedToUndistort_; }
-
-  const cv::Size &newImSize() const { return newImSize_; }
-  float fps() const { return fps_; }
-  bool needToResize() const { return bNeedToResize1_; }
-  bool needToRectify() const { return bNeedToRectify_; }
-
-  float noiseGyro() const { return noiseGyro_; }
-  float noiseAcc() const { return noiseAcc_; }
-  float gyroWalk() const { return gyroWalk_; }
-  float accWalk() const { return accWalk_; }
-  float accFrequency() const { return accFrequency_; }
-  float gyroFrequency() const { return gyroFrequency_; }
-  const Sophus::SE3f &Tbc() const { return Tbc_; }
-
-  float depthMapFactor() const { return depthMapFactor_; }
-
-  int nFeatures() const { return nFeatures_; }
-  int nLevels() const { return nLevels_; }
-  float initThFAST() const { return initThFAST_; }
-  float minThFAST() const { return minThFAST_; }
-  float scaleFactor() const { return scaleFactor_; }
-
-  float keyFrameSize() const { return keyFrameSize_; }
-  float keyFrameLineWidth() const { return keyFrameLineWidth_; }
-  float graphLineWidth() const { return graphLineWidth_; }
-  float pointSize() const { return pointSize_; }
-  float cameraSize() const { return cameraSize_; }
-  float cameraLineWidth() const { return cameraLineWidth_; }
-  float viewPointX() const { return viewPointX_; }
-  float viewPointY() const { return viewPointY_; }
-  float viewPointZ() const { return viewPointZ_; }
-  float viewPointF() const { return viewPointF_; }
-  float imageViewerScale() const { return imageViewerScale_; }
-
-  const std::string &atlasLoadFile() const { return sLoadFrom_; }
-  const std::string &atlasSaveFile() const { return sSaveto_; }
-
-  float thFarPoints() const { return thFarPoints_; }
-  bool activeLoopClosing() const { return activeLoopClosing_; }
-  bool fastIMUInit() const { return fastIMUInit_; }
-  bool stationaryIMUInit() const { return stationaryIMUInit_; }
-  bool newMapRelocalization() const { return newMapRelocalization_; }
-
-  const cv::Mat &M1l() const { return M1l_; }
-  const cv::Mat &M2l() const { return M2l_; }
-  const cv::Mat &M1r() const { return M1r_; }
-  const cv::Mat &M2r() const { return M2r_; }
-
- private:
   template <typename T>
-  T readParameter(cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required = true) {
-    cv::FileNode node = fSettings[name];
+  static T readParameter(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required = true) {
+    cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
         std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
@@ -127,82 +61,118 @@ class Settings {
         found = false;
         return T();
       }
-
     } else {
       found = true;
       return (T)node;
     }
   }
 
-  void readCamera1(cv::FileStorage& fSettings);
-  void readCamera2(cv::FileStorage& fSettings);
-  void readImageInfo(cv::FileStorage& fSettings);
-  void readIMU(cv::FileStorage& fSettings);
-  void readRGBD(cv::FileStorage& fSettings);
-  void readORB(cv::FileStorage& fSettings);
-  void readViewer(cv::FileStorage& fSettings);
-  void readLoadAndSave(cv::FileStorage& fSettings);
-  void readOtherParameters(cv::FileStorage& fSettings);
+  template <>
+  bool readParameter<bool>(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required) {
+    cv::FileNode node = settings[name];
+    if (node.empty()) {
+      if (required) {
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
+      } else {
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        found = false;
+        return false;
+      }
+    } else if(node.isString()) {
+      found = true;
+      std::string s = node.string();
+      if(s=="y"||s=="Y"||s=="yes"||s=="Yes"||s=="YES"||s=="true"||s=="True"||s=="TRUE"||s=="on"||s=="On"||s=="ON")
+        return true;
+      else if(s=="n"||s=="N"||s=="no"||s=="No"||s=="NO"||s=="false"||s=="False"||s=="FALSE"||s=="off"||s=="Off"||s=="OFF")
+        return false;
+    }
+    throw std::invalid_argument(name + " bool setting was not set to a valid string");
+  }
 
-  void precomputeRectificationMaps();
+  template <>
+  float readParameter<float>(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required) {
+    cv::FileNode node = settings[name];
+    if (node.empty()) {
+      if (required) {
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
+      } else {
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        found = false;
+        return 0.0f;
+      }
+    } else if (!node.isReal()) {
+      std::cerr << name << " parameter must be a real number, aborting..." << std::endl;
+      throw std::invalid_argument(name + " parameter must be a real number, aborting...");
+    } else {
+      found = true;
+      return node.real();
+    }
+  }
 
-  CameraType sensor_;
-  CameraModelType cameraModelType_;
+  template <>
+  int readParameter<int>(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required) {
+    cv::FileNode node = settings[name];
+    if (node.empty()) {
+      if (required) {
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
+      } else {
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        found = false;
+        return 0;
+      }
+    } else if (!node.isInt()) {
+      std::cerr << name << " parameter must be an integer number, aborting..." << std::endl;
+      throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
+    } else {
+      found = true;
+      return node.operator int();
+    }
+  }
 
-  /* Visual stuff */
-  std::shared_ptr<GeometricCamera> calibration1_, calibration2_;  // Camera calibration
-  std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
+  template <>
+  std::string readParameter<std::string>(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required) {
+    cv::FileNode node = settings[name];
+    if (node.empty()) {
+      if (required) {
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
+      } else {
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        found = false;
+        return std::string();
+      }
+    } else if (!node.isString()) {
+      std::cerr << name << " parameter must be a std::string, aborting..." << std::endl;
+      throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
+    } else {
+      found = true;
+      return node.string();
+    }
+  }
 
-  cv::Size originalImSize_, newImSize_;
-  float fps_;
-
-  bool bNeedToUndistort_;
-  bool bNeedToRectify_;
-  bool bNeedToResize1_, bNeedToResize2_;
-
-  Sophus::SE3f Tlr_;
-  float thDepth_;
-  float bf_, b_;
-
-  /* Rectification stuff */
-  cv::Mat M1l_, M2l_;
-  cv::Mat M1r_, M2r_;
-
-  /* Inertial stuff */
-  float noiseGyro_, noiseAcc_;
-  float gyroWalk_, accWalk_;
-  float accFrequency_;
-  float gyroFrequency_;
-  Sophus::SE3f Tbc_;
-
-  /* RGBD stuff */
-  float depthMapFactor_;
-
-  /* ORB stuff */
-  int nFeatures_;
-  float scaleFactor_;
-  int nLevels_;
-  int initThFAST_, minThFAST_;
-
-  /* Viewer stuff */
-  float keyFrameSize_;
-  float keyFrameLineWidth_;
-  float graphLineWidth_;
-  float pointSize_;
-  float cameraSize_;
-  float cameraLineWidth_;
-  float viewPointX_, viewPointY_, viewPointZ_, viewPointF_;
-  float imageViewerScale_;
-
-  /* Save & load maps */
-  std::string sLoadFrom_, sSaveto_;
-
-  /* Other stuff */
-  float thFarPoints_;
-  bool activeLoopClosing_;
-  bool fastIMUInit_;
-  bool stationaryIMUInit_;
-  bool newMapRelocalization_;
+  template <>
+  cv::Mat readParameter<cv::Mat>(const cv::FileStorage& settings, const std::string& name, bool& found, const bool required) {
+    cv::FileNode node = settings[name];
+    if (node.empty()) {
+      if (required) {
+        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        throw std::invalid_argument(name + " required parameter does not exist, aborting...");
+      } else {
+        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        found = false;
+        return cv::Mat();
+      }
+    } else {
+      found = true;
+      return node.mat();
+    }
+  }
+  
 };
+
+
 }  // namespace MORB_SLAM
 

@@ -1,0 +1,3 @@
+%YAML:1.0
+
+host_address: "ws://127.0.0.1:8765" # change this to the address of your websocket host
