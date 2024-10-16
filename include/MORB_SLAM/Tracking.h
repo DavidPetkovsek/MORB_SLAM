@@ -36,7 +36,7 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/CameraSettings.hpp"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
@@ -50,7 +50,7 @@ class LoopClosing;
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<Settings> settings);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings);
 
   ~Tracking();
 
@@ -270,7 +270,7 @@ public:
 
   Sophus::SE3f mTlr;
 
-  void newParameterLoader(Settings& settings);
+  void newParameterLoader(CameraSettings& settings);
 
   bool mForcedLost;
 

@@ -37,7 +37,7 @@
 #include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/Converter.h"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/CameraSettings.hpp"
 #include "MORB_SLAM/Camera.hpp"
 
 

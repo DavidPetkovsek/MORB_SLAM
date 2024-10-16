@@ -54,7 +54,7 @@ Viewer::~Viewer(){
   if(mptViewer.joinable()) mptViewer.join();
 }
 
-void Viewer::newParameterLoader(const Settings &settings) {
+void Viewer::newParameterLoader(const CameraSettings &settings) {
   mImageViewerScale = 1.f;
 
   float fps = settings.fps();
@@ -71,7 +71,7 @@ void Viewer::newParameterLoader(const Settings &settings) {
   mViewpointZ = settings.viewPointZ();
   mViewpointF = settings.viewPointF();
 
-  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && settings.cameraModelType() == Settings::KannalaBrandt) {
+  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && settings.cameraModelType() == CameraSettings::KannalaBrandt) {
     both = true;
     mpFrameDrawer.both = true;
   }

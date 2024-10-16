@@ -32,11 +32,11 @@
 
 namespace MORB_SLAM {
 
-MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const Settings& settings): mpAtlas(pAtlas){
+MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const CameraSettings& settings): mpAtlas(pAtlas){
   newParameterLoader(settings);
 }
 
-void MapDrawer::newParameterLoader(const Settings &settings) {
+void MapDrawer::newParameterLoader(const CameraSettings &settings) {
   mKeyFrameSize = settings.keyFrameSize();
   mKeyFrameLineWidth = settings.keyFrameLineWidth();
   mGraphLineWidth = settings.graphLineWidth();

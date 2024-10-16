@@ -33,6 +33,7 @@
 
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
+#include <MORB_SLAM/CameraSettings.hpp>
 
 
 
@@ -346,7 +347,8 @@ int main(int argc, char **argv) {
 
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
 

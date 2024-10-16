@@ -9,15 +9,9 @@
 
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-#include "MORB_SLAM/ExternalIMUProcessor.h"
+#include <MORB_SLAM/ExternalIMUProcessor.h>
 
 #include <csignal>
-
-// Settings
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-    const std::string websocket_host_address = "ws://172.26.0.1:8765";
-    const double time_unit_to_seconds_conversion_factor = 0.001;
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool exitSLAM = false;
 
@@ -29,6 +23,12 @@ void sigHandler(int sigNum) {
 
 int main(int argc, char **argv) {
     signal(SIGINT, sigHandler);
+
+    bool found;
+    std::string web_socket_config_path(argv[3]);
+    cv::FileStorage websocket_config = MORB_SLAM::Settings::loadFile(web_socket_config_path);
+    const std::string websocket_host_address = MORB_SLAM::Settings::readParameter<std::string>(websocket_config, "host_address", found, true);
+    const double time_unit_to_seconds_conversion_factor = 0.001;
 
     {
     ix::initNetSystem();
@@ -84,7 +84,8 @@ int main(int argc, char **argv) {
         }
     );
     
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
