@@ -3,6 +3,7 @@
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/Atlas.h"
 
 #include <iostream>
 
@@ -23,6 +24,8 @@ void InertialOdometry::newParameterLoader(CameraSettings &settings) {
     const float sf_a = sqrt(settings.accFrequency());
     const float sf_g = sqrt(settings.gyroFrequency());
     mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf_g, Na * sf_a, Ngw / sf_g, Naw / sf_a);
+
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
 void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double timestamp_s) {
@@ -202,8 +205,103 @@ void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<
     }
 }
 
-bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &prev_frame) {      
+void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
+  if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
+    curr_frame.setIntegrated();
+    return;
+  }
+
+  if (mvImuBatch.size() == 0) {
+    Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
+    curr_frame.setIntegrated();
+    return;
+  }
+
+  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, curr_frame.mImuCalib);
+  bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuBatch);
+
+  if(hasPreintKF) {
+    mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuBatch);
+    curr_frame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+    curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    curr_frame.mpLastKeyFrame = last_kf;
+  } else {
+    Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
+  }
+  curr_frame.setIntegrated();
+}
+
+bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
+  //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
+  if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
+    Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
+    return false;
+  }
+
+  const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+
+  //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
+  if (map_updated && last_kf) {
+    const Eigen::Vector3f twb1 = last_kf->GetImuPosition();
+    const Eigen::Matrix3f Rwb1 = last_kf->GetImuRotation();
+    const Eigen::Vector3f Vwb1 = last_kf->GetVelocity();
+
+    const float t12 = mpImuPreintegratedFromLastKF->dT;
+    IMU::Bias b = last_kf->GetImuBias();
+
+    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
+    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
+    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
+    curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+
+    curr_frame.mImuBias = b;
     return true;
+  } else if (!map_updated && curr_frame.mpImuPreintegratedFrame) {
+    const Eigen::Vector3f twb1 = last_frame.GetImuPosition();
+    const Eigen::Matrix3f Rwb1 = last_frame.GetImuRotation();
+    const Eigen::Vector3f Vwb1 = last_frame.GetVelocity();
+
+    const float t12 = curr_frame.mpImuPreintegratedFrame->dT;
+    IMU::Bias b = last_frame.mImuBias;
+
+    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * curr_frame.mpImuPreintegratedFrame->GetDeltaRotation(b));
+    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * curr_frame.mpImuPreintegratedFrame->GetDeltaPosition(b);
+    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * curr_frame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
+
+    curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+
+    curr_frame.mImuBias = b;
+    return true;
+  }
+
+  // only happens gets here if there was no IMU data when PreintegrateIMU() was called this frame
+  std::cout << "not IMU prediction!!" << std::endl;
+  return false;
+}
+
+bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame, std::shared_ptr<Atlas> p_atlas) {
+    if (!curr_frame.mpImuPreintegrated || !last_frame.mpImuPreintegrated) {
+      return false;
+    }
+
+    if (!mbStationaryInitEnabled && (p_atlas->CountMaps() <= 1) && (curr_frame.mpImuPreintegratedFrame->avgA - last_frame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+      std::cout << "More acceleration is required to initialize the Map" << std::endl;
+      return false;
+    }
+
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+    curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    return true;
+}
+
+void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), ref_kf->mImuCalib);
+}
+
+void InertialOdometry::NewMap() {
+    if(mpImuPreintegratedFromLastKF) {
+        mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+    }
 }
 
 

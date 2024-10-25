@@ -11,12 +11,17 @@ namespace MORB_SLAM {
 
 
 class CameraSettings;
+class Atlas;
 
 class InertialOdometry : public Odometry {
 
 public:
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    bool PreintegrateOdom(Frame &curr_frame, Frame &prev_frame) override;
+    void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
+    bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
+    bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame, std::shared_ptr<Atlas> p_atlas) override;
+    void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;
+    void NewMap() override;
 
 public:
     InertialOdometry(std::shared_ptr<CameraSettings> settings);
@@ -41,6 +46,8 @@ private:
 
     std::vector<IMU::Point> interpolateImu(const std::vector<Eigen::Vector3f> &v_imu, const std::vector<double> &v_imu_timestamp_s, const double &curr_frame_timestamp_s, const double &prev_frame_timestamp_s, const bool &is_accel) const;
     void combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined);
+
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 };
 
 

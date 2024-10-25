@@ -379,17 +379,18 @@ void Tracking::Track() {
 
   mLastProcessedState = mState;
 
-  if (mSensor.isInertial() && !mbCreatedMap) {
-    PreintegrateIMU();
-  }
-  mbCreatedMap = false;
+  // ========= NEW external odometry =========
+  // if (mSensor.isInertial() && !mbCreatedMap) {
+  //   PreintegrateIMU();
+  // }
+  // mbCreatedMap = false;
 
-  // NEW EXTERNAL ODOM
   if(mpOdomSource && !mbCreatedMap) {
-    mpOdomSource->PreintegrateOdom(mCurrentFrame, mLastFrame);
+    mpOdomSource->PreintegrateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame);
   }
   mbCreatedMap = false;
-  
+  // ========================================
+
   // Get Map Mutex -> Map cannot be changed
   std::unique_lock<std::mutex> lock(pCurrentMap->mMutexMapUpdate);
 
@@ -448,11 +449,10 @@ void Tracking::Track() {
       } else if (mState == TrackingState::RECENTLY_LOST) {
         bOK = true;
         if (mSensor.isInertial()) {
-          bOK = (pCurrentMap->isImuInitialized()) ? PredictStateIMU() : false;
-          if (pCurrentMap->isImuInitialized())
-            bOK = PredictStateIMU();
-          else
-            bOK = false;
+          // ======== NEW EXTERNAL ODOM ========
+          // bOK = (pCurrentMap->isImuInitialized()) ? PredictStateIMU() : false;
+          bOK = (pCurrentMap->isImuInitialized()) ? mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated) : false;
+          // ===============================
           if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost || mForcedLost) {
             if(mForcedLost) {
               std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
@@ -672,19 +672,24 @@ void Tracking::StereoInitialization() {
     return;
   }
 
-  if (mSensor.isInertial()) {
-    if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated) {
-      return;
-    }
+  // ========= NEW external odom ==============
+  // if (mSensor.isInertial()) {
+  //   if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated) {
+  //     return;
+  //   }
 
-    if (!stationaryIMUInitEnabled() && (mpAtlas->CountMaps() <= 1) && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
-      std::cout << "More acceleration is required to initialize the Map" << std::endl;
-      return;
-    }
+  //   if (!stationaryIMUInitEnabled() && (mpAtlas->CountMaps() <= 1) && (mCurrentFrame.mpImuPreintegratedFrame->avgA - mLastFrame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+  //     std::cout << "More acceleration is required to initialize the Map" << std::endl;
+  //     return;
+  //   }
 
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-  }
+  //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+  //   mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+  // }
+
+  if(mpOdomSource && !mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame, mpAtlas))
+    return;
+  // =======================
 
   // This if statement runs Relocalization() only if there's an existing map and relocalization is enabled 
   if(mpAtlas->CountMaps() > 1 && newMapRelocalizationEnabled() && Relocalization(true)) {
@@ -968,8 +973,13 @@ void Tracking::CreateMapInAtlas() {
   mbHasPrevDeltaFramePose = false;
   notEnoughMatchPoints_trackOnlyMode = false;
 
-  if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+  // ================ NEW ==========================
+  // if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
+  //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+  // }
+
+  if (mpOdomSource) {
+    mpOdomSource->NewMap();
   }
 
   if (mpLastKeyFrame) mpLastKeyFrame = nullptr;
@@ -1107,10 +1117,17 @@ bool Tracking::TrackWithMotionModel() {
   // Create "visual odometry" points if in Localization Mode
   UpdateLastFrame();
 
+  // ============= NEW EXTERNAL ODOM =========
+  // if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
+  //   // Predict state with IMU if it is initialized and it doesnt need reset
+  //   return PredictStateIMU();
+  // }
+
   if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
     // Predict state with IMU if it is initialized and it doesnt need reset
-    return PredictStateIMU();
+    return mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated);
   }
+  // ========================================
 
   //No IMU, so assume the pose changed by the same amount it changed by last Frame
   mCurrentFrame.SetPose(mPrevDeltaFramePose * mLastFrame.GetPose());
@@ -1319,9 +1336,15 @@ void Tracking::CreateNewKeyFrame() {
   } else
     Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
 
+  // ================ NEW external odom ==========
   // Reset preintegration from last KF (Create new object)
-  if (mSensor.isInertial())
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(mpReferenceKF->GetImuBias(), mpReferenceKF->mImuCalib);
+  // if (mSensor.isInertial())
+  //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(mpReferenceKF->GetImuBias(), mpReferenceKF->mImuCalib);
+
+  if(mpOdomSource) {
+    mpOdomSource->NewKeyFrame(mpReferenceKF);
+  }
+  // ===================================
 
   if (mSensor.hasMulticam()){  // TODO check if incluide imu_stereo
     mCurrentFrame.UpdatePoseMatrices();
