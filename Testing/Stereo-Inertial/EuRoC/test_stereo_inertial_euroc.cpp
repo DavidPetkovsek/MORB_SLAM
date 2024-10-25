@@ -32,6 +32,7 @@
 #include <MORB_SLAM/ExternalMapViewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>
 #include <MORB_SLAM/CameraSettings.hpp>
+#include <MORB_SLAM/InertialOdometry.hpp>
 
 #include <MORB_SLAM/ImuTypes.h>
 
@@ -133,7 +134,8 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(cam_settings);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
@@ -166,10 +168,20 @@ int main(int argc, char **argv)
             imu_meas << v_acc[first_imu_idx].x, v_acc[first_imu_idx].y, v_acc[first_imu_idx].z, v_gyro[first_imu_idx].x, v_gyro[first_imu_idx].y, v_gyro[first_imu_idx].z;
             v_local_imu_meas.push_back(imu_meas);
             v_local_timestamp_imu_s.push_back(v_timestamp_imu_s[first_imu_idx]);
+            
+            // NEW external odom
+            Eigen::Vector3f accel_meas;
+            Eigen::Vector3f gyro_meas;
+            accel_meas << v_acc[first_imu_idx].x, v_acc[first_imu_idx].y, v_acc[first_imu_idx].z;
+            gyro_meas << v_gyro[first_imu_idx].x, v_gyro[first_imu_idx].y, v_gyro[first_imu_idx].z;
+            inertial_odom->AddAccel(accel_meas, v_timestamp_imu_s[first_imu_idx]);
+            inertial_odom->AddGyro(gyro_meas, v_timestamp_imu_s[first_imu_idx]);
+
             ++first_imu_idx;
         }
 
         // Pass the images to the SLAM system
+        inertial_odom->GrabOdom(t_frame, t_frame_prev);
         std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(v_local_imu_meas, v_local_timestamp_imu_s, t_frame_prev, t_frame);
 
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
