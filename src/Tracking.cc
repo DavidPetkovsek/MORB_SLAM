@@ -41,7 +41,8 @@
 namespace MORB_SLAM {
 
 Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
-                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings)
+                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings,
+                   std::shared_ptr<Odometry> odomSource)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),
@@ -66,7 +67,8 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mbActivateLocalizationMode(false),
       mbDeactivateLocalizationMode(false),
       mGlobalOriginPose(Sophus::SE3f()),
-      mInitialFramePose(Sophus::SE3f()) {
+      mInitialFramePose(Sophus::SE3f()),
+      mpOdomSource(odomSource) {
   // Load camera parameters from settings file
   newParameterLoader(*settings);
 
@@ -171,7 +173,7 @@ void Tracking::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) { mpLo
 
 void Tracking::SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing) { mpLoopClosing = pLoopClosing; }
 
-StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam) {
+StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam) { 
   cv::Mat imGrayLeft = imRectLeft;
   cv::Mat imGrayRight = imRectRight;
 
@@ -382,6 +384,12 @@ void Tracking::Track() {
   }
   mbCreatedMap = false;
 
+  // NEW EXTERNAL ODOM
+  if(mpOdomSource && !mbCreatedMap) {
+    mpOdomSource->PreintegrateOdom(mCurrentFrame, mLastFrame);
+  }
+  mbCreatedMap = false;
+  
   // Get Map Mutex -> Map cannot be changed
   std::unique_lock<std::mutex> lock(pCurrentMap->mMutexMapUpdate);
 

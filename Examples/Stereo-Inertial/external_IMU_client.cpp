@@ -11,6 +11,7 @@
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>
+#include <MORB_SLAM/InertialOdometry.hpp>
 
 #include <Eigen/StdVector>
 
@@ -66,7 +67,12 @@ int main(int argc, char **argv) {
     std::mutex gyro_mutex;
     std::condition_variable cond_image_rec;
 
-    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &img_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(cam_settings);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings, inertial_odom);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+
+    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &img_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img, &inertial_odom, &time_unit_to_seconds_conversion_factor](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
                 if(msg->str.data()[0] == 1) {
                     std::unique_lock<std::mutex> lock(img_mutex);
@@ -83,12 +89,14 @@ int main(int argc, char **argv) {
                     std::memcpy(accel.data(), msg->str.data()+1+timestamp_size, imu_size);
                     accel_measurements.push_back(accel);
                     accel_timestamps.push_back(accel_timestamp);
+                    inertial_odom->AddAccel(accel, accel_timestamp * time_unit_to_seconds_conversion_factor);
                 } else if(msg->str.data()[0] == 3) {
                     std::unique_lock<std::mutex> lock(gyro_mutex);
                     std::memcpy(&gyro_timestamp, msg->str.data()+1, timestamp_size);
                     std::memcpy(gyro.data(), msg->str.data()+1+timestamp_size, imu_size);
                     gyro_measurements.push_back(gyro);
                     gyro_timestamps.push_back(gyro_timestamp);
+                    inertial_odom->AddGyro(gyro, gyro_timestamp * time_unit_to_seconds_conversion_factor);
                 }
             } else if(msg->type == ix::WebSocketMessageType::Open) {
                 std::cout << "Connected to the Realsense websocket" << std::endl;
@@ -99,10 +107,6 @@ int main(int argc, char **argv) {
             }
         }
     );
-
-    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
-    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
      
@@ -161,6 +165,7 @@ int main(int argc, char **argv) {
             gyro_measurements.clear();
             gyro_timestamps.clear();
         }
+        inertial_odom->GrabOdom(img_timestamp * time_unit_to_seconds_conversion_factor, prev_img_timestamp * time_unit_to_seconds_conversion_factor);
 
         slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
         prev_img_timestamp = local_img_timestamp;

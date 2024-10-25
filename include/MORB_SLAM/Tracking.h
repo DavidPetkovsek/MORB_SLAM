@@ -41,6 +41,7 @@
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
+#include "MORB_SLAM/Odometry.hpp"
 
 namespace MORB_SLAM {
 
@@ -50,7 +51,7 @@ class LoopClosing;
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings, std::shared_ptr<Odometry> odomSource);
 
   ~Tracking();
 
@@ -280,6 +281,8 @@ public:
   std::mutex mMutexReset;
   bool mbReset;
   bool mbResetActiveMap;
+
+  std::shared_ptr<Odometry> mpOdomSource;
 };
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 typedef std::weak_ptr<Tracking> Tracking_wptr;

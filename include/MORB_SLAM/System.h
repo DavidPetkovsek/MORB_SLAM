@@ -38,6 +38,7 @@
 #include "MORB_SLAM/CameraSettings.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
+#include "MORB_SLAM/Odometry.hpp"
 
 
 namespace MORB_SLAM
@@ -63,7 +64,7 @@ class System {
  public:
     
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings);
+    System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings, std::shared_ptr<Odometry> odomSource);
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.

@@ -48,7 +48,7 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings)
+System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings, std::shared_ptr<Odometry> odomSource)
     : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
@@ -99,7 +99,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
     mpAtlas->CreateNewMap();
   }
 
-  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings, odomSource);
 
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
