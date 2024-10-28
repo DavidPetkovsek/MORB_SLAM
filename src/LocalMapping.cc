@@ -1004,16 +1004,18 @@ void LocalMapping::InitializeIMU(ImuInitializater::ImuInitType priorG, ImuInitia
         mpCurrentKeyFrame->bImu = true;
     }
 
-    Verbose::PrintMess("start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
-    if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
-        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, nullptr, true, priorG, priorA);
-    } else {
-        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, nullptr, false);
-        mpAtlas->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
-        mPoseReverseAxisFlip = mpCurrentKeyFrame->GetPose();
-    }  
+    if(bFIBA) {
+        Verbose::PrintMess("start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+        if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, nullptr, true, priorG, priorA);
+        } else {
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, nullptr, false);
+            mpAtlas->setUseGravityDirectionFromLastMap(mpTracker->fastIMUInitEnabled());
+            mPoseReverseAxisFlip = mpCurrentKeyFrame->GetPose();
+        }  
 
-    Verbose::PrintMess("end Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("end Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+    }
 
     // Get Map Mutex
     std::scoped_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
