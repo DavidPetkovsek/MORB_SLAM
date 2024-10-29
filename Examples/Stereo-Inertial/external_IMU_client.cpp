@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
         }
     );
 
-    std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
+    // std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
      
     std::vector<Eigen::Vector3f> local_accel_measurements;
     std::vector<double> local_accel_timestamps;
@@ -165,12 +165,14 @@ int main(int argc, char **argv) {
             gyro_measurements.clear();
             gyro_timestamps.clear();
         }
-        inertial_odom->GrabOdom(img_timestamp * time_unit_to_seconds_conversion_factor, prev_img_timestamp * time_unit_to_seconds_conversion_factor);
+        inertial_odom->GrabOdom(local_img_timestamp * time_unit_to_seconds_conversion_factor, prev_img_timestamp * time_unit_to_seconds_conversion_factor);
 
-        slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
+        // slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
         prev_img_timestamp = local_img_timestamp;
 
-        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
+        // MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
+        std::vector<MORB_SLAM::IMU::Point> empty_imu_vector;
+        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp * time_unit_to_seconds_conversion_factor, empty_imu_vector);
 
         viewer->update(sophusPose);
     }
