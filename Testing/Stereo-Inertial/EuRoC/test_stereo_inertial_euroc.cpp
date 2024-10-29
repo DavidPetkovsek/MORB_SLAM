@@ -182,10 +182,12 @@ int main(int argc, char **argv)
 
         // Pass the images to the SLAM system
         inertial_odom->GrabOdom(t_frame, t_frame_prev);
-        std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(v_local_imu_meas, v_local_timestamp_imu_s, t_frame_prev, t_frame);
+        // std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(v_local_imu_meas, v_local_timestamp_imu_s, t_frame_prev, t_frame);
 
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, slam_data.first, slam_data.second);
+        // MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, slam_data.first, slam_data.second);
+        std::vector<MORB_SLAM::IMU::Point> empty_imu_vector;
+        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, t_frame, empty_imu_vector);
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
         viewer->update(sophus_pose);
