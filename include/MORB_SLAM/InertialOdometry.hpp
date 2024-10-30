@@ -19,9 +19,10 @@ public:
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
-    bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame, std::shared_ptr<Atlas> p_atlas) override;
+    bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
     void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;
     void NewMap() override;
+    // void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) override;
 
 public:
     InertialOdometry(std::shared_ptr<CameraSettings> settings);
@@ -48,6 +49,9 @@ private:
     void combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined);
 
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
+
+    bool mbStationaryImuInit = false; // TO DO: include in OdometrySettings class 
+    // bool mbMonocular;
 };
 
 

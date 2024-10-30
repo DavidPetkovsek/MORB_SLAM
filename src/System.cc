@@ -130,6 +130,13 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
+  // Set up Odometry
+  if(odomSource) {
+    odomSource->SetLocalMapper(mpLocalMapper);
+    odomSource->SetTracker(mpTracker);
+    odomSource->SetAtlas(mpAtlas);
+  }
+
   std::cout << "Creating LocalMapping thread" << std::endl;
   mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
 

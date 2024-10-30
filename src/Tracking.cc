@@ -687,7 +687,7 @@ void Tracking::StereoInitialization() {
   //   mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   // }
 
-  if(mpOdomSource && !mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame, mpAtlas))
+  if(mpOdomSource && !mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame))
     return;
   // =======================
 

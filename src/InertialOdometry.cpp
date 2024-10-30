@@ -279,12 +279,12 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
   return false;
 }
 
-bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame, std::shared_ptr<Atlas> p_atlas) {
+bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) {
     if (!curr_frame.mpImuPreintegrated || !last_frame.mpImuPreintegrated) {
       return false;
     }
 
-    if (!mbStationaryInitEnabled && (p_atlas->CountMaps() <= 1) && (curr_frame.mpImuPreintegratedFrame->avgA - last_frame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+    if (!mbStationaryInitEnabled && (AtlasNumMaps() <= 1) && (curr_frame.mpImuPreintegratedFrame->avgA - last_frame.mpImuPreintegratedFrame->avgA).norm() < 0.5) {
       std::cout << "More acceleration is required to initialize the Map" << std::endl;
       return false;
     }
@@ -303,6 +303,18 @@ void InertialOdometry::NewMap() {
         mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     }
 }
+
+// void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) {
+//     float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
+//         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
+
+//     if (mbStationaryImuInit || dist > 0.05)
+//         Tinit += curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp;
+
+//     int tracking_matches_inliers = TrackingGetMatchesInliers();
+//     bool bLarge = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
+//     Optimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), bLarge, !curr_kf->GetMap()->GetInertialBA2());  
+// }
 
 
 } //namespace MORB_SLAM
