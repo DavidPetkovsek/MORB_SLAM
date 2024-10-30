@@ -102,7 +102,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
   mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings, odomSource);
 
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
-  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
+  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial(), odomSource);
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {

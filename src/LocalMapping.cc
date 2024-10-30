@@ -36,7 +36,7 @@
 #include <math.h> 
 namespace MORB_SLAM {
 
-LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial)
+LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial, const std::shared_ptr<Odometry> &odomSource)
     : mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
       mbBadImu(false),
@@ -56,7 +56,8 @@ LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInert
       bInitializing(false),
       mTinit(0.f),
       isDoneVIBA(false),
-      mPoseReverseAxisFlip(Sophus::SE3f()) {
+      mPoseReverseAxisFlip(Sophus::SE3f()),
+      mpOdomSource(odomSource) {
 }
 
 void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) {

@@ -36,12 +36,13 @@ class System;
 class Tracking;
 class LoopClosing;
 class Atlas;
+class Odometry;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class LocalMapping {
  public:
   
-  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial, const std::shared_ptr<Odometry> &odomSource);
 
   void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
@@ -149,6 +150,8 @@ class LocalMapping {
 
   // used when returning from TrackStereo to undo the Axis Flip bug
   Sophus::SE3f mPoseReverseAxisFlip;
+
+  std::shared_ptr<Odometry> mpOdomSource;
 };
 
 }  // namespace MORB_SLAM
