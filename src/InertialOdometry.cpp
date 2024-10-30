@@ -308,12 +308,12 @@ void InertialOdometry::NewMap() {
     }
 }
 
-void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) {
+void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) {
     float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
 
     if (mbStationaryImuInit || dist > 0.05)
-        Tinit += curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp;
+        LocalMappingIncrementTimeInit(curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp);
 
     int tracking_matches_inliers = TrackingGetMatchesInliers();
     bool b_large = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
@@ -345,9 +345,10 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         return;
     }
 
+    std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
+
     // Retrieve all keyframe in temporal order
     std::list<std::shared_ptr<KeyFrame>> lpKF;
-    std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
     std::shared_ptr<KeyFrame> pKF = curr_kf;
     while (pKF->mPrevKF) {
         lpKF.push_front(pKF);
@@ -369,7 +370,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     LocalMappingSetInitializing(true);
 
-    LocalMappingProcessKeyFramesInQueue(lpKF, vpKF);
+    LocalMappingProcessKeyFramesInQueue(vpKF);
 
     const int N = vpKF.size();
     IMU::Bias b(0, 0, 0, 0, 0, 0);
@@ -438,7 +439,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
-            TrackingUpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), curr_kf);
+            TrackingUpdateFrameOdom(mScale, vpKF[0]->GetImuBias(), curr_kf);
         }
 
         // Check if initialization OK
@@ -450,7 +451,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         }
     }
 
-    TrackingUpdateFrameIMU(1.0, vpKF[0]->GetImuBias(), curr_kf);
+    TrackingUpdateFrameOdom(1.0, vpKF[0]->GetImuBias(), curr_kf);
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
         curr_kf->bImu = true;
@@ -475,7 +476,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     unsigned long GBAid = curr_kf->mnId;
 
     // Process keyframes in the queue
-    LocalMappingProcessKeyFramesInQueue(lpKF, vpKF);
+    LocalMappingProcessKeyFramesInQueue(vpKF);
     
     curr_kf = LocalMappingGetCurrentKeyFrame();
 
@@ -597,8 +598,9 @@ void InertialOdometry::PostInitializeOdom() {
 void InertialOdometry::scaleRefinement() {
     if (LocalMappingResetRequested()) return;
 
-    // Retrieve all keyframes in temporal order
     std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
+
+    // Retrieve all keyframes in temporal order
     std::list<std::shared_ptr<KeyFrame>> lpKF;
     std::shared_ptr<KeyFrame> pKF = curr_kf;
     while (pKF->mPrevKF) {
@@ -608,7 +610,7 @@ void InertialOdometry::scaleRefinement() {
     lpKF.push_front(pKF);
     std::vector<std::shared_ptr<KeyFrame>> vpKF(lpKF.begin(), lpKF.end());
 
-    LocalMappingProcessKeyFramesInQueue(lpKF, vpKF);
+    LocalMappingProcessKeyFramesInQueue(vpKF);
 
     curr_kf = LocalMappingGetCurrentKeyFrame();
 
@@ -630,7 +632,7 @@ void InertialOdometry::scaleRefinement() {
     if ((fabs(mScale - 1.f) > 0.002) || !mbMonocular) {
     Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
-        TrackingUpdateFrameIMU(mScale, curr_kf->GetImuBias(), curr_kf);
+        TrackingUpdateFrameOdom(mScale, curr_kf->GetImuBias(), curr_kf);
     }
 
     LocalMappingSetNewKeyFramesBad();

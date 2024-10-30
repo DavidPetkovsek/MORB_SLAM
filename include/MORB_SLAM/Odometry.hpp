@@ -30,7 +30,7 @@ public:
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;
     virtual void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) = 0;
     virtual void NewMap() = 0;
-    virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) = 0;
+    virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
     virtual void InitializeOdom() = 0;
     virtual void PostInitializeOdom() = 0;
 
@@ -42,19 +42,20 @@ protected:
     int TrackingGetMatchesInliers();
     void TrackingLockPreTeleportTranslation(bool is_locked);
     void TrackingSetTeleported(bool is_teleported);
-    void TrackingUpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this
+    void TrackingUpdateFrameOdom(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this
     void TrackingSetState(TrackingState state);
     TrackingState TrackingGetState();
 
     // Local Mapping
     bool LocalMappingResetRequested();
     void LocalMappingSetInitializing(bool is_initializing);
-    void LocalMappingProcessKeyFramesInQueue(std::list<std::shared_ptr<KeyFrame>> &lpKF, std::vector<std::shared_ptr<KeyFrame>> &vpKF);
+    void LocalMappingProcessKeyFramesInQueue(std::vector<std::shared_ptr<KeyFrame>> &vpKF);
     void LocalMappingSetTimeInit(float t_init);
+    float LocalMappingGetTimeInit();
+    void LocalMappingIncrementTimeInit(float t_increment);
     void LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose);
     void LocalMappingSetNewKeyFramesBad();
     std::shared_ptr<KeyFrame> LocalMappingGetCurrentKeyFrame();
-    float LocalMappingGetTimeInit();
 
 private:
     std::weak_ptr<LocalMapping> mwpLocalMapper;

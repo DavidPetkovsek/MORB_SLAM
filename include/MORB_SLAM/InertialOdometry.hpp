@@ -22,7 +22,7 @@ public:
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
     void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;
     void NewMap() override;
-    void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) override;
+    void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
     void InitializeOdom() override;
     void PostInitializeOdom() override;
     

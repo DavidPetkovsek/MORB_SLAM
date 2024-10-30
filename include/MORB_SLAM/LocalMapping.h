@@ -140,8 +140,8 @@ class LocalMapping {
   bool mbAcceptKeyFrames;
   std::mutex mMutexAccept;
 
-  void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A, bool bFirst = false);
-  void ScaleRefinement();
+  // void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A, bool bFirst = false);
+  // void ScaleRefinement();
 
   bool bInitializing;
 
