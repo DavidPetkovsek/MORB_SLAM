@@ -10,7 +10,8 @@
 namespace MORB_SLAM {
 
 
-InertialOdometry::InertialOdometry(std::shared_ptr<CameraSettings> settings) {
+InertialOdometry::InertialOdometry(std::shared_ptr<CameraSettings> settings)
+    : mbMonocular(settings->cameraType() == CameraType::MONOCULAR || settings->cameraType() == CameraType::IMU_MONOCULAR) {
     newParameterLoader(*settings);
 }
 
@@ -304,17 +305,17 @@ void InertialOdometry::NewMap() {
     }
 }
 
-// void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) {
-//     float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
-//         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
+void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) {
+    float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
+        (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
 
-//     if (mbStationaryImuInit || dist > 0.05)
-//         Tinit += curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp;
+    if (mbStationaryImuInit || dist > 0.05)
+        Tinit += curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp;
 
-//     int tracking_matches_inliers = TrackingGetMatchesInliers();
-//     bool bLarge = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
-//     Optimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), bLarge, !curr_kf->GetMap()->GetInertialBA2());  
-// }
+    int tracking_matches_inliers = TrackingGetMatchesInliers();
+    bool b_large = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
+    Optimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->GetInertialBA2());  
+}
 
 
 } //namespace MORB_SLAM

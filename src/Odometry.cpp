@@ -12,6 +12,6 @@ namespace MORB_SLAM {
 
     int Odometry::AtlasNumMaps() { return mpAtlas->CountMaps(); }
 
-    // int Odometry::TrackingGetMatchesInliers() { std::shared_ptr<Tracking> pTracker = mwpTracker.lock(); return pTracker->GetMatchesInliers(); }
+    int Odometry::TrackingGetMatchesInliers() { std::shared_ptr<Tracking> pTracker = mwpTracker.lock(); return pTracker->GetMatchesInliers(); }
 
 } //namespace MORB_SLAM

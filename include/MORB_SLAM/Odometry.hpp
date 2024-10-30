@@ -24,14 +24,14 @@ public:
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;
     virtual void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) = 0;
     virtual void NewMap() = 0;
-    // virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) = 0;
+    virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) = 0;
 
 protected:
     // Atlas
     int AtlasNumMaps();
 
     // Tracking
-    // int TrackingGetMatchesInliers();
+    int TrackingGetMatchesInliers();
 
 private:
     std::weak_ptr<LocalMapping> mwpLocalMapper;
