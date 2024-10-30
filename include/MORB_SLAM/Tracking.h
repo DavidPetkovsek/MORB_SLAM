@@ -51,7 +51,7 @@ class LoopClosing;
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings, std::shared_ptr<Odometry> odomSource);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings, const std::shared_ptr<Odometry> &odomSource);
 
   ~Tracking();
 

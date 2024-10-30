@@ -42,7 +42,7 @@ namespace MORB_SLAM {
 
 Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
                    std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings,
-                   std::shared_ptr<Odometry> odomSource)
+                   const std::shared_ptr<Odometry> &odomSource)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
       mSensor(sensor),

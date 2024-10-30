@@ -48,7 +48,7 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings, std::shared_ptr<Odometry> odomSource)
+System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
     : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
