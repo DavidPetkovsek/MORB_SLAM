@@ -41,6 +41,7 @@ typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class LocalMapping {
  public:
+  friend class Odometry;
   
   LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial, const std::shared_ptr<Odometry> &odomSource);
 

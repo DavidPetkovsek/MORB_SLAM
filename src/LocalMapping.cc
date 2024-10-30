@@ -113,42 +113,50 @@ void LocalMapping::Run() {
                 // Initialize IMU here
                 if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial) {
                     isDoneVIBA = false;
-                    mpTracker->mLockPreTeleportTranslation = true;
-                    if (mbMonocular) {
-                        InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
-                    } else {
-                        InitializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
-                    }
-                    mpTracker->mTeleported = true;
+                    // ============== NEW external odom ==============
+                    // mpTracker->mLockPreTeleportTranslation = true;
+                    // if (mbMonocular) {
+                    //     InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
+                    // } else {
+                    //     InitializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
+                    // }
+                    // mpTracker->mTeleported = true;
+                    mpOdomSource->InitializeOdom();
+                    // =======================================
                 }
                 // Check redundant local Keyframes
                 if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetInertialBA2()) KeyFrameCulling();
+                // =================== NEW external odom =============
+                // if ((mTinit < 50.0f) && mbInertial) {
+                //     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
+                //         if (!mpCurrentKeyFrame->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
+                //             mpTracker->mLockPreTeleportTranslation = true;
+                //             std::cout << "start VIBA 1" << std::endl;
+                //             mpCurrentKeyFrame->GetMap()->SetInertialBA1();
+                //             InitializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
+                //             mpTracker->mTeleported = true;
+                //             std::cout << "end VIBA 1" << std::endl;
+                //         } else if (!mpCurrentKeyFrame->GetMap()->GetInertialBA2() && mTinit > timerVIBA2) {
+                //             mpTracker->mLockPreTeleportTranslation = true;
+                //             std::cout << "start VIBA 2" << std::endl;
+                //             mpCurrentKeyFrame->GetMap()->SetInertialBA2();
+                //             InitializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
+                //             mpTracker->mTeleported = true;
+                //             std::cout << "end VIBA 2" << std::endl;
+                //         }
 
-                if ((mTinit < 50.0f) && mbInertial) {
-                    if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
-                        if (!mpCurrentKeyFrame->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
-                            mpTracker->mLockPreTeleportTranslation = true;
-                            std::cout << "start VIBA 1" << std::endl;
-                            mpCurrentKeyFrame->GetMap()->SetInertialBA1();
-                            InitializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
-                            mpTracker->mTeleported = true;
-                            std::cout << "end VIBA 1" << std::endl;
-                        } else if (!mpCurrentKeyFrame->GetMap()->GetInertialBA2() && mTinit > timerVIBA2) {
-                            mpTracker->mLockPreTeleportTranslation = true;
-                            std::cout << "start VIBA 2" << std::endl;
-                            mpCurrentKeyFrame->GetMap()->SetInertialBA2();
-                            InitializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
-                            mpTracker->mTeleported = true;
-                            std::cout << "end VIBA 2" << std::endl;
-                        }
+                //         // scale refinement
+                //         if (mbMonocular && ((mpAtlas->KeyFramesInMap()) <= 200) &&
+                //             ((mTinit > 25.0f && mTinit < 25.5f) || (mTinit > 35.0f && mTinit < 35.5f) || (mTinit > 45.0f && mTinit < 45.5f))) {
+                //             ScaleRefinement();
+                //         }
+                //     }
+                // }
 
-                        // scale refinement
-                        if (mbMonocular && ((mpAtlas->KeyFramesInMap()) <= 200) &&
-                            ((mTinit > 25.0f && mTinit < 25.5f) || (mTinit > 35.0f && mTinit < 35.5f) || (mTinit > 45.0f && mTinit < 45.5f))) {
-                            ScaleRefinement();
-                        }
-                    }
+                if(mpOdomSource) {
+                    mpOdomSource->PostInitializeOdom();
                 }
+                // ===============================================
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);

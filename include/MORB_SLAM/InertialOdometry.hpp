@@ -23,7 +23,9 @@ public:
     void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;
     void NewMap() override;
     void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA, float &Tinit) override;
-
+    void InitializeOdom() override;
+    void PostInitializeOdom() override;
+    
 public:
     InertialOdometry(std::shared_ptr<CameraSettings> settings);
 
@@ -52,6 +54,17 @@ private:
 
     bool mbStationaryImuInit = false; // TO DO: include in OdometrySettings class 
     bool mbMonocular;
+
+    void initializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA);
+
+    Eigen::Matrix3d mRwg;
+    Eigen::Vector3d mbg;
+    Eigen::Vector3d mba;
+    double mScale;
+
+    bool mbFastInit;
+
+    void scaleRefinement();
 };
 
 
