@@ -166,7 +166,7 @@ void Tracking::newParameterLoader(CameraSettings& settings) {
   const float sf_g = sqrt(settings.gyroFrequency());
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf_g, Na * sf_a, Ngw / sf_g, Naw / sf_a);
 
-  mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+  // mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
 void Tracking::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) { mpLocalMapper = pLocalMapper; }
@@ -790,20 +790,26 @@ void Tracking::MonocularInitialization() {
   if (!mbReadyToInitialize) {
     // Set Reference Frame
     if (mCurrentFrame.mvKeys.size() > 100) {
-      mInitialFrame = Frame(mCurrentFrame);
-      mLastFrame = Frame(mCurrentFrame);
+      // mInitialFrame = Frame(mCurrentFrame);
+      // mLastFrame = Frame(mCurrentFrame);
       mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
       for (size_t i = 0; i < mCurrentFrame.mvKeysUn.size(); i++)
         mvbPrevMatched[i] = mCurrentFrame.mvKeysUn[i].pt;
 
       std::fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
 
-      if (mSensor == CameraType::IMU_MONOCULAR) {
-        mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-        mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-      }
+      // if (mSensor == CameraType::IMU_MONOCULAR) {
+      //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+      //   mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+      // }
 
-      mbReadyToInitialize = true;
+      // mbReadyToInitialize = true;
+
+      // ========= NEW external odom =========
+      mbReadyToInitialize = (mpOdomSource != nullptr) ? mpOdomSource->ReadyForMonocularInitialization(mCurrentFrame, mLastFrame) : true;
+      mInitialFrame = Frame(mCurrentFrame);
+      mLastFrame = Frame(mCurrentFrame);
+      // ===================================
       return;
     }
   } else {
@@ -847,8 +853,8 @@ void Tracking::CreateInitialMapMonocular() {
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
   std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
-  if (mSensor == CameraType::IMU_MONOCULAR)
-    pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
+  // if (mSensor == CameraType::IMU_MONOCULAR)
+  //   pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
 
   pKFini->ComputeBoW();
   pKFcur->ComputeBoW();
@@ -922,13 +928,19 @@ void Tracking::CreateInitialMapMonocular() {
     }
   }
 
-  if (mSensor == CameraType::IMU_MONOCULAR) {
-    pKFcur->mPrevKF = pKFini;
-    pKFini->mNextKF = pKFcur;
-    pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+  // if (mSensor == CameraType::IMU_MONOCULAR) {
+  //   pKFcur->mPrevKF = pKFini;
+  //   pKFini->mNextKF = pKFcur;
+  //   pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
+  //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
+  // }
+
+  // ====== NEW external odom ============
+  if(mpOdomSource) {
+    mpOdomSource->InitialMapMonocular(pKFcur, pKFini);
   }
+  // =====================================
 
   mpLocalMapper->InsertKeyFrame(pKFini);
   mpLocalMapper->InsertKeyFrame(pKFcur);

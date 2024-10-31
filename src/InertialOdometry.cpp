@@ -298,6 +298,20 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
     return true;
 }
 
+bool InertialOdometry::ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) {
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+    curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    return true;
+}
+
+void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) {
+    initial_kf->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
+    curr_kf->mPrevKF = initial_kf;
+    initial_kf->mNextKF = curr_kf;
+    curr_kf->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), curr_kf->mImuCalib);
+}
+
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), ref_kf->mImuCalib);
 }

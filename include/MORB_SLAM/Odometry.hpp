@@ -28,6 +28,8 @@ public:
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;
+    virtual bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) = 0;
+    virtual void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) = 0;
     virtual void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) = 0;
     virtual void NewMap() = 0;
     virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;

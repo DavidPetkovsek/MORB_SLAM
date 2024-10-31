@@ -198,7 +198,7 @@ public:
   bool mbMapUpdated;
 
   // Imu preintegration from last frame
-  std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
+  // std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
   // Queue of IMU measurements between frames
   // std::vector<IMU::Point> mvImuData;
