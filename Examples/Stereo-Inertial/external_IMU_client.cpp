@@ -171,8 +171,7 @@ int main(int argc, char **argv) {
         prev_img_timestamp = local_img_timestamp;
 
         // MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
-        std::vector<MORB_SLAM::IMU::Point> empty_imu_vector;
-        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp * time_unit_to_seconds_conversion_factor, empty_imu_vector);
+        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp * time_unit_to_seconds_conversion_factor);
 
         viewer->update(sophusPose);
     }

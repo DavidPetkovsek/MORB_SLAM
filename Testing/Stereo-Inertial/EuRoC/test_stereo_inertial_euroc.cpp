@@ -186,8 +186,7 @@ int main(int argc, char **argv)
 
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
         // MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, slam_data.first, slam_data.second);
-        std::vector<MORB_SLAM::IMU::Point> empty_imu_vector;
-        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, t_frame, empty_imu_vector);
+        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, t_frame);
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
         viewer->update(sophus_pose);

@@ -69,18 +69,18 @@ class System {
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
 
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
 
     // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();

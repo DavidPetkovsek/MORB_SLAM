@@ -61,7 +61,7 @@ class Tracking {
   RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
   MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
 
-  void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
+  // void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
 
   void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
@@ -170,7 +170,7 @@ public:
   bool TrackReferenceKeyFrame();
   void UpdateLastFrame();
   bool TrackWithMotionModel();
-  bool PredictStateIMU();
+  // bool PredictStateIMU();
 
   bool Relocalization(bool isNewMap=false);
 
@@ -185,7 +185,7 @@ public:
   void CreateNewKeyFrame();
 
   // Perform preintegration from last frame
-  void PreintegrateIMU();
+  // void PreintegrateIMU();
 
   // Reset IMU biases and compute frame velocity
   void ResetFrameIMU();
@@ -201,7 +201,7 @@ public:
   std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
   // Queue of IMU measurements between frames
-  std::vector<IMU::Point> mvImuData;
+  // std::vector<IMU::Point> mvImuData;
 
   // Imu calibration parameters
   std::shared_ptr<IMU::Calib> mpImuCalib;

@@ -267,83 +267,83 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
   return MonoPacket(mImGray);
 }
 
-void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
-  mvImuData = imuMeasurements;
-}
+// void Tracking::GrabImuData(const std::vector<IMU::Point>& imuMeasurements) {
+//   mvImuData = imuMeasurements;
+// }
 
-void Tracking::PreintegrateIMU() {
-  if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
-    mCurrentFrame.setIntegrated();
-    return;
-  }
+// void Tracking::PreintegrateIMU() {
+//   if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
+//     mCurrentFrame.setIntegrated();
+//     return;
+//   }
 
-  if (mvImuData.size() == 0) {
-    Verbose::PrintMess("No IMU data in mvImuData!!", Verbose::VERBOSITY_NORMAL);
-    mCurrentFrame.setIntegrated();
-    return;
-  }
+//   if (mvImuData.size() == 0) {
+//     Verbose::PrintMess("No IMU data in mvImuData!!", Verbose::VERBOSITY_NORMAL);
+//     mCurrentFrame.setIntegrated();
+//     return;
+//   }
 
-  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
-  bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuData);
+//   std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(mLastFrame.mImuBias, mCurrentFrame.mImuCalib);
+//   bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuData);
 
-  if(hasPreintKF) {
-    mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuData);
-    mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
-    mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-    mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
-  } else {
-    Verbose::PrintMess("mvImuData is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
-  }
-  mCurrentFrame.setIntegrated();
-}
+//   if(hasPreintKF) {
+//     mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuData);
+//     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+//     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+//     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
+//   } else {
+//     Verbose::PrintMess("mvImuData is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
+//   }
+//   mCurrentFrame.setIntegrated();
+// }
 
-bool Tracking::PredictStateIMU() {
-  //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
-  if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
-    Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
-    return false;
-  }
+// bool Tracking::PredictStateIMU() {
+//   //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
+//   if (!mCurrentFrame.mpPrevFrame || mCurrentFrame.mpPrevFrame->isPartiallyConstructed) {
+//     Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
+//     return false;
+//   }
 
-  const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+//   const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
 
-  //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
-  if (mbMapUpdated && mpLastKeyFrame) {
-    const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
-    const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
+//   //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
+//   if (mbMapUpdated && mpLastKeyFrame) {
+//     const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
+//     const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
+//     const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
 
-    const float t12 = mpImuPreintegratedFromLastKF->dT;
-    IMU::Bias b = mpLastKeyFrame->GetImuBias();
+//     const float t12 = mpImuPreintegratedFromLastKF->dT;
+//     IMU::Bias b = mpLastKeyFrame->GetImuBias();
 
-    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
-    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
-    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
-    mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+//     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
+//     Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
+//     Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
+//     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
 
-    mCurrentFrame.mImuBias = b;
-    return true;
-  } else if (!mbMapUpdated && mCurrentFrame.mpImuPreintegratedFrame) {
-    const Eigen::Vector3f twb1 = mLastFrame.GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
-    const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
+//     mCurrentFrame.mImuBias = b;
+//     return true;
+//   } else if (!mbMapUpdated && mCurrentFrame.mpImuPreintegratedFrame) {
+//     const Eigen::Vector3f twb1 = mLastFrame.GetImuPosition();
+//     const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
+//     const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
 
-    const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
-    IMU::Bias b = mLastFrame.mImuBias;
+//     const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
+//     IMU::Bias b = mLastFrame.mImuBias;
 
-    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(b));
-    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(b);
-    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
+//     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(b));
+//     Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(b);
+//     Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
 
-    mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+//     mCurrentFrame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
 
-    mCurrentFrame.mImuBias = b;
-    return true;
-  }
+//     mCurrentFrame.mImuBias = b;
+//     return true;
+//   }
 
-  // only happens gets here if there was no IMU data when PreintegrateIMU() was called this frame
-  std::cout << "not IMU prediction!!" << std::endl;
-  return false;
-}
+//   // only happens gets here if there was no IMU data when PreintegrateIMU() was called this frame
+//   std::cout << "not IMU prediction!!" << std::endl;
+//   return false;
+// }
 
 void Tracking::Track() {
   if (mpLocalMapper->mbBadOdom /*mpLocalMapper->mbBadImu*/) {
