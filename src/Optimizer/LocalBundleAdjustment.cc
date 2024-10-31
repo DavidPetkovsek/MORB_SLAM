@@ -33,7 +33,7 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial) {
+void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bOdom /*bInertial*/) {
   // Local KeyFrames: First Breath Search from Current Keyframe
   std::list<std::shared_ptr<KeyFrame>> lLocalKeyFrames;
 
@@ -99,7 +99,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   g2o::BlockSolver_6_3* solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
 
   g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-  if (bInertial) solver->setUserLambdaInit(100.0);
+  if (bOdom /*bInertial*/) solver->setUserLambdaInit(100.0);
 
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);

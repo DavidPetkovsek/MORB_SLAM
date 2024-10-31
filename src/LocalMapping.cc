@@ -36,12 +36,13 @@
 #include <math.h> 
 namespace MORB_SLAM {
 
-LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial, const std::shared_ptr<Odometry> &odomSource)
-    : mRwg(Eigen::Matrix3d::Identity()),
+LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bInertial,*/ const std::shared_ptr<Odometry> &odomSource)
+    : /* mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
-      mbBadImu(false),
+      mbBadImu(false), */
+      mbBadOdom(false),
       mbMonocular(bMonocular),
-      mbInertial(bInertial),
+    //   mbInertial(bInertial),
       mbResetRequested(false),
       mbResetRequestedActiveMap(false),
       mbFinishRequested(false),
@@ -69,9 +70,9 @@ void LocalMapping::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 void LocalMapping::Run() {
     mbFinished = false;
 
-    //TODO: make these settings
-    const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
-    const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
+    // //TODO: make these settings
+    // const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
+    // const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
     while (1) {
         try {
@@ -79,7 +80,7 @@ void LocalMapping::Run() {
         SetAcceptKeyFrames(false);
 
         // Check if there are keyframes in the queue
-        if (CheckNewKeyFrames() && !mbBadImu) {
+        if (CheckNewKeyFrames() && !mbBadOdom /*!mbBadImu*/) {
             ProcessNewKeyFrame();
             MapPointCulling();
             CreateNewMapPoints();
@@ -93,7 +94,7 @@ void LocalMapping::Run() {
 
             if (!CheckNewKeyFrames() && !stopRequested()) {
                 if(mpCurrentKeyFrame && mpCurrentKeyFrame->mPrevKF && mpCurrentKeyFrame->mPrevKF->mPrevKF) {
-                    if (mbInertial && mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+                    if (mpOdomSource /*mbInertial*/ && mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
                         // ============= NEW external odom ==============
                         // float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                         //     (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
@@ -106,12 +107,12 @@ void LocalMapping::Run() {
                         mpOdomSource->LocalOdomBA(mpCurrentKeyFrame, mbAbortBA);
                         // ===========================================
                     } else {
-                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(), mbInertial);
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(), mpOdomSource != nullptr /*mbInertial*/);
                     }
                 }
 
                 // Initialize IMU here
-                if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial) {
+                if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpOdomSource /*mbInertial*/) {
                     isDoneVIBA = false;
                     // ============== NEW external odom ==============
                     // mpTracker->mLockPreTeleportTranslation = true;
@@ -126,6 +127,7 @@ void LocalMapping::Run() {
                 }
                 // Check redundant local Keyframes
                 if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetInertialBA2()) KeyFrameCulling();
+                
                 // =================== NEW external odom =============
                 // if ((mTinit < 50.0f) && mbInertial) {
                 //     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
@@ -161,7 +163,7 @@ void LocalMapping::Run() {
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
 
-        } else if (Stop() && !mbBadImu) {
+        } else if (Stop() && !mbBadOdom /*!mbBadImu*/) {
             // Safe area to stop
             while (isStopped() && !CheckFinish()) {
                 usleep(3000);
@@ -266,7 +268,7 @@ void LocalMapping::CreateNewMapPoints() {
     // Retrieve neighbor keyframes in covisibility graph
     std::vector<std::shared_ptr<KeyFrame>> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
-    if (mbInertial) {
+    if (mpOdomSource /*mbInertial*/) {
         std::shared_ptr<KeyFrame> pKF = mpCurrentKeyFrame;
         int count = 0;
         while ((static_cast<int>(vpNeighKFs.size()) <= nn) && (pKF->mPrevKF) && (count++ < nn)) {
@@ -321,7 +323,7 @@ void LocalMapping::CreateNewMapPoints() {
 
         // Search matches that fullfil epipolar constraint
         std::vector<std::pair<size_t, size_t>> vMatchedIndices;
-        bool bCoarse = mbInertial && mpTracker->mState == TrackingState::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
+        bool bCoarse = mpOdomSource /*mbInertial*/ && mpTracker->mState == TrackingState::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
 
         matcher.SearchForTriangulation(mpCurrentKeyFrame, pKF2, vMatchedIndices, false, bCoarse);
 
@@ -428,7 +430,7 @@ void LocalMapping::CreateNewMapPoints() {
 
             bool goodProj = false;
             // bool bPointStereo = false;
-            if (cosParallaxRays < cosParallaxStereo && cosParallaxRays > 0 && (bStereo1 || bStereo2 || (cosParallaxRays < 0.9996 && mbInertial) || (cosParallaxRays < 0.9998 && !mbInertial))) {
+            if (cosParallaxRays < cosParallaxStereo && cosParallaxRays > 0 && (bStereo1 || bStereo2 || (cosParallaxRays < 0.9996 && mpOdomSource /*mbInertial*/) || (cosParallaxRays < 0.9998 && !mpOdomSource /*!mbInertial*/))) {
                 goodProj = GeometricTools::Triangulate(xn1, xn2, eigTcw1, eigTcw2, x3D);
             } else if (bStereo1 && cosParallaxStereo1 < cosParallaxStereo2) {
                 goodProj = mpCurrentKeyFrame->UnprojectStereo(idx1, x3D);
@@ -553,7 +555,7 @@ void LocalMapping::SearchInNeighbors() {
     }
 
     // Extend to temporal neighbors
-    if (mbInertial) {
+    if (mpOdomSource /*mbInertial*/) {
         std::shared_ptr<KeyFrame> pKFi = mpCurrentKeyFrame->mPrevKF;
         while (vpTargetKFs.size() < 20 && pKFi) {
             if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId) {
@@ -686,14 +688,14 @@ void LocalMapping::KeyFrameCulling() {
 
     std::vector<std::shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
-    float redundant_th = (!mbInertial || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threshold
+    float redundant_th = (!mpOdomSource /*!mbInertial*/ || mbMonocular) ? 0.9 : 0.5; // David comment: redundancy threshold
 
     int count = 0;
     int numChecked = 0;
 
     // Compute last KF from optimizable window:
     unsigned int id_keyframe_upto_Nd_older_than_currentKeyFrame = 0; // normally was left unset, however, it produces a warning of id_keyframe_upto_Nd_older_than_currentKeyFrame potentially being uninitialized lower down even though the logic says otherwise
-    if (mbInertial) { // David comment: min(get number of preiviously linked keyframes from current keyframe,   Nd) put id of the frame into the above variable^
+    if (mpOdomSource /*mbInertial*/) { // David comment: min(get number of preiviously linked keyframes from current keyframe,   Nd) put id of the frame into the above variable^
         int count = 0;
         std::shared_ptr<KeyFrame> aux_KF = mpCurrentKeyFrame;
         while (count < Nd && aux_KF->mPrevKF) {
@@ -835,7 +837,8 @@ void LocalMapping::ResetIfRequested() {
 
             // Inertial parameters
             mTinit = 0.f;
-            mbBadImu = false;
+            // mbBadImu = false;
+            mbBadOdom = false;
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
         }
@@ -848,7 +851,8 @@ void LocalMapping::ResetIfRequested() {
 
             // Inertial parameters
             mTinit = 0.f;
-            mbBadImu = false;
+            // mbBadImu = false;
+            mbBadOdom = false;
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;

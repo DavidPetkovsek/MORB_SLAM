@@ -346,9 +346,9 @@ bool Tracking::PredictStateIMU() {
 }
 
 void Tracking::Track() {
-  if (mpLocalMapper->mbBadImu) {
+  if (mpLocalMapper->mbBadOdom /*mpLocalMapper->mbBadImu*/) {
     mForcedLost = false;
-    std::cout << "TRACK: Reset map because local mapper set the bad imu flag " << std::endl;
+    std::cout << "TRACK: Reset map because local mapper set the bad odom flag " << std::endl;
     RequestResetActiveMap();
     return;
   }
