@@ -35,13 +35,15 @@
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"
+#include "MORB_SLAM/SystemSettings.hpp"
 
 
 
 namespace MORB_SLAM {
 
 Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
-                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings,
+                   std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor,
+                   std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings,
                    const std::shared_ptr<Odometry> &odomSource)
     : mState(TrackingState::NO_IMAGES_YET),
       mLastProcessedState(TrackingState::NO_IMAGES_YET),
@@ -70,7 +72,7 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mInitialFramePose(Sophus::SE3f()),
       mpOdomSource(odomSource) {
   // Load camera parameters from settings file
-  newParameterLoader(*settings);
+  newParameterLoader(*sysSettings, *camSettings);
 
   initID = 0;
   lastID = 0;
@@ -97,12 +99,12 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
 
 Tracking::~Tracking() {}
 
-void Tracking::newParameterLoader(CameraSettings& settings) {
-  mpCamera = settings.camera1();
+void Tracking::newParameterLoader(SystemSettings& sysSettings, CameraSettings& camSettings) {
+  mpCamera = camSettings.camera1();
   mpCamera = mpAtlas->AddCamera(mpCamera);
 
-  if (settings.needToUndistort()) {
-    mDistCoef = settings.camera1DistortionCoef();
+  if (camSettings.needToUndistort()) {
+    mDistCoef = camSettings.camera1DistortionCoef();
   } else {
     mDistCoef = cv::Mat::zeros(4, 1, CV_32F);
   }
@@ -113,35 +115,35 @@ void Tracking::newParameterLoader(CameraSettings& settings) {
   mK.at<float>(0, 2) = mpCamera->getParameter(2);
   mK.at<float>(1, 2) = mpCamera->getParameter(3);
 
-  if (mSensor.hasMulticam() && settings.cameraModelType() == CameraSettings::KannalaBrandt) {
-    mpCamera2 = settings.camera2();
+  if (mSensor.hasMulticam() && camSettings.cameraModelType() == CameraSettings::KannalaBrandt) {
+    mpCamera2 = camSettings.camera2();
     mpCamera2 = mpAtlas->AddCamera(mpCamera2);
 
-    mTlr = settings.Tlr();
+    mTlr = camSettings.Tlr();
   }
 
   if (mSensor.hasMulticam()) {
-    mbf = settings.bf();
-    mThDepth = settings.b() * settings.thDepth();
+    mbf = camSettings.bf();
+    mThDepth = camSettings.b() * camSettings.thDepth();
   }
 
   if (mSensor == CameraType::RGBD || mSensor == CameraType::IMU_RGBD) {
-    mDepthMapFactor = settings.depthMapFactor();
+    mDepthMapFactor = camSettings.depthMapFactor();
     if (fabs(mDepthMapFactor) < 1e-5)
       mDepthMapFactor = 1;
     else
       mDepthMapFactor = 1.0f / mDepthMapFactor;
   }
 
-  mFPS = settings.fps();
+  mFPS = camSettings.fps();
   // might be pointless
 
   // ORB parameters
-  int nFeatures = settings.nFeatures();
-  int nLevels = settings.nLevels();
-  int fIniThFAST = settings.initThFAST();
-  int fMinThFAST = settings.minThFAST();
-  float fScaleFactor = settings.scaleFactor();
+  int nFeatures = sysSettings.nFeatures();
+  int nLevels = sysSettings.nLevels();
+  int fIniThFAST = sysSettings.initThFAST();
+  int fMinThFAST = sysSettings.minThFAST();
+  float fScaleFactor = sysSettings.scaleFactor();
 
   mpORBextractorLeft = std::make_shared<ORBextractor>(nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
 
@@ -151,21 +153,23 @@ void Tracking::newParameterLoader(CameraSettings& settings) {
   if (mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR)
     mpIniORBextractor = std::make_shared<ORBextractor>(5 * nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
 
-  mFastInit = settings.fastIMUInit();
-  mStationaryInit = settings.stationaryIMUInit();
-  mNewMapRelocalization = settings.newMapRelocalization();
+  mNewMapRelocalization = sysSettings.newMapRelocalization();
 
-  // IMU parameters
-  Sophus::SE3f Tbc = settings.Tbc();
-  float Ng = settings.noiseGyro();
-  float Na = settings.noiseAcc();
-  float Ngw = settings.gyroWalk();
-  float Naw = settings.accWalk();
+  // ===================== TODO =====================
+  // Delete the following from camSettings when mpImuCalib is removed from Tracking
+  // mFastInit = settings.fastIMUInit();
+  // mStationaryInit = settings.stationaryIMUInit();
+  Sophus::SE3f Tbc = camSettings.Tbc();
+  float Ng = camSettings.noiseGyro();
+  float Na = camSettings.noiseAcc();
+  float Ngw = camSettings.gyroWalk();
+  float Naw = camSettings.accWalk();
 
-  const float sf_a = sqrt(settings.accFrequency());
-  const float sf_g = sqrt(settings.gyroFrequency());
+  const float sf_a = sqrt(camSettings.accFrequency());
+  const float sf_g = sqrt(camSettings.gyroFrequency());
   mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf_g, Na * sf_a, Ngw / sf_g, Naw / sf_a);
-
+  // ==============================================
+  
   // mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 

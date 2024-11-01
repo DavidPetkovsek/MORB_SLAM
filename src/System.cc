@@ -48,11 +48,12 @@ namespace MORB_SLAM {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
-System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
+System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
     : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
-      settings(camSettings) {
+      mpCamSettings(camSettings),
+      mpSysSettings(sysSettings) {
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
@@ -61,10 +62,10 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
   // We're legally obligated to keep this line
   std::cout << std::endl << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl << "This is free software, and you are welcome to redistribute it" << std::endl << "under certain conditions. See LICENSE.txt." << std::endl << std::endl;
   
-  mStrLoadAtlasFromFile = settings->atlasLoadFile();
-  mStrSaveAtlasToFile = settings->atlasSaveFile();
+  mStrLoadAtlasFromFile = mpSysSettings->atlasLoadFile();
+  mStrSaveAtlasToFile = mpSysSettings->atlasSaveFile();
 
-  bool activeLC = settings->activeLoopClosing();
+  bool activeLC = mpSysSettings->activeLoopClosing();
 
   mStrVocabularyFilePath = strVocFile;
 
@@ -99,7 +100,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
     mpAtlas->CreateNewMap();
   }
 
-  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings, odomSource);
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, mpSysSettings, mpCamSettings, odomSource);
 
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, /*mSensor.isInertial(),*/ odomSource);
@@ -109,7 +110,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<CameraSettings> ca
     mpLocalMapper->setIsDoneVIBA(true);
   }
 
-  mpLocalMapper->mThFarPoints = settings->thFarPoints();
+  mpLocalMapper->mThFarPoints = mpSysSettings->thFarPoints();
   if (mpLocalMapper->mThFarPoints != 0) {
     std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
     mpLocalMapper->mbFarPoints = true;
@@ -154,17 +155,17 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   }
 
   cv::Mat imLeftToFeed, imRightToFeed;
-  if (settings && settings->needToRectify()) {
-    const cv::Mat &M1l = settings->M1l();
-    const cv::Mat &M2l = settings->M2l();
-    const cv::Mat &M1r = settings->M1r();
-    const cv::Mat &M2r = settings->M2r();
+  if (mpCamSettings && mpCamSettings->needToRectify()) {
+    const cv::Mat &M1l = mpCamSettings->M1l();
+    const cv::Mat &M2l = mpCamSettings->M2l();
+    const cv::Mat &M1r = mpCamSettings->M1r();
+    const cv::Mat &M2r = mpCamSettings->M2r();
 
     cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
     cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
-  } else if (settings && settings->needToResize()) {
-    cv::resize(imLeft, imLeftToFeed, settings->newImSize());
-    cv::resize(imRight, imRightToFeed, settings->newImSize());
+  } else if (mpCamSettings && mpCamSettings->needToResize()) {
+    cv::resize(imLeft, imLeftToFeed, mpCamSettings->newImSize());
+    cv::resize(imRight, imRightToFeed, mpCamSettings->newImSize());
   } else {
     imLeftToFeed = imLeft;
     imRightToFeed = imRight;
@@ -192,11 +193,11 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
 
   cv::Mat imToFeed = im.clone();
   cv::Mat imDepthToFeed = depthmap.clone();
-  if (settings && settings->needToResize()) {
+  if (mpCamSettings && mpCamSettings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings->newImSize());
+    cv::resize(im, resizedIm, mpCamSettings->newImSize());
     imToFeed = resizedIm;
-    cv::resize(depthmap, imDepthToFeed, settings->newImSize());
+    cv::resize(depthmap, imDepthToFeed, mpCamSettings->newImSize());
   }
 
   // Check mode change
@@ -221,9 +222,9 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp/*, const s
   }
 
   cv::Mat imToFeed = im.clone();
-  if (settings && settings->needToResize()) {
+  if (mpCamSettings && mpCamSettings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings->newImSize());
+    cv::resize(im, resizedIm, mpCamSettings->newImSize());
     imToFeed = resizedIm;
   }
 
@@ -453,7 +454,8 @@ bool System::getIsDoneVIBA() {
   return mpLocalMapper->getIsDoneVIBA();
 }
 
-std::shared_ptr<CameraSettings> System::getSettings() const { return settings; }
+std::shared_ptr<SystemSettings> System::getSysSettings() const { return mpSysSettings; }
+std::shared_ptr<CameraSettings> System::getCamSettings() const { return mpCamSettings; }
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }

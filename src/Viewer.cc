@@ -40,11 +40,11 @@ Viewer::Viewer(const System_ptr &pSystem)
     : mpSystem(pSystem),
       mpAtlas(pSystem->mpAtlas),
       mpFrameDrawer(pSystem->mpAtlas),
-      mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
+      mpMapDrawer(pSystem->mpAtlas, *pSystem->getSysSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
       mbClosed(false) {
-    newParameterLoader(*pSystem->getSettings());
+    newParameterLoader(*pSystem->getSysSettings(), *pSystem->getCamSettings());
     std::cout << "Creating Viewer thread" << std::endl;
     mptViewer = std::jthread(&Viewer::Run, this);
 }
@@ -54,24 +54,24 @@ Viewer::~Viewer(){
   if(mptViewer.joinable()) mptViewer.join();
 }
 
-void Viewer::newParameterLoader(const CameraSettings &settings) {
+void Viewer::newParameterLoader(const SystemSettings& sysSettings, const CameraSettings& camSettings) {
   mImageViewerScale = 1.f;
 
-  float fps = settings.fps();
+  float fps = camSettings.fps();
   if (fps < 1) fps = 30;
   mT = 1e3 / fps;
 
-  cv::Size imSize = settings.newImSize();
+  cv::Size imSize = camSettings.newImSize();
   mImageHeight = imSize.height;
   mImageWidth = imSize.width;
 
-  mImageViewerScale = settings.imageViewerScale();
-  mViewpointX = settings.viewPointX();
-  mViewpointY = settings.viewPointY();
-  mViewpointZ = settings.viewPointZ();
-  mViewpointF = settings.viewPointF();
+  mImageViewerScale = sysSettings.imageViewerScale();
+  mViewpointX = sysSettings.viewPointX();
+  mViewpointY = sysSettings.viewPointY();
+  mViewpointZ = sysSettings.viewPointZ();
+  mViewpointF = sysSettings.viewPointF();
 
-  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && settings.cameraModelType() == CameraSettings::KannalaBrandt) {
+  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && camSettings.cameraModelType() == CameraSettings::KannalaBrandt) {
     both = true;
     mpFrameDrawer.both = true;
   }

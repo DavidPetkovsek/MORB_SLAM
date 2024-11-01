@@ -47,11 +47,12 @@ namespace MORB_SLAM {
 
 class LocalMapping;
 class LoopClosing;
+class SystemSettings;
 
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<CameraSettings> settings, const std::shared_ptr<Odometry> &odomSource);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource);
 
   ~Tracking();
 
@@ -271,7 +272,7 @@ public:
 
   Sophus::SE3f mTlr;
 
-  void newParameterLoader(CameraSettings& settings);
+  void newParameterLoader(SystemSettings& sysSettings, CameraSettings& camSettings);
 
   bool mForcedLost;
 

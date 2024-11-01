@@ -29,20 +29,21 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/MapPoint.h"
+#include "MORB_SLAM/SystemSettings.hpp"
 
 namespace MORB_SLAM {
 
-MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const CameraSettings& settings): mpAtlas(pAtlas){
-  newParameterLoader(settings);
+MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const SystemSettings& sysSettings): mpAtlas(pAtlas){
+  newParameterLoader(sysSettings);
 }
 
-void MapDrawer::newParameterLoader(const CameraSettings &settings) {
-  mKeyFrameSize = settings.keyFrameSize();
-  mKeyFrameLineWidth = settings.keyFrameLineWidth();
-  mGraphLineWidth = settings.graphLineWidth();
-  mPointSize = settings.pointSize();
-  mCameraSize = settings.cameraSize();
-  mCameraLineWidth = settings.cameraLineWidth();
+void MapDrawer::newParameterLoader(const SystemSettings& sysSettings) {
+  mKeyFrameSize = sysSettings.keyFrameSize();
+  mKeyFrameLineWidth = sysSettings.keyFrameLineWidth();
+  mGraphLineWidth = sysSettings.graphLineWidth();
+  mPointSize = sysSettings.pointSize();
+  mCameraSize = sysSettings.cameraSize();
+  mCameraLineWidth = sysSettings.cameraLineWidth();
 }
 
 void MapDrawer::DrawMapPoints() {

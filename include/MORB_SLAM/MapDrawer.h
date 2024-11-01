@@ -27,12 +27,12 @@
 namespace MORB_SLAM
 {
 
-class CameraSettings;
+class SystemSettings;
 class KeyFrame;
 
 class MapDrawer
 {
-    void newParameterLoader(const CameraSettings& settings);
+    void newParameterLoader(const SystemSettings& sysSettings);
     Atlas_ptr mpAtlas;
     
     float mKeyFrameSize;
@@ -54,7 +54,7 @@ class MapDrawer
                                 {0.0f, 1.0f, 1.0f}};
 
 public:
-    MapDrawer(const Atlas_ptr &pAtlas, const CameraSettings& settings);
+    MapDrawer(const Atlas_ptr &pAtlas, const SystemSettings& sysSettings);
 
     void DrawMapPoints();
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba);
