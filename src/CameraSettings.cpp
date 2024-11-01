@@ -14,9 +14,7 @@ CameraSettings::CameraSettings(const std::string& configFile, const CameraType& 
       bNeedToUndistort_(false),
       bNeedToRectify_(false),
       bNeedToResize1_(false),
-      bNeedToResize2_(false),
-      thFarPoints_(0.f),
-      activeLoopClosing_(true) {
+      bNeedToResize2_(false) {
 
   cv::FileStorage fSettings = loadFile(configFile);
 
@@ -34,24 +32,19 @@ CameraSettings::CameraSettings(const std::string& configFile, const CameraType& 
   readImageInfo(fSettings);
   std::cout << "\t-Loaded image info" << std::endl;
 
+  // ======================= TODO =============================
+  // Delete this when mpImuCalib is removed from Tracking
   if (sensor_ == MORB_SLAM::CameraType::IMU_MONOCULAR || sensor_ == MORB_SLAM::CameraType::IMU_STEREO || sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
     readIMU(fSettings);
     std::cout << "\t-Loaded IMU calibration" << std::endl;
   }
+  // ===================================================
 
   if (sensor_ == MORB_SLAM::CameraType::RGBD || sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
     readRGBD(fSettings);
     std::cout << "\t-Loaded RGB-D calibration" << std::endl;
   }
 
-  readORB(fSettings);
-  std::cout << "\t-Loaded ORB settings" << std::endl;
-  readViewer(fSettings);
-  std::cout << "\t-Loaded viewer settings" << std::endl;
-  readLoadAndSave(fSettings);
-  std::cout << "\t-Loaded Atlas settings" << std::endl;
-  readOtherParameters(fSettings);
-  std::cout << "\t-Loaded misc parameters" << std::endl;
 
   if (bNeedToRectify_) {
     precomputeRectificationMaps();
@@ -267,6 +260,8 @@ void CameraSettings::readImageInfo(cv::FileStorage& fSettings) {
   fps_ = readParameter<int>(fSettings, "Camera.fps", found);
 }
 
+// ======================= TODO =============================
+// Delete this when mpImuCalib is removed from Tracking
 void CameraSettings::readIMU(cv::FileStorage& fSettings) {
   bool found;
   noiseGyro_ = readParameter<float>(fSettings, "IMU.NoiseGyro", found);
@@ -279,6 +274,7 @@ void CameraSettings::readIMU(cv::FileStorage& fSettings) {
   cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
   Tbc_ = Converter::toSophus(cvTbc);
 }
+// ======================================================
 
 void CameraSettings::readRGBD(cv::FileStorage& fSettings) {
   bool found;
@@ -289,55 +285,6 @@ void CameraSettings::readRGBD(cv::FileStorage& fSettings) {
   bf_ = b_ * calibration1_->getParameter(0);
 }
 
-void CameraSettings::readORB(cv::FileStorage& fSettings) {
-  bool found;
-
-  nFeatures_ = readParameter<int>(fSettings, "ORBextractor.nFeatures", found);
-  scaleFactor_ = readParameter<float>(fSettings, "ORBextractor.scaleFactor", found);
-  nLevels_ = readParameter<int>(fSettings, "ORBextractor.nLevels", found);
-  initThFAST_ = readParameter<int>(fSettings, "ORBextractor.iniThFAST", found);
-  minThFAST_ = readParameter<int>(fSettings, "ORBextractor.minThFAST", found);
-}
-
-void CameraSettings::readViewer(cv::FileStorage& fSettings) {
-  bool found;
-
-  keyFrameSize_ = readParameter<float>(fSettings, "Viewer.KeyFrameSize", found);
-  keyFrameLineWidth_ = readParameter<float>(fSettings, "Viewer.KeyFrameLineWidth", found);
-  graphLineWidth_ = readParameter<float>(fSettings, "Viewer.GraphLineWidth", found);
-  pointSize_ = readParameter<float>(fSettings, "Viewer.PointSize", found);
-  cameraSize_ = readParameter<float>(fSettings, "Viewer.CameraSize", found);
-  cameraLineWidth_ = readParameter<float>(fSettings, "Viewer.CameraLineWidth", found);
-  viewPointX_ = readParameter<float>(fSettings, "Viewer.ViewpointX", found);
-  viewPointY_ = readParameter<float>(fSettings, "Viewer.ViewpointY", found);
-  viewPointZ_ = readParameter<float>(fSettings, "Viewer.ViewpointZ", found);
-  viewPointF_ = readParameter<float>(fSettings, "Viewer.ViewpointF", found);
-  imageViewerScale_ = readParameter<float>(fSettings, "Viewer.imageViewScale", found, false);
-
-  if (!found) imageViewerScale_ = 1.0f;
-}
-
-void CameraSettings::readLoadAndSave(cv::FileStorage& fSettings) {
-  bool found;
-
-  sLoadFrom_ = readParameter<std::string>(fSettings, "System.LoadAtlasFromFile", found, false);
-  sSaveto_ = readParameter<std::string>(fSettings, "System.SaveAtlasToFile", found, false);
-}
-
-void CameraSettings::readOtherParameters(cv::FileStorage& fSettings) {
-  bool found;
-
-  thFarPoints_ = readParameter<float>(fSettings, "System.thFarPoints", found, false);
-  activeLoopClosing_ = readParameter<bool>(fSettings, "System.activeLoopClosing", found, false);
-  if (!found) activeLoopClosing_ = true;
-  fastIMUInit_ = readParameter<bool>(fSettings, "System.FastIMUInit", found, false);
-  if (!found) fastIMUInit_ = false;
-  stationaryIMUInit_ = readParameter<bool>(fSettings, "System.StationaryIMUInit", found, false);
-  if (!found) stationaryIMUInit_ = false;
-  newMapRelocalization_ = readParameter<bool>(fSettings, "System.NewMapRelocalization", found, false);
-  if (!found) newMapRelocalization_ = false;
-
-}
 
 void CameraSettings::precomputeRectificationMaps() {
   // Precompute rectification maps, new calibrations, ...
@@ -475,11 +422,6 @@ std::ostream& operator<<(std::ostream& output, const CameraSettings& settings) {
     output << "\t-RGB-D depth map factor: " << settings.depthMapFactor_ << std::endl;
   }
 
-  output << "\t-Features per image: " << settings.nFeatures_ << std::endl;
-  output << "\t-ORB scale factor: " << settings.scaleFactor_ << std::endl;
-  output << "\t-ORB number of scales: " << settings.nLevels_ << std::endl;
-  output << "\t-Initial FAST threshold: " << settings.initThFAST_ << std::endl;
-  output << "\t-Min FAST threshold: " << settings.minThFAST_ << std::endl;
 
   return output;
 }
