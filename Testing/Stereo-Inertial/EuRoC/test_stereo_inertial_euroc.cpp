@@ -32,6 +32,7 @@
 #include <MORB_SLAM/ExternalMapViewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>
 #include <MORB_SLAM/CameraSettings.hpp>
+#include <MORB_SLAM/SystemSettings.hpp>
 #include <MORB_SLAM/InertialOdometry.hpp>
 
 #include <MORB_SLAM/ImuTypes.h>
@@ -47,8 +48,16 @@ void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f &pose, doub
 
 int main(int argc, char **argv)
 {
-    if(argc < 4) {
-        std::cerr << "\nRequired arguments: <path_to_vocabulary> <path_to_camera_settings> <path_to_euroc_sequence_folder> <results_file_path>" << std::endl;
+    // argv[0] program
+    // argv[1] path to vocab
+    // argv[2] path to slam settings
+    // argv[3] path to cam settings
+    // argv[4] path to odom settings
+    // argv[5] path to EuRoc sequence
+    // argv[6] optional path to results csvfile
+
+    if(argc < 6) {
+        std::cerr << "\nRequired arguments: <path_to_vocabulary> <path_to_slam_settings> <path_to_camera_settings> <path_to_odometry_settings> <path_to_euroc_sequence_folder> <results_file_path>" << std::endl;
         return 1;
     }
 
@@ -63,7 +72,7 @@ int main(int argc, char **argv)
     int num_imu;
     int first_imu_idx;
 
-    std::filesystem::path path_to_seq(argv[3]);
+    std::filesystem::path path_to_seq(argv[5]);
     std::filesystem::path path_cam0_images = path_to_seq / "mav0"/"cam0"/"data";
     std::filesystem::path path_cam1_images = path_to_seq / "mav0"/"cam1"/"data";
     std::filesystem::path path_cam0_csv = path_to_seq / "mav0"/"cam0"/"data.csv"; // cam0 and cam1 are synchronized - their timestamps are the same and thus their data.csv files are identical
@@ -72,8 +81,8 @@ int main(int argc, char **argv)
     bool b_results_file;
     std::filesystem::path path_results_csv;
     std::ofstream results_file;
-    if(argc == 5) {
-        path_results_csv = argv[4];
+    if(argc == 7) {
+        path_results_csv = argv[6];
         std::filesystem::create_directories(path_results_csv.parent_path());
         results_file.open(path_results_csv); // csv file containing timestamped poses calculated by MORB_SLAM
         if(!results_file.is_open()) {
@@ -116,8 +125,12 @@ int main(int argc, char **argv)
 
     std::cout << "The first imu measurement to be considered is at index " << first_imu_idx << std::endl;
 
+    // Create SLAM settings
+    std::shared_ptr<MORB_SLAM::SystemSettings> slam_settings = std::make_shared<MORB_SLAM::SystemSettings>(argv[2]);
     // Create CameraSettings object
-    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[3], MORB_SLAM::CameraType::IMU_STEREO);
+    // Create InertialOdometry settings
+    std::shared_ptr<MORB_SLAM::InertialOdometrySettings> imu_settings = std::make_shared<MORB_SLAM::InertialOdometrySettings>(argv[4]);
 
     // Write the image sequences to a video, if a video doesn't exist
     std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
@@ -134,8 +147,8 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(cam_settings);
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings, inertial_odom);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], slam_settings, cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
