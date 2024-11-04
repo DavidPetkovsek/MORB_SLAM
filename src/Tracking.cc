@@ -35,7 +35,7 @@
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"
-#include "MORB_SLAM/SystemSettings.hpp"
+#include "MORB_SLAM/Settings/SystemSettings.hpp"
 
 
 

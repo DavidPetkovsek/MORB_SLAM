@@ -1,4 +1,4 @@
-#include "MORB_SLAM/CameraSettings.hpp"
+#include "MORB_SLAM/Settings/CameraSettings.hpp"
 
 #include "MORB_SLAM/CameraModels/KannalaBrandt8.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"

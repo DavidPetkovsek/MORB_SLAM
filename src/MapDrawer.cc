@@ -29,7 +29,7 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/MapPoint.h"
-#include "MORB_SLAM/SystemSettings.hpp"
+#include "MORB_SLAM/Settings/SystemSettings.hpp"
 
 namespace MORB_SLAM {
 

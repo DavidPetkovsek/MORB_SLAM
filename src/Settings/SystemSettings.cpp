@@ -1,4 +1,4 @@
-#include "MORB_SLAM/SystemSettings.hpp"
+#include "MORB_SLAM/Settings/SystemSettings.hpp"
 
 namespace MORB_SLAM {
 

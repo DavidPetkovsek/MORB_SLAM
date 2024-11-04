@@ -36,7 +36,7 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
-#include "MORB_SLAM/CameraSettings.hpp"
+#include "MORB_SLAM/Settings/CameraSettings.hpp"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"

@@ -20,7 +20,7 @@
 #pragma once
 
 #include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/Settings.h"
 #include "MORB_SLAM/Atlas.h"
 #include <mutex>
 

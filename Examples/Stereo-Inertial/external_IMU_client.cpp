@@ -7,8 +7,8 @@
 #include <condition_variable>
 #include <opencv2/opencv.hpp>
 
-#include <MORB_SLAM/CameraSettings.hpp>
-#include <MORB_SLAM/SystemSettings.hpp>
+#include <MORB_SLAM/Settings/CameraSettings.hpp>
+#include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>

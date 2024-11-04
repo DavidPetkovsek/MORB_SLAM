@@ -31,8 +31,8 @@
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalMapViewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>
-#include <MORB_SLAM/CameraSettings.hpp>
-#include <MORB_SLAM/SystemSettings.hpp>
+#include <MORB_SLAM/Settings/CameraSettings.hpp>
+#include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/InertialOdometry.hpp>
 
 #include <MORB_SLAM/ImuTypes.h>

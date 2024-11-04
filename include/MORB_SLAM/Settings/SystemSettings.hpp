@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/Settings.h"
 
 namespace MORB_SLAM {
 

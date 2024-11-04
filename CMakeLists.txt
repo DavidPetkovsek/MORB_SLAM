@@ -110,11 +110,14 @@ find_package(ixwebsocket QUIET) # only needed for getting realsense data through
 file(GLOB CPP_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 file(GLOB CPP_OPTIMIZER_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/Optimizer/*.cc)
 file(GLOB CPP_CAMERA_MODELS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/CameraModels/*.cpp)
+file(GLOB CPP_SETTINGS_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/*.cpp)
 list(APPEND CPP_FILES ${CPP_CAMERA_MODELS_FILES})
 list(APPEND CPP_FILES ${CPP_OPTIMIZER_FILES})
+list(APPEND CPP_FILES ${CPP_SETTINGS_FILES})
 
 file(GLOB headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/*.h)
 file(GLOB camera_model_headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/CameraModels/*.hpp)
+file(GLOB settings_headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/Settings/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/Settings/*.hpp)
 
 
 add_library(${TARGET_NAME} SHARED ${CPP_FILES})
@@ -161,6 +164,7 @@ install(TARGETS ${TARGET_NAME}
 # install header files
 install(FILES ${headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 install(FILES ${camera_model_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/CameraModels)
+install(FILES ${settings_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/Settings)
 
 
 # generate and install export file

@@ -2,7 +2,7 @@
 
 #include "MORB_SLAM/Odometry.hpp"
 #include "MORB_SLAM/ImuTypes.h"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/Settings.h"
 
 #include <Eigen/Core>
 

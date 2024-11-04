@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/Settings.h"
 
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
