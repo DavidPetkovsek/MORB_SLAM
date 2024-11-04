@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <MORB_SLAM/CameraSettings.hpp>
+#include <MORB_SLAM/SystemSettings.hpp>
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
 #include <MORB_SLAM/ExternalIMUProcessor.h>
@@ -27,9 +28,15 @@ void sigHandler(int sigNum) {
 }
 
 int main(int argc, char **argv) {
+    // argv[0] program
+    // argv[1] path to vocab
+    // argv[2] path to slam settings
+    // argv[3] path to cam settings
+    // argv[4] path to odom settings
+    // argv[5] path to program config
     
     bool found;
-    std::string web_socket_config_path(argv[3]);
+    std::string web_socket_config_path(argv[5]);
     cv::FileStorage websocket_config = MORB_SLAM::Settings::loadFile(web_socket_config_path);
     const std::string websocket_host_address = MORB_SLAM::Settings::readParameter<std::string>(websocket_config, "host_address", found, true);
     const double time_unit_to_seconds_conversion_factor = 0.001;
@@ -67,9 +74,11 @@ int main(int argc, char **argv) {
     std::mutex gyro_mutex;
     std::condition_variable cond_image_rec;
 
-    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(cam_settings);
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings, inertial_odom);
+    std::shared_ptr<MORB_SLAM::SystemSettings> sys_settings = std::make_shared<MORB_SLAM::SystemSettings>(argv[2]);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[3], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::InertialOdometrySettings> imu_settings = std::make_shared<MORB_SLAM::InertialOdometrySettings>(argv[4]);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], sys_settings, cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &img_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img, &inertial_odom, &time_unit_to_seconds_conversion_factor](const ix::WebSocketMessagePtr& msg) {
