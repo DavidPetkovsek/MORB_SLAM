@@ -1,0 +1,54 @@
+%YAML:1.0
+File.version: "1.0"
+
+#--------------------------------------------------------------------------------------------
+# System Parameters
+#--------------------------------------------------------------------------------------------
+
+System.NewMapRelocalization: "ON"
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1250
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7 
+Viewer.ViewpointZ: -3.5
+Viewer.ViewpointF: 500.0
+
+#--------------------------------------------------------------------------------------------
+# Map/Atlas IO
+#--------------------------------------------------------------------------------------------
+
+# Save/Load Map
+# System.LoadAtlasFromFile: "/home/landson/MORB_SLAM/trial"
+# System.LoadAtlasFromFile: "/home/ryan/MartinRea/MORB_SLAM/loopy"
+# System.LoadAtlasFromFile: "/home/patson/MORB_SLAM/atlases/one"
+# System.SaveAtlasToFile: "/home/sorourke/MORB_SLAM/atlases/expos"
+# System.LoadAtlasFromFile: "/home/sorourke/MORB_SLAM/atlases/expos"
