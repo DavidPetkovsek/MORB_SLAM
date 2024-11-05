@@ -33,7 +33,7 @@
 
 namespace MORB_SLAM {
 
-LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC, bool bInertial)
+LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC, bool bInertial,  const std::shared_ptr<Odometry> &odomSource)
     : hasMergedLocalMap(false),
       mbResetRequested(false),
       mbResetActiveMapRequested(false),
@@ -52,7 +52,8 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDataba
       mbFixScale(bFixScale),
       mnFullBAIdx(0),
       mbActiveLC(bActiveLC),
-      mbInertial(bInertial) {}
+      mbInertial(bInertial),
+      mpOdomSource(odomSource) {}
 
 void LoopClosing::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 

@@ -119,7 +119,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   }
 
   // Initialize the Loop Closing thread and launch
-  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial(), odomSource);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
