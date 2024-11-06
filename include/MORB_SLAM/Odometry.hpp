@@ -4,6 +4,9 @@
 #include <vector>
 #include <list>
 #include <sophus/se3.hpp>
+#include <map>
+#include <set>
+#include <g2o/types/sim3.h>
 
 #include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
@@ -15,6 +18,8 @@ class KeyFrame;
 class LocalMapping;
 class Tracking;
 class Atlas;
+class Map;
+typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>, Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3>>> KeyFrameAndPose;
 
 class Odometry {
 public:
@@ -35,6 +40,9 @@ public:
     virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
     virtual void InitializeOdom() = 0;
     virtual void PostInitializeOdom() = 0;
+    virtual void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) = 0;
+    virtual void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
+    virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;
 
 protected:
     // Atlas
@@ -47,6 +55,7 @@ protected:
     void TrackingUpdateFrameOdom(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this
     void TrackingSetState(TrackingState state);
     TrackingState TrackingGetState();
+    std::shared_ptr<KeyFrame> TrackingGetLastKeyFrame();
 
     // Local Mapping
     bool LocalMappingResetRequested();

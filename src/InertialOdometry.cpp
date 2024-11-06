@@ -696,4 +696,32 @@ void InertialOdometry::scaleRefinement() {
     return;
 }
 
+void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) {
+    // Map is not completly initialized
+    Eigen::Vector3d bg, ba;
+    bg << 0., 0., 0.;
+    ba << 0., 0., 0.;
+    Optimizer::InertialOptimization(curr_map, bg, ba);
+    IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
+    std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+
+    TrackingUpdateFrameOdom(1.0f, b, TrackingGetLastKeyFrame());
+
+    // Set map initialized
+    curr_map->SetInertialBA2();
+    curr_map->SetInertialBA1();
+    curr_map->SetImuInitialized();
+}
+
+void InertialOdometry::MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) {
+  bool bStopFlag = false;
+  Optimizer::MergeInertialBA(curr_kf, merge_kf, &bStopFlag, curr_map, corr_poses);
+}
+
+void InertialOdometry::LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) {
+    Optimizer::OptimizeEssentialGraph4DoF(pMap, pLoopKF, pCurKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
+}
+
+
+
 } //namespace MORB_SLAM
