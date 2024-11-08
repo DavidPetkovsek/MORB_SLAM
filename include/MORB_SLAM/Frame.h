@@ -65,6 +65,15 @@ public:
     // Copy constructor.
     Frame(const Frame &frame);
 
+    // Copy assignment operator (default)
+    Frame& operator=(Frame &frame) = default;
+
+    // Move constructor (default)
+    Frame(Frame &&frame) = default;
+
+    // Move assignment operator (default)
+    Frame& operator=(Frame &&frame) = default;
+
     // Copy for ExternalMapViewer.
     Frame(const Frame &frame, const bool copyExternalMapViewer);
 
@@ -81,7 +90,7 @@ public:
     Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft, const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2, Sophus::SE3f& Tlr,Frame* pPrevF = nullptr, const IMU::Calib &ImuCalib = IMU::Calib());
     
     // Destructor
-    virtual ~Frame();
+    ~Frame();
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(bool isLeft, const cv::Mat &im, const int x0, const int x1);
