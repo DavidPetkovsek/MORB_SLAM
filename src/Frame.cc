@@ -55,7 +55,8 @@ Frame::Frame()
       mpReferenceKF(nullptr),
       mbImuPreintegrated(false),
       mpLastKeyFrame(nullptr),
-      isPartiallyConstructed(true) {
+      isPartiallyConstructed(true),
+      mpExternalFrameData(nullptr) {
   mpMutexImu = std::make_shared<std::mutex>();
   mnId = nNextId++;
 }
@@ -119,7 +120,8 @@ Frame::Frame(const Frame &frame)
       monoRight(frame.monoRight),
       mvLeftToRightMatch(frame.mvLeftToRightMatch),
       mvRightToLeftMatch(frame.mvRightToLeftMatch),
-      mvStereo3Dpoints(frame.mvStereo3Dpoints) {
+      mvStereo3Dpoints(frame.mvStereo3Dpoints),
+      mpExternalFrameData(frame.mpExternalFrameData) {
   for (int i = 0; i < FRAME_GRID_COLS; i++)
     for (int j = 0; j < FRAME_GRID_ROWS; j++) {
       mGrid[i][j] = frame.mGrid[i][j];
@@ -169,7 +171,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
-      mpLastKeyFrame(nullptr) {
+      mpLastKeyFrame(nullptr),
+      mpExternalFrameData(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -256,7 +259,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       camera(cam), 
       mpCamera(pCamera),
       mpCamera2(nullptr),
-      mpLastKeyFrame(nullptr) {
+      mpLastKeyFrame(nullptr),
+      mpExternalFrameData(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -345,7 +349,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
-      mpLastKeyFrame(nullptr) {
+      mpLastKeyFrame(nullptr),
+      mpExternalFrameData(nullptr) {
   // Frame ID
   mnId = nNextId++;
 
@@ -440,7 +445,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(pCamera2),
-      mpLastKeyFrame(nullptr) {
+      mpLastKeyFrame(nullptr),
+      mpExternalFrameData(nullptr) {
   imgLeft = imLeft.clone();
   imgRight = imRight.clone();
 

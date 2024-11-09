@@ -57,6 +57,9 @@ class ConstraintPoseImu;
 class GeometricCamera;
 class ORBextractor;
 
+struct ExternalFrameData {
+    virtual ~ExternalFrameData() {}
+};
 class Frame
 {
 public:
@@ -277,6 +280,14 @@ public:
     static float mnMaxY;
 
     static bool mbInitialComputations;
+
+    std::shared_ptr<ExternalFrameData> mpExternalFrameData;
+
+    template <typename T>
+    std::shared_ptr<T>& ExternalFrameData() { return std::dynamic_pointer_cast<T>(mpExternalFrameData); }
+    
+    template<typename T>
+    const std::shared_ptr<const T> &ExternalFrameData() const { return std::dynamic_pointer_cast<const T>(std::const_pointer_cast<const struct ExternalFrameData>(mpExternalFrameData)); }
 
 private:
 
