@@ -78,8 +78,8 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
     // std::cout << std::fixed << "Added Accel with timestamp " <<  timestamp_s << std::endl;
 }
 
-bool InertialOdometry::AddFrameData(Frame& frame) {
-    std::shared_ptr<ExternalFrameData> frame_data = std::make_shared<InertialFrameData>();
+bool InertialOdometry::InitFrameData(Frame& frame) {
+    std::shared_ptr<ExternalFrameData> frame_data = std::make_shared<InertialFrameData>(*mpImuCalib);
     frame.mpExternalFrameData = frame_data;
     return true;
 }
@@ -274,6 +274,8 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     curr_frame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     curr_frame.mpLastKeyFrame = last_kf;
+    curr_frame.ExternalFrameData<InertialFrameData>()->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame; // NEW
+    curr_frame.ExternalFrameData<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF; // NEW
   } else {
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }

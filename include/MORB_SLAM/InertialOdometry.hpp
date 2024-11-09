@@ -74,7 +74,7 @@ class InertialOdometry : public Odometry {
 
 public:
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    bool AddFrameData(Frame& frame) override;
+    bool InitFrameData(Frame& frame) override;
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
