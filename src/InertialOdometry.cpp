@@ -78,6 +78,12 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
     // std::cout << std::fixed << "Added Accel with timestamp " <<  timestamp_s << std::endl;
 }
 
+bool InertialOdometry::AddFrameData(Frame& frame) {
+    std::shared_ptr<ExternalFrameData> frame_data = std::make_shared<InertialFrameData>();
+    frame.mpExternalFrameData = frame_data;
+    return true;
+}
+
 void InertialOdometry::AddAccel(const std::vector<Eigen::Vector3f> &v_accel_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexAccel);
     if(v_accel_meas.size() != v_timestamp_s.size()) {

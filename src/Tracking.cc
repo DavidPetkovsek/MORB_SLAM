@@ -198,6 +198,9 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   else if (mSensor == CameraType::IMU_STEREO && mpCamera2)
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame, *mpImuCalib);
 
+  if(mpOdomSource)
+    mpOdomSource->AddFrameData(mCurrentFrame);
+    
   Track();
 
   if(mState != TrackingState::OK && mState != TrackingState::NOT_INITIALIZED)

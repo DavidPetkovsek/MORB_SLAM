@@ -3,6 +3,7 @@
 #include "MORB_SLAM/Odometry.hpp"
 #include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/Settings/Settings.h"
+#include "MORB_SLAM/Frame.h"
 
 #include <Eigen/Core>
 
@@ -12,6 +13,32 @@ namespace MORB_SLAM {
 
 
 class Atlas;
+
+struct InertialFrameData : public ExternalFrameData {
+    // default constructor
+    InertialFrameData()
+        : mpImuPreintegrated(nullptr),
+          mpImuPreintegratedFrame(nullptr),
+          mbImuPreintegrated(false)
+    {
+        mpMutexImu = std::make_shared<std::mutex>();
+    }
+
+    InertialFrameData(IMU::Calib imuCalib)
+        : mImuCalib(imuCalib),
+          mpImuPreintegrated(nullptr),
+          mpImuPreintegratedFrame(nullptr),
+          mbImuPreintegrated(false)
+    {
+        mpMutexImu = std::make_shared<std::mutex>();
+    } 
+    IMU::Bias mImuBias;
+    IMU::Calib mImuCalib;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
+    bool mbImuPreintegrated;
+    std::shared_ptr<std::mutex> mpMutexImu;
+};
 
 class InertialOdometrySettings : public Settings {
 public:
@@ -47,6 +74,7 @@ class InertialOdometry : public Odometry {
 
 public:
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
+    bool AddFrameData(Frame& frame) override;
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
