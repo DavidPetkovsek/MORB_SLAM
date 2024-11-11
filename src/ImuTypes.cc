@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h"
 
 #include <iostream>
 

@@ -34,7 +34,7 @@
 #include "sophus/se3.hpp"
 #endif
 
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since IMU types will soon be decoupled from the Frame object
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/Converter.h"
 #include "MORB_SLAM/Settings/CameraSettings.hpp"

@@ -8,7 +8,7 @@
 #include <set>
 #include <g2o/types/sim3.h>
 
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since the abstract calss should have no knowledge of developer defined odometry types
 #include "MORB_SLAM/ImprovedTypes.hpp"
 
 namespace MORB_SLAM {

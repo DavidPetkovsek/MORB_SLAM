@@ -24,7 +24,6 @@
 #include <mutex>
 
 #include "MORB_SLAM/Converter.h"
-#include "MORB_SLAM/ImuTypes.h"
 
 namespace MORB_SLAM {
 

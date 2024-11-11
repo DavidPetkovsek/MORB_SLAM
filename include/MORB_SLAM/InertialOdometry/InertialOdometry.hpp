@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MORB_SLAM/Odometry.hpp"
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h"
 #include "MORB_SLAM/Settings/Settings.h"
 #include "MORB_SLAM/Frame.h"
 

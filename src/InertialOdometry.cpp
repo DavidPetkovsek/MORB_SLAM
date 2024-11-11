@@ -1,4 +1,4 @@
-#include "MORB_SLAM/InertialOdometry.hpp"
+#include "MORB_SLAM/InertialOdometry/InertialOdometry.hpp"
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/Verbose.h"

@@ -11,8 +11,8 @@
 #include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-#include <MORB_SLAM/ExternalIMUProcessor.h>
-#include <MORB_SLAM/InertialOdometry.hpp>
+// #include <MORB_SLAM/ExternalIMUProcessor.h>
+#include <MORB_SLAM/InertialOdometry/InertialOdometry.hpp>
 
 #include <Eigen/StdVector>
 

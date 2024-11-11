@@ -34,7 +34,6 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/ORBVocabulary.h"
-#include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/Settings/CameraSettings.hpp"
 #include "MORB_SLAM/Settings/SystemSettings.hpp"
 #include "MORB_SLAM/Camera.hpp"

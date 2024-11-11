@@ -40,7 +40,7 @@
 #endif
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since IMU types will no linger be coupled to frame
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/MapPoint.h"
 #include "MORB_SLAM/ORBVocabulary.h"

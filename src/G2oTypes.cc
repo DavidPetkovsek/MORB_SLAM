@@ -22,7 +22,7 @@
 #include "MORB_SLAM/G2oTypes.h"
 
 #include "MORB_SLAM/Converter.h"
-#include "MORB_SLAM/ImuTypes.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since inertial specific g2o types will soon be placed in seperate files
 namespace MORB_SLAM {
 
 ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
