@@ -69,6 +69,8 @@ private:
     bool mbFastInit;
 
     void scaleRefinement();
+
+    void updateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
 };
 
 

@@ -50,6 +50,8 @@ protected:
     std::shared_ptr<Atlas> mpAtlas;
 
     // Tracking
+    std::weak_ptr<Tracking> mwpTracker;
+    // TO-DO: Remove. Tracker was initially a private member of Odometry, so any child classes can't access it. This has been changed, so the below methods aren't needed anymore.
     int TrackingGetMatchesInliers();
     void TrackingLockPreTeleportTranslation(bool is_locked);
     void TrackingSetTeleported(bool is_teleported);
@@ -71,7 +73,6 @@ protected:
 
 private:
     std::weak_ptr<LocalMapping> mwpLocalMapper;
-    std::weak_ptr<Tracking> mwpTracker;
 
 };
 

@@ -1980,4 +1980,14 @@ void Tracking::CheckTrackingReset() {
   }
 }
 
+void Tracking::UpdateScale(const float s) {
+  if(s != 1.0f) {
+    mRelativeFramePose.translation() *= s;
+  }
+}
+
+void Tracking::UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
+  mpLastKeyFrame = pCurrentKeyFrame; 
+}
+
 }  // namespace MORB_SLAM

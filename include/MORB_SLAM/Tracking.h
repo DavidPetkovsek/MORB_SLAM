@@ -84,6 +84,10 @@ class Tracking {
   Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
   void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
 
+  // TEST: putting this here for now...
+  void UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+  void UpdateScale(const float s);
+
  public:
 
   TrackingState mState;
