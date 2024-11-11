@@ -303,7 +303,15 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
     Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
     Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
-    curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+    // curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+
+    // =======ExternalData test ========
+    Sophus::SE3f Twb(Rwb2, twb2);
+    Sophus::SE3f Tbw = Twb.inverse();
+    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+    curr_frame.SetPose(Tcw);
+    curr_frame.SetVelocity(Vwb2);
+    // ===== ExternalData test =======
 
     curr_frame.mImuBias = b;
     return true;
@@ -319,7 +327,15 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * curr_frame.mpImuPreintegratedFrame->GetDeltaPosition(b);
     Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * curr_frame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
 
-    curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+    // curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
+
+    // =======ExternalData test ========
+    Sophus::SE3f Twb(Rwb2, twb2);
+    Sophus::SE3f Tbw = Twb.inverse();
+    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+    curr_frame.SetPose(Tcw);
+    curr_frame.SetVelocity(Vwb2);
+    // ===== ExternalData test =======
 
     curr_frame.mImuBias = b;
     return true;
