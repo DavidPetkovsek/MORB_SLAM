@@ -216,13 +216,13 @@ void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<
 
 void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    curr_frame.setIntegrated();
+    curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
     return;
   }
 
   if (mvImuBatch.size() == 0) {
     Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
-    curr_frame.setIntegrated();
+    curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
     return;
   }
 
@@ -239,7 +239,7 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   } else {
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }
-  curr_frame.setIntegrated();
+  curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
 }
 
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
@@ -719,7 +719,7 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     pTracker->mLastFrame.SetNewBias(b);
     pTracker->mCurrentFrame.SetNewBias(b);
 
-    while (!pTracker->mCurrentFrame.imuIsPreintegrated()) {
+    while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
         usleep(500);
     }
 
@@ -783,7 +783,7 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         pTracker->mCurrentFrame.SetNewBias(pCurrentKF->GetImuBias());
     
         // I know this is code duplication, but I will refactor it later
-        while (!pTracker->mCurrentFrame.imuIsPreintegrated()) {
+        while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
             usleep(500);
         }
 

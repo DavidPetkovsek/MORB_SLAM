@@ -30,6 +30,19 @@ struct InertialFrameData : public ExternalFrameData {
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
     bool mbImuPreintegrated;
     std::shared_ptr<std::mutex> mpMutexImu;
+
+    bool imuIsPreintegrated() {
+        std::unique_lock<std::mutex> lock(*mpMutexImu);
+        return mbImuPreintegrated;
+    }
+    
+    void setIntegrated() {
+        while (!mpMutexImu)
+            mpMutexImu = std::make_shared<std::mutex>();
+
+        std::unique_lock<std::mutex> lock(*mpMutexImu);
+        mbImuPreintegrated = true;
+    }
 };
 
 
