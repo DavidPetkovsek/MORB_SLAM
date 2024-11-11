@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
@@ -34,7 +34,7 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge, bool bRecInit) {
+void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bLarge, bool bRecInit) {
   std::shared_ptr<Map> pCurrentMap = pKF->GetMap();
 
   // bLarge is true if pKF has 100 MapPoints

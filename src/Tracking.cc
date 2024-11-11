@@ -34,6 +34,7 @@
 #include "MORB_SLAM/MLPnPsolver.h"
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp" // to be removed
 #include "MORB_SLAM/CameraModels/Pinhole.h"
 #include "MORB_SLAM/Settings/SystemSettings.hpp"
 
@@ -1214,9 +1215,9 @@ bool Tracking::TrackLocalMap() {
   if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS) {
     Optimizer::PoseOptimization(&mCurrentFrame);
   } else if(mbMapUpdated || mCurrentFrame.mpPrevFrame->mpcpi == nullptr) {
-    Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
+    InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
   } else {
-    Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
+    InertialOptimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
   }
 
   mnMatchesInliers = 0;

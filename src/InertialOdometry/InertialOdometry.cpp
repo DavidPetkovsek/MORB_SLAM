@@ -1,7 +1,7 @@
 #include "MORB_SLAM/InertialOdometry/InertialOdometry.hpp"
 #include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
 #include "MORB_SLAM/Verbose.h"
-#include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Atlas.h"
 
 #include <iostream>
@@ -354,7 +354,7 @@ void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_ab
 
     int tracking_matches_inliers = TrackingGetMatchesInliers();
     bool b_large = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
-    Optimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->GetInertialBA2());  
+    InertialOptimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->GetInertialBA2());  
 }
 
 void InertialOdometry::InitializeOdom() {
@@ -462,7 +462,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     mScale = 1.0;
 
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, false, false, priorG, priorA);
+    InertialOptimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, false, false, priorG, priorA);
 
     if (mScale < 1e-1) {
         std::cout << "scale too small" << std::endl;
@@ -497,9 +497,9 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     if(bFIBA) {
         Verbose::PrintMess("start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
         if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, true, priorG, priorA);
+            InertialOptimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, true, priorG, priorA);
         } else {
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, false);
+            InertialOptimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, false);
             mpAtlas->setUseGravityDirectionFromLastMap(mbFastInit);
             LocalMappingSetPoseReverseAxisFlip(curr_kf->GetPose());
         }  
@@ -654,7 +654,7 @@ void InertialOdometry::scaleRefinement() {
     mRwg = Eigen::Matrix3d::Identity();
     mScale = 1.0;
 
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale);
+    InertialOptimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale);
 
     if (mScale < 1e-1)  // 1e-1
     {
@@ -685,7 +685,7 @@ void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_
     Eigen::Vector3d bg, ba;
     bg << 0., 0., 0.;
     ba << 0., 0., 0.;
-    Optimizer::InertialOptimization(curr_map, bg, ba);
+    InertialOptimizer::InertialOptimization(curr_map, bg, ba);
     IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
@@ -699,11 +699,11 @@ void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_
 
 void InertialOdometry::MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) {
   bool bStopFlag = false;
-  Optimizer::MergeInertialBA(curr_kf, merge_kf, &bStopFlag, curr_map, corr_poses);
+  InertialOptimizer::MergeInertialBA(curr_kf, merge_kf, &bStopFlag, curr_map, corr_poses);
 }
 
 void InertialOdometry::LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) {
-    Optimizer::OptimizeEssentialGraph4DoF(pMap, pLoopKF, pCurKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
+    InertialOptimizer::OptimizeEssentialGraph4DoF(pMap, pLoopKF, pCurKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
 }
 
 

@@ -19,6 +19,8 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// #include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Optimizer.h"
 
 #include <Eigen/Dense>
@@ -34,7 +36,7 @@
 namespace MORB_SLAM {
 
 // used in LocalMapping::InitializeIMU()
-void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale, Eigen::Vector3d& bg, Eigen::Vector3d& ba, bool bMono, bool bFixedVel, bool bGauss, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
+void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale, Eigen::Vector3d& bg, Eigen::Vector3d& ba, bool bMono, bool bFixedVel, bool bGauss, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
   Verbose::PrintMess("start inertial optimization", Verbose::VERBOSITY_NORMAL);
   const int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
@@ -182,7 +184,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 }
 
 // used in LoopClosing
-void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d& bg, Eigen::Vector3d& ba, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
+void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d& bg, Eigen::Vector3d& ba, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
   const int its = 200;  // Check number of iterations
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
@@ -320,7 +322,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d&
 }
 
 // used in LocalMapping::ScaleRefinement()
-void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale) {
+void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale) {
   const int its = 10;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
@@ -417,7 +419,7 @@ void Optimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d&
 }
 
 
-int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit) {
+int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
 
@@ -745,7 +747,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit
 
 static std::shared_ptr<ConstraintPoseImu> oldMpcpi = nullptr;
 
-int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
+int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
   g2o::SparseOptimizer optimizer;
   g2o::BlockSolverX::LinearSolverType* linearSolver;
   linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
@@ -1098,7 +1100,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     }
   }
 
-  H = Marginalize(H, 0, 14);
+  H = Optimizer::Marginalize(H, 0, 14);
 
   pFrame->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
   if (oldMpcpi == pFp->mpcpi) {

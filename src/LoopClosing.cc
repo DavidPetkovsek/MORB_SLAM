@@ -29,6 +29,7 @@
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Sim3Solver.h"
 
 namespace MORB_SLAM {
@@ -1155,7 +1156,7 @@ void LoopClosing::MergeLocal() {
   std::copy(spLocalWindowKFs.begin(), spLocalWindowKFs.end(), std::back_inserter(vpLocalCurrentWindowKFs));
   std::copy(spMergeConnectedKFs.begin(), spMergeConnectedKFs.end(), std::back_inserter(vpMergeConnectedKFs));
   if (mpTracker->mSensor == CameraType::IMU_MONOCULAR || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD) {
-    Optimizer::MergeInertialBA(mpCurrentKF, mpMergeMatchedKF, &bStop, pCurrentMap, vCorrectedSim3);
+    InertialOptimizer::MergeInertialBA(mpCurrentKF, mpMergeMatchedKF, &bStop, pCurrentMap, vCorrectedSim3);
   } else {
     Optimizer::LocalBundleAdjustment(mpCurrentKF, vpLocalCurrentWindowKFs, vpMergeConnectedKFs, &bStop);
   }
@@ -1575,7 +1576,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
   if (!bImuInit)
     Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
   else
-    Optimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
+    InertialOptimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
 
   int idx = mnFullBAIdx;
     

@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
@@ -37,7 +37,7 @@ bool sortByVal(const std::pair<std::shared_ptr<MapPoint>, int>& a, const std::pa
   return (a.second < b.second);
 }
 
-void Optimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_ptr<KeyFrame> pMergeKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, LoopClosing::KeyFrameAndPose& corrPoses) {
+void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::shared_ptr<KeyFrame> pMergeKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, LoopClosing::KeyFrameAndPose& corrPoses) {
   const int Nd = 6;
 
   const unsigned long maxKFid = pCurrKF->mnId;

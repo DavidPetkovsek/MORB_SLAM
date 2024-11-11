@@ -19,7 +19,7 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "MORB_SLAM/Optimizer.h"
+#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
@@ -33,7 +33,7 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool* pbStopFlag, bool bInit, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, Eigen::VectorXd* vSingVal, bool* bHess) {
+void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool* pbStopFlag, bool bInit, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, Eigen::VectorXd* vSingVal, bool* bHess) {
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
   const std::vector<std::shared_ptr<MapPoint>> vpMPs = pMap->GetAllMapPoints();
