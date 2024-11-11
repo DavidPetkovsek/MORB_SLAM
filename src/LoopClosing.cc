@@ -1316,7 +1316,10 @@ void LoopClosing::MergeLocal2() {
     bool bScaleVel = false;
     if (s_on != 1) bScaleVel = true;
     mpAtlas->GetCurrentMap()->ApplyScaledRotation(T_on, s_on, bScaleVel);
-    mpTracker->UpdateFrameIMU(s_on, mpCurrentKF->GetImuBias(), mpTracker->GetLastKeyFrame());
+
+    mpTracker->UpdateScale(s_on);
+    mpOdomSource->MergeLocalUpdateTrackingFrame(mpCurrentKF);
+    // mpTracker->UpdateFrameIMU(s_on, mpCurrentKF->GetImuBias(), mpTracker->GetLastKeyFrame());
   }
 
   const int numKFnew = pCurrentMap->KeyFramesInMap();

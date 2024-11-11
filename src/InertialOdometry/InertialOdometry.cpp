@@ -776,7 +776,71 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     }
   }
 }
-  
+
+void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) {
+    if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock()) {
+        pTracker->mLastFrame.SetNewBias(pCurrentKF->GetImuBias());
+        pTracker->mCurrentFrame.SetNewBias(pCurrentKF->GetImuBias());
+    
+        // I know this is code duplication, but I will refactor it later
+        while (!pTracker->mCurrentFrame.imuIsPreintegrated()) {
+            usleep(500);
+        }
+
+        if (pTracker->mLastFrame.mnId == pTracker->mLastFrame.mpLastKeyFrame->mnFrameId) {
+            // pTracker->mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(), mLastFrame.mpLastKeyFrame->GetImuPosition(), mLastFrame.mpLastKeyFrame->GetVelocity());
+            // =======ExternalData test ========
+            Sophus::SE3f Twb(pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation(), pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition());
+            Sophus::SE3f Tbw = Twb.inverse();
+            Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+            pTracker->mCurrentFrame.SetPose(Tcw);
+            pTracker->mCurrentFrame.SetVelocity(pTracker->mLastFrame.mpLastKeyFrame->GetVelocity());
+            // ===== ExternalData test =======
+
+        } else {
+            const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+            const Eigen::Vector3f twb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition();
+            const Eigen::Matrix3f Rwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation();
+            const Eigen::Vector3f Vwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetVelocity();
+            float t12 = pTracker->mLastFrame.mpImuPreintegrated->dT;
+
+            // pTracker->mLastFrame.SetImuPoseVelocity(
+            // IMU::NormalizeRotation(Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaRotation()),
+            // twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
+            // Vwb1 + Gz * t12 + Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+            // =======ExternalData test ========
+            Sophus::SE3f Twb(IMU::NormalizeRotation(Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaRotation()), twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaPosition());
+            Sophus::SE3f Tbw = Twb.inverse();
+            Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+            pTracker->mCurrentFrame.SetPose(Tcw);
+            pTracker->mCurrentFrame.SetVelocity(Vwb1 + Gz * t12 + Rwb1 * pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+            // ===== ExternalData test =======
+        }
+
+        std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = pTracker->mCurrentFrame.mpImuPreintegrated;
+        if (currFramePreintegrated) {
+            const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+            const Eigen::Vector3f twb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuPosition();
+            const Eigen::Matrix3f Rwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuRotation();
+            const Eigen::Vector3f Vwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetVelocity();
+            float t12 = currFramePreintegrated->dT;
+
+            // pTracker->mCurrentFrame.SetImuPoseVelocity(
+            //     IMU::NormalizeRotation(Rwb1 * currFramePreintegrated->GetUpdatedDeltaRotation()),
+            //     twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * currFramePreintegrated->GetUpdatedDeltaPosition(),
+            //     Vwb1 + Gz * t12 + Rwb1 * currFramePreintegrated->GetUpdatedDeltaVelocity());
+            // =======ExternalData test ========
+            Sophus::SE3f Twb(IMU::NormalizeRotation(Rwb1 * currFramePreintegrated->GetUpdatedDeltaRotation()), twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * currFramePreintegrated->GetUpdatedDeltaPosition());
+            Sophus::SE3f Tbw = Twb.inverse();
+            Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+            pTracker->mCurrentFrame.SetPose(Tcw);
+            pTracker->mCurrentFrame.SetVelocity(Vwb1 + Gz * t12 + Rwb1 * currFramePreintegrated->GetUpdatedDeltaVelocity());
+            // ===== ExternalData test =======
+            
+        }
+
+    }
+}
 
 
 

@@ -44,6 +44,7 @@ public:
     virtual void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) = 0;
     virtual void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
     virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;
+    virtual void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) = 0;
 
 protected:
     // Atlas
