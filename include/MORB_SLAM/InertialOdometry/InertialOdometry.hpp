@@ -2,7 +2,6 @@
 
 #include "MORB_SLAM/Odometry.hpp"
 #include "MORB_SLAM/InertialOdometry/InertialOdometrySettings.hpp"
-#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
 
 #include <Eigen/Core>
 #include <mutex>
