@@ -19,7 +19,6 @@
  * ORB-SLAM3. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Optimizer.h"
 
@@ -709,7 +708,16 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   }
 
   // Recover optimized pose, velocity and biases
-  pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
+  // pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
+
+  // =======ExternalData test ========
+  Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
+  Sophus::SE3f Tbw = Twb.inverse();
+  Sophus::SE3f Tcw = pFrame->ExternalFrameData<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  pFrame->SetPose(Tcw);
+  pFrame->SetVelocity(VV->estimate().cast<float>());
+  // ===== ExternalData test =======
+
   Vector6d b;
   b << VG->estimate(), VA->estimate();
   pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
@@ -1057,7 +1065,16 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   }
 
   // Recover optimized pose, velocity and biases
-  pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
+  // pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
+
+  // =======ExternalData test ========
+  Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
+  Sophus::SE3f Tbw = Twb.inverse();
+  Sophus::SE3f Tcw = pFrame->ExternalFrameData<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  pFrame->SetPose(Tcw);
+  pFrame->SetVelocity(VV->estimate().cast<float>());
+  // ===== ExternalData test =======
+  
   Vector6d b;
   b << VG->estimate(), VA->estimate();
   pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
