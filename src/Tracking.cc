@@ -1212,12 +1212,18 @@ bool Tracking::TrackLocalMap() {
   UpdateLocalMap();
   SearchLocalPoints();
 
-  if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS) {
-    Optimizer::PoseOptimization(&mCurrentFrame);
-  } else if(mbMapUpdated || mCurrentFrame.mpPrevFrame->mpcpi == nullptr) {
-    InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
+  // if (!mpAtlas->isImuInitialized() || mCurrentFrame.mpImuPreintegratedFrame == nullptr || mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS) {
+  //   Optimizer::PoseOptimization(&mCurrentFrame);
+  // } else if(mbMapUpdated || mCurrentFrame.mpPrevFrame->mpcpi == nullptr) {
+  //   InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
+  // } else {
+  //   InertialOptimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
+  // }
+
+  if(mpOdomSource) {
+    mpOdomSource->TrackLocalMapPoseOptimization(mCurrentFrame, mbMapUpdated, mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS);
   } else {
-    InertialOptimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
+    Optimizer::PoseOptimization(&mCurrentFrame);
   }
 
   mnMatchesInliers = 0;

@@ -2,6 +2,7 @@
 #include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
+#include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/Atlas.h"
 
 #include <iostream>
@@ -842,6 +843,15 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
     }
 }
 
+void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
+    if (!mpAtlas->isImuInitialized() || curr_frame.mpImuPreintegratedFrame == nullptr || reloc_recently) {
+        Optimizer::PoseOptimization(&curr_frame);
+    } else if(b_map_updated || curr_frame.mpPrevFrame->mpcpi == nullptr) {
+        InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
+    } else {
+        InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);
+    }
+}
 
 
 
