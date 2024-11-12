@@ -82,7 +82,8 @@ KeyFrame::KeyFrame()
       mbBad(false),
       NLeft(0),
       NRight(0),
-      isPartiallyConstructed(true) {
+      isPartiallyConstructed(true),
+      mpExternalKeyFrameData(nullptr) {
         nKFsInMemory++;
       }
 
@@ -155,7 +156,8 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mpCamera2(F.mpCamera2),
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
-      NRight(F.Nright) {
+      NRight(F.Nright),
+      mpExternalKeyFrameData(nullptr) {
   mnId = nNextId++;
   nKFsInMemory++;
 

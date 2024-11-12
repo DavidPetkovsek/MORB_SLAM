@@ -42,7 +42,7 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
 bool InertialOdometry::InitFrameData(Frame& frame) {
     std::shared_ptr<ExternalFrameData> frame_data = std::make_shared<InertialFrameData>(*mpImuCalib);
     frame.mpExternalFrameData = frame_data;
-    return true;
+    return true; // to do, handle cases where setting frame data was not successful
 }
 
 void InertialOdometry::AddAccel(const std::vector<Eigen::Vector3f> &v_accel_meas, const std::vector<double> v_timestamp_s) {
@@ -851,6 +851,12 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
     } else {
         InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);
     }
+}
+
+bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
+    std::shared_ptr<ExternalKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.ExternalFrameData<InertialFrameData>());
+    new_kf->mpExternalKeyFrameData = kf_data;
+    return true;
 }
 
 

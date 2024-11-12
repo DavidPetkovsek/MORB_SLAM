@@ -31,6 +31,7 @@ public:
 
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
     virtual bool InitFrameData(Frame& frame) = 0;
+    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0;
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;

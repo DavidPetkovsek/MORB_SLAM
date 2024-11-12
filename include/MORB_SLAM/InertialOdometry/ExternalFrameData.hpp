@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MORB_SLAM/Frame.h"
+#include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/InertialOdometry/ImuTypes.h"
 
 namespace MORB_SLAM {
@@ -46,6 +47,38 @@ struct InertialFrameData : public ExternalFrameData {
         std::unique_lock<std::mutex> lock(*mpMutexImu);
         mbImuPreintegrated = true;
     }
+};
+
+
+struct InertialKeyFrameData : public ExternalKeyFrameData {
+    InertialKeyFrameData() {}
+    
+    InertialKeyFrameData(InertialFrameData frame_data)
+        : mpImuPreintegrated(frame_data.mpImuPreintegrated),
+          mImuCalib(frame_data.mImuCalib),
+          mImuBias(frame_data.mImuBias)
+    { }
+
+    void SetNewBias(const IMU::Bias& b);
+    Eigen::Vector3f GetGyroBias() {
+        std::unique_lock<std::mutex> lock(mMutexImu);
+        return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+    }
+
+    Eigen::Vector3f GetAccBias() {
+        std::unique_lock<std::mutex> lock(mMutexImu);
+        return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
+    }
+
+    IMU::Bias GetImuBias() {
+        std::unique_lock<std::mutex> lock(mMutexImu);
+        return mImuBias;
+    }
+    bool bImu;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    IMU::Calib mImuCalib;
+    IMU::Bias mImuBias;
+    std::mutex mMutexImu;
 };
 
 

@@ -56,6 +56,10 @@ class KeyFrameDatabase;
 
 class GeometricCamera;
 
+struct ExternalKeyFrameData {
+    virtual ~ExternalKeyFrameData() {}
+};
+
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   friend class boost::serialization::access;
 
@@ -248,6 +252,11 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   bool bImu;
 
   static long unsigned int nKFsInMemory;
+
+  std::shared_ptr<ExternalKeyFrameData> mpExternalKeyFrameData;
+
+  template <typename T>
+  std::shared_ptr<T> ExternalKeyFrameData() { return std::dynamic_pointer_cast<T>(mpExternalKeyFrameData); }
 
   // The following variables are accesed from only 1 thread or never change (no mutex needed).
  public:

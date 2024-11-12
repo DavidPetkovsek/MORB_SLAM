@@ -730,6 +730,9 @@ void Tracking::StereoInitialization() {
   // Create KeyFrame
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
+  if(mpOdomSource)
+    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFini);
+
   // Insert KeyFrame in the map
   // TODO: Why is this an Atlas function?
   mpAtlas->AddKeyFrame(pKFini);
@@ -860,6 +863,10 @@ void Tracking::CreateInitialMapMonocular() {
   // Create KeyFrames
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
   std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+
+  if(mpOdomSource)
+    mpOdomSource->TrackingInitKeyFrameData(mInitialFrame, pKFini);
+    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFcur);
 
   // if (mSensor == CameraType::IMU_MONOCULAR)
   //   pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
@@ -1355,6 +1362,9 @@ void Tracking::CreateNewKeyFrame() {
 
   mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias);
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
+
+  if(mpOdomSource)
+    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, mpReferenceKF);
 
   if (mpLastKeyFrame) {
     mpReferenceKF->mPrevKF = mpLastKeyFrame;
