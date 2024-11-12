@@ -28,7 +28,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include "MORB_SLAM/Converter.h"
-#include "MORB_SLAM/G2oTypes.h"
+#include "MORB_SLAM/InertialOdometry/InertialG2oTypes.hpp"
 #include "MORB_SLAM/OptimizableTypes.h"
 
 namespace MORB_SLAM {
