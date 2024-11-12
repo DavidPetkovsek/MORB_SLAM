@@ -73,7 +73,7 @@ class Tracking {
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool& flag);
 
-  void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+  // void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
   std::shared_ptr<KeyFrame> GetLastKeyFrame() { return mpLastKeyFrame; }
 
   void CreateMapInAtlas();

@@ -56,7 +56,7 @@ protected:
     int TrackingGetMatchesInliers();
     void TrackingLockPreTeleportTranslation(bool is_locked);
     void TrackingSetTeleported(bool is_teleported);
-    void TrackingUpdateFrameOdom(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this
+    // void TrackingUpdateFrameOdom(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this
     void TrackingSetState(TrackingState state);
     TrackingState TrackingGetState();
     std::shared_ptr<KeyFrame> TrackingGetLastKeyFrame();

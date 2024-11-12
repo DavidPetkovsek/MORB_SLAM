@@ -1872,50 +1872,50 @@ void Tracking::ResetActiveMap(bool bLocMap) {
 
 void Tracking::InformOnlyTracking(const bool& flag) { mbOnlyTracking = flag; }
 
-void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
-  std::shared_ptr<Map> pMap = pCurrentKeyFrame->GetMap();
-  if(s != 1.0f) {
-    mRelativeFramePose.translation() *= s;
-  }
+// void Tracking::UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
+//   std::shared_ptr<Map> pMap = pCurrentKeyFrame->GetMap();
+//   if(s != 1.0f) {
+//     mRelativeFramePose.translation() *= s;
+//   }
 
-  mpLastKeyFrame = pCurrentKeyFrame;
+//   mpLastKeyFrame = pCurrentKeyFrame;
 
-  mLastFrame.SetNewBias(b);
-  mCurrentFrame.SetNewBias(b);
+//   mLastFrame.SetNewBias(b);
+//   mCurrentFrame.SetNewBias(b);
 
-  while (!mCurrentFrame.imuIsPreintegrated()) {
-    usleep(500);
-  }
+//   while (!mCurrentFrame.imuIsPreintegrated()) {
+//     usleep(500);
+//   }
 
-  if (mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId) {
-    mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(), mLastFrame.mpLastKeyFrame->GetImuPosition(), mLastFrame.mpLastKeyFrame->GetVelocity());
-  } else {
-    const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-    const Eigen::Vector3f twb1 = mLastFrame.mpLastKeyFrame->GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = mLastFrame.mpLastKeyFrame->GetImuRotation();
-    const Eigen::Vector3f Vwb1 = mLastFrame.mpLastKeyFrame->GetVelocity();
-    float t12 = mLastFrame.mpImuPreintegrated->dT;
+//   if (mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId) {
+//     mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(), mLastFrame.mpLastKeyFrame->GetImuPosition(), mLastFrame.mpLastKeyFrame->GetVelocity());
+//   } else {
+//     const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+//     const Eigen::Vector3f twb1 = mLastFrame.mpLastKeyFrame->GetImuPosition();
+//     const Eigen::Matrix3f Rwb1 = mLastFrame.mpLastKeyFrame->GetImuRotation();
+//     const Eigen::Vector3f Vwb1 = mLastFrame.mpLastKeyFrame->GetVelocity();
+//     float t12 = mLastFrame.mpImuPreintegrated->dT;
 
-    mLastFrame.SetImuPoseVelocity(
-      IMU::NormalizeRotation(Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaRotation()),
-      twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
-      Vwb1 + Gz * t12 + Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
-  }
+//     mLastFrame.SetImuPoseVelocity(
+//       IMU::NormalizeRotation(Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaRotation()),
+//       twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaPosition(),
+//       Vwb1 + Gz * t12 + Rwb1 * mLastFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
+//   }
 
-  std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = mCurrentFrame.mpImuPreintegrated;
-  if (currFramePreintegrated) {
-    const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-    const Eigen::Vector3f twb1 = mCurrentFrame.mpLastKeyFrame->GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = mCurrentFrame.mpLastKeyFrame->GetImuRotation();
-    const Eigen::Vector3f Vwb1 = mCurrentFrame.mpLastKeyFrame->GetVelocity();
-    float t12 = currFramePreintegrated->dT;
+//   std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = mCurrentFrame.mpImuPreintegrated;
+//   if (currFramePreintegrated) {
+//     const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+//     const Eigen::Vector3f twb1 = mCurrentFrame.mpLastKeyFrame->GetImuPosition();
+//     const Eigen::Matrix3f Rwb1 = mCurrentFrame.mpLastKeyFrame->GetImuRotation();
+//     const Eigen::Vector3f Vwb1 = mCurrentFrame.mpLastKeyFrame->GetVelocity();
+//     float t12 = currFramePreintegrated->dT;
 
-    mCurrentFrame.SetImuPoseVelocity(
-        IMU::NormalizeRotation(Rwb1 * currFramePreintegrated->GetUpdatedDeltaRotation()),
-        twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * currFramePreintegrated->GetUpdatedDeltaPosition(),
-        Vwb1 + Gz * t12 + Rwb1 * currFramePreintegrated->GetUpdatedDeltaVelocity());
-  }
-}
+//     mCurrentFrame.SetImuPoseVelocity(
+//         IMU::NormalizeRotation(Rwb1 * currFramePreintegrated->GetUpdatedDeltaRotation()),
+//         twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * currFramePreintegrated->GetUpdatedDeltaPosition(),
+//         Vwb1 + Gz * t12 + Rwb1 * currFramePreintegrated->GetUpdatedDeltaVelocity());
+//   }
+// }
 
 int Tracking::GetMatchesInliers() { return mnMatchesInliers; }
 
