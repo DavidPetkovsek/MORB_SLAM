@@ -720,6 +720,11 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     pTracker->mLastFrame.SetNewBias(b);
     pTracker->mCurrentFrame.SetNewBias(b);
 
+    // ======= New ExternalFrameData test =========
+    pTracker->mLastFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(b);
+    pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(b);
+    // ========================================
+
     while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
         usleep(500);
     }
@@ -782,7 +787,12 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
     if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock()) {
         pTracker->mLastFrame.SetNewBias(pCurrentKF->GetImuBias());
         pTracker->mCurrentFrame.SetNewBias(pCurrentKF->GetImuBias());
-    
+
+        // ========== NEW ExternalFrameData test ====================
+        pTracker->mLastFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
+        pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
+        // =====================================================
+        
         // I know this is code duplication, but I will refactor it later
         while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
             usleep(500);
@@ -854,8 +864,10 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
 }
 
 bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
-    std::shared_ptr<ExternalKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.ExternalFrameData<InertialFrameData>());
-    new_kf->mpExternalKeyFrameData = kf_data;
+    std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.ExternalFrameData<InertialFrameData>());
+    if(mpAtlas->isImuInitialized())
+        kf_data->bImu = true;
+    new_kf->mpExternalKeyFrameData = std::move(std::static_pointer_cast<ExternalKeyFrameData>(kf_data));
     return true;
 }
 

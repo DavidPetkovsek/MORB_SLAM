@@ -47,6 +47,12 @@ struct InertialFrameData : public ExternalFrameData {
         std::unique_lock<std::mutex> lock(*mpMutexImu);
         mbImuPreintegrated = true;
     }
+
+    void SetNewBias(const IMU::Bias &b) {
+        mImuBias = b;
+        if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+    }
+
 };
 
 
