@@ -53,11 +53,11 @@ Frame::Frame()
       mpPrevFrame(nullptr),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
+      // mbImuPreintegrated(false),
       mpLastKeyFrame(nullptr),
       isPartiallyConstructed(true),
       mpExternalFrameData(nullptr) {
-  mpMutexImu = std::make_shared<std::mutex>();
+  // mpMutexImu = std::make_shared<std::mutex>();
   mnId = nNextId++;
 }
 
@@ -109,8 +109,8 @@ Frame::Frame(const Frame &frame)
       mvInvScaleFactors(frame.mvInvScaleFactors),
       mvLevelSigma2(frame.mvLevelSigma2),
       mvInvLevelSigma2(frame.mvInvLevelSigma2),
-      mbImuPreintegrated(frame.mbImuPreintegrated),
-      mpMutexImu(frame.mpMutexImu),
+      // mbImuPreintegrated(frame.mbImuPreintegrated),
+      // mpMutexImu(frame.mpMutexImu),
       camera{frame.camera},
       mpCamera(frame.mpCamera),
       mpCamera2(frame.mpCamera2),
@@ -167,7 +167,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
+      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -222,7 +222,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
     mVw.setZero();
   }
 
-  mpMutexImu = std::make_shared<std::mutex>();
+  // mpMutexImu = std::make_shared<std::mutex>();
 
   // Set no stereo fisheye information
   Nleft = -1;
@@ -255,7 +255,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
+      // mbImuPreintegrated(false),
       camera(cam), 
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -310,7 +310,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
     mVw.setZero();
   }
 
-  mpMutexImu = std::make_shared<std::mutex>();
+  // mpMutexImu = std::make_shared<std::mutex>();
 
   // Set no stereo fisheye information
   Nleft = -1;
@@ -345,7 +345,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
+      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -415,7 +415,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
     mVw.setZero();
   }
 
-  mpMutexImu = std::make_shared<std::mutex>();
+  // mpMutexImu = std::make_shared<std::mutex>();
 }
 
 // Constructor for non-rectified stereo cameras.
@@ -441,7 +441,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      mbImuPreintegrated(false),
+      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(pCamera2),
@@ -511,7 +511,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 
   AssignFeaturesToGrid();
 
-  mpMutexImu = std::make_shared<std::mutex>();
+  // mpMutexImu = std::make_shared<std::mutex>();
 
   UndistortKeyPoints();
 }
@@ -996,18 +996,18 @@ bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D) {
   return false;
 }
 
-bool Frame::imuIsPreintegrated() {
-  std::unique_lock<std::mutex> lock(*mpMutexImu);
-  return mbImuPreintegrated;
-}
+// bool Frame::imuIsPreintegrated() {
+//   std::unique_lock<std::mutex> lock(*mpMutexImu);
+//   return mbImuPreintegrated;
+// }
 
-void Frame::setIntegrated() {
-  while (!mpMutexImu)
-    mpMutexImu = std::make_shared<std::mutex>();
+// void Frame::setIntegrated() {
+//   while (!mpMutexImu)
+//     mpMutexImu = std::make_shared<std::mutex>();
 
-  std::unique_lock<std::mutex> lock(*mpMutexImu);
-  mbImuPreintegrated = true;
-}
+//   std::unique_lock<std::mutex> lock(*mpMutexImu);
+//   mbImuPreintegrated = true;
+// }
 
 
 void Frame::ComputeStereoFishEyeMatches() {

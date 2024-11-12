@@ -140,8 +140,8 @@ public:
 
     std::shared_ptr<ConstraintPoseImu> mpcpi;
 
-    bool imuIsPreintegrated();
-    void setIntegrated();
+    // bool imuIsPreintegrated();
+    // void setIntegrated();
 
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();
@@ -301,9 +301,9 @@ private:
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();
 
-    bool mbImuPreintegrated;
+    // bool mbImuPreintegrated;
 
-    std::shared_ptr<std::mutex> mpMutexImu;
+    // std::shared_ptr<std::mutex> mpMutexImu;
 
     bool isInFrustumChecks(std::shared_ptr<MapPoint> pMP, float viewingCosLimit, bool bRight = false);
 
