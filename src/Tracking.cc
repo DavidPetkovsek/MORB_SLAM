@@ -1357,10 +1357,13 @@ void Tracking::CreateNewKeyFrame() {
 
   mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
+  // ====== To be Removed ======
   if (mpAtlas->isImuInitialized())
     mpReferenceKF->bImu = true;
 
-  mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias);
+  mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
+  // ============================
+
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
   if(mpOdomSource)

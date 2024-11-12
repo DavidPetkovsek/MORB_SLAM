@@ -572,18 +572,18 @@ void Frame::SetVelocity(Eigen::Vector3f Vwb) {
 
 Eigen::Vector3f Frame::GetVelocity() const { return mVw; }
 
-void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb) {
-  mVw = Vwb;
-  mbHasVelocity = true;
+// void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb) {
+//   mVw = Vwb;
+//   mbHasVelocity = true;
 
-  Sophus::SE3f Twb(Rwb, twb);
-  Sophus::SE3f Tbw = Twb.inverse();
+//   Sophus::SE3f Twb(Rwb, twb);
+//   Sophus::SE3f Tbw = Twb.inverse();
 
-  mTcw = mImuCalib.mTcb * Tbw;
+//   mTcw = mImuCalib.mTcb * Tbw;
 
-  UpdatePoseMatrices();
-  mbHasPose = true;
-}
+//   UpdatePoseMatrices();
+//   mbHasPose = true;
+// }
 
 void Frame::UpdatePoseMatrices() {
   Sophus::SE3<float> Twc = mTcw.inverse();

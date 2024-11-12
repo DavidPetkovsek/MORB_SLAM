@@ -110,7 +110,7 @@ public:
     Eigen::Vector3f GetVelocity() const;
 
     // Set IMU pose and velocity (implicitly changes camera pose)
-    void SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb);
+    // void SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb);
 
     Eigen::Matrix<float,3,1> GetImuPosition() const;
     Eigen::Matrix<float,3,3> GetImuRotation();

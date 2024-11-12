@@ -717,7 +717,7 @@ void LocalMapping::KeyFrameCulling() {
         } else if(pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) {
             if(t >= 3 || !mapVIBA2) {
                 if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) || 
-                        ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)) continue;
+                        ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)) continue; // TO-DO
                 longTimeNotMoving = true;
             }
             count++;
