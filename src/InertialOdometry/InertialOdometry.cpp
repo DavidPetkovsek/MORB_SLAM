@@ -846,7 +846,7 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
 void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
     if (!mpAtlas->isImuInitialized() || curr_frame.mpImuPreintegratedFrame == nullptr || reloc_recently) {
         Optimizer::PoseOptimization(&curr_frame);
-    } else if(b_map_updated || curr_frame.mpPrevFrame->mpcpi == nullptr) {
+    } else if(b_map_updated || curr_frame.mpPrevFrame->ExternalFrameData<InertialFrameData>()->mpcpi == nullptr) {
         InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
     } else {
         InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);

@@ -138,7 +138,7 @@ public:
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
     bool UnprojectStereo(const int &i, Eigen::Vector3f &x3D);
 
-    std::shared_ptr<ConstraintPoseImu> mpcpi;
+    // std::shared_ptr<ConstraintPoseImu> mpcpi;
 
     // bool imuIsPreintegrated();
     // void setIntegrated();

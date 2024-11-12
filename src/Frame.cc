@@ -46,7 +46,7 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame()
-    : mpcpi(nullptr),
+    : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
       mpImuPreintegrated(nullptr),
@@ -65,7 +65,7 @@ Frame::~Frame(){}
 
 // Copy Constructor.
 Frame::Frame(const Frame &frame)
-    : mpcpi(frame.mpcpi),
+    : /*mpcpi(frame.mpcpi),*/
       mTcw(frame.mTcw),
       mbHasPose(false),
       mTlr(frame.mTlr),
@@ -151,7 +151,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
-    : mpcpi(nullptr),
+    : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
@@ -239,7 +239,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
              std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
              Frame *pPrevF, const IMU::Calib &ImuCalib)
-    : mpcpi(nullptr),
+    : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
@@ -329,7 +329,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
              const std::shared_ptr<ORBextractor> &extractor, std::shared_ptr<ORBVocabulary> voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
              const float &thDepth, Frame *pPrevF, const IMU::Calib &ImuCalib)
-    : mpcpi(nullptr),
+    : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
@@ -425,7 +425,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
              Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)
-    : mpcpi(nullptr),
+    : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),

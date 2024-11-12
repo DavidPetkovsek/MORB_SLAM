@@ -11,7 +11,8 @@ struct InertialFrameData : public ExternalFrameData {
     InertialFrameData()
         : mpImuPreintegrated(nullptr),
           mpImuPreintegratedFrame(nullptr),
-          mbImuPreintegrated(false)
+          mbImuPreintegrated(false),
+          mpcpi(nullptr)
     {
         mpMutexImu = std::make_shared<std::mutex>();
     }
@@ -20,7 +21,8 @@ struct InertialFrameData : public ExternalFrameData {
         : mImuCalib(imuCalib),
           mpImuPreintegrated(nullptr),
           mpImuPreintegratedFrame(nullptr),
-          mbImuPreintegrated(false)
+          mbImuPreintegrated(false),
+          mpcpi(nullptr)
     {
         mpMutexImu = std::make_shared<std::mutex>();
     } 
@@ -30,6 +32,7 @@ struct InertialFrameData : public ExternalFrameData {
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
     bool mbImuPreintegrated;
     std::shared_ptr<std::mutex> mpMutexImu;
+    std::shared_ptr<ConstraintPoseImu> mpcpi;
 
     bool imuIsPreintegrated() {
         std::unique_lock<std::mutex> lock(*mpMutexImu);
