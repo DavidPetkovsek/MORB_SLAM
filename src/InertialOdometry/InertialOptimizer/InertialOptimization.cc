@@ -713,7 +713,7 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   // =======ExternalData test ========
   Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
   Sophus::SE3f Tbw = Twb.inverse();
-  Sophus::SE3f Tcw = pFrame->ExternalFrameData<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  Sophus::SE3f Tcw = pFrame->External<InertialFrameData>()->mImuCalib.mTcb * Tbw;
   pFrame->SetPose(Tcw);
   pFrame->SetVelocity(VV->estimate().cast<float>());
   // ===== ExternalData test =======
@@ -748,7 +748,7 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
     }
   }
 
-  pFrame->ExternalFrameData<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H);
+  pFrame->External<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H);
 
   return nInitialCorrespondences - nBad;
 }
@@ -944,11 +944,11 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
-  if (pFp->ExternalFrameData<InertialFrameData>()->mpcpi == nullptr){
+  if (pFp->External<InertialFrameData>()->mpcpi == nullptr){
     std::cout << "NO MPCPI" << std::endl;
     return 0;
   }
-  EdgePriorPoseImu* ep = new EdgePriorPoseImu(pFp->ExternalFrameData<InertialFrameData>()->mpcpi);
+  EdgePriorPoseImu* ep = new EdgePriorPoseImu(pFp->External<InertialFrameData>()->mpcpi);
 
   ep->setVertex(0, VPk);
   ep->setVertex(1, VVk);
@@ -1070,7 +1070,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   // =======ExternalData test ========
   Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
   Sophus::SE3f Tbw = Twb.inverse();
-  Sophus::SE3f Tcw = pFrame->ExternalFrameData<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  Sophus::SE3f Tcw = pFrame->External<InertialFrameData>()->mImuCalib.mTcb * Tbw;
   pFrame->SetPose(Tcw);
   pFrame->SetVelocity(VV->estimate().cast<float>());
   // ===== ExternalData test =======
@@ -1119,12 +1119,12 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
 
   H = Optimizer::Marginalize(H, 0, 14);
 
-  pFrame->ExternalFrameData<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
-  if (oldMpcpi == pFp->ExternalFrameData<InertialFrameData>()->mpcpi) {
+  pFrame->External<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
+  if (oldMpcpi == pFp->External<InertialFrameData>()->mpcpi) {
     std::cerr << "\033[22;34mSAME MPCPI\033[0m" << std::endl;
   } else {
-    oldMpcpi = pFp->ExternalFrameData<InertialFrameData>()->mpcpi;
-    pFp->ExternalFrameData<InertialFrameData>()->mpcpi = nullptr;
+    oldMpcpi = pFp->External<InertialFrameData>()->mpcpi;
+    pFp->External<InertialFrameData>()->mpcpi = nullptr;
   }
   return nInitialCorrespondences - nBad;
 }

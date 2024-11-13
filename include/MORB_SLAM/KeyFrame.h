@@ -256,7 +256,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<ExternalKeyFrameData> mpExternalKeyFrameData;
 
   template <typename T>
-  std::shared_ptr<T> ExternalKeyFrameData() { return std::dynamic_pointer_cast<T>(mpExternalKeyFrameData); }
+  std::shared_ptr<T> External() { return std::dynamic_pointer_cast<T>(mpExternalKeyFrameData); }
 
   // The following variables are accesed from only 1 thread or never change (no mutex needed).
  public:

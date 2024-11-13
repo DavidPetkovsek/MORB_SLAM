@@ -217,13 +217,13 @@ void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<
 
 void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
+    curr_frame.External<InertialFrameData>()->setIntegrated();
     return;
   }
 
   if (mvImuBatch.size() == 0) {
     Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
-    curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
+    curr_frame.External<InertialFrameData>()->setIntegrated();
     return;
   }
 
@@ -235,12 +235,12 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     curr_frame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     curr_frame.mpLastKeyFrame = last_kf;
-    curr_frame.ExternalFrameData<InertialFrameData>()->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame; // NEW
-    curr_frame.ExternalFrameData<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF; // NEW
+    curr_frame.External<InertialFrameData>()->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame; // NEW
+    curr_frame.External<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF; // NEW
   } else {
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }
-  curr_frame.ExternalFrameData<InertialFrameData>()->setIntegrated();
+  curr_frame.External<InertialFrameData>()->setIntegrated();
 }
 
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
@@ -721,11 +721,11 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     pTracker->mCurrentFrame.SetNewBias(b);
 
     // ======= New ExternalFrameData test =========
-    pTracker->mLastFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(b);
-    pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(b);
+    pTracker->mLastFrame.External<InertialFrameData>()->SetNewBias(b);
+    pTracker->mCurrentFrame.External<InertialFrameData>()->SetNewBias(b);
     // ========================================
 
-    while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
+    while (!pTracker->mCurrentFrame.External<InertialFrameData>()->imuIsPreintegrated()) {
         usleep(500);
     }
 
@@ -789,12 +789,12 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         pTracker->mCurrentFrame.SetNewBias(pCurrentKF->GetImuBias());
 
         // ========== NEW ExternalFrameData test ====================
-        pTracker->mLastFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
-        pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
+        pTracker->mLastFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
+        pTracker->mCurrentFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
         // =====================================================
         
         // I know this is code duplication, but I will refactor it later
-        while (!pTracker->mCurrentFrame.ExternalFrameData<InertialFrameData>()->imuIsPreintegrated()) {
+        while (!pTracker->mCurrentFrame.External<InertialFrameData>()->imuIsPreintegrated()) {
             usleep(500);
         }
 
@@ -856,7 +856,7 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
 void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
     if (!mpAtlas->isImuInitialized() || curr_frame.mpImuPreintegratedFrame == nullptr || reloc_recently) {
         Optimizer::PoseOptimization(&curr_frame);
-    } else if(b_map_updated || curr_frame.mpPrevFrame->ExternalFrameData<InertialFrameData>()->mpcpi == nullptr) {
+    } else if(b_map_updated || curr_frame.mpPrevFrame->External<InertialFrameData>()->mpcpi == nullptr) {
         InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
     } else {
         InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);
@@ -864,7 +864,7 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
 }
 
 bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
-    std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.ExternalFrameData<InertialFrameData>());
+    std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.External<InertialFrameData>());
     if(mpAtlas->isImuInitialized())
         kf_data->bImu = true;
     new_kf->mpExternalKeyFrameData = std::move(std::static_pointer_cast<ExternalKeyFrameData>(kf_data));
