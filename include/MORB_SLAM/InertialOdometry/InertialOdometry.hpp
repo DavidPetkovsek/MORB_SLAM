@@ -2,6 +2,7 @@
 
 #include "MORB_SLAM/Odometry.hpp"
 #include "MORB_SLAM/InertialOdometry/InertialOdometrySettings.hpp"
+#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
 
 #include <Eigen/Core>
 #include <mutex>
@@ -14,8 +15,8 @@ class Atlas;
 class InertialOdometry : public Odometry {
 
 public:
+    std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() override;
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    bool InitFrameData(Frame& frame) override;
     bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override;
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;

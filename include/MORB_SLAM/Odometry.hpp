@@ -8,7 +8,6 @@
 #include <set>
 #include <g2o/types/sim3.h>
 
-#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since the abstract calss should have no knowledge of developer defined odometry types
 #include "MORB_SLAM/ImprovedTypes.hpp"
 
 namespace MORB_SLAM {
@@ -19,6 +18,7 @@ class LocalMapping;
 class Tracking;
 class Atlas;
 class Map;
+class ExternalFrameData;
 typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>, Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3>>> KeyFrameAndPose;
 
 class Odometry {
@@ -29,8 +29,8 @@ public:
     void SetTracker(std::shared_ptr<Tracking> pTracker);
     void SetAtlas(const std::shared_ptr<Atlas> &pAtlas);
 
+    virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() = 0;
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
-    virtual bool InitFrameData(Frame& frame) = 0;
     virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0;
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;

@@ -1,5 +1,4 @@
 #include "MORB_SLAM/InertialOdometry/InertialOdometry.hpp"
-#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Optimizer.h"
@@ -39,11 +38,6 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
     // std::cout << std::fixed << "Added Accel with timestamp " <<  timestamp_s << std::endl;
 }
 
-bool InertialOdometry::InitFrameData(Frame& frame) {
-    std::shared_ptr<ExternalFrameData> frame_data = std::make_shared<InertialFrameData>(*mpImuCalib);
-    frame.mpExternalFrameData = frame_data;
-    return true; // to do, handle cases where setting frame data was not successful
-}
 
 void InertialOdometry::AddAccel(const std::vector<Eigen::Vector3f> &v_accel_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexAccel);
@@ -871,6 +865,8 @@ bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_p
     return true;
 }
 
-
+std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData()  {
+    return std::make_shared<InertialFrameData>(*mpImuCalib);
+}
 
 } //namespace MORB_SLAM

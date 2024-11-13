@@ -150,7 +150,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF, const IMU::Calib &ImuCalib)
+             Frame *pPrevF, const IMU::Calib &ImuCalib, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -172,7 +172,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpCamera(pCamera),
       mpCamera2(nullptr),
       mpLastKeyFrame(nullptr),
-      mpExternalFrameData(nullptr) {
+      mpExternalFrameData(pExternalData) {
   // Frame ID
   mnId = nNextId++;
 
@@ -424,7 +424,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
-             Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib)
+             Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -446,7 +446,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mpCamera(pCamera),
       mpCamera2(pCamera2),
       mpLastKeyFrame(nullptr),
-      mpExternalFrameData(nullptr) {
+      mpExternalFrameData(pExternalData) {
   imgLeft = imLeft.clone();
   imgRight = imRight.clone();
 
