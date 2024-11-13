@@ -61,18 +61,5 @@ inline std::ostream &operator<<(std::ostream &os, const CameraType &t){
     return os;
 }
 
-namespace ImuInitializater{
-  enum ImuInitType{ //enum values are used for math stuff -- DO NOT CHANGE
-    MONOCULAR_INIT_A=10000000000,
-    STEREO_INIT_A=100000,
-    VIBA1_A=100000, // VIBA = visual-inertial bundle adjustment
-    VIBA2_A=0,
-    DEFAULT_A=100,
-    MONOCULAR_INIT_G=100,
-    STEREO_INIT_G=100,
-    VIBA1_G=1,
-    VIBA2_G=0,
-    DEFAULT_G=1000000,
-  };
-}
-}
+
+} // namespace MORB_SLAM
