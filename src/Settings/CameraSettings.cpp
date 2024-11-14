@@ -317,11 +317,17 @@ void CameraSettings::precomputeRectificationMaps() {
   bf_ = b_ * P1.at<double>(0, 0);
 
   // Update relative pose between camera 1 and IMU if necessary
+    // TODO: this is temporary, rework this!
   if (sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
     Eigen::Matrix3f eigenR_r1_u1;
     cv::cv2eigen(R_r1_u1, eigenR_r1_u1);
-    Sophus::SE3f T_r1_u1(eigenR_r1_u1, Eigen::Vector3f::Zero());
-    Tbc_ = Tbc_ * T_r1_u1.inverse();
+    T_r1_u1_ = Sophus::SE3f(eigenR_r1_u1, Eigen::Vector3f::Zero());
+
+    Eigen::Matrix3f eigenR_r2_u2;
+    cv::cv2eigen(R_r2_u2, eigenR_r2_u2);
+    T_r2_u2_ = Sophus::SE3f(eigenR_r2_u2, Eigen::Vector3f::Zero());
+
+    Tbc_ = Tbc_ * T_r1_u1_.inverse();
   }
 }
 
@@ -414,8 +420,8 @@ std::ostream& operator<<(std::ostream& output, const CameraSettings& settings) {
     output << "\t-Accelerometer noise: " << settings.noiseAcc_ << std::endl;
     output << "\t-Gyro walk: " << settings.gyroWalk_ << std::endl;
     output << "\t-Accelerometer walk: " << settings.accWalk_ << std::endl;
-    output << "\t-IMU frequency: " << settings.accFrequency_ << std::endl;
-    output << "\t-IMU frequency: " << settings.gyroFrequency_ << std::endl;
+    output << "\t-Accelerometer frequency: " << settings.accFrequency_ << std::endl;
+    output << "\t-Gyro frequency: " << settings.gyroFrequency_ << std::endl;
   }
 
   if (settings.sensor_ == MORB_SLAM::CameraType::RGBD || settings.sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {

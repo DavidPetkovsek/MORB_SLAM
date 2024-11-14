@@ -59,6 +59,9 @@ public:
     const cv::Mat &M1r() const { return M1r_; }
     const cv::Mat &M2r() const { return M2r_; }
 
+    const Sophus::SE3f &Tr1u1() const { return T_r1_u1_; }
+    const Sophus::SE3f &Tr2u2() const { return T_r2_u2_; }
+
 private:
 
     void readCamera1(cv::FileStorage& fSettings);
@@ -89,6 +92,7 @@ private:
     /* Rectification stuff */
     cv::Mat M1l_, M2l_;
     cv::Mat M1r_, M2r_;
+    Sophus::SE3f T_r1_u1_, T_r2_u2_;
 
     /* RGBD stuff */
     float depthMapFactor_;

@@ -132,6 +132,11 @@ int main(int argc, char **argv)
     // Create InertialOdometry settings
     std::shared_ptr<MORB_SLAM::InertialOdometrySettings> imu_settings = std::make_shared<MORB_SLAM::InertialOdometrySettings>(argv[4]);
 
+    // Non rectified stereo case. Temporary solution - in the future the user will not have ot do this.
+    if(cam_settings->cameraType() == MORB_SLAM::CameraType::IMU_STEREO && cam_settings->needToRectify()) {
+        imu_settings->SetTbc(imu_settings->Tbc() * cam_settings->Tr1u1().inverse());
+    }
+
     // Write the image sequences to a video, if a video doesn't exist
     std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
     std::filesystem::path output_vid_path_right = path_to_seq / "stereo_right.avi";

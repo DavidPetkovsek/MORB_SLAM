@@ -11,6 +11,8 @@ class InertialOdometrySettings : public Settings {
 public:
     InertialOdometrySettings(const std::string& configFile);
 
+    void SetTbc(Sophus::SE3f Tbc) { Tbc_ = Tbc; } // TODO: rework InertialSettings to account for stereo rectification in Tbc. Use this for now
+
     float noiseGyro() const { return noiseGyro_; }
     float noiseAcc() const { return noiseAcc_; }
     float gyroWalk() const { return gyroWalk_; }
