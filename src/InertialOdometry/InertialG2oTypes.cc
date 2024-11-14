@@ -26,8 +26,11 @@ namespace MORB_SLAM {
 
 ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
   // Load IMU pose
-  twb = pKF->GetImuPosition().cast<double>();
-  Rwb = pKF->GetImuRotation().cast<double>();
+  // twb = pKF->GetImuPosition().cast<double>();
+  // Rwb = pKF->GetImuRotation().cast<double>();
+  auto eKFd = pKF->External<InertialKeyFrameData>();
+  twb = (pKF->GetPoseInverse() * eKFd->mImuCalib.mTcb).translation().cast<double>();
+  Rwb = (pKF->GetPoseInverse() * eKFd->mImuCalib.mTcb).rotationMatrix().cast<double>();
 
   // Load camera poses
   const int num_cams = pKF->mpCamera2 ? 2 : 1;
@@ -43,10 +46,14 @@ ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
   // Left camera
   tcw[0] = pKF->GetTranslation().cast<double>();
   Rcw[0] = pKF->GetRotation().cast<double>();
-  tcb[0] = pKF->mImuCalib.mTcb.translation().cast<double>();
-  Rcb[0] = pKF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  // tcb[0] = pKF->mImuCalib.mTcb.translation().cast<double>();
+  tcb[0] = eKFd->mImuCalib.mTcb.translation().cast<double>();
+  // Rcb[0] = pKF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  Rcb[0] = eKFd->mImuCalib.mTcb.rotationMatrix().cast<double>();
   Rbc[0] = Rcb[0].transpose();
-  tbc[0] = pKF->mImuCalib.mTbc.translation().cast<double>();
+  // tbc[0] = pKF->mImuCalib.mTbc.translation().cast<double>();
+  tbc[0] = eKFd->mImuCalib.mTbc.translation().cast<double>();
+
   pCamera[0] = pKF->mpCamera;
   bf = pKF->mbf;
 
@@ -68,8 +75,12 @@ ImuCamPose::ImuCamPose(std::shared_ptr<KeyFrame> pKF) : its(0) {
 
 ImuCamPose::ImuCamPose(Frame* pF) : its(0) {
   // Load IMU pose
-  twb = pF->GetImuPosition().cast<double>();
-  Rwb = pF->GetImuRotation().cast<double>();
+  // twb = pF->GetImuPosition().cast<double>();
+  // Rwb = pF->GetImuRotation().cast<double>();
+
+  auto ed = pF->External<InertialFrameData>();
+  twb = (pF->GetPose().inverse() * ed->mImuCalib.mTcb).translation().cast<double>();
+  Rwb = (pF->GetPose().inverse() * ed->mImuCalib.mTcb).rotationMatrix().cast<double>();
 
   // Load camera poses
   int num_cams;
@@ -89,10 +100,13 @@ ImuCamPose::ImuCamPose(Frame* pF) : its(0) {
   // Left camera
   tcw[0] = pF->GetPose().translation().cast<double>();
   Rcw[0] = pF->GetPose().rotationMatrix().cast<double>();
-  tcb[0] = pF->mImuCalib.mTcb.translation().cast<double>();
-  Rcb[0] = pF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  // tcb[0] = pF->mImuCalib.mTcb.translation().cast<double>();
+  tcb[0] = ed->mImuCalib.mTcb.translation().cast<double>();
+  // Rcb[0] = pF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  Rcb[0] = ed->mImuCalib.mTcb.rotationMatrix().cast<double>();
   Rbc[0] = Rcb[0].transpose();
-  tbc[0] = pF->mImuCalib.mTbc.translation().cast<double>();
+  // tbc[0] = pF->mImuCalib.mTbc.translation().cast<double>();
+  tbc[0] = ed->mImuCalib.mTbc.translation().cast<double>();
   pCamera[0] = pF->mpCamera;
   bf = pF->mbf;
 
@@ -123,10 +137,15 @@ ImuCamPose::ImuCamPose(Eigen::Matrix3d& _Rwc, Eigen::Vector3d& _twc, std::shared
   tbc.resize(1);
   pCamera.resize(1);
 
-  tcb[0] = pKF->mImuCalib.mTcb.translation().cast<double>();
-  Rcb[0] = pKF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  auto eKFd = pKF->External<InertialKeyFrameData>();
+
+  // tcb[0] = pKF->mImuCalib.mTcb.translation().cast<double>();
+  tcb[0] = eKFd->mImuCalib.mTcb.translation().cast<double>();
+  // Rcb[0] = pKF->mImuCalib.mTcb.rotationMatrix().cast<double>();
+  Rcb[0] = eKFd->mImuCalib.mTcb.rotationMatrix().cast<double>();
   Rbc[0] = Rcb[0].transpose();
-  tbc[0] = pKF->mImuCalib.mTbc.translation().cast<double>();
+  // tbc[0] = pKF->mImuCalib.mTbc.translation().cast<double>();
+  tbc[0] = eKFd->mImuCalib.mTbc.translation().cast<double>();
   twb = _Rwc * tcb[0] + _twc;
   Rwb = _Rwc * Rcb[0];
   Rcw[0] = _Rwc.transpose();
@@ -414,7 +433,9 @@ VertexGyroBias::VertexGyroBias(std::shared_ptr<KeyFrame> pKF) {
 
 VertexGyroBias::VertexGyroBias(Frame* pF) {
   Eigen::Vector3d bg;
-  bg << pF->mImuBias.bwx, pF->mImuBias.bwy, pF->mImuBias.bwz;
+  // bg << pF->mImuBias.bwx, pF->mImuBias.bwy, pF->mImuBias.bwz;
+  auto ed = pF->External<InertialFrameData>();
+  bg << ed->mImuBias.bwx, ed->mImuBias.bwy, ed->mImuBias.bwz;
   setEstimate(bg);
 }
 
@@ -424,7 +445,9 @@ VertexAccBias::VertexAccBias(std::shared_ptr<KeyFrame> pKF) {
 
 VertexAccBias::VertexAccBias(Frame* pF) {
   Eigen::Vector3d ba;
-  ba << pF->mImuBias.bax, pF->mImuBias.bay, pF->mImuBias.baz;
+  // ba << pF->mImuBias.bax, pF->mImuBias.bay, pF->mImuBias.baz;
+  auto ed = pF->External<InertialFrameData>();
+  ba << ed->mImuBias.bax, ed->mImuBias.bay, ed->mImuBias.baz;
   setEstimate(ba);
 }
 
