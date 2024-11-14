@@ -190,14 +190,23 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
     cvtColor(imGrayRight, imGrayRight, cv::COLOR_BGRA2GRAY);
   }
 
+  std::shared_ptr<ExternalFrameData> ed;
+  if(mpOdomSource) {
+    if(mpLastKeyFrame)
+      ed = mpOdomSource->DefaultExternalFrameData(mpLastKeyFrame);
+    else
+      ed = mpOdomSource->DefaultExternalFrameData();
+  }
+
+  // TO DO: Change these conditions
   if (mSensor == CameraType::STEREO && !mpCamera2)
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera);
   else if (mSensor == CameraType::STEREO && mpCamera2)
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr);
-  else if (mSensor == CameraType::IMU_STEREO && !mpCamera2 && mpOdomSource) // TODO: change these conditions
-    mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, *mpImuCalib, mpOdomSource->DefaultExternalFrameData());
-  else if (mSensor == CameraType::IMU_STEREO && mpCamera2 && mpOdomSource) // TODO: change these conditions
-    mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame, *mpImuCalib, mpOdomSource->DefaultExternalFrameData());
+  else if (mSensor == CameraType::IMU_STEREO && !mpCamera2 && mpOdomSource)
+    mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, *mpImuCalib, ed);
+  else if (mSensor == CameraType::IMU_STEREO && mpCamera2 && mpOdomSource)
+    mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame, *mpImuCalib, ed);
 
   Track();
 
@@ -374,9 +383,12 @@ void Tracking::Track() {
     }
   }
   
-  if (mSensor.isInertial() && mpLastKeyFrame) {
-    mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
-  }
+  // This line sets the bias of the current Frame to the bias of the previous KeyFrame.
+  // Instead, we encapsulate the odom related data (like bias) into ExternalData, and pass it into the Frame constructor
+  // the developer defines what the ExternalData will look like if there is a previous KeyFrame and if there is not (default)
+  // if (mSensor.isInertial() && mpLastKeyFrame) {
+  //   mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+  // }
 
   if (mState == TrackingState::NO_IMAGES_YET) {
     mState = TrackingState::NOT_INITIALIZED;

@@ -869,4 +869,13 @@ std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData() 
     return std::make_shared<InertialFrameData>(*mpImuCalib);
 }
 
+std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_last_kf) {
+    std::shared_ptr<InertialFrameData> ed = std::make_shared<InertialFrameData>(*mpImuCalib);
+    if(std::shared_ptr<InertialKeyFrameData> external_kf_data = p_last_kf->External<InertialKeyFrameData>()) {
+        // ed->SetNewBias(external_kf_data->GetImuBias); // This is what it should be
+        ed->SetNewBias(p_last_kf->GetImuBias()); // What it will be for now, until we remove bias out of KeyFrame
+    }
+    return ed;
+}
+
 } //namespace MORB_SLAM
