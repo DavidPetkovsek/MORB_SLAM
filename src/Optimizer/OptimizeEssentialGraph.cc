@@ -206,6 +206,8 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_pt
     }
 
     // Inertial edges if inertial
+    // This function is never called in Inertial Cases (OptimizeEssentialGraph4DoF is called instead)
+    // Thus, the following block may be redundant
     if (pKF->bImu && pKF->mPrevKF) {
       g2o::Sim3 Spw;
       LoopClosing::KeyFrameAndPose::const_iterator itp = NonCorrectedSim3.find(pKF->mPrevKF);

@@ -71,7 +71,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
     }
     optimizer.addVertex(VP);
 
-    if (pKFi->bImu) {
+    if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = new VertexVelocity(pKFi);
       VV->setId(maxKFid + 3 * (pKFi->mnId) + 1);
       VV->setFixed(bFixed);
@@ -116,7 +116,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (pKFi->bImu && pKFi->mPrevKF->bImu && pKFi->mpImuPreintegrated) {
+      if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu && /*pKFi->mPrevKF->bImu*/ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->mpImuPreintegrated) {
         pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
         g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
         g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
@@ -340,7 +340,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
       pKFi->mTcwGBA = Sophus::SE3f(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
       pKFi->mnBAGlobalForKF = nLoopId;
     }
-    if (pKFi->bImu) {
+    if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = static_cast<VertexVelocity*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1));
       if (nLoopId == 0) {
         pKFi->SetVelocity(VV->estimate().cast<float>());

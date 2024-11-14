@@ -176,7 +176,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     VP->setFixed(false);
     optimizer.addVertex(VP);
 
-    if (pKFi->bImu) {
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = new VertexVelocity(pKFi);
       VV->setId(maxKFid + 3 * (pKFi->mnId) + 1);
       VV->setFixed(false);
@@ -200,7 +200,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     VP->setFixed(false);
     optimizer.addVertex(VP);
 
-    if (pKFi->bImu) {
+    if (/* pKFi->bImu */pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = new VertexVelocity(pKFi);
       VV->setId(maxKFid + 3 * (pKFi->mnId) + 1);
       VV->setFixed(false);
@@ -223,7 +223,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     VP->setFixed(true);
     optimizer.addVertex(VP);
 
-    if (pKFi->bImu) {
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = new VertexVelocity(pKFi);
       VV->setId(maxKFid + 3 * (pKFi->mnId) + 1);
       VV->setFixed(true);
@@ -247,7 +247,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!!!!", Verbose::VERBOSITY_NORMAL);
       continue;
     }
-    if (pKFi->bImu && pKFi->mPrevKF->bImu && pKFi->mpImuPreintegrated) {
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu && /* pKFi->mPrevKF->bImu */ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->mpImuPreintegrated) {
       pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
@@ -467,7 +467,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     g2o::Sim3 g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
     corrPoses[pKFi] = g2oSiw;
 
-    if (pKFi->bImu) {
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = static_cast<VertexVelocity*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1));
       pKFi->SetVelocity(VV->estimate().cast<float>());
       VertexGyroBias* VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 2));
@@ -489,7 +489,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     g2o::Sim3 g2oSiw(Tiw.unit_quaternion(), Tiw.translation(), 1.0);
     corrPoses[pKFi] = g2oSiw;
 
-    if (pKFi->bImu) {
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu) {
       VertexVelocity* VV = static_cast<VertexVelocity*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 1));
       pKFi->SetVelocity(VV->estimate().cast<float>());
       VertexGyroBias* VG = static_cast<VertexGyroBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 2));

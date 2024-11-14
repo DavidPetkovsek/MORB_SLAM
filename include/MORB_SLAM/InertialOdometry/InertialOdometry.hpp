@@ -19,7 +19,7 @@ public:
     std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_last_kf) override; // Construct default ExternalFrameData based on last keframe in Tracking
     std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) override;
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override;
+    bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override; // To remove since ExternalData is now added via the keyframe constructor
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;

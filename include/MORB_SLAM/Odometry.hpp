@@ -34,7 +34,7 @@ public:
     virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_curr_kf) = 0;
     virtual std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) = 0;
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
-    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0;
+    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0; // To remove since ExternalData is now added via the keyframe constructor
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;

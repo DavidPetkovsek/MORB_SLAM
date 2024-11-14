@@ -479,7 +479,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         if (!mpAtlas->isImuInitialized()) {
             for (int i = 0; i < N; i++) {
                 std::shared_ptr<KeyFrame> pKF2 = vpKF[i];
-                pKF2->bImu = true;
+                pKF2->bImu = true; // To remove
+                pKF2->External<InertialKeyFrameData>()->bImu = true; // NEW
             }
         }
     }
@@ -490,6 +491,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
         curr_kf->bImu = true;
+        curr_kf->External<InertialKeyFrameData>()->bImu = true; // NEW
     }
 
     if(bFIBA) {
@@ -549,7 +551,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         pKF->mTcwBefGBA = pKF->GetPose();
         pKF->SetPose(pKF->mTcwGBA);
 
-        if (pKF->bImu) {
+        if (/*pKF->bImu*/pKF->External<InertialKeyFrameData>()->bImu) {
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             pKF->SetNewBias(pKF->mBiasGBA);
@@ -857,6 +859,7 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
     }
 }
 
+// To remove since ExternalData is now added via the keyframe constructor
 bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
     std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.External<InertialFrameData>());
     if(mpAtlas->isImuInitialized())
