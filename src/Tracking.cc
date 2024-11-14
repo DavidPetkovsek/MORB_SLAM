@@ -616,7 +616,7 @@ void Tracking::Track() {
       }
 
       // Check if we need to insert a new keyframe
-      if (mSensor.isInertial() && NeedNewKeyFrame()) {
+      if (mSensor.isInertial() && NeedNewKeyFrame()) { // These conditions are incorrect. TODO: fix
         CreateNewKeyFrame();
       }
 
@@ -1363,7 +1363,11 @@ void Tracking::CreateNewKeyFrame() {
 
   if (!mpLocalMapper->SetNotStop(true)) return;
 
-  mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
+  std::shared_ptr<ExternalKeyFrameData> eKFd;
+  if(mpOdomSource)
+    eKFd = mpOdomSource->DefaultExternalKeyFrameData(mCurrentFrame);
+    
+  mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
 
   // ====== To be Removed ======
   if (mpAtlas->isImuInitialized())
@@ -1374,8 +1378,6 @@ void Tracking::CreateNewKeyFrame() {
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
-  if(mpOdomSource)
-    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, mpReferenceKF);
 
   if (mpLastKeyFrame) {
     mpReferenceKF->mPrevKF = mpLastKeyFrame;

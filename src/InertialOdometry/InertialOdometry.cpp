@@ -879,10 +879,16 @@ std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(st
 }
 
 std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameData(Frame& curr_frame) {
+    std::shared_ptr<InertialKeyFrameData> external_kf_data;
     if(auto ed = curr_frame.External<InertialFrameData>())
-        return std::make_shared<InertialKeyFrameData>(*ed);
+        external_kf_data = std::make_shared<InertialKeyFrameData>(*ed);
     else
-        return std::make_shared<InertialKeyFrameData>(*mpImuCalib);
+        external_kf_data = std::make_shared<InertialKeyFrameData>(*mpImuCalib);
+
+    if (mpAtlas->isImuInitialized())
+        external_kf_data->bImu = true;
+    
+    return external_kf_data;
 }
 
 
