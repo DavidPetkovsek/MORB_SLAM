@@ -57,8 +57,10 @@ struct InertialFrameData : public ExternalFrameData {
 
 
 struct InertialKeyFrameData : public ExternalKeyFrameData {
-    InertialKeyFrameData() {}
-    
+    InertialKeyFrameData(IMU::Calib imuCalib)
+        : mpImuPreintegrated(nullptr),
+          mImuCalib(imuCalib) { }
+
     InertialKeyFrameData(InertialFrameData frame_data)
         : mpImuPreintegrated(frame_data.mpImuPreintegrated),
           mImuCalib(frame_data.mImuCalib),

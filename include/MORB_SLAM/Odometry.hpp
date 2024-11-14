@@ -19,6 +19,7 @@ class Tracking;
 class Atlas;
 class Map;
 class ExternalFrameData;
+class ExternalKeyFrameData;
 typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<KeyFrame>>, Eigen::aligned_allocator<std::pair<std::shared_ptr<KeyFrame> const, g2o::Sim3>>> KeyFrameAndPose;
 
 class Odometry {
@@ -31,6 +32,7 @@ public:
 
     virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() = 0;
     virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_curr_kf) = 0;
+    virtual std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) = 0;
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
     virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0;
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;

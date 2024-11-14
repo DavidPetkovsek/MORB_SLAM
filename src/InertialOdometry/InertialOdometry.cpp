@@ -878,4 +878,12 @@ std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(st
     return ed;
 }
 
+std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameData(Frame& curr_frame) {
+    if(auto ed = curr_frame.External<InertialFrameData>())
+        return std::make_shared<InertialKeyFrameData>(*ed);
+    else
+        return std::make_shared<InertialKeyFrameData>(*mpImuCalib);
+}
+
+
 } //namespace MORB_SLAM

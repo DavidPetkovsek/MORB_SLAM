@@ -153,7 +153,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
  public:
   
   KeyFrame();
-  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
+  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed=nullptr);
   ~KeyFrame();
 
   // Pose functions

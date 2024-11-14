@@ -730,17 +730,16 @@ void Tracking::StereoInitialization() {
     mCurrentFrame.SetPose(getStereoInitDefaultPose());
   }
 
-  if (mSensor.isInertial()) {
+  std::shared_ptr<ExternalKeyFrameData> eKFd;
+  if (mpOdomSource) {
+    eKFd = mpOdomSource->DefaultExternalKeyFrameData(mCurrentFrame);
     Eigen::Vector3f Vwb0;
     Vwb0.setZero();
     mCurrentFrame.SetVelocity(Vwb0);
   }
 
   // Create KeyFrame
-  std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
-
-  if(mpOdomSource)
-    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFini);
+  std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
 
   // Insert KeyFrame in the map
   // TODO: Why is this an Atlas function?

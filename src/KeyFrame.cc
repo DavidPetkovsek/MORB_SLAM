@@ -87,7 +87,7 @@ KeyFrame::KeyFrame()
         nKFsInMemory++;
       }
 
-KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB)
+KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed)
     : bImu(pMap->isImuInitialized()),
       mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
@@ -157,7 +157,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
       NRight(F.Nright),
-      mpExternalKeyFrameData(nullptr) {
+      mpExternalKeyFrameData(ed) {
   mnId = nNextId++;
   nKFsInMemory++;
 
