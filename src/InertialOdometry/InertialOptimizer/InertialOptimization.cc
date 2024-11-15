@@ -582,7 +582,7 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   VAk->setFixed(true);
   optimizer.addVertex(VAk);
 
-  EdgeInertial* ei = new EdgeInertial(pFrame->mpImuPreintegrated);
+  EdgeInertial* ei = new EdgeInertial(pFrame->External<InertialFrameData>()->mpImuPreintegrated);
 
   ei->setVertex(0, VPk);
   ei->setVertex(1, VVk);
@@ -595,14 +595,14 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+  Eigen::Matrix3d InfoA = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
@@ -920,7 +920,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   VAk->setFixed(false);
   optimizer.addVertex(VAk);
 
-  EdgeInertial* ei = new EdgeInertial(pFrame->mpImuPreintegratedFrame);
+  EdgeInertial* ei = new EdgeInertial(pFrame->External<InertialFrameData>()->mpImuPreintegratedFrame);
 
   ei->setVertex(0, VPk);
   ei->setVertex(1, VVk);
@@ -933,14 +933,14 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG = pFrame->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+  Eigen::Matrix3d InfoA = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 

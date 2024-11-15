@@ -61,6 +61,7 @@ private:
     void combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined);
 
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF_old;
 
     bool mbStationaryImuInit = false; // TO DO: include in OdometrySettings class 
     bool mbMonocular;
