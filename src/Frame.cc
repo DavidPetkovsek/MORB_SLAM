@@ -593,13 +593,13 @@ void Frame::UpdatePoseMatrices() {
   mtcw = mTcw.translation();
 }
 
-Eigen::Matrix<float, 3, 1> Frame::GetImuPosition() const {
-  return mRwc * mImuCalib.mTcb.translation() + mOw;
-}
+// Eigen::Matrix<float, 3, 1> Frame::GetImuPosition() const {
+//   return mRwc * mImuCalib.mTcb.translation() + mOw;
+// }
 
-Eigen::Matrix<float, 3, 3> Frame::GetImuRotation() {
-  return mRwc * mImuCalib.mTcb.rotationMatrix();
-}
+// Eigen::Matrix<float, 3, 3> Frame::GetImuRotation() {
+//   return mRwc * mImuCalib.mTcb.rotationMatrix();
+// }
 
 Sophus::SE3f Frame::GetRelativePoseTrl() { return mTrl; }
 

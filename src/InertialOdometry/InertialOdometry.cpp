@@ -279,8 +279,8 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     curr_frame.mImuBias = b;
     return true;
   } else if (!map_updated && ed && ed->mpImuPreintegratedFrame) {
-    const Eigen::Vector3f twb1 = last_frame.GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = last_frame.GetImuRotation();
+    const Eigen::Vector3f twb1 = last_frame.GetRwc() * mpImuCalib->mTcb.translation() + last_frame.GetOw();
+    const Eigen::Matrix3f Rwb1 = last_frame.GetRwc() * mpImuCalib->mTcb.rotationMatrix();
     const Eigen::Vector3f Vwb1 = last_frame.GetVelocity();
 
     const float t12 = ed->mpImuPreintegratedFrame->dT /*curr_frame.mpImuPreintegratedFrame->dT*/;
