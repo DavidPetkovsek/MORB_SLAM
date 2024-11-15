@@ -87,6 +87,13 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
     std::mutex mMutexImu;
+
+    void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
+        std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);
+        if(mpImuPreintegrated && inertial_eKFd_prev->mpImuPreintegrated) {
+            mpImuPreintegrated->MergePrevious(inertial_eKFd_prev->mpImuPreintegrated);
+        }
+    }
 };
 
 

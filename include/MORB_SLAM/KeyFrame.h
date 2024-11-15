@@ -58,6 +58,7 @@ class GeometricCamera;
 
 struct ExternalKeyFrameData {
     virtual ~ExternalKeyFrameData() {}
+    virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) = 0;
 };
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {

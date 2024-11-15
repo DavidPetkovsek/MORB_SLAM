@@ -587,9 +587,15 @@ bool KeyFrame::SetBadFlag() {
       mPrevKF->mNextKF = mNextKF;
     }
     if(mNextKF) {
+      // NEW
+      if(mpExternalKeyFrameData && mNextKF->mpExternalKeyFrameData) {
+        mNextKF->mpExternalKeyFrameData->MergePrevious(mpExternalKeyFrameData);
+      }
+      // OLD
       if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
         mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
       }
+
       mNextKF->mPrevKF = mPrevKF;
     }
     mPrevKF = nullptr;
