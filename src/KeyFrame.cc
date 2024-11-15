@@ -188,7 +188,10 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
   SetPose(F.GetPose());
 
   mnOriginMapId = pMap->GetId();
+
+  mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
 }
+
 KeyFrame::~KeyFrame() {
   nKFsInMemory--;
 }

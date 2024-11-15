@@ -67,26 +67,48 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
           mImuBias(frame_data.mImuBias)
     { }
 
-    void SetNewBias(const IMU::Bias& b);
+    void SetNewBias(const IMU::Bias& b) {
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            mImuBias = b;
+            if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+        }
+    }
+
     Eigen::Vector3f GetGyroBias() {
-        std::unique_lock<std::mutex> lock(mMutexImu);
-        return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+        } else {
+            std::cout<<"ERROR: Getting gyro bias from a KeyFrame that doesn't exist." <<std::endl;
+            return Eigen::Vector3f();
+        }
     }
 
     Eigen::Vector3f GetAccBias() {
-        std::unique_lock<std::mutex> lock(mMutexImu);
-        return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
+        } else {
+            std::cout<<"ERROR: Getting accel bias from a KeyFrame that doesn't exist." <<std::endl;
+            return Eigen::Vector3f();
+        }
     }
 
     IMU::Bias GetImuBias() {
-        std::unique_lock<std::mutex> lock(mMutexImu);
-        return mImuBias;
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return mImuBias;
+        } else {
+            std::cout<<"ERROR: Getting imu bias from a KeyFrame that doesn't exist." <<std::endl;
+            return IMU::Bias();
+        }
     }
+
     bool bImu;
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
-    std::mutex mMutexImu;
 
     void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
         std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);

@@ -59,6 +59,9 @@ class GeometricCamera;
 struct ExternalKeyFrameData {
     virtual ~ExternalKeyFrameData() {}
     virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) = 0;
+
+    std::weak_ptr<std::mutex> mpMutexPose; // shared mutex with the KeyFrame.
+    void SetPoseMutex(const std::shared_ptr<std::mutex> &pMutexPose) { mpMutexPose = pMutexPose; }
 };
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
