@@ -80,6 +80,7 @@ KeyFrame::KeyFrame()
       mbNotErase(false),
       mbToBeErased(false),
       mbBad(false),
+      mpMutexPose(std::make_shared<std::mutex>()),
       NLeft(0),
       NRight(0),
       isPartiallyConstructed(true),
@@ -152,6 +153,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mbToBeErased(false),
       mbBad(false),
       mpMap(pMap),
+      mpMutexPose(std::make_shared<std::mutex>()),
       mpCamera(F.mpCamera),
       mpCamera2(F.mpCamera2),
       mvKeysRight(F.mvKeysRight),
@@ -200,7 +202,7 @@ void KeyFrame::ComputeBoW() {
 }
 
 void KeyFrame::SetPose(const Sophus::SE3f &Tcw) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   mTcw = Tcw;
   mRcw = mTcw.rotationMatrix();
@@ -213,53 +215,53 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw) {
 }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   mVw = Vw;
   mbHasVelocity = true;
 }
 
 Sophus::SE3f KeyFrame::GetPose() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTcw;
 }
 
 Sophus::SE3f KeyFrame::GetPoseInverse() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTwc;
 }
 
 Eigen::Vector3f KeyFrame::GetCameraCenter() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTwc.translation();
 }
 
 Eigen::Vector3f KeyFrame::GetImuPosition() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mOwb;
 }
 
 Eigen::Matrix3f KeyFrame::GetImuRotation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return (mTwc * mImuCalib.mTcb).rotationMatrix();
 }
 
 Eigen::Matrix3f KeyFrame::GetRotation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mRcw;
 }
 
 Eigen::Vector3f KeyFrame::GetTranslation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTcw.translation();
 }
 
 Eigen::Vector3f KeyFrame::GetVelocity() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mVw;
 }
 
 bool KeyFrame::isVelocitySet() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mbHasVelocity;
 }
 
@@ -733,7 +735,7 @@ bool KeyFrame::UnprojectStereo(int i, Eigen::Vector3f &x3D) {
     const float y = (v - cy) * z * invfy;
     Eigen::Vector3f x3Dc(x, y, z);
 
-    std::unique_lock<std::mutex> lock(mMutexPose);
+    std::unique_lock<std::mutex> lock(*mpMutexPose);
     x3D = mRwc * x3Dc + mTwc.translation();
     return true;
   } else
@@ -748,7 +750,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   Eigen::Vector3f tcw;
   {
     std::unique_lock<std::mutex> lock(mMutexFeatures);
-    std::unique_lock<std::mutex> lock2(mMutexPose);
+    std::unique_lock<std::mutex> lock2(*mpMutexPose);
     vpMapPoints = mvpMapPoints;
     tcw = mTcw.translation();
     Rcw = mRcw;
@@ -773,23 +775,23 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
 }
 
 void KeyFrame::SetNewBias(const IMU::Bias &b) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   mImuBias = b;
   if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
 }
 
 Eigen::Vector3f KeyFrame::GetGyroBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
 }
 
 Eigen::Vector3f KeyFrame::GetAccBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
 
 IMU::Bias KeyFrame::GetImuBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mImuBias;
 }
 
@@ -966,29 +968,29 @@ bool KeyFrame::ProjectPointUnDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &
 }
 
 Sophus::SE3f KeyFrame::GetRelativePoseTrl() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTrl;
 }
 
 Sophus::SE3f KeyFrame::GetRelativePoseTlr() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTlr;
 }
 
 Sophus::SE3<float> KeyFrame::GetRightPose() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return mTrl * mTcw;
 }
 
 Sophus::SE3<float> KeyFrame::GetRightPoseInverse() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return mTwc * mTlr;
 }
 
 Eigen::Vector3f KeyFrame::GetRightCameraCenter() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return (mTwc * mTlr).translation();
 }

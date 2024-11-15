@@ -423,7 +423,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   unsigned int mnBackupIdCamera, mnBackupIdCamera2;
 
   // Mutex
-  std::mutex mMutexPose;  // for pose, velocity and biases
+  std::shared_ptr<std::mutex> mpMutexPose;  // for pose, velocity and biases
   std::mutex mMutexConnections;
   std::mutex mMutexFeatures;
   std::mutex mMutexMap;
