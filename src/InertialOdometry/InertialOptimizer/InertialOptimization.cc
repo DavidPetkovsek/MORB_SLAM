@@ -111,12 +111,12 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (!pKFi->mpImuPreintegrated) {
+      if (!pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
         std::cout << "Not preintegrated measurement" << std::endl;
         continue;
       }
 
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -129,7 +129,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
         std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
         continue;
       }
-      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->mpImuPreintegrated);
+      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
       ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
       ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
@@ -176,8 +176,8 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     pKFi->SetVelocity(Vw.cast<float>());
 
     pKFi->SetNewBias(b);
-    if (((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->mpImuPreintegrated)
-      pKFi->mpImuPreintegrated->Reintegrate();
+    if (((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated)
+      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
   }
   Verbose::PrintMess("end inertial optimization", Verbose::VERBOSITY_NORMAL);
 }
@@ -256,9 +256,9 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
-      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !pKFi->mpImuPreintegrated) continue;
+      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) continue;
 
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -271,7 +271,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
         std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
         continue;
       }
-      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->mpImuPreintegrated);
+      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
       ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
       ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
@@ -314,7 +314,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
 
     if ((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
       pKFi->SetNewBias(b);
-      if (pKFi->mpImuPreintegrated) pKFi->mpImuPreintegrated->Reintegrate();
+      if (pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
     } else
       pKFi->SetNewBias(b);
   }
@@ -388,7 +388,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
         Verbose::PrintMess("Error" + std::to_string(VP1->id()) + ", " + std::to_string(VV1->id()) + ", " + std::to_string(VG->id()) + ", " + std::to_string(VA->id()) + ", " + std::to_string(VP2->id()) + ", " + std::to_string(VV2->id()) + ", " + std::to_string(VGDir->id()) + ", " + std::to_string(VS->id()), Verbose::VERBOSITY_NORMAL);
         continue;
       }
-      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->mpImuPreintegrated);
+      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
       ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
       ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));

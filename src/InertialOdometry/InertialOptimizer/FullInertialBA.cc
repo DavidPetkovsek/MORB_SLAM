@@ -116,8 +116,8 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu && /*pKFi->mPrevKF->bImu*/ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->mpImuPreintegrated) {
-        pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu && /*pKFi->mPrevKF->bImu*/ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
+        pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
         g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
         g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
 
@@ -150,7 +150,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           }
         }
 
-        EdgeInertial* ei = new EdgeInertial(pKFi->mpImuPreintegrated);
+        EdgeInertial* ei = new EdgeInertial(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
         ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
         ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
         ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG1));
@@ -168,7 +168,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           EdgeGyroRW* egr = new EdgeGyroRW();
           egr->setVertex(0, VG1);
           egr->setVertex(1, VG2);
-          Eigen::Matrix3d InfoG = pKFi->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+          Eigen::Matrix3d InfoG = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
           egr->setInformation(InfoG);
           egr->computeError();
           optimizer.addEdge(egr);
@@ -176,7 +176,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           EdgeAccRW* ear = new EdgeAccRW();
           ear->setVertex(0, VA1);
           ear->setVertex(1, VA2);
-          Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+          Eigen::Matrix3d InfoA = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
           ear->setInformation(InfoA);
           ear->computeError();
           optimizer.addEdge(ear);

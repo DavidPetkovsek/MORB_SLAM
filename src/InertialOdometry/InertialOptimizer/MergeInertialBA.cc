@@ -247,8 +247,8 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!!!!", Verbose::VERBOSITY_NORMAL);
       continue;
     }
-    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu && /* pKFi->mPrevKF->bImu */ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->mpImuPreintegrated) {
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+    if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu && /* pKFi->mPrevKF->bImu */ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
+      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VG1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 2);
@@ -263,7 +263,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
         continue;
       }
 
-      EdgeInertial* vei = new EdgeInertial(pKFi->mpImuPreintegrated);
+      EdgeInertial* vei = new EdgeInertial(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
 
       vei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       vei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
@@ -281,14 +281,14 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       EdgeGyroRW* vegr = new EdgeGyroRW();
       vegr->setVertex(0, VG1);
       vegr->setVertex(1, VG2);
-      Eigen::Matrix3d InfoG = pKFi->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+      Eigen::Matrix3d InfoG = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
       vegr->setInformation(InfoG);
       optimizer.addEdge(vegr);
 
       EdgeAccRW* vear = new EdgeAccRW();
       vear->setVertex(0, VA1);
       vear->setVertex(1, VA2);
-      Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+      Eigen::Matrix3d InfoA = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
       vear->setInformation(InfoA);
       optimizer.addEdge(vear);
     } else
