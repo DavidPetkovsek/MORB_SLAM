@@ -32,14 +32,6 @@ CameraSettings::CameraSettings(const std::string& configFile, const CameraType& 
   readImageInfo(fSettings);
   std::cout << "\t-Loaded image info" << std::endl;
 
-  // ======================= TODO =============================
-  // Delete this when mpImuCalib is removed from Tracking
-  if (sensor_ == MORB_SLAM::CameraType::IMU_MONOCULAR || sensor_ == MORB_SLAM::CameraType::IMU_STEREO || sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
-    readIMU(fSettings);
-    std::cout << "\t-Loaded IMU calibration" << std::endl;
-  }
-  // ===================================================
-
   if (sensor_ == MORB_SLAM::CameraType::RGBD || sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
     readRGBD(fSettings);
     std::cout << "\t-Loaded RGB-D calibration" << std::endl;
@@ -260,22 +252,6 @@ void CameraSettings::readImageInfo(cv::FileStorage& fSettings) {
   fps_ = readParameter<int>(fSettings, "Camera.fps", found);
 }
 
-// ======================= TODO =============================
-// Delete this when mpImuCalib is removed from Tracking
-void CameraSettings::readIMU(cv::FileStorage& fSettings) {
-  bool found;
-  noiseGyro_ = readParameter<float>(fSettings, "IMU.NoiseGyro", found);
-  noiseAcc_ = readParameter<float>(fSettings, "IMU.NoiseAcc", found);
-  gyroWalk_ = readParameter<float>(fSettings, "IMU.GyroWalk", found);
-  accWalk_ = readParameter<float>(fSettings, "IMU.AccWalk", found);
-  accFrequency_ = readParameter<float>(fSettings, "IMU.AccFrequency", found);
-  gyroFrequency_ = readParameter<float>(fSettings, "IMU.GyroFrequency", found);
-
-  cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
-  Tbc_ = Converter::toSophus(cvTbc);
-}
-// ======================================================
-
 void CameraSettings::readRGBD(cv::FileStorage& fSettings) {
   bool found;
 
@@ -316,18 +292,15 @@ void CameraSettings::precomputeRectificationMaps() {
   // Update bf
   bf_ = b_ * P1.at<double>(0, 0);
 
-  // Update relative pose between camera 1 and IMU if necessary
-    // TODO: this is temporary, rework this!
-  if (sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
-    Eigen::Matrix3f eigenR_r1_u1;
-    cv::cv2eigen(R_r1_u1, eigenR_r1_u1);
-    T_r1_u1_ = Sophus::SE3f(eigenR_r1_u1, Eigen::Vector3f::Zero());
+  // Compute T_r1_u1 and T_r2_u2
+  Eigen::Matrix3f eigenR_r1_u1;
+  cv::cv2eigen(R_r1_u1, eigenR_r1_u1);
+  T_r1_u1_ = Sophus::SE3f(eigenR_r1_u1, Eigen::Vector3f::Zero());
 
+  if (sensor_ == MORB_SLAM::CameraType::IMU_STEREO || sensor_ == MORB_SLAM::CameraType::STEREO) {
     Eigen::Matrix3f eigenR_r2_u2;
     cv::cv2eigen(R_r2_u2, eigenR_r2_u2);
     T_r2_u2_ = Sophus::SE3f(eigenR_r2_u2, Eigen::Vector3f::Zero());
-
-    Tbc_ = Tbc_ * T_r1_u1_.inverse();
   }
 }
 
@@ -413,15 +386,6 @@ std::ostream& operator<<(std::ostream& output, const CameraSettings& settings) {
       output << "\t-Camera 1 overlapping area: [ " << vOverlapping1[0] << " , " << vOverlapping1[1] << " ]" << std::endl;
       output << "\t-Camera 2 overlapping area: [ " << vOverlapping2[0] << " , " << vOverlapping2[1] << " ]" << std::endl;
     }
-  }
-
-  if (settings.sensor_ == MORB_SLAM::CameraType::IMU_MONOCULAR || settings.sensor_ == MORB_SLAM::CameraType::IMU_STEREO || settings.sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
-    output << "\t-Gyro noise: " << settings.noiseGyro_ << std::endl;
-    output << "\t-Accelerometer noise: " << settings.noiseAcc_ << std::endl;
-    output << "\t-Gyro walk: " << settings.gyroWalk_ << std::endl;
-    output << "\t-Accelerometer walk: " << settings.accWalk_ << std::endl;
-    output << "\t-Accelerometer frequency: " << settings.accFrequency_ << std::endl;
-    output << "\t-Gyro frequency: " << settings.gyroFrequency_ << std::endl;
   }
 
   if (settings.sensor_ == MORB_SLAM::CameraType::RGBD || settings.sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {

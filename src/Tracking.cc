@@ -155,23 +155,6 @@ void Tracking::newParameterLoader(SystemSettings& sysSettings, CameraSettings& c
     mpIniORBextractor = std::make_shared<ORBextractor>(5 * nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
 
   mNewMapRelocalization = sysSettings.newMapRelocalization();
-
-  // ===================== TODO =====================
-  // Delete the following from camSettings when mpImuCalib is removed from Tracking
-  // mFastInit = settings.fastIMUInit();
-  // mStationaryInit = settings.stationaryIMUInit();
-  Sophus::SE3f Tbc = camSettings.Tbc();
-  float Ng = camSettings.noiseGyro();
-  float Na = camSettings.noiseAcc();
-  float Ngw = camSettings.gyroWalk();
-  float Naw = camSettings.accWalk();
-
-  const float sf_a = sqrt(camSettings.accFrequency());
-  const float sf_g = sqrt(camSettings.gyroFrequency());
-  mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf_g, Na * sf_a, Ngw / sf_g, Naw / sf_a);
-  // ==============================================
-  
-  // mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
 void Tracking::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) { mpLocalMapper = pLocalMapper; }

@@ -208,8 +208,8 @@ public:
   // Queue of IMU measurements between frames
   // std::vector<IMU::Point> mvImuData;
 
-  // Imu calibration parameters
-  std::shared_ptr<IMU::Calib> mpImuCalib;
+  // // Imu calibration parameters
+  // std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // In case of performing only localization, this flag is true when there are no matches to points in the map. Still tracking will continue if there are
   // enough matches with temporal points. In that case we are doing visual odometry. The system will try to do relocalization to recover "zero-drift" localization to the map.

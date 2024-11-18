@@ -41,17 +41,6 @@ public:
     bool needToResize() const { return bNeedToResize1_; }
     bool needToRectify() const { return bNeedToRectify_; }
 
-    // ================= TODO ==============
-    // IMU related stuff. Keep here for now until mpImuCalib is removed from Tracking
-    float noiseGyro() const { return noiseGyro_; }
-    float noiseAcc() const { return noiseAcc_; }
-    float gyroWalk() const { return gyroWalk_; }
-    float accWalk() const { return accWalk_; }
-    float accFrequency() const { return accFrequency_; }
-    float gyroFrequency() const { return gyroFrequency_; }
-    const Sophus::SE3f &Tbc() const { return Tbc_; }
-    // ======================================
-
     float depthMapFactor() const { return depthMapFactor_; }
 
     const cv::Mat &M1l() const { return M1l_; }
@@ -97,15 +86,6 @@ private:
     /* RGBD stuff */
     float depthMapFactor_;
 
-    // ========= TODO ==================
-    // IMU related stuff. Keep here for now until mpImuCalib is removed from Tracking
-    void readIMU(cv::FileStorage& fSettings);
-    float noiseGyro_, noiseAcc_;
-    float gyroWalk_, accWalk_;
-    float accFrequency_;
-    float gyroFrequency_;
-    Sophus::SE3f Tbc_;
-    // =================================
 };
 
 
