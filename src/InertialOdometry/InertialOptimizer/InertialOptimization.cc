@@ -176,6 +176,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     pKFi->SetVelocity(Vw.cast<float>());
 
     pKFi->SetNewBias(b);
+    pKFi->External<InertialKeyFrameData>()->SetNewBias(b);
     if (((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated)
       pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
   }
@@ -314,9 +315,11 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
 
     if ((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
       pKFi->SetNewBias(b);
+      pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
       if (pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
     } else
       pKFi->SetNewBias(b);
+      pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
   }
 }
 
@@ -721,6 +724,7 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   Vector6d b;
   b << VG->estimate(), VA->estimate();
   pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
+  pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize keyFframe states and generate new prior for frame
   Eigen::Matrix<double, 15, 15> H;
@@ -1078,6 +1082,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   Vector6d b;
   b << VG->estimate(), VA->estimate();
   pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
+  pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize previous frame states and generate new prior for frame
   Eigen::Matrix<double, 30, 30> H;

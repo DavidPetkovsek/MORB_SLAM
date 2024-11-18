@@ -1643,6 +1643,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
           // assert(!pKF->mVwbGBA.empty());
           pKF->SetVelocity(pKF->mVwbGBA);
           pKF->SetNewBias(pKF->mBiasGBA);
+          pKF->External<InertialKeyFrameData>()->SetNewBias(pKF->mBiasGBA);
         }
 
         lpKFtoCheck.pop_front();

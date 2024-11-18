@@ -475,6 +475,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       Vector6d b;
       b << VG->estimate(), VA->estimate();
       pKFi->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
+      pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
     }
   }
 
@@ -497,6 +498,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       Vector6d b;
       b << VG->estimate(), VA->estimate();
       pKFi->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
+      pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2])); // NEW
     }
   }
 

@@ -222,7 +222,10 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     return;
   }
 
-  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, *mpImuCalib);
+  auto curr_frame_ed = curr_frame.External<InertialFrameData>();
+  auto last_frame_ed = last_frame.External<InertialFrameData>();
+
+  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame_ed->mImuBias, *mpImuCalib);
   bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuBatch);
 
   std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame_old = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, *mpImuCalib);
@@ -230,8 +233,8 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
 
   if(hasPreintKF) {
     mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuBatch);
-    curr_frame.External<InertialFrameData>()->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame; // NEW
-    curr_frame.External<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF; // NEW
+    curr_frame_ed->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
+    curr_frame_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
     mpImuPreintegratedFromLastKF_old->IntegrateMeasurements(mvImuBatch);
     curr_frame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame_old;
@@ -241,7 +244,7 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   } else {
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }
-  curr_frame.External<InertialFrameData>()->setIntegrated();
+  curr_frame_ed->setIntegrated();
 }
 
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
@@ -277,6 +280,8 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     // ===== ExternalData test =======
 
     curr_frame.mImuBias = b;
+    ed->mImuBias = b;
+
     return true;
   } else if (!map_updated && ed && ed->mpImuPreintegratedFrame) {
     const Eigen::Vector3f twb1 = last_frame.GetRwc() * mpImuCalib->mTcb.translation() + last_frame.GetOw();
@@ -301,6 +306,7 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     // ===== ExternalData test =======
 
     curr_frame.mImuBias = b;
+    ed->mImuBias = b; // NEW!!!
     return true;
   }
 
@@ -576,6 +582,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             pKF->SetNewBias(pKF->mBiasGBA);
+            pKF->External<InertialKeyFrameData>()->SetNewBias(pKF->mBiasGBA);
         } else {
             std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
         }
