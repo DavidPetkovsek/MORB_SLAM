@@ -62,6 +62,8 @@ struct ExternalKeyFrameData {
 
     std::weak_ptr<std::mutex> mpMutexPose; // shared mutex with the KeyFrame.
     void SetPoseMutex(const std::shared_ptr<std::mutex> &pMutexPose) { mpMutexPose = pMutexPose; }
+    virtual void UpdateChildSpanningTree() = 0;
+    virtual void UpdateParentSpanningTree() = 0;
 };
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {

@@ -109,6 +109,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
+    IMU::Bias mBiasGBA;
 
     void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
         std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);
@@ -116,6 +117,15 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
             mpImuPreintegrated->MergePrevious(inertial_eKFd_prev->mpImuPreintegrated);
         }
     }
+
+    void UpdateChildSpanningTree() override {
+        mBiasGBA = GetImuBias();
+    }
+
+    void UpdateParentSpanningTree() override {
+        SetNewBias(mBiasGBA);
+    }
+    
 };
 
 

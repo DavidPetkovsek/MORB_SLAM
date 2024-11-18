@@ -570,6 +570,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
                 }
 
                 pChild->mBiasGBA = pChild->GetImuBias();
+                pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
+
                 pChild->mnBAGlobalForKF = GBAid;
             }
             lpKFtoCheck.push_back(pChild);
@@ -581,8 +583,9 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         if (/*pKF->bImu*/pKF->External<InertialKeyFrameData>()->bImu) {
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
+            
             pKF->SetNewBias(pKF->mBiasGBA);
-            pKF->External<InertialKeyFrameData>()->SetNewBias(pKF->mBiasGBA);
+            pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         } else {
             std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
         }

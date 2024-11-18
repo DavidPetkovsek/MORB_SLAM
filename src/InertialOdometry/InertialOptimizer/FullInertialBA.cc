@@ -366,6 +366,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
         pKFi->External<InertialKeyFrameData>()->SetNewBias(b);
       } else {
         pKFi->mBiasGBA = b;
+        pKFi->External<InertialKeyFrameData>()->mBiasGBA = b; // NEW
       }
     }
   }
