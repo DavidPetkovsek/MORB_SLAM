@@ -140,7 +140,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mPrevKF(nullptr),
       mNextKF(nullptr),
       mpImuPreintegrated(F.mpImuPreintegrated),
-      mImuCalib(F.mImuCalib),
+      // mImuCalib(F.mImuCalib),
       mbHasVelocity(false),
       mTlr(F.GetRelativePoseTlr()),
       mTrl(F.GetRelativePoseTrl()),

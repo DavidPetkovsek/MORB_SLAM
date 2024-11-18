@@ -145,7 +145,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     // Inertial variables
     ar& mImuBias;
     ar& mBackupImuPreintegrated;
-    ar& mImuCalib;
+    // ar& mImuCalib
     ar& mBackupPrevKFId;
     ar& mBackupNextKFId;
     ar& bImu;
@@ -356,7 +356,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<KeyFrame> mNextKF;
 
   std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
-  IMU::Calib mImuCalib;
+  // IMU::Calib mImuCalib;
 
   unsigned int mnOriginMapId;
 

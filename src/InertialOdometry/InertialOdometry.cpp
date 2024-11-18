@@ -346,12 +346,12 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
     curr_kf->mPrevKF = initial_kf;
     initial_kf->mNextKF = curr_kf;
     curr_kf->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), curr_kf->mImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), *mpImuCalib);
 }
 
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), ref_kf->mImuCalib);
-    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), ref_kf->mImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), *mpImuCalib);
+    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), *mpImuCalib);
 }
 
 void InertialOdometry::NewMap() {
