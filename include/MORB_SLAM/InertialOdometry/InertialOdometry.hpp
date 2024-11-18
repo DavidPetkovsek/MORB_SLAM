@@ -78,6 +78,9 @@ private:
     void scaleRefinement();
 
     void updateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+
+    const inline Eigen::Vector3f getImuPosition(const std::shared_ptr<KeyFrame> &kf) { return (kf->GetPoseInverse() * mpImuCalib->mTcb).translation(); }
+    const inline Eigen::Matrix3f getImuRotation(const std::shared_ptr<KeyFrame> &kf) { return (kf->GetPoseInverse() * mpImuCalib->mTcb).rotationMatrix(); }
 };
 
 
