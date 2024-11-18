@@ -150,7 +150,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& mBackupNextKFId;
     ar& bImu;
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
-    ar& boost::serialization::make_array(mOwb.data(), mOwb.size());
+    // ar& boost::serialization::make_array(mOwb.data(), mOwb.size());
     ar& mbHasVelocity;
   }
 
@@ -169,8 +169,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3f GetPoseInverse();
   Eigen::Vector3f GetCameraCenter();
 
-  Eigen::Vector3f GetImuPosition();
-  Eigen::Matrix3f GetImuRotation();
+  // Eigen::Vector3f GetImuPosition();
+  // Eigen::Matrix3f GetImuRotation();
   Eigen::Matrix3f GetRotation();
   Eigen::Vector3f GetTranslation();
   Eigen::Vector3f GetVelocity();
@@ -369,7 +369,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Eigen::Matrix3f mRwc;
 
   // IMU position
-  Eigen::Vector3f mOwb;
+  // Eigen::Vector3f mOwb;
   // Velocity (Only used for inertial SLAM)
   Eigen::Vector3f mVw;
   bool mbHasVelocity;

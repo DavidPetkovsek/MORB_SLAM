@@ -212,9 +212,9 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw) {
   mTwc = mTcw.inverse();
   mRwc = mTwc.rotationMatrix();
 
-  if (mImuCalib.isSet()) {
-    mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
-  }
+  // if (mImuCalib.isSet()) {
+  //   mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
+  // }
 }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw) {
@@ -238,15 +238,15 @@ Eigen::Vector3f KeyFrame::GetCameraCenter() {
   return mTwc.translation();
 }
 
-Eigen::Vector3f KeyFrame::GetImuPosition() {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  return mOwb;
-}
+// Eigen::Vector3f KeyFrame::GetImuPosition() {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   return mOwb;
+// }
 
-Eigen::Matrix3f KeyFrame::GetImuRotation() {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  return (mTwc * mImuCalib.mTcb).rotationMatrix();
-}
+// Eigen::Matrix3f KeyFrame::GetImuRotation() {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   return (mTwc * mImuCalib.mTcb).rotationMatrix();
+// }
 
 Eigen::Matrix3f KeyFrame::GetRotation() {
   std::unique_lock<std::mutex> lock(*mpMutexPose);
