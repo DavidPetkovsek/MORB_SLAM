@@ -95,7 +95,7 @@ Frame::Frame(const Frame &frame)
       mDescriptorsRight(frame.mDescriptorsRight.clone()),
       mvbOutlier(frame.mvbOutlier),
       mImuBias(frame.mImuBias),
-      mImuCalib(frame.mImuCalib),
+      // mImuCalib(frame.mImuCalib),
       mpImuPreintegrated(frame.mpImuPreintegrated),
       mpLastKeyFrame(frame.mpLastKeyFrame),
       mpPrevFrame(frame.mpPrevFrame),
@@ -150,7 +150,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF, const IMU::Calib &ImuCalib, const std::shared_ptr<ExternalFrameData> &pExternalData)
+             Frame *pPrevF/* , const IMU::Calib &ImuCalib */, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -162,7 +162,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      mImuCalib(ImuCalib),
+      // mImuCalib(ImuCalib),
       mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
@@ -238,7 +238,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF, const IMU::Calib &ImuCalib)
+             Frame *pPrevF/* , const IMU::Calib &ImuCalib */)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -250,7 +250,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      mImuCalib(ImuCalib),
+      // mImuCalib(ImuCalib),
       mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
@@ -328,7 +328,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, std::shared_ptr<ORBVocabulary> voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
-             const float &thDepth, Frame *pPrevF, const IMU::Calib &ImuCalib)
+             const float &thDepth, Frame *pPrevF/* , const IMU::Calib &ImuCalib */)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -340,7 +340,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      mImuCalib(ImuCalib),
+      // mImuCalib(ImuCalib),
       mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),
@@ -424,7 +424,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
-             Sophus::SE3f &Tlr, Frame *pPrevF, const IMU::Calib &ImuCalib, const std::shared_ptr<ExternalFrameData> &pExternalData)
+             Sophus::SE3f &Tlr, Frame *pPrevF/* , const IMU::Calib &ImuCalib */, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : /*mpcpi(nullptr),*/
       mbHasPose(false),
       mbHasVelocity(false),
@@ -436,7 +436,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      mImuCalib(ImuCalib),
+      // mImuCalib(ImuCalib),
       mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
       mpImuPreintegratedFrame(nullptr),

@@ -222,10 +222,10 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     return;
   }
 
-  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, curr_frame.mImuCalib);
+  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, *mpImuCalib);
   bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuBatch);
 
-  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame_old = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, curr_frame.mImuCalib);
+  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame_old = std::make_shared<IMU::Preintegrated>(last_frame.mImuBias, *mpImuCalib);
   bool hasPreintKF_old = pImuPreintegratedFromLastFrame_old->IntegrateMeasurements(mvImuBatch);
 
   if(hasPreintKF) {
