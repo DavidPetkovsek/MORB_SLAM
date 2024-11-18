@@ -256,8 +256,8 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
 
   //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
   if (map_updated && last_kf) {
-    const Eigen::Vector3f twb1 = last_kf->GetImuPosition();
-    const Eigen::Matrix3f Rwb1 = last_kf->GetImuRotation();
+    const Eigen::Vector3f twb1 = getImuPosition(last_kf);
+    const Eigen::Matrix3f Rwb1 = getImuRotation(last_kf);
     const Eigen::Vector3f Vwb1 = last_kf->GetVelocity();
 
     const float t12 = mpImuPreintegratedFromLastKF->dT;
@@ -438,8 +438,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
             if (!(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
-            dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedDeltaVelocity();
-            Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
+            dirG -= getImuRotation((*itKF)->mPrevKF) * (*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+            Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
         }
@@ -461,7 +461,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         for (std::vector<std::shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
             if (!(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
-            Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
+            Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
         }
@@ -749,7 +749,7 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     if (pTracker->mLastFrame.mnId == pTracker->mLastFrame.mpLastKeyFrame->mnFrameId) {
         // pTracker->mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(), mLastFrame.mpLastKeyFrame->GetImuPosition(), mLastFrame.mpLastKeyFrame->GetVelocity());
         // =======ExternalData test ========
-        Sophus::SE3f Twb(pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation(), pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition());
+        Sophus::SE3f Twb(getImuRotation(pTracker->mLastFrame.mpLastKeyFrame), getImuPosition(pTracker->mLastFrame.mpLastKeyFrame));
         Sophus::SE3f Tbw = Twb.inverse();
         Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
         pTracker->mCurrentFrame.SetPose(Tcw);
@@ -759,8 +759,8 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     } else {
         auto last_ed = pTracker->mLastFrame.External<InertialFrameData>();
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        const Eigen::Vector3f twb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition();
-        const Eigen::Matrix3f Rwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation();
+        const Eigen::Vector3f twb1 = getImuPosition(pTracker->mLastFrame.mpLastKeyFrame);
+        const Eigen::Matrix3f Rwb1 = getImuRotation(pTracker->mLastFrame.mpLastKeyFrame);
         const Eigen::Vector3f Vwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetVelocity();
         float t12 = last_ed->mpImuPreintegrated->dT;
 
@@ -780,8 +780,8 @@ void InertialOdometry::updateFrameIMU(const float s, const IMU::Bias& b, std::sh
     std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = pTracker->mCurrentFrame.External<InertialFrameData>()->mpImuPreintegrated;
     if (currFramePreintegrated) {
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        const Eigen::Vector3f twb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuPosition();
-        const Eigen::Matrix3f Rwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuRotation();
+        const Eigen::Vector3f twb1 = getImuPosition(pTracker->mCurrentFrame.mpLastKeyFrame);
+        const Eigen::Matrix3f Rwb1 = getImuRotation(pTracker->mCurrentFrame.mpLastKeyFrame);
         const Eigen::Vector3f Vwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetVelocity();
         float t12 = currFramePreintegrated->dT;
 
@@ -819,7 +819,7 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         if (pTracker->mLastFrame.mnId == pTracker->mLastFrame.mpLastKeyFrame->mnFrameId) {
             // pTracker->mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(), mLastFrame.mpLastKeyFrame->GetImuPosition(), mLastFrame.mpLastKeyFrame->GetVelocity());
             // =======ExternalData test ========
-            Sophus::SE3f Twb(pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation(), pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition());
+            Sophus::SE3f Twb(getImuRotation(pTracker->mLastFrame.mpLastKeyFrame), getImuPosition(pTracker->mLastFrame.mpLastKeyFrame));
             Sophus::SE3f Tbw = Twb.inverse();
             Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
             pTracker->mCurrentFrame.SetPose(Tcw);
@@ -829,8 +829,8 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         } else {
             auto last_ed = pTracker->mLastFrame.External<InertialFrameData>();  
             const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-            const Eigen::Vector3f twb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuPosition();
-            const Eigen::Matrix3f Rwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetImuRotation();
+            const Eigen::Vector3f twb1 = getImuPosition(pTracker->mLastFrame.mpLastKeyFrame);
+            const Eigen::Matrix3f Rwb1 = getImuRotation(pTracker->mLastFrame.mpLastKeyFrame);
             const Eigen::Vector3f Vwb1 = pTracker->mLastFrame.mpLastKeyFrame->GetVelocity();
             float t12 = last_ed->mpImuPreintegrated->dT;
 
@@ -850,8 +850,8 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         std::shared_ptr<IMU::Preintegrated> currFramePreintegrated = pTracker->mCurrentFrame.External<InertialFrameData>()->mpImuPreintegrated;
         if (currFramePreintegrated) {
             const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-            const Eigen::Vector3f twb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuPosition();
-            const Eigen::Matrix3f Rwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetImuRotation();
+            const Eigen::Vector3f twb1 = getImuPosition(pTracker->mCurrentFrame.mpLastKeyFrame);
+            const Eigen::Matrix3f Rwb1 = getImuRotation(pTracker->mCurrentFrame.mpLastKeyFrame);
             const Eigen::Vector3f Vwb1 = pTracker->mCurrentFrame.mpLastKeyFrame->GetVelocity();
             float t12 = currFramePreintegrated->dT;
 
