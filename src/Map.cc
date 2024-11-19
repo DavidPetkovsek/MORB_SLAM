@@ -28,7 +28,8 @@ namespace MORB_SLAM {
 long unsigned int Map::nNextId = 0;
 
 Map::Map()
-    : mbImuInitialized(false),
+    : mbOdomInitialized(false),
+      // mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnMaxKFid(0),
@@ -40,7 +41,8 @@ Map::Map()
 }
 
 Map::Map(int initKFid)
-    : mbImuInitialized(false),
+    : mbOdomInitialized(false),
+      // mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnInitKFid(initKFid),
@@ -84,12 +86,12 @@ void Map::AddMapPoint(std::shared_ptr<MapPoint> pMP) {
 
 void Map::SetOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbImuInitialized = true;
+  mbOdomInitialized = true;
 }
 
 bool Map::isOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbImuInitialized;
+  return mbOdomInitialized;
 }
 
 void Map::EraseMapPoint(std::shared_ptr<MapPoint> pMP) {
@@ -176,7 +178,7 @@ void Map::clear() {
   mspMapPoints.clear();
   mspKeyFrames.clear();
   mnMaxKFid = mnInitKFid;
-  mbImuInitialized = false;
+  mbOdomInitialized = false;
   mvpReferenceMapPoints.clear();
   mvpKeyFrameOrigins.clear();
   mbIMU_BA1 = false;

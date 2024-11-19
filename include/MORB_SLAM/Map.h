@@ -61,8 +61,8 @@ class Map
         ar & mnBackupKFinitialID;
         ar & mnBackupKFlowerID;
 
-        ar & mbImuInitialized;
-        // ar & mbOdomInitialized;
+        // ar & mbImuInitialized;
+        ar & mbOdomInitialized;
         ar & mbIMU_BA1;
         ar & mbIMU_BA2;
     }
@@ -155,8 +155,8 @@ protected:
 
     std::vector<std::shared_ptr<MapPoint>> mvpReferenceMapPoints;
 
-    bool mbImuInitialized;
-    // bool mbOdomInitialized;
+    // bool mbImuInitialized;
+    bool mbOdomInitialized;
 
     int mnMapChange;
     int mnMapChangeNotified;
