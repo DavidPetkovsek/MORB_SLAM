@@ -105,7 +105,6 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
         }
     }
 
-    bool bImu;
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;

@@ -497,7 +497,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             for (int i = 0; i < N; i++) {
                 std::shared_ptr<KeyFrame> pKF2 = vpKF[i];
                 pKF2->bImu = true; // To remove
-                pKF2->External<InertialKeyFrameData>()->bImu = true; // NEW
             }
         }
     }
@@ -508,7 +507,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
         curr_kf->bImu = true;
-        curr_kf->External<InertialKeyFrameData>()->bImu = true; // NEW
     }
 
     if(bFIBA) {
@@ -570,7 +568,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         pKF->mTcwBefGBA = pKF->GetPose();
         pKF->SetPose(pKF->mTcwGBA);
 
-        if (/*pKF->bImu*/pKF->External<InertialKeyFrameData>()->bImu) {
+        if (pKF->bImu) {
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             
@@ -884,8 +882,8 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
 // To remove since ExternalData is now added via the keyframe constructor
 bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
     std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.External<InertialFrameData>());
-    if(mpAtlas->isImuInitialized())
-        kf_data->bImu = true;
+    // if(mpAtlas->isImuInitialized())
+    //     kf_data->bImu = true;
     new_kf->mpExternalKeyFrameData = std::move(std::static_pointer_cast<ExternalKeyFrameData>(kf_data));
     return true;
 }
@@ -908,9 +906,6 @@ std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameD
         external_kf_data = std::make_shared<InertialKeyFrameData>(*ed);
     else
         external_kf_data = std::make_shared<InertialKeyFrameData>(*mpImuCalib);
-
-    if (mpAtlas->isImuInitialized())
-        external_kf_data->bImu = true;
     
     return external_kf_data;
 }
