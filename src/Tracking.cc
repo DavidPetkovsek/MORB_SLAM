@@ -27,6 +27,13 @@
 #include <mutex>
 #include <stdexcept>
 
+// To remove
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <assert.h>
+#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
+
 #include "MORB_SLAM/Converter.h"
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/GeometricTools.h"
@@ -175,10 +182,13 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
 
   std::shared_ptr<ExternalFrameData> ed;
   if(mpOdomSource) {
-    if(mpLastKeyFrame)
+    if(mpLastKeyFrame) {
+      assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
       ed = mpOdomSource->DefaultExternalFrameData(mpLastKeyFrame);
-    else
+    }
+    else {
       ed = mpOdomSource->DefaultExternalFrameData();
+    }
   }
 
   // TO DO: Change these conditions
@@ -369,9 +379,10 @@ void Tracking::Track() {
   // This line sets the bias of the current Frame to the bias of the previous KeyFrame.
   // Instead, we encapsulate the odom related data (like bias) into ExternalData, and pass it into the Frame constructor
   // the developer defines what the ExternalData will look like if there is a previous KeyFrame and if there is not (default)
-  // if (mSensor.isInertial() && mpLastKeyFrame) {
-  //   mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
-  // }
+  if (mSensor.isInertial() && mpLastKeyFrame) {
+    assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
+    mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+  }
 
   if (mState == TrackingState::NO_IMAGES_YET) {
     mState = TrackingState::NOT_INITIALIZED;
@@ -723,6 +734,8 @@ void Tracking::StereoInitialization() {
 
   // Create KeyFrame
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
+
+  assert(pKFini->GetImuBias() == pKFini->External<InertialKeyFrameData>()->GetImuBias());
 
   // Insert KeyFrame in the map
   // TODO: Why is this an Atlas function?
@@ -1361,6 +1374,7 @@ void Tracking::CreateNewKeyFrame() {
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
+  assert(mpReferenceKF->GetImuBias() == mpReferenceKF->External<InertialKeyFrameData>()->GetImuBias());
 
   if (mpLastKeyFrame) {
     mpReferenceKF->mPrevKF = mpLastKeyFrame;
