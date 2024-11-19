@@ -496,7 +496,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         if (!mpAtlas->isOdomInitialized()) {
             for (int i = 0; i < N; i++) {
                 std::shared_ptr<KeyFrame> pKF2 = vpKF[i];
-                pKF2->bImu = true; // To remove
+                pKF2->bOdom = true; // To remove
             }
         }
     }
@@ -506,7 +506,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     if (!mpAtlas->isOdomInitialized()) {
         mpAtlas->SetOdomInitialized();
-        curr_kf->bImu = true;
+        curr_kf->bOdom = true;
     }
 
     if(bFIBA) {
@@ -568,7 +568,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         pKF->mTcwBefGBA = pKF->GetPose();
         pKF->SetPose(pKF->mTcwGBA);
 
-        if (pKF->bImu) {
+        if (pKF->bOdom) {
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             

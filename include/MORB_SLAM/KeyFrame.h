@@ -150,7 +150,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     // ar& mImuCalib
     ar& mBackupPrevKFId;
     ar& mBackupNextKFId;
-    ar& bImu;
+    // ar& bImu;
+    ar& bOdom;
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
     // ar& boost::serialization::make_array(mOwb.data(), mOwb.size());
     ar& mbHasVelocity;
@@ -255,7 +256,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
 
-  bool bImu;
+  // bool bImu;
+  bool bOdom;
 
   static long unsigned int nKFsInMemory;
 

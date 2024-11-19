@@ -1358,7 +1358,7 @@ void Tracking::CreateNewKeyFrame() {
 
   // ====== To be Removed ======
   if (mpAtlas->isOdomInitialized())
-    mpReferenceKF->bImu = true;
+    mpReferenceKF->bOdom = true;
 
   // mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
   // ============================

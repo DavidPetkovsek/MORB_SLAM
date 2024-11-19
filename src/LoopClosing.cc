@@ -1644,7 +1644,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
         pKF->mTcwBefGBA = pKF->GetPose();
         pKF->SetPose(pKF->mTcwGBA);
 
-        if (pKF->bImu) {
+        if (pKF->bOdom) {
           pKF->mVwbBefGBA = pKF->GetVelocity();
           // assert(!pKF->mVwbGBA.empty());
           pKF->SetVelocity(pKF->mVwbGBA);
