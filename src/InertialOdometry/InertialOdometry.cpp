@@ -4,13 +4,6 @@
 #include "MORB_SLAM/Optimizer.h"
 #include "MORB_SLAM/Atlas.h"
 
-// To remove
-#ifdef NDEBUG
-#undef NDEBUG
-#define INERTIAL_ODOMETRY_UNDEFINE_NDEBUG
-#endif
-#include <assert.h>
-
 
 #include <iostream>
 
@@ -265,8 +258,6 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
   const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
   auto ed = curr_frame.External<InertialFrameData>();
 
-  assert(last_kf->GetImuBias() == last_kf->External<InertialKeyFrameData>()->GetImuBias());
-
   //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
   if (map_updated && last_kf) {
     const Eigen::Vector3f twb1 = getImuPosition(last_kf);
@@ -368,7 +359,7 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
 
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
-    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), *mpImuCalib);
+    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
 }
 
 void InertialOdometry::NewMap() {
@@ -416,9 +407,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     }
 
     std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
-
-    assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-    assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
 
 
     // Retrieve all keyframe in temporal order
@@ -489,12 +477,12 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
         mRwg = Eigen::Matrix3d::Identity();
         LocalMappingSetTimeInit(curr_kf->mTimeStamp - first_ts);
-        mbg = curr_kf->GetGyroBias().cast<double>();
-        mba = curr_kf->GetAccBias().cast<double>();
+        mbg = curr_kf->External<InertialKeyFrameData>()->GetGyroBias().cast<double>();
+        mba = curr_kf->External<InertialKeyFrameData>()->GetAccBias().cast<double>();
     } else {
         mRwg = Eigen::Matrix3d::Identity();
-        mbg = curr_kf->GetGyroBias().cast<double>();
-        mba = curr_kf->GetAccBias().cast<double>();
+        mbg = curr_kf->External<InertialKeyFrameData>()->GetGyroBias().cast<double>();
+        mba = curr_kf->External<InertialKeyFrameData>()->GetAccBias().cast<double>();
     }
 
     mScale = 1.0;
@@ -515,8 +503,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
             // TrackingUpdateFrameOdom(mScale, vpKF[0]->GetImuBias(), curr_kf);
             updateFrameIMU(mScale, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
-            assert(vpKF[0]->GetImuBias() == vpKF[0]->External<InertialKeyFrameData>()->GetImuBias());
-
         }
 
         // Check if initialization OK
@@ -529,13 +515,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         }
     }
 
-    assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-    assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
-
     // TrackingUpdateFrameOdom(1.0, vpKF[0]->GetImuBias(), curr_kf);
     updateFrameIMU(1.0, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
-    assert(vpKF[0]->GetImuBias() == vpKF[0]->External<InertialKeyFrameData>()->GetImuBias());
-
 
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
@@ -591,7 +572,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
                     Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
                 }
 
-                pChild->mBiasGBA = pChild->GetImuBias();
+                // pChild->mBiasGBA = pChild->GetImuBias();
                 pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
 
                 pChild->mnBAGlobalForKF = GBAid;
@@ -606,7 +587,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             
-            pKF->SetNewBias(pKF->mBiasGBA);
+            // pKF->SetNewBias(pKF->mBiasGBA);
             pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         } else {
             std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
@@ -614,9 +595,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
         lpKFtoCheck.pop_front();
     }
-
-    assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-    assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
 
     // Correct MapPoints
     const std::vector<std::shared_ptr<MapPoint>> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
@@ -642,9 +620,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     }
 
     Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
-
-  assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-  assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
 
     LocalMappingSetNewKeyFramesBad();
 
@@ -710,9 +685,6 @@ void InertialOdometry::scaleRefinement() {
 
     curr_kf = LocalMappingGetCurrentKeyFrame();
 
-    assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-    assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
-
     mRwg = Eigen::Matrix3d::Identity();
     mScale = 1.0;
 
@@ -736,9 +708,6 @@ void InertialOdometry::scaleRefinement() {
     }
 
     LocalMappingSetNewKeyFramesBad();
-
-    assert(curr_kf->GetImuBias() == curr_kf->External<InertialKeyFrameData>()->GetImuBias());
-    assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
     
     // To perform pose-inertial opt w.r.t. last keyframe
     curr_kf->GetMap()->IncreaseChangeIndex();
@@ -853,10 +822,6 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         pTracker->mLastFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->External<InertialKeyFrameData>()->GetImuBias());
         pTracker->mCurrentFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->External<InertialKeyFrameData>()->GetImuBias());
         // =====================================================
-
-
-        assert(pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedBias() == pTracker->mLastFrame.External<InertialFrameData>()->mpImuPreintegrated->GetUpdatedBias());
-        assert(pTracker->mCurrentFrame.mpImuPreintegrated->GetUpdatedBias() == pTracker->mCurrentFrame.External<InertialFrameData>()->mpImuPreintegrated->GetUpdatedBias());
         
         // I know this is code duplication, but I will refactor it later
         while (!pTracker->mCurrentFrame.External<InertialFrameData>()->imuIsPreintegrated()) {
@@ -916,8 +881,6 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
             
         }
 
-        assert(pTracker->mLastFrame.mpImuPreintegrated->GetUpdatedBias() == pTracker->mLastFrame.External<InertialFrameData>()->mpImuPreintegrated->GetUpdatedBias());
-        assert(pTracker->mCurrentFrame.mpImuPreintegrated->GetUpdatedBias() == pTracker->mCurrentFrame.External<InertialFrameData>()->mpImuPreintegrated->GetUpdatedBias());
     }
 }
 
@@ -967,8 +930,3 @@ std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameD
 
 
 } //namespace MORB_SLAM
-
-#ifdef INERTIAL_ODOMETRY_UNDEFINE_NDEBUG
-#define NDEBUG
-#undef INERTIAL_ODOMETRY_UNDEFINE_NDEBUG
-#endif

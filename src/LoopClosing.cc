@@ -1628,7 +1628,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
             } else
               Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
 
-            pChild->mBiasGBA = pChild->GetImuBias();
+            // pChild->mBiasGBA = pChild->GetImuBias();
             pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
 
             pChild->mnBAGlobalForKF = nLoopKF;
@@ -1644,7 +1644,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
           // assert(!pKF->mVwbGBA.empty());
           pKF->SetVelocity(pKF->mVwbGBA);
           
-          pKF->SetNewBias(pKF->mBiasGBA);
+          // pKF->SetNewBias(pKF->mBiasGBA);
           pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         }
 

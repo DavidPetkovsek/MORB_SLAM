@@ -117,7 +117,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
       }
 
       pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -176,9 +176,8 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     Eigen::Vector3d Vw = VV->estimate();  // Velocity is scaled after
     pKFi->SetVelocity(Vw.cast<float>());
 
-    pKFi->SetNewBias(b);
     pKFi->External<InertialKeyFrameData>()->SetNewBias(b);
-    if (((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated)
+    if (((pKFi->External<InertialKeyFrameData>()->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated)
       pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
   }
   Verbose::PrintMess("end inertial optimization", Verbose::VERBOSITY_NORMAL);
@@ -261,7 +260,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) continue;
 
       pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -315,12 +314,10 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
     Eigen::Vector3d Vw = VV->estimate();
     pKFi->SetVelocity(Vw.cast<float>());
 
-    if ((pKFi->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
-      pKFi->SetNewBias(b);
+    if ((pKFi->External<InertialKeyFrameData>()->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
       pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
       if (pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
     } else
-      pKFi->SetNewBias(b);
       pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
   }
 }

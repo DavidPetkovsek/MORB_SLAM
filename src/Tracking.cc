@@ -27,14 +27,6 @@
 #include <mutex>
 #include <stdexcept>
 
-// To remove
-#ifdef NDEBUG
-#undef NDEBUG
-#define TRACKING_UNDEFINE_NDEBUG
-#endif
-#include <assert.h>
-#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
-
 #include "MORB_SLAM/Converter.h"
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/GeometricTools.h"
@@ -184,7 +176,6 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   std::shared_ptr<ExternalFrameData> ed;
   if(mpOdomSource) {
     if(mpLastKeyFrame) {
-      assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
       ed = mpOdomSource->DefaultExternalFrameData(mpLastKeyFrame);
     }
     else {
@@ -380,11 +371,9 @@ void Tracking::Track() {
   // This line sets the bias of the current Frame to the bias of the previous KeyFrame.
   // Instead, we encapsulate the odom related data (like bias) into ExternalData, and pass it into the Frame constructor
   // the developer defines what the ExternalData will look like if there is a previous KeyFrame and if there is not (default)
-  // TO be deleted
-  if (mSensor.isInertial() && mpLastKeyFrame) {
-    assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
-    mCurrentFrame.External<InertialFrameData>()->SetNewBias(mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
-  }
+  // if (mSensor.isInertial() && mpLastKeyFrame) {
+  //   mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+  // }
 
   if (mState == TrackingState::NO_IMAGES_YET) {
     mState = TrackingState::NOT_INITIALIZED;
@@ -1371,7 +1360,7 @@ void Tracking::CreateNewKeyFrame() {
   if (mpAtlas->isImuInitialized())
     mpReferenceKF->bImu = true;
 
-  mpReferenceKF->SetNewBias(mCurrentFrame.External<InertialFrameData>()->mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
+  // mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
   // ============================
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
@@ -2019,9 +2008,3 @@ void Tracking::UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
 }
 
 }  // namespace MORB_SLAM
-
-
-#ifdef TRACKING_UNDEFINE_NDEBUG
-#define NDEBUG
-#undef TRACKING_UNDEFINE_NDEBUG
-#endif

@@ -20,7 +20,6 @@
  */
 
 #include "MORB_SLAM/KeyFrame.h"
-#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp" // TO REMOVE
 
 #include <mutex>
 
@@ -185,7 +184,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
     mbHasVelocity = true;
   }
 
-  mImuBias = F.External<InertialFrameData>()->mImuBias;
+  // mImuBias = F.mImuBias;
   SetPose(F.GetPose());
 
   mnOriginMapId = pMap->GetId();
@@ -778,26 +777,26 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   return vDepths[(vDepths.size() - 1) / q];
 }
 
-void KeyFrame::SetNewBias(const IMU::Bias &b) {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  mImuBias = b;
-  if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
-}
+// void KeyFrame::SetNewBias(const IMU::Bias &b) {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   mImuBias = b;
+//   if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+// }
 
-Eigen::Vector3f KeyFrame::GetGyroBias() {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
-}
+// Eigen::Vector3f KeyFrame::GetGyroBias() {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+// }
 
-Eigen::Vector3f KeyFrame::GetAccBias() {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
-}
+// Eigen::Vector3f KeyFrame::GetAccBias() {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
+// }
 
-IMU::Bias KeyFrame::GetImuBias() {
-  std::unique_lock<std::mutex> lock(*mpMutexPose);
-  return mImuBias;
-}
+// IMU::Bias KeyFrame::GetImuBias() {
+//   std::unique_lock<std::mutex> lock(*mpMutexPose);
+//   return mImuBias;
+// }
 
 std::shared_ptr<Map> KeyFrame::GetMap() {
   std::unique_lock<std::mutex> lock(mMutexMap);

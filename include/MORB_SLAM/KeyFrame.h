@@ -145,7 +145,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& mGridRight;
 
     // Inertial variables
-    ar& mImuBias;
+    // ar& mImuBias;
     ar& mBackupImuPreintegrated;
     // ar& mImuCalib
     ar& mBackupPrevKFId;
@@ -241,11 +241,11 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<Map> GetMap();
   void UpdateMap(std::shared_ptr<Map> pMap);
 
-  void SetNewBias(const IMU::Bias& b);
+  // void SetNewBias(const IMU::Bias& b);
 
-  Eigen::Vector3f GetGyroBias();
-  Eigen::Vector3f GetAccBias();
-  IMU::Bias GetImuBias();
+  // Eigen::Vector3f GetGyroBias();
+  // Eigen::Vector3f GetAccBias();
+  // IMU::Bias GetImuBias();
 
   bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
@@ -311,7 +311,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3f mTcwBefGBA;
   Eigen::Vector3f mVwbGBA;
   Eigen::Vector3f mVwbBefGBA;
-  IMU::Bias mBiasGBA;
+  // IMU::Bias mBiasGBA;
   long unsigned int mnBAGlobalForKF;
 
   // Variables used by merging
@@ -380,8 +380,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3<float> mTlr;
   Sophus::SE3<float> mTrl;
 
-  // Imu bias
-  IMU::Bias mImuBias;
+  // // Imu bias
+  // IMU::Bias mImuBias;
 
   // MapPoints associated to keypoints
   std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;

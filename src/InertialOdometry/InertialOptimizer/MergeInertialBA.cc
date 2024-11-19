@@ -249,7 +249,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     }
     if (/* pKFi->bImu */ pKFi->External<InertialKeyFrameData>()->bImu && /* pKFi->mPrevKF->bImu */ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
       pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
-      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VG1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 2);
@@ -475,7 +475,6 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       VertexAccBias* VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 3));
       Vector6d b;
       b << VG->estimate(), VA->estimate();
-      pKFi->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
       pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
     }
   }
@@ -498,7 +497,6 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       VertexAccBias* VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 3));
       Vector6d b;
       b << VG->estimate(), VA->estimate();
-      pKFi->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
       pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2])); // NEW
     }
   }

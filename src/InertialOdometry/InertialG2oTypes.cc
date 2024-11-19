@@ -428,7 +428,7 @@ VertexVelocity::VertexVelocity(Frame* pF) {
 }
 
 VertexGyroBias::VertexGyroBias(std::shared_ptr<KeyFrame> pKF) {
-  setEstimate(pKF->GetGyroBias().cast<double>());
+  setEstimate(pKF->External<InertialKeyFrameData>()->GetGyroBias().cast<double>());
 }
 
 VertexGyroBias::VertexGyroBias(Frame* pF) {
@@ -440,7 +440,7 @@ VertexGyroBias::VertexGyroBias(Frame* pF) {
 }
 
 VertexAccBias::VertexAccBias(std::shared_ptr<KeyFrame> pKF) {
-  setEstimate(pKF->GetAccBias().cast<double>());
+  setEstimate(pKF->External<InertialKeyFrameData>()->GetAccBias().cast<double>());
 }
 
 VertexAccBias::VertexAccBias(Frame* pF) {
