@@ -379,9 +379,11 @@ void Tracking::Track() {
   // This line sets the bias of the current Frame to the bias of the previous KeyFrame.
   // Instead, we encapsulate the odom related data (like bias) into ExternalData, and pass it into the Frame constructor
   // the developer defines what the ExternalData will look like if there is a previous KeyFrame and if there is not (default)
+  // TO be deleted
   if (mSensor.isInertial() && mpLastKeyFrame) {
     assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
     mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
+    mCurrentFrame.External<InertialFrameData>()->SetNewBias(mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
   }
 
   if (mState == TrackingState::NO_IMAGES_YET) {
