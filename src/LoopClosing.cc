@@ -1576,11 +1576,16 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
 
   const bool bImuInit = pActiveMap->isImuInitialized();
 
-  if (!bImuInit)
-    Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
-  else
-    InertialOptimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
+  // if (!bImuInit)
+  //   Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
+  // else
+  //   InertialOptimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
 
+  if(mpOdomSource)
+    mpOdomSource->GlobalBundleAdjustment(pActiveMap, nLoopKF, mbStopGBA);
+  else
+    Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
+  
   int idx = mnFullBAIdx;
     
   // Update all MapPoints and KeyFrames

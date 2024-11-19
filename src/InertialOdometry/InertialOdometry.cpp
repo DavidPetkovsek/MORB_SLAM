@@ -910,5 +910,11 @@ std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameD
     return external_kf_data;
 }
 
+void InertialOdometry::GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) {
+  if (!pMap->isImuInitialized())
+    Optimizer::GlobalBundleAdjustemnt(pMap, 10, &mbStopGBA, nLoopId, false);
+  else
+    InertialOptimizer::FullInertialBA(pMap, 7, false, nLoopId, &mbStopGBA);
+}
 
 } //namespace MORB_SLAM
