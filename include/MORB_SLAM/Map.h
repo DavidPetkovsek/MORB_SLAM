@@ -62,6 +62,7 @@ class Map
         ar & mnBackupKFlowerID;
 
         ar & mbImuInitialized;
+        // ar & mbOdomInitialized;
         ar & mbIMU_BA1;
         ar & mbIMU_BA2;
     }
@@ -104,8 +105,10 @@ public:
     int GetLastMapChange();
     void SetLastMapChange(int currentChangeId);
 
-    void SetImuInitialized();
-    bool isImuInitialized();
+    // void SetImuInitialized();
+    // bool isImuInitialized();
+    void SetOdomInitialized();
+    bool isOdomInitialized();
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
@@ -153,6 +156,7 @@ protected:
     std::vector<std::shared_ptr<MapPoint>> mvpReferenceMapPoints;
 
     bool mbImuInitialized;
+    // bool mbOdomInitialized;
 
     int mnMapChange;
     int mnMapChangeNotified;

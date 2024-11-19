@@ -94,7 +94,7 @@ void LocalMapping::Run() {
 
             if (!CheckNewKeyFrames() && !stopRequested()) {
                 if(mpCurrentKeyFrame && mpCurrentKeyFrame->mPrevKF && mpCurrentKeyFrame->mPrevKF->mPrevKF) {
-                    if (mpOdomSource /*mbInertial*/ && mpCurrentKeyFrame->GetMap()->isImuInitialized()) {
+                    if (mpOdomSource /*mbInertial*/ && mpCurrentKeyFrame->GetMap()->isOdomInitialized()) {
                         // ============= NEW external odom ==============
                         // float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                         //     (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
@@ -112,7 +112,7 @@ void LocalMapping::Run() {
                 }
 
                 // Initialize IMU here
-                if (!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpOdomSource /*mbInertial*/) {
+                if (!mpCurrentKeyFrame->GetMap()->isOdomInitialized() && mpOdomSource /*mbInertial*/) {
                     isDoneVIBA = false;
                     // ============== NEW external odom ==============
                     // mpTracker->mLockPreTeleportTranslation = true;

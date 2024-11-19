@@ -82,12 +82,12 @@ void Map::AddMapPoint(std::shared_ptr<MapPoint> pMP) {
   mspMapPoints.insert(pMP);
 }
 
-void Map::SetImuInitialized() {
+void Map::SetOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   mbImuInitialized = true;
 }
 
-bool Map::isImuInitialized() {
+bool Map::isOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mbImuInitialized;
 }

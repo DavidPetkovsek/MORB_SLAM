@@ -427,7 +427,7 @@ void Tracking::Track() {
         CheckReplacedInLastFrame();
 
         // If the state is not LOST and a bundle adjustment didn't occur on the previous frame
-        if((mbHasPrevDeltaFramePose || pCurrentMap->isImuInitialized()) && mCurrentFrame.mnId > mnLastRelocFrameId + 1){
+        if((mbHasPrevDeltaFramePose || pCurrentMap->isOdomInitialized()) && mCurrentFrame.mnId > mnLastRelocFrameId + 1){
           bOK = TrackWithMotionModel();
         }
         // If the state was lost/reset on the previous Frame, or if TrackWithMotionModel() failed
@@ -453,7 +453,7 @@ void Tracking::Track() {
         if (mSensor.isInertial()) {
           // ======== NEW EXTERNAL ODOM ========
           // bOK = (pCurrentMap->isImuInitialized()) ? PredictStateIMU() : false;
-          bOK = (pCurrentMap->isImuInitialized()) ? mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated) : false;
+          bOK = (pCurrentMap->isOdomInitialized()) ? mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated) : false;
           // ===============================
           if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost || mForcedLost) {
             if(mForcedLost) {
@@ -571,7 +571,7 @@ void Tracking::Track() {
       mState = TrackingState::OK;
     // Occurs if this the Frame we're becoming lost
     } else if (mState == TrackingState::OK) {
-      if (mSensor.isInertial() && (!pCurrentMap->isImuInitialized() || !pCurrentMap->GetInertialBA2())) {
+      if (mSensor.isInertial() && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->GetInertialBA2())) {
           std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
           mForcedLost = false;
           RequestResetActiveMap();
@@ -623,7 +623,7 @@ void Tracking::Track() {
       }
 
       if (mSensor.isInertial()) {
-        if (!pCurrentMap->isImuInitialized()) {
+        if (!pCurrentMap->isOdomInitialized()) {
           Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
           RequestResetActiveMap();
           return;
@@ -1145,7 +1145,7 @@ bool Tracking::TrackWithMotionModel() {
   //   return PredictStateIMU();
   // }
 
-  if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
+  if (mpAtlas->isOdomInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
     // Predict state with IMU if it is initialized and it doesnt need reset
     return mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated);
   }
@@ -1257,7 +1257,7 @@ bool Tracking::TrackLocalMap() {
 
   if(mSensor.isInertial()){
     if (!mSensor.hasMulticam()) {
-      return !((mnMatchesInliers < 15 && mpAtlas->isImuInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isImuInitialized()));
+      return !((mnMatchesInliers < 15 && mpAtlas->isOdomInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isOdomInitialized()));
     } else {
       return mnMatchesInliers >= 15;
     } 
@@ -1267,7 +1267,7 @@ bool Tracking::TrackLocalMap() {
 }
 
 bool Tracking::NeedNewKeyFrame() {
-  if (mSensor.isInertial() && !mpAtlas->GetCurrentMap()->isImuInitialized()) 
+  if (mSensor.isInertial() && !mpAtlas->GetCurrentMap()->isOdomInitialized()) 
     return (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.25;
 
   if (mbOnlyTracking) return false;
@@ -1346,7 +1346,7 @@ bool Tracking::NeedNewKeyFrame() {
 }
 
 void Tracking::CreateNewKeyFrame() {
-  if (mpLocalMapper->IsInitializing() && !mpAtlas->isImuInitialized()) return;
+  if (mpLocalMapper->IsInitializing() && !mpAtlas->isOdomInitialized()) return;
 
   if (!mpLocalMapper->SetNotStop(true)) return;
 
@@ -1357,7 +1357,7 @@ void Tracking::CreateNewKeyFrame() {
   mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
 
   // ====== To be Removed ======
-  if (mpAtlas->isImuInitialized())
+  if (mpAtlas->isOdomInitialized())
     mpReferenceKF->bImu = true;
 
   // mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
@@ -1494,9 +1494,9 @@ void Tracking::SearchLocalPoints() {
       th = 15;
     else if (mCurrentFrame.mnId < mnLastRelocFrameId + 2)
       th = 5;
-    else if (mpAtlas->isImuInitialized())
+    else if (mpAtlas->isOdomInitialized())
       th = mpAtlas->GetCurrentMap()->GetInertialBA2() ? 2 : 6;
-    else if (!mpAtlas->isImuInitialized() && mSensor.isInertial())
+    else if (!mpAtlas->isOdomInitialized() && mSensor.isInertial())
       th = 10;
     else
       th = (mSensor == CameraType::RGBD || mSensor == CameraType::IMU_RGBD) ? 3 : 1;
@@ -1529,7 +1529,7 @@ void Tracking::UpdateLocalPoints() {
 void Tracking::UpdateLocalKeyFrames() {
   // Each map point vote for the keyframes in which it has been observed
   std::map<std::shared_ptr<KeyFrame>, int> keyframeCounter;
-  if (!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId < mnLastRelocFrameId + 2)) {
+  if (!mpAtlas->isOdomInitialized() || (mCurrentFrame.mnId < mnLastRelocFrameId + 2)) {
     for (int i = 0; i < mCurrentFrame.N; i++) {
       std::shared_ptr<MapPoint> pMP = mCurrentFrame.mvpMapPoints[i];
       if (pMP) {

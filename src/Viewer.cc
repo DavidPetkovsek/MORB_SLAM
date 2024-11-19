@@ -221,7 +221,7 @@ void Viewer::Run() {
       s_cam.Follow(Twc);
     }
 
-    if (menuTopView && mpAtlas->isImuInitialized()) {
+    if (menuTopView && mpAtlas->isOdomInitialized()) {
       menuTopView = false;
       bCameraView = false;
       s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, 3000, 3000, 512, 389, 0.1, 10000));

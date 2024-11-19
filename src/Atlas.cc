@@ -190,14 +190,24 @@ void Atlas::RemoveBadMaps() {
   mspBadMaps.clear();
 }
 
-void Atlas::SetImuInitialized() {
+// void Atlas::SetImuInitialized() {
+//   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
+//   mpCurrentMap->SetImuInitialized();
+// }
+
+// bool Atlas::isImuInitialized() {
+//   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
+//   return mpCurrentMap->isImuInitialized();
+// }
+
+void Atlas::SetOdomInitialized() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  mpCurrentMap->SetImuInitialized();
+  mpCurrentMap->SetOdomInitialized();
 }
 
-bool Atlas::isImuInitialized() {
+bool Atlas::isOdomInitialized() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mpCurrentMap->isImuInitialized();
+  return mpCurrentMap->isOdomInitialized();
 }
 
 void Atlas::PreSave() {

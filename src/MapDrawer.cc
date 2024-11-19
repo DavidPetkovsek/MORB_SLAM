@@ -193,7 +193,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     glEnd();
   }
 
-  if (bDrawInertialGraph && pActiveMap->isImuInitialized()) {
+  if (bDrawInertialGraph && pActiveMap->isOdomInitialized()) {
     glLineWidth(mGraphLineWidth);
     glColor4f(1.0f, 0.0f, 0.0f, 0.6f);
     glBegin(GL_LINES);

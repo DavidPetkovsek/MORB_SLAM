@@ -70,7 +70,7 @@ void LoopClosing::Run() {
       bool bFindedRegion = NewDetectCommonRegions();
       if (bFindedRegion) {
         if (mbMergeDetected) {
-          if (mbInertial && (!mpCurrentKF->GetMap()->isImuInitialized())) {
+          if (mbInertial && (!mpCurrentKF->GetMap()->isOdomInitialized())) {
             std::cout << "IMU is not initilized, merge is aborted" << std::endl;
           } else {
             Sophus::SE3d mTmw = mpMergeMatchedKF->GetPose().cast<double>();
@@ -712,7 +712,7 @@ void LoopClosing::CorrectLoop() {
     // Get Map Mutex
     std::unique_lock<std::mutex> lock(pLoopMap->mMutexMapUpdate);
 
-    const bool bImuInit = pLoopMap->isImuInitialized();
+    const bool bImuInit = pLoopMap->isOdomInitialized();
 
     for (std::vector<std::shared_ptr<KeyFrame>>::iterator vit = vpCurrentConnectedKFs.begin(), vend = vpCurrentConnectedKFs.end(); vit != vend; vit++) {
       std::shared_ptr<KeyFrame> pKFi = *vit;
@@ -823,7 +823,7 @@ void LoopClosing::CorrectLoop() {
   //   Optimizer::OptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, bFixedScale);
   // }
 
-  if (mpOdomSource && pLoopMap->isImuInitialized()) {
+  if (mpOdomSource && pLoopMap->isOdomInitialized()) {
     mpOdomSource->LoopClosingOptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
   } else {
     Optimizer::OptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, bFixedScale);
@@ -837,7 +837,7 @@ void LoopClosing::CorrectLoop() {
   mpCurrentKF->AddLoopEdge(mpLoopMatchedKF);
 
   // Launch a new thread to perform Global Bundle Adjustment (Only if few keyframes, if not it would take too much time)
-  if (!pLoopMap->isImuInitialized() || (pLoopMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)) {
+  if (!pLoopMap->isOdomInitialized() || (pLoopMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)) {
     mbRunningGBA = true;
     mbStopGBA = false;
     std::cout << "Creating CorrectLoop thread" << std::endl;
@@ -1028,7 +1028,7 @@ void LoopClosing::MergeLocal() {
 
     pKFi->mTcwMerge = correctedTiw.cast<float>();
 
-    if (pCurrentMap->isImuInitialized()) {
+    if (pCurrentMap->isOdomInitialized()) {
       Eigen::Quaternionf Rcor = (g2oCorrectedSiw.rotation().inverse() * vNonCorrectedSim3[pKFi].rotation()).cast<float>();
       pKFi->mVwbMerge = Rcor * pKFi->GetVelocity();
     }
@@ -1088,7 +1088,7 @@ void LoopClosing::MergeLocal() {
       pMergeMap->AddKeyFrame(pKFi);
       pCurrentMap->EraseKeyFrame(pKFi);
 
-      if (pCurrentMap->isImuInitialized()) {
+      if (pCurrentMap->isOdomInitialized()) {
         pKFi->SetVelocity(pKFi->mVwbMerge);
       }
     }
@@ -1200,7 +1200,7 @@ void LoopClosing::MergeLocal() {
 
         pKFi->SetPose(correctedTiw.cast<float>());
 
-        if (pCurrentMap->isImuInitialized()) {
+        if (pCurrentMap->isOdomInitialized()) {
           Eigen::Quaternionf Rcor = (g2oCorrectedSiw.rotation().inverse() * vNonCorrectedSim3[pKFi].rotation()).cast<float>();
           pKFi->SetVelocity(Rcor * pKFi->GetVelocity());  // TODO: should add here scale s
         }
@@ -1259,7 +1259,7 @@ void LoopClosing::MergeLocal() {
 
   mpLocalMapper->Release();
 
-  if (bRelaunchBA && (!pCurrentMap->isImuInitialized() || (pCurrentMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1))) {
+  if (bRelaunchBA && (!pCurrentMap->isOdomInitialized() || (pCurrentMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1))) {
     // Launch a new thread to perform Global Bundle Adjustment
     mbRunningGBA = true;
     mbStopGBA = false;
@@ -1574,7 +1574,7 @@ void LoopClosing::ResetIfRequested() {
 void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, unsigned long nLoopKF) {
   Verbose::PrintMess("Starting Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
 
-  const bool bImuInit = pActiveMap->isImuInitialized();
+  const bool bImuInit = pActiveMap->isOdomInitialized();
 
   // if (!bImuInit)
   //   Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
@@ -1595,7 +1595,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
     std::unique_lock<std::mutex> lock(mMutexGBA);
     if (idx != mnFullBAIdx) return;
 
-    if (!bImuInit && pActiveMap->isImuInitialized()) return;
+    if (!bImuInit && pActiveMap->isOdomInitialized()) return;
 
     if (!mbStopGBA) {
       Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);

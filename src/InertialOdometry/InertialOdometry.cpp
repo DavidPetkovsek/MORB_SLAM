@@ -411,7 +411,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         return; // condition could be here too
     }
 
-    if (!curr_kf->GetMap()->isImuInitialized())
+    if (!curr_kf->GetMap()->isOdomInitialized())
         std::cout << "start IMU initialization" << std::endl;
 
     double first_ts = vpKF.front()->mTimeStamp;
@@ -425,7 +425,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     IMU::Bias b(0, 0, 0, 0, 0, 0);
 
     // Compute and KF velocities mRwg estimation
-    if (!mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isImuInitialized()) {
+    if (!mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isOdomInitialized()) {
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -453,7 +453,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         mRwg = Rwg.cast<double>();
         LocalMappingSetTimeInit(curr_kf->mTimeStamp - first_ts);
         LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero()));
-    } else if(mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isImuInitialized()) {
+    } else if(mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isOdomInitialized()) {
         for (std::vector<std::shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
             if (!(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
@@ -493,7 +493,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         }
 
         // Check if initialization OK
-        if (!mpAtlas->isImuInitialized()) {
+        if (!mpAtlas->isOdomInitialized()) {
             for (int i = 0; i < N; i++) {
                 std::shared_ptr<KeyFrame> pKF2 = vpKF[i];
                 pKF2->bImu = true; // To remove
@@ -504,8 +504,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     // TrackingUpdateFrameOdom(1.0, vpKF[0]->GetImuBias(), curr_kf);
     updateFrameIMU(1.0, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
 
-    if (!mpAtlas->isImuInitialized()) {
-        mpAtlas->SetImuInitialized();
+    if (!mpAtlas->isOdomInitialized()) {
+        mpAtlas->SetOdomInitialized();
         curr_kf->bImu = true;
     }
 
@@ -625,7 +625,7 @@ void InertialOdometry::PostInitializeOdom() {
     std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
     float mTinit = LocalMappingGetTimeInit();
     if ((mTinit < 50.0f)) {
-        if (curr_kf->GetMap()->isImuInitialized() && TrackingGetState() == TrackingState::OK) {  // Enter here everytime local-mapping is called
+        if (curr_kf->GetMap()->isOdomInitialized() && TrackingGetState() == TrackingState::OK) {  // Enter here everytime local-mapping is called
             if (!curr_kf->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
                 TrackingLockPreTeleportTranslation(true);
                 std::cout << "start VIBA 1" << std::endl;
@@ -715,7 +715,7 @@ void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_
     // Set map initialized
     curr_map->SetInertialBA2();
     curr_map->SetInertialBA1();
-    curr_map->SetImuInitialized();
+    curr_map->SetOdomInitialized();
 }
 
 void InertialOdometry::MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) {
@@ -870,7 +870,7 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
 }
 
 void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
-    if (!mpAtlas->isImuInitialized() || curr_frame.External<InertialFrameData>()->mpImuPreintegratedFrame == nullptr || reloc_recently) {
+    if (!mpAtlas->isOdomInitialized() || curr_frame.External<InertialFrameData>()->mpImuPreintegratedFrame == nullptr || reloc_recently) {
         Optimizer::PoseOptimization(&curr_frame);
     } else if(b_map_updated || curr_frame.mpPrevFrame->External<InertialFrameData>()->mpcpi == nullptr) {
         InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
@@ -911,7 +911,7 @@ std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameD
 }
 
 void InertialOdometry::GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) {
-  if (!pMap->isImuInitialized())
+  if (!pMap->isOdomInitialized())
     Optimizer::GlobalBundleAdjustemnt(pMap, 10, &mbStopGBA, nLoopId, false);
   else
     InertialOptimizer::FullInertialBA(pMap, 7, false, nLoopId, &mbStopGBA);

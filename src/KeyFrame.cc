@@ -89,7 +89,7 @@ KeyFrame::KeyFrame()
       }
 
 KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed)
-    : bImu(pMap->isImuInitialized()),
+    : bImu(pMap->isOdomInitialized()),
       mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
       mnGridCols(FRAME_GRID_COLS),
