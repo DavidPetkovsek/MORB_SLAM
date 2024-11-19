@@ -139,7 +139,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mnMaxY(F.mnMaxY),
       mPrevKF(nullptr),
       mNextKF(nullptr),
-      mpImuPreintegrated(F.mpImuPreintegrated),
+      // mpImuPreintegrated(F.mpImuPreintegrated),
       // mImuCalib(F.mImuCalib),
       mbHasVelocity(false),
       mTlr(F.GetRelativePoseTlr()),
@@ -597,9 +597,9 @@ bool KeyFrame::SetBadFlag() {
         mNextKF->mpExternalKeyFrameData->MergePrevious(mpExternalKeyFrameData);
       }
       // OLD
-      if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
-        mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
-      }
+      // if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
+      //   mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
+      // }
 
       mNextKF->mPrevKF = mPrevKF;
     }
@@ -864,7 +864,8 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   if (mNextKF && spKF.find(mNextKF) != spKF.end())
     mBackupNextKFId = mNextKF->mnId;
 
-  if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+  // TODO -- BACKING UP EXTERNALDATA
+  // if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
@@ -930,7 +931,8 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   if (mBackupNextKFId != -1) {
     mNextKF = mpKFid[mBackupNextKFId];
   }
-  mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+  // TODO -- BACKING UP EXTERNAL DATA
+  // mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
 
   // Remove all backup container
   mvBackupMapPointsId.clear();

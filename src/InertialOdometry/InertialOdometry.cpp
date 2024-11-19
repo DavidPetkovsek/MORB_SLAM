@@ -30,7 +30,6 @@ void InertialOdometry::newParameterLoader(InertialOdometrySettings &settings) {
     mpImuCalib = std::make_shared<IMU::Calib>(Tbc, Ng * sf_g, Na * sf_a, Ngw / sf_g, Naw / sf_a);
 
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
 void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double timestamp_s) {
@@ -229,17 +228,10 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame_ed->mImuBias, *mpImuCalib);
   bool hasPreintKF = pImuPreintegratedFromLastFrame->IntegrateMeasurements(mvImuBatch);
 
-  std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame_old = std::make_shared<IMU::Preintegrated>(last_frame_ed->mImuBias, *mpImuCalib);
-  bool hasPreintKF_old = pImuPreintegratedFromLastFrame_old->IntegrateMeasurements(mvImuBatch);
-
   if(hasPreintKF) {
     mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuBatch);
     curr_frame_ed->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-
-    mpImuPreintegratedFromLastKF_old->IntegrateMeasurements(mvImuBatch);
-    curr_frame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame_old;
-    curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF_old;
 
     curr_frame.mpLastKeyFrame = last_kf;
   } else {
@@ -335,9 +327,6 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     curr_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
-    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    curr_frame.mpImuPreintegrated = mpImuPreintegratedFromLastKF_old;
-
     return true;
 }
 
@@ -349,23 +338,21 @@ bool InertialOdometry::ReadyForMonocularInitialization(Frame &curr_frame, Frame 
 }
 
 void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) {
-    // TODO: Monocular case
-    initial_kf->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
+    // TODO: Monocular case. Currently, everything is commented out.
+    // initial_kf->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
     curr_kf->mPrevKF = initial_kf;
     initial_kf->mNextKF = curr_kf;
-    curr_kf->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), *mpImuCalib);
+    // curr_kf->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+    // mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), *mpImuCalib);
 }
 
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
-    mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
 }
 
 void InertialOdometry::NewMap() {
     if(mpImuPreintegratedFromLastKF) {
         mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-        mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     }
 }
 
