@@ -20,6 +20,7 @@
  */
 
 #include "MORB_SLAM/KeyFrame.h"
+#include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp" // TO REMOVE
 
 #include <mutex>
 
@@ -184,7 +185,7 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
     mbHasVelocity = true;
   }
 
-  mImuBias = F.mImuBias;
+  mImuBias = F.External<InertialFrameData>()->mImuBias;
   SetPose(F.GetPose());
 
   mnOriginMapId = pMap->GetId();

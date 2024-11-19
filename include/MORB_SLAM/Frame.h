@@ -118,7 +118,7 @@ public:
     Sophus::SE3f GetRelativePoseTrl();
     Sophus::SE3f GetRelativePoseTlr();
 
-    void SetNewBias(const IMU::Bias &b);
+    // void SetNewBias(const IMU::Bias &b);
 
     // Check if a MapPoint is in the frustum of the camera and fill variables of the MapPoint to be used by the tracking
     bool isInFrustum(std::shared_ptr<MapPoint> pMP, float viewingCosLimit);
@@ -244,7 +244,7 @@ public:
     std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     // IMU bias
-    IMU::Bias mImuBias;
+    // IMU::Bias mImuBias;
 
     // Imu calibration
     // IMU::Calib mImuCalib;

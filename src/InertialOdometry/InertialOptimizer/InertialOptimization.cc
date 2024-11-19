@@ -725,7 +725,6 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
 
   Vector6d b;
   b << VG->estimate(), VA->estimate();
-  pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
   pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize keyFframe states and generate new prior for frame
@@ -1083,7 +1082,6 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   
   Vector6d b;
   b << VG->estimate(), VA->estimate();
-  pFrame->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]);
   pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize previous frame states and generate new prior for frame

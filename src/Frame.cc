@@ -94,7 +94,7 @@ Frame::Frame(const Frame &frame)
       mDescriptors(frame.mDescriptors.clone()),
       mDescriptorsRight(frame.mDescriptorsRight.clone()),
       mvbOutlier(frame.mvbOutlier),
-      mImuBias(frame.mImuBias),
+      // mImuBias(frame.mImuBias),
       // mImuCalib(frame.mImuCalib),
       mpImuPreintegrated(frame.mpImuPreintegrated),
       mpLastKeyFrame(frame.mpLastKeyFrame),
@@ -560,10 +560,10 @@ void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
   mbHasPose = true;
 }
 
-void Frame::SetNewBias(const IMU::Bias &b) {
-  mImuBias = b;
-  if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
-}
+// void Frame::SetNewBias(const IMU::Bias &b) {
+//   mImuBias = b;
+//   if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+// }
 
 void Frame::SetVelocity(Eigen::Vector3f Vwb) {
   mVw = Vwb;

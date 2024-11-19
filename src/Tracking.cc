@@ -30,6 +30,7 @@
 // To remove
 #ifdef NDEBUG
 #undef NDEBUG
+#define TRACKING_UNDEFINE_NDEBUG
 #endif
 #include <assert.h>
 #include "MORB_SLAM/InertialOdometry/ExternalFrameData.hpp"
@@ -382,7 +383,6 @@ void Tracking::Track() {
   // TO be deleted
   if (mSensor.isInertial() && mpLastKeyFrame) {
     assert(mpLastKeyFrame->GetImuBias() == mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
-    mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
     mCurrentFrame.External<InertialFrameData>()->SetNewBias(mpLastKeyFrame->External<InertialKeyFrameData>()->GetImuBias());
   }
 
@@ -1371,7 +1371,7 @@ void Tracking::CreateNewKeyFrame() {
   if (mpAtlas->isImuInitialized())
     mpReferenceKF->bImu = true;
 
-  mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
+  mpReferenceKF->SetNewBias(mCurrentFrame.External<InertialFrameData>()->mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
   // ============================
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
@@ -2019,3 +2019,9 @@ void Tracking::UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame) {
 }
 
 }  // namespace MORB_SLAM
+
+
+#ifdef TRACKING_UNDEFINE_NDEBUG
+#define NDEBUG
+#undef TRACKING_UNDEFINE_NDEBUG
+#endif
