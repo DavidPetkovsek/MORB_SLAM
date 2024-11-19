@@ -275,7 +275,7 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     const Eigen::Vector3f Vwb1 = last_kf->GetVelocity();
 
     const float t12 = mpImuPreintegratedFromLastKF->dT;
-    IMU::Bias b = last_kf->GetImuBias();
+    IMU::Bias b = last_kf->External<InertialKeyFrameData>()->GetImuBias();
 
     Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
     Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
@@ -367,7 +367,7 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
 }
 
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), *mpImuCalib);
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
     mpImuPreintegratedFromLastKF_old = std::make_shared<IMU::Preintegrated>(ref_kf->GetImuBias(), *mpImuCalib);
 }
 
@@ -514,7 +514,9 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
             // TrackingUpdateFrameOdom(mScale, vpKF[0]->GetImuBias(), curr_kf);
-            updateFrameIMU(mScale, vpKF[0]->GetImuBias(), curr_kf);
+            updateFrameIMU(mScale, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
+            assert(vpKF[0]->GetImuBias() == vpKF[0]->External<InertialKeyFrameData>()->GetImuBias());
+
         }
 
         // Check if initialization OK
@@ -531,7 +533,9 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     assert(curr_kf->mpImuPreintegrated->GetUpdatedBias() == curr_kf->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedBias());
 
     // TrackingUpdateFrameOdom(1.0, vpKF[0]->GetImuBias(), curr_kf);
-    updateFrameIMU(1.0, vpKF[0]->GetImuBias(), curr_kf);
+    updateFrameIMU(1.0, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
+    assert(vpKF[0]->GetImuBias() == vpKF[0]->External<InertialKeyFrameData>()->GetImuBias());
+
 
     if (!mpAtlas->isImuInitialized()) {
         mpAtlas->SetImuInitialized();
@@ -728,7 +732,7 @@ void InertialOdometry::scaleRefinement() {
     Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
         // TrackingUpdateFrameOdom(mScale, curr_kf->GetImuBias(), curr_kf);
-        updateFrameIMU(mScale, curr_kf->GetImuBias(), curr_kf);
+        updateFrameIMU(mScale, curr_kf->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
     }
 
     LocalMappingSetNewKeyFramesBad();
@@ -856,8 +860,8 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
         pTracker->mCurrentFrame.SetNewBias(pCurrentKF->GetImuBias());
 
         // ========== NEW ExternalFrameData test ====================
-        pTracker->mLastFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
-        pTracker->mCurrentFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->GetImuBias());
+        pTracker->mLastFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->External<InertialKeyFrameData>()->GetImuBias());
+        pTracker->mCurrentFrame.External<InertialFrameData>()->SetNewBias(pCurrentKF->External<InertialKeyFrameData>()->GetImuBias());
         // =====================================================
 
         assert(pTracker->mLastFrame.mImuBias == pTracker->mLastFrame.External<InertialFrameData>()->mImuBias);
@@ -957,8 +961,7 @@ std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData() 
 std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_last_kf) {
     std::shared_ptr<InertialFrameData> ed = std::make_shared<InertialFrameData>(*mpImuCalib);
     if(std::shared_ptr<InertialKeyFrameData> external_kf_data = p_last_kf->External<InertialKeyFrameData>()) {
-        // ed->SetNewBias(external_kf_data->GetImuBias); // This is what it should be
-        ed->SetNewBias(p_last_kf->GetImuBias()); // What it will be for now, until we remove bias out of KeyFrame
+        ed->SetNewBias(external_kf_data->GetImuBias());
     }
     return ed;
 }

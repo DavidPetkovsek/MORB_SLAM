@@ -326,7 +326,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
     }
 
     if (/*pKFi->bImu*/ pKFi->External<InertialKeyFrameData>()->bImu && /*pKFi->mPrevKF->bImu*/ pKFi->mPrevKF->External<InertialKeyFrameData>()->bImu && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
-      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
+      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3*(pKFi->mPrevKF->mnId) + 1);
