@@ -24,15 +24,28 @@ typedef std::map<std::shared_ptr<KeyFrame>,g2o::Sim3,std::less<std::shared_ptr<K
 
 class Odometry {
 public:
-    // virtual ~Odometry();
+    virtual ~Odometry() {}
 
-    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
-    void SetTracker(std::shared_ptr<Tracking> pTracker);
+    void SetLocalMapper(const std::shared_ptr<LocalMapping> &pLocalMapper);
+    void SetTracker(const std::shared_ptr<Tracking> &pTracker);
     void SetAtlas(const std::shared_ptr<Atlas> &pAtlas);
 
-    virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() = 0;
-    virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_curr_kf) = 0;
-    virtual std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) = 0;
+    /*
+        If custom members are required for the Frame and KeyFrame class, define structs that derive from ExternalFrameData and ExternalKeyFrameData respectively
+    */
+
+    // Default external data assigned to a Frame when it is created at the start of the Track loop
+    virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() { return std::shared_ptr<ExternalFrameData>(nullptr); }
+
+    // Default external data assigned to a Frame when it is created at the start of the Track loop, based on the latest KeyFrame tracked
+    virtual std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_latest_kf) { return std::shared_ptr<ExternalFrameData>(nullptr); }
+
+    // Default external data assigned to a KeyFrame that has just been promoted from a Frame at the end of the Track loop
+    virtual std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) { return std::shared_ptr<ExternalKeyFrameData>(nullptr); }
+
+    /*
+        Core functionality used in the Track loop
+    */
     virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
     virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0; // To remove since ExternalData is now added via the keyframe constructor
@@ -53,11 +66,9 @@ public:
     virtual void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) = 0; // TO DO: b_map_updated and reloc_recently are TEMPORARY parameters, to be reworked
 
 protected:
-    // Atlas
     std::shared_ptr<Atlas> mpAtlas;
-
-    // Tracking
     std::weak_ptr<Tracking> mwpTracker;
+
     // TO-DO: Remove. Tracker was initially a private member of Odometry, so any child classes can't access it. This has been changed, so the below methods aren't needed anymore.
     int TrackingGetMatchesInliers();
     void TrackingLockPreTeleportTranslation(bool is_locked);

@@ -32,6 +32,29 @@ void InertialOdometry::newParameterLoader(InertialOdometrySettings &settings) {
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
 }
 
+std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData()  {
+    return std::make_shared<InertialFrameData>(*mpImuCalib);
+}
+
+std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_latest_kf) {
+    std::shared_ptr<InertialFrameData> ed = std::make_shared<InertialFrameData>(*mpImuCalib);
+    
+    // If the ExternalData on the KeyFrame exists, copy over the necessary data
+    if(std::shared_ptr<InertialKeyFrameData> external_kf_data = p_latest_kf->External<InertialKeyFrameData>()) {
+        ed->SetNewBias(external_kf_data->GetImuBias());
+    }
+    
+    return ed;
+}
+
+std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameData(Frame& curr_frame) {
+    // Construct ExternalKeyFrameData using ExternalFrameData if it exists
+    if(std::shared_ptr<InertialFrameData> ed = curr_frame.External<InertialFrameData>())
+        return std::make_shared<InertialKeyFrameData>(*ed);
+    else
+        return std::make_shared<InertialKeyFrameData>(*mpImuCalib);
+}
+
 void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double timestamp_s) {
     std::scoped_lock lock(mMutexAccel);
     mvAccelQueue.push_back(accel_meas);
@@ -888,27 +911,6 @@ bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_p
     return true;
 }
 
-std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData()  {
-    return std::make_shared<InertialFrameData>(*mpImuCalib);
-}
-
-std::shared_ptr<ExternalFrameData> InertialOdometry::DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_last_kf) {
-    std::shared_ptr<InertialFrameData> ed = std::make_shared<InertialFrameData>(*mpImuCalib);
-    if(std::shared_ptr<InertialKeyFrameData> external_kf_data = p_last_kf->External<InertialKeyFrameData>()) {
-        ed->SetNewBias(external_kf_data->GetImuBias());
-    }
-    return ed;
-}
-
-std::shared_ptr<ExternalKeyFrameData> InertialOdometry::DefaultExternalKeyFrameData(Frame& curr_frame) {
-    std::shared_ptr<InertialKeyFrameData> external_kf_data;
-    if(auto ed = curr_frame.External<InertialFrameData>())
-        external_kf_data = std::make_shared<InertialKeyFrameData>(*ed);
-    else
-        external_kf_data = std::make_shared<InertialKeyFrameData>(*mpImuCalib);
-    
-    return external_kf_data;
-}
 
 void InertialOdometry::GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) {
   if (!pMap->isOdomInitialized())

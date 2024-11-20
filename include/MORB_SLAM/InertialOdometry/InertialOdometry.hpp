@@ -15,9 +15,10 @@ class Atlas;
 class InertialOdometry : public Odometry {
 
 public:
-    std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() override; // Construct default ExternalFrameData
-    std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_last_kf) override; // Construct default ExternalFrameData based on last keframe in Tracking
+    std::shared_ptr<ExternalFrameData> DefaultExternalFrameData() override;
+    std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_latest_kf) override;
     std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) override;
+
     void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
     bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override; // To remove since ExternalData is now added via the keyframe constructor

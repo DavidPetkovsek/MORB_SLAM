@@ -6,8 +6,8 @@
 namespace MORB_SLAM {
 
 
-    void Odometry::SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper) { mwpLocalMapper = pLocalMapper; };
-    void Odometry::SetTracker(std::shared_ptr<Tracking> pTracker) { mwpTracker = pTracker; };
+    void Odometry::SetLocalMapper(const std::shared_ptr<LocalMapping> &pLocalMapper) { mwpLocalMapper = pLocalMapper; };
+    void Odometry::SetTracker(const std::shared_ptr<Tracking> &pTracker) { mwpTracker = pTracker; };
     void Odometry::SetAtlas(const std::shared_ptr<Atlas> &pAtlas) { mpAtlas = pAtlas; };
 
     // Tracking
