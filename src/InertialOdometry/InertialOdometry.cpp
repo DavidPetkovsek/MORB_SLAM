@@ -286,78 +286,8 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
     return true;
 }
 
-bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
-  //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
-  if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
-    return false;
-  }
-
-  const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-  auto ed = curr_frame.External<InertialFrameData>();
-
-  //If the map was merged or loop was closed on the last Frame use mpLastKeyFrame, otherwise use mCurrentFrame
-  if (map_updated && last_kf) {
-    const Eigen::Vector3f twb1 = getImuPosition(last_kf);
-    const Eigen::Matrix3f Rwb1 = getImuRotation(last_kf);
-    const Eigen::Vector3f Vwb1 = last_kf->GetVelocity();
-
-    const float t12 = mpImuPreintegratedFromLastKF->dT;
-    IMU::Bias b = last_kf->External<InertialKeyFrameData>()->GetImuBias();
-
-    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
-    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
-    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
-    // curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
-
-    // =======ExternalData test ========
-    Sophus::SE3f Twb(Rwb2, twb2);
-    Sophus::SE3f Tbw = Twb.inverse();
-    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
-    curr_frame.SetPose(Tcw);
-    curr_frame.SetVelocity(Vwb2);
-    // ===== ExternalData test =======
-
-    // curr_frame.mImuBias = b;
-    ed->mImuBias = b;
-
-    return true;
-  } else if (!map_updated && ed && ed->mpImuPreintegratedFrame) {
-    const Eigen::Vector3f twb1 = last_frame.GetRwc() * mpImuCalib->mTcb.translation() + last_frame.GetOw();
-    const Eigen::Matrix3f Rwb1 = last_frame.GetRwc() * mpImuCalib->mTcb.rotationMatrix();
-    const Eigen::Vector3f Vwb1 = last_frame.GetVelocity();
-
-    const float t12 = ed->mpImuPreintegratedFrame->dT /*curr_frame.mpImuPreintegratedFrame->dT*/;
-    // IMU::Bias b = last_frame.mImuBias;
-    IMU::Bias b = last_frame.External<InertialFrameData>()->mImuBias;
-
-    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaRotation(b)/*curr_frame.mpImuPreintegratedFrame->GetDeltaRotation(b)*/);
-    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaPosition(b)/* curr_frame.mpImuPreintegratedFrame->GetDeltaPosition(b) */;
-    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaVelocity(b)/*curr_frame.mpImuPreintegratedFrame->GetDeltaVelocity(b)*/;
-
-    // curr_frame.SetImuPoseVelocity(Rwb2, twb2, Vwb2);
-
-    // =======ExternalData test ========
-    Sophus::SE3f Twb(Rwb2, twb2);
-    Sophus::SE3f Tbw = Twb.inverse();
-    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
-    curr_frame.SetPose(Tcw);
-    curr_frame.SetVelocity(Vwb2);
-    // ===== ExternalData test =======
-
-    // curr_frame.mImuBias = b;
-    ed->mImuBias = b; // NEW!!!
-    return true;
-  }
-
-  // only happens gets here if there was no IMU data when PreintegrateIMU() was called this frame
-  std::cout << "not IMU prediction!!" << std::endl;
-  return false;
-}
-
-
 bool InertialOdometry::ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) {
-    // TODO: Monocular case
+    // TODO: Monocular case.
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     curr_frame.External<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     return true;
@@ -370,6 +300,70 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
     initial_kf->mNextKF = curr_kf;
     // curr_kf->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     // mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(curr_kf->mpImuPreintegrated->GetUpdatedBias(), *mpImuCalib);
+}
+
+bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
+  //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
+  if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
+    Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
+    return false;
+  }
+
+  std::shared_ptr<InertialFrameData> ed = curr_frame.External<InertialFrameData>();
+  std::shared_ptr<InertialFrameData> last_ed = last_frame.External<InertialFrameData>();
+  if(!ed || !last_ed) {
+    std::cout << "No ExternalFrameData, failed to predict the pose of the frame with odometry." << std::endl;
+    return false;
+  }
+
+  const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+
+  //If the map was merged or loop was closed on the last Frame use Tracking::mpLastKeyFrame, otherwise use Tracking::mLastFrame
+  if (map_updated && last_kf) {
+    const Eigen::Vector3f twb1 = getImuPosition(last_kf);
+    const Eigen::Matrix3f Rwb1 = getImuRotation(last_kf);
+    const Eigen::Vector3f Vwb1 = last_kf->GetVelocity();
+
+    const float t12 = mpImuPreintegratedFromLastKF->dT;
+    IMU::Bias b = last_kf->External<InertialKeyFrameData>()->GetImuBias();
+
+    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
+    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
+    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
+
+    Sophus::SE3f Twb(Rwb2, twb2);
+    Sophus::SE3f Tbw = Twb.inverse();
+    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+    curr_frame.SetPose(Tcw);
+    curr_frame.SetVelocity(Vwb2);
+
+    ed->mImuBias = b;
+    return true;
+
+  } else if (!map_updated && ed->mpImuPreintegratedFrame) {
+    const Eigen::Vector3f twb1 = last_frame.GetRwc() * mpImuCalib->mTcb.translation() + last_frame.GetOw();
+    const Eigen::Matrix3f Rwb1 = last_frame.GetRwc() * mpImuCalib->mTcb.rotationMatrix();
+    const Eigen::Vector3f Vwb1 = last_frame.GetVelocity();
+
+    const float t12 = ed->mpImuPreintegratedFrame->dT;
+    IMU::Bias b = last_ed->mImuBias;
+
+    Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaRotation(b));
+    Eigen::Vector3f twb2 = twb1 + Vwb1 * t12 + 0.5f * t12 * t12 * Gz + Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaPosition(b);
+    Eigen::Vector3f Vwb2 = Vwb1 + t12 * Gz + Rwb1 * ed->mpImuPreintegratedFrame->GetDeltaVelocity(b);
+
+    Sophus::SE3f Twb(Rwb2, twb2);
+    Sophus::SE3f Tbw = Twb.inverse();
+    Sophus::SE3f Tcw = mpImuCalib->mTcb * Tbw;
+    curr_frame.SetPose(Tcw);
+    curr_frame.SetVelocity(Vwb2);
+
+    ed->mImuBias = b;
+    return true;
+  }
+
+  std::cout << "not IMU prediction!!" << std::endl;
+  return false;
 }
 
 void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {

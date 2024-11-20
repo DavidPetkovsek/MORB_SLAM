@@ -449,10 +449,11 @@ void Tracking::Track() {
       } else if (mState == TrackingState::RECENTLY_LOST) {
         bOK = true;
         if (mSensor.isInertial()) {
-          // ======== NEW EXTERNAL ODOM ========
           // bOK = (pCurrentMap->isImuInitialized()) ? PredictStateIMU() : false;
-          bOK = (pCurrentMap->isOdomInitialized()) ? mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated) : false;
-          // ===============================
+          if(pCurrentMap->isOdomInitialized())
+            bOK = mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated);
+          else
+            bOK = false;
           if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost || mForcedLost) {
             if(mForcedLost) {
               std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
@@ -1137,17 +1138,14 @@ bool Tracking::TrackWithMotionModel() {
   // Create "visual odometry" points if in Localization Mode
   UpdateLastFrame();
 
-  // ============= NEW EXTERNAL ODOM =========
   // if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
   //   // Predict state with IMU if it is initialized and it doesnt need reset
   //   return PredictStateIMU();
   // }
-
   if (mpAtlas->isOdomInitialized() && (mCurrentFrame.mnId > mnLastRelocFrameId + mFPS)) {
     // Predict state with IMU if it is initialized and it doesnt need reset
     return mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated);
   }
-  // ========================================
 
   //No IMU, so assume the pose changed by the same amount it changed by last Frame
   mCurrentFrame.SetPose(mPrevDeltaFramePose * mLastFrame.GetPose());
