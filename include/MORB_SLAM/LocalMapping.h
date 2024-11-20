@@ -43,7 +43,7 @@ class LocalMapping {
  public:
   friend class Odometry;
   
-  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bInertial,*/ const std::shared_ptr<Odometry> &odomSource);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bInertial,*/ const std::shared_ptr<Odometry> &odomSource=nullptr);
 
   void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 

@@ -52,7 +52,7 @@ class SystemSettings;
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
   ~Tracking();
 
