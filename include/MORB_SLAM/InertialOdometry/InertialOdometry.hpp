@@ -19,12 +19,13 @@ public:
     std::shared_ptr<ExternalFrameData> DefaultExternalFrameData(std::shared_ptr<KeyFrame> p_latest_kf) override;
     std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) override;
 
-    void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override; // To remove since ExternalData is now added via the keyframe constructor
     void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
-    bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
+
+    void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
+    bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override; // To remove since ExternalData is now added via the keyframe constructor
+    bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) override;
     void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) override;
     void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;

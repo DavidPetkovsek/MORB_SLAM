@@ -59,14 +59,13 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
     std::scoped_lock lock(mMutexAccel);
     mvAccelQueue.push_back(accel_meas);
     mvAccelTimestampQueue.push_back(timestamp_s);
-    // std::cout << std::fixed << "Added Accel with timestamp " <<  timestamp_s << std::endl;
 }
 
 
 void InertialOdometry::AddAccel(const std::vector<Eigen::Vector3f> &v_accel_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexAccel);
     if(v_accel_meas.size() != v_timestamp_s.size()) {
-        std::cerr << "ERROR: Could not add batch of accel measurements, the number of timestamps don't match" << std::endl;
+        std::cerr << "ERROR: Could not add batch of accel measurements, the number of timestamps and accel measurements don't match" << std::endl;
         return;
     }
     mvAccelQueue.insert(mvAccelQueue.end(), v_accel_meas.begin(), v_accel_meas.end());
@@ -77,13 +76,12 @@ void InertialOdometry::AddGyro(const Eigen::Vector3f &gyro_meas, const double ti
     std::scoped_lock lock(mMutexGyro);
     mvGyroQueue.push_back(gyro_meas);
     mvGyroTimestampQueue.push_back(timestamp_s);
-    // std::cout << std::fixed << "Added gyro with timestamp " <<  timestamp_s << std::endl;
 }
 
 void InertialOdometry::AddGyro(const std::vector<Eigen::Vector3f> &v_gyro_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexGyro);
     if(v_gyro_meas.size() != v_timestamp_s.size()) {
-        std::cerr << "ERROR: Could not add batch of gyro measurements, the number of timestamps don't match" << std::endl;
+        std::cerr << "ERROR: Could not add batch of gyro measurements, the number of timestamps and gyro measurements don't match" << std::endl;
         return;
     }
     mvGyroQueue.insert(mvGyroQueue.end(), v_gyro_meas.begin(), v_gyro_meas.end());
@@ -199,7 +197,7 @@ std::vector<IMU::Point> InertialOdometry::interpolateImu(const std::vector<Eigen
         imu_interpolated.push_back(IMU::Point(data, t_step, is_accel));
     }
 
-    return imu_interpolated;
+    return std::move(imu_interpolated);
 }
 
 void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined) {
@@ -234,18 +232,23 @@ void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<
 }
 
 void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
+  // This should never return true because ExternalData is assigned to the Frame at the start of the tracking loop.
+  // The only case it returns true is if Odometry::DefaultExternalFrameData() returns a nullptr
+  auto curr_frame_ed = curr_frame.External<InertialFrameData>();
+  if(!curr_frame_ed)
+    throw std::runtime_error("ExternalFrameData does not exist in the current. Could not Preintegrate.");
+  
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    curr_frame.External<InertialFrameData>()->setIntegrated();
+    curr_frame_ed->setIntegrated();
     return;
   }
 
   if (mvImuBatch.size() == 0) {
     Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
-    curr_frame.External<InertialFrameData>()->setIntegrated();
+    curr_frame_ed->setIntegrated();
     return;
   }
-
-  auto curr_frame_ed = curr_frame.External<InertialFrameData>();
+  
   auto last_frame_ed = last_frame.External<InertialFrameData>();
 
   std::shared_ptr<IMU::Preintegrated> pImuPreintegratedFromLastFrame = std::make_shared<IMU::Preintegrated>(last_frame_ed->mImuBias, *mpImuCalib);
@@ -261,6 +264,27 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }
   curr_frame_ed->setIntegrated();
+}
+
+bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) {
+    auto last_ed = last_frame.External<InertialFrameData>();
+    auto curr_ed = curr_frame.External<InertialFrameData>();
+
+    if(!last_ed || !curr_ed)
+        return false;
+
+    if (!curr_ed->mpImuPreintegrated || !last_ed->mpImuPreintegrated)
+      return false;
+
+    if (!mbStationaryInitEnabled && (mpAtlas->CountMaps() <= 1) && (curr_ed->mpImuPreintegratedFrame->avgA - last_ed->mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+      std::cout << "More acceleration is required to initialize the Map" << std::endl;
+      return false;
+    }
+
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+    curr_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
+
+    return true;
 }
 
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
@@ -332,26 +356,6 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
   return false;
 }
 
-bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) {
-    auto last_ed = last_frame.External<InertialFrameData>();
-    auto curr_ed = curr_frame.External<InertialFrameData>();
-
-    if(!last_ed || !curr_ed)
-        return false;
-
-    if (!curr_ed->mpImuPreintegrated || !last_ed->mpImuPreintegrated)
-      return false;
-
-    if (!mbStationaryInitEnabled && (mpAtlas->CountMaps() <= 1) && (curr_ed->mpImuPreintegratedFrame->avgA - last_ed->mpImuPreintegratedFrame->avgA).norm() < 0.5) {
-      std::cout << "More acceleration is required to initialize the Map" << std::endl;
-      return false;
-    }
-
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    curr_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-
-    return true;
-}
 
 bool InertialOdometry::ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) {
     // TODO: Monocular case

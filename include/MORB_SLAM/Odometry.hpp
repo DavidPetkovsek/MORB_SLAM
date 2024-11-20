@@ -46,12 +46,23 @@ public:
     /*
         Core functionality used in the Track loop
     */
-    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
+    // Called when a new Frame comes into the Tracking loop. Retrieve relevant odometry data from the previous Frame timestamp up until the current Frame timestamp for processing. Perform any necessary pre processing.
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
-    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0; // To remove since ExternalData is now added via the keyframe constructor
+
+    // Called at the start of the Track loop, shortly after Odometry::GrabOdom() is called. Preintegrate the odometry data.
     virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
-    virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
+
+    // Called within Tracking::StereoInitialization() (after Odometry::PreintegrateOdom()) if the Tracking state is NOT_INITIALIZED. Returns true if Tracking can proceed in intializing the map.
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;
+
+
+
+    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
+    
+    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0; // To remove since ExternalData is now added via the keyframe constructor
+    
+    virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
+
     virtual bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) = 0;
     virtual void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) = 0;
     virtual void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) = 0;
