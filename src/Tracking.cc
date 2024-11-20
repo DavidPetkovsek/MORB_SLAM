@@ -381,17 +381,15 @@ void Tracking::Track() {
 
   mLastProcessedState = mState;
 
-  // ========= NEW external odometry =========
   // if (mSensor.isInertial() && !mbCreatedMap) {
   //   PreintegrateIMU();
   // }
   // mbCreatedMap = false;
-
   if(mpOdomSource && !mbCreatedMap) {
-    mpOdomSource->PreintegrateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame);
+    if(mpOdomSource->PreintegrateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame))
+      mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
   }
   mbCreatedMap = false;
-  // ========================================
 
   // Get Map Mutex -> Map cannot be changed
   std::unique_lock<std::mutex> lock(pCurrentMap->mMutexMapUpdate);

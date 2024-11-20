@@ -49,8 +49,8 @@ public:
     // Called when a new Frame comes into the Tracking loop. Retrieve relevant odometry data from the previous Frame timestamp up until the current Frame timestamp for processing. Perform any necessary pre processing.
     virtual bool GrabOdom(double curr_timestamp, double prev_timestamp) = 0;
 
-    // Called at the start of the Track loop, shortly after Odometry::GrabOdom() is called. Preintegrate the odometry data.
-    virtual void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
+    // Called at the start of the Track loop, shortly after Odometry::GrabOdom() is called. Preintegrate the odometry data. Returns true if preintegration is successful.
+    virtual bool PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) = 0;
 
     // Called within Tracking::StereoInitialization() (after Odometry::PreintegrateOdom()) if the Tracking state is NOT_INITIALIZED. Returns true if Tracking can proceed in intializing the map.
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;

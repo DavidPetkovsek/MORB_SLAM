@@ -231,7 +231,7 @@ void InertialOdometry::combineImu(std::vector<IMU::Point> &v_accel, std::vector<
     }
 }
 
-void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
+bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf) {
   // This should never return true because ExternalData is assigned to the Frame at the start of the tracking loop.
   // The only case it returns true is if Odometry::DefaultExternalFrameData() returns a nullptr
   auto curr_frame_ed = curr_frame.External<InertialFrameData>();
@@ -240,13 +240,13 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
     curr_frame_ed->setIntegrated();
-    return;
+    return false;
   }
 
   if (mvImuBatch.size() == 0) {
     Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
     curr_frame_ed->setIntegrated();
-    return;
+    return false;
   }
   
   auto last_frame_ed = last_frame.External<InertialFrameData>();
@@ -258,12 +258,11 @@ void InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     mpImuPreintegratedFromLastKF->IntegrateMeasurements(mvImuBatch);
     curr_frame_ed->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-
-    curr_frame.mpLastKeyFrame = last_kf;
   } else {
     Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
   }
   curr_frame_ed->setIntegrated();
+  return hasPreintKF;
 }
 
 bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) {

@@ -20,7 +20,7 @@ public:
     std::shared_ptr<ExternalKeyFrameData> DefaultExternalKeyFrameData(Frame &curr_frame) override;
 
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
-    void PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
+    bool PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
 
     void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
