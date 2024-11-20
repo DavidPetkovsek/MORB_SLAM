@@ -725,7 +725,6 @@ void Tracking::StereoInitialization() {
   // Create KeyFrame
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
 
-  assert(pKFini->GetImuBias() == pKFini->External<InertialKeyFrameData>()->GetImuBias());
 
   // Insert KeyFrame in the map
   // TODO: Why is this an Atlas function?
@@ -858,9 +857,10 @@ void Tracking::CreateInitialMapMonocular() {
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
   std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
 
-  if(mpOdomSource)
-    mpOdomSource->TrackingInitKeyFrameData(mInitialFrame, pKFini);
-    mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFcur);
+  // TODO
+  // if(mpOdomSource)
+  //   mpOdomSource->TrackingInitKeyFrameData(mInitialFrame, pKFini);
+  //   mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFcur);
 
   // if (mSensor == CameraType::IMU_MONOCULAR)
   //   pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
@@ -994,13 +994,11 @@ void Tracking::CreateMapInAtlas() {
   mbHasPrevDeltaFramePose = false;
   notEnoughMatchPoints_trackOnlyMode = false;
 
-  // ================ NEW ==========================
   // if (mSensor.isInertial() && mpImuPreintegratedFromLastKF) {
   //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
   // }
-
   if (mpOdomSource) {
-    mpOdomSource->NewMap();
+    mpOdomSource->NewMapEvent();
   }
 
   if (mpLastKeyFrame) mpLastKeyFrame = nullptr;
@@ -1217,7 +1215,6 @@ bool Tracking::TrackLocalMap() {
   // } else {
   //   InertialOptimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
   // }
-
   if(mpOdomSource) {
     mpOdomSource->TrackLocalMapPoseOptimization(mCurrentFrame, mbMapUpdated, mCurrentFrame.mnId <= mnLastRelocFrameId + mFPS);
   } else {
@@ -1361,23 +1358,18 @@ void Tracking::CreateNewKeyFrame() {
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
-  assert(mpReferenceKF->GetImuBias() == mpReferenceKF->External<InertialKeyFrameData>()->GetImuBias());
-
   if (mpLastKeyFrame) {
     mpReferenceKF->mPrevKF = mpLastKeyFrame;
     mpLastKeyFrame->mNextKF = mpReferenceKF;
   } else
     Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
 
-  // ================ NEW external odom ==========
   // Reset preintegration from last KF (Create new object)
   // if (mSensor.isInertial())
   //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(mpReferenceKF->GetImuBias(), mpReferenceKF->mImuCalib);
-
   if(mpOdomSource) {
-    mpOdomSource->NewKeyFrame(mpReferenceKF);
+    mpOdomSource->NewKeyFrameEvent(mpReferenceKF);
   }
-  // ===================================
 
   if (mSensor.hasMulticam()){  // TODO check if incluide imu_stereo
     mCurrentFrame.UpdatePoseMatrices();

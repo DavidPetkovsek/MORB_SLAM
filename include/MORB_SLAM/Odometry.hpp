@@ -62,13 +62,18 @@ public:
     // Called during the tracking loop to get an initial extimate of the frame (before a local pose optimization is performed in Tracking::TrackLocalMap())
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
 
+    // A pose optimization that occurs during Tracking::TrackLocalMap() to determine the pose of the current frame 
+    virtual void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) = 0; // TO DO: b_map_updated and reloc_recently are TEMPORARY parameters, to be reworked
+
+    // Called when a Frame become a KeyFrame in the Tracking thread.
+    virtual void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) = 0;
+
+    // Called in Tracking::CreateMapInAtlas() when Tracking needs to create a new map in the Atlas
+    virtual void NewMapEvent() = 0;
+
+
     virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
     
-    virtual bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) = 0; // To remove since ExternalData is now added via the keyframe constructor
-    
-
-    virtual void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) = 0;
-    virtual void NewMap() = 0;
     virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
     virtual void InitializeOdom() = 0;
     virtual void PostInitializeOdom() = 0;
@@ -76,7 +81,7 @@ public:
     virtual void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
     virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;
     virtual void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) = 0;
-    virtual void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) = 0; // TO DO: b_map_updated and reloc_recently are TEMPORARY parameters, to be reworked
+
 
 protected:
     std::shared_ptr<Atlas> mpAtlas;

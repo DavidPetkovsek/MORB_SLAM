@@ -366,11 +366,24 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
   return false;
 }
 
-void InertialOdometry::NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) {
+void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
+    std::shared_ptr<InertialFrameData> ed = curr_frame.External<InertialFrameData>();
+    std::shared_ptr<InertialFrameData> last_ed = curr_frame.mpPrevFrame->External<InertialFrameData>();
+
+    if (!mpAtlas->isOdomInitialized() || !ed || ed->mpImuPreintegratedFrame == nullptr || reloc_recently) {
+        Optimizer::PoseOptimization(&curr_frame);
+    } else if(b_map_updated || !last_ed || last_ed->mpcpi == nullptr) {
+        InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
+    } else {
+        InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);
+    }
+}
+
+void InertialOdometry::NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) {
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
 }
 
-void InertialOdometry::NewMap() {
+void InertialOdometry::NewMapEvent() {
     if(mpImuPreintegratedFromLastKF) {
         mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
     }
@@ -888,26 +901,6 @@ void InertialOdometry::MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> p
 
     }
 }
-
-void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) {
-    if (!mpAtlas->isOdomInitialized() || curr_frame.External<InertialFrameData>()->mpImuPreintegratedFrame == nullptr || reloc_recently) {
-        Optimizer::PoseOptimization(&curr_frame);
-    } else if(b_map_updated || curr_frame.mpPrevFrame->External<InertialFrameData>()->mpcpi == nullptr) {
-        InertialOptimizer::PoseInertialOptimizationLastKeyFrame(&curr_frame);
-    } else {
-        InertialOptimizer::PoseInertialOptimizationLastFrame(&curr_frame);
-    }
-}
-
-// To remove since ExternalData is now added via the keyframe constructor
-bool InertialOdometry::TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) {
-    std::shared_ptr<InertialKeyFrameData> kf_data = std::make_shared<InertialKeyFrameData>(*curr_frame.External<InertialFrameData>());
-    // if(mpAtlas->isImuInitialized())
-    //     kf_data->bImu = true;
-    new_kf->mpExternalKeyFrameData = std::move(std::static_pointer_cast<ExternalKeyFrameData>(kf_data));
-    return true;
-}
-
 
 void InertialOdometry::GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) {
   if (!pMap->isOdomInitialized())

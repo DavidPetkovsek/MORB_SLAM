@@ -25,11 +25,11 @@ public:
     bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) override;
     void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) override;
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
+    void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) override;
+    void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) override;
+    void NewMapEvent() override;
 
     void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
-    bool TrackingInitKeyFrameData(Frame &curr_frame, std::shared_ptr<KeyFrame> new_kf) override; // To remove since ExternalData is now added via the keyframe constructor
-    void NewKeyFrame(std::shared_ptr<KeyFrame> ref_kf) override;
-    void NewMap() override;
     void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
     void InitializeOdom() override;
     void PostInitializeOdom() override;
@@ -37,7 +37,6 @@ public:
     void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) override;
     void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) override;
     void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) override;
-    void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) override; // TO DO: b_map_updated and reloc_recently are TEMPORARY parameters, to be reworked
 
 public:
     InertialOdometry(std::shared_ptr<InertialOdometrySettings> settings, const CameraType &cam);
