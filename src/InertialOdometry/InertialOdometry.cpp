@@ -14,6 +14,7 @@ InertialOdometry::InertialOdometry(std::shared_ptr<InertialOdometrySettings> set
     : mbMonocular(cam == CameraType::MONOCULAR || cam == CameraType::IMU_MONOCULAR),
       mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
+      mbStationaryInitEnabled(settings->stationaryIMUInit()),
       mbFastInit(settings->fastIMUInit()) {
     newParameterLoader(*settings);
 }
@@ -393,7 +394,7 @@ void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, 
     float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
 
-    if (mbStationaryImuInit || dist > 0.05)
+    if (mbStationaryInitEnabled || dist > 0.05)
         LocalMappingIncrementTimeInit(curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp);
 
     int tracking_matches_inliers;

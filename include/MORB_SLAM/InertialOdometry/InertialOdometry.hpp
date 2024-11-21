@@ -63,7 +63,6 @@ private:
 
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
-    bool mbStationaryImuInit = false; // TO DO: include in OdometrySettings class 
     bool mbMonocular;
 
     void initializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA);
