@@ -815,20 +815,15 @@ void LoopClosing::CorrectLoop() {
   bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->GetInertialBA2());
   // TODO CHECK; Solo para el monocular inertial
 
-  // =============== NEW external odometry ===============
-  // Note: This needs to be revisited
   // if (mbInertial && pLoopMap->isImuInitialized()) {
   //   Optimizer::OptimizeEssentialGraph4DoF(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
   // } else {
   //   Optimizer::OptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, bFixedScale);
   // }
-
-  if (mpOdomSource && pLoopMap->isOdomInitialized()) {
+  if (mpOdomSource && pLoopMap->isOdomInitialized())
     mpOdomSource->LoopClosingOptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
-  } else {
+  else
     Optimizer::OptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, bFixedScale);
-  }
-  // =====================================================
 
   mpAtlas->InformNewBigChange();
 
@@ -1324,7 +1319,6 @@ void LoopClosing::MergeLocal2() {
 
   const int numKFnew = pCurrentMap->KeyFramesInMap();
   
-  // ================ NEW external odom ===================
   // if (mpTracker->mSensor.isInertial() && !pCurrentMap->GetInertialBA2()) {
   //   // Map is not completly initialized
   //   Eigen::Vector3d bg, ba;
@@ -1340,11 +1334,8 @@ void LoopClosing::MergeLocal2() {
   //   pCurrentMap->SetInertialBA1();
   //   pCurrentMap->SetImuInitialized();
   // }
-
-  if(!pCurrentMap->GetInertialBA2()) { // don't need to do check for odom because we only enter this function if there is odom
-    mpOdomSource->MergeLocalInitializeMap(pCurrentMap);
-  }
-  // ==================================================
+  if(!pCurrentMap->GetInertialBA2())
+    mpOdomSource->InitializeMergeMap(pCurrentMap);
 
   // Load KFs and MPs from merge map
   {
@@ -1442,7 +1433,6 @@ void LoopClosing::MergeLocal2() {
     return;
   }
 
-  // ============= NEW external odometry =================
   // Perform BA
   std::shared_ptr<KeyFrame> pCurrKF = mpTracker->GetLastKeyFrame();
   if (pCurrKF == nullptr) {
@@ -1453,8 +1443,7 @@ void LoopClosing::MergeLocal2() {
 
   // bool bStopFlag = false;
   // Optimizer::MergeInertialBA(pCurrKF, mpMergeMatchedKF, &bStopFlag, pCurrentMap, CorrectedSim3);
-  mpOdomSource->MergeOdomBA(pCurrKF, mpMergeMatchedKF, pCurrentMap, CorrectedSim3);
-  // ====================================================
+  mpOdomSource->MergeLocalBundleAdjustment(pCurrKF, mpMergeMatchedKF, pCurrentMap, CorrectedSim3);
 
   // Release Local Mapping.
   mpLocalMapper->Release();

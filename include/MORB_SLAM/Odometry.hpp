@@ -82,12 +82,24 @@ public:
 
     // Called in every LocalMapping loop once the odometry source has been initialized. Any refinement in the odometry parameters can be done here.
     virtual void PostInitializeOdom() = 0;
-    
-    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
-    virtual void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) = 0;
-    virtual void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
-    virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;
+
+    /*
+        Core functionality in the LoopClosing thread
+    */
+    // Called in LoopClosing thread when a map merge is performed, but the current map is not fully mature yet.
+    virtual void InitializeMergeMap(const std::shared_ptr<Map> &curr_map) = 0;
+
+    // Called during a map merge. Performs a bundle adjustment on the welding window.
+    virtual void MergeLocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
+
+    // Called during a map merge. Uses the current KeyFrame to update the Tracking Frames.
     virtual void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) = 0;
+
+    // Called during a loop correction. Updates the essential graph
+    virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;
+    
+    // Called in LoopClosing::RunGlobalBundleAdjustment(), which is callled during loop correction.
+    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
 
 
 protected:

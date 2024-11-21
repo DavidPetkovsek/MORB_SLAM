@@ -746,7 +746,7 @@ void InertialOdometry::scaleRefinement() {
     return;
 }
 
-void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) {
+void InertialOdometry::InitializeMergeMap(const std::shared_ptr<Map> &curr_map) {
     // Map is not completly initialized
     Eigen::Vector3d bg, ba;
     bg << 0., 0., 0.;
@@ -755,8 +755,8 @@ void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_
     IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
     std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
-    // TrackingUpdateFrameOdom(1.0f, b, TrackingGetLastKeyFrame());
-    updateFrameIMU(1.0f, b, TrackingGetLastKeyFrame());
+    if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock())
+        updateFrameIMU(1.0f, b, pTracker->GetLastKeyFrame());
 
     // Set map initialized
     curr_map->SetInertialBA2();
@@ -764,7 +764,7 @@ void InertialOdometry::MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_
     curr_map->SetOdomInitialized();
 }
 
-void InertialOdometry::MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) {
+void InertialOdometry::MergeLocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) {
   bool bStopFlag = false;
   InertialOptimizer::MergeInertialBA(curr_kf, merge_kf, &bStopFlag, curr_map, corr_poses);
 }

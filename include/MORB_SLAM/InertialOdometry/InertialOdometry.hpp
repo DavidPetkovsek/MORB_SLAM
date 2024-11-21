@@ -29,14 +29,13 @@ public:
     void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) override;
     void NewMapEvent() override;
     void LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
-
-    void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
     void InitializeOdom() override;
     void PostInitializeOdom() override;
-    void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) override;
-    void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) override;
-    void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) override;
+    void InitializeMergeMap(const std::shared_ptr<Map> &curr_map) override;
+    void MergeLocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) override;
     void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) override;
+    void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) override;
+    void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
 
 public:
     InertialOdometry(std::shared_ptr<InertialOdometrySettings> settings, const CameraType &cam);
