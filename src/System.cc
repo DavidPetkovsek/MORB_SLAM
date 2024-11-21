@@ -25,7 +25,6 @@
 #include <opencv2/opencv.hpp>
 #include <pangolin/pangolin.h>
 
-#include "MORB_SLAM/ImprovedTypes.hpp"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -100,9 +99,9 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
     mpAtlas->CreateNewMap();
   }
 
+  // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, mpSysSettings, mpCamSettings, odomSource);
 
-  // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, /*mSensor.isInertial(),*/ odomSource);
   
   // Do not axis flip when loading from existing atlas
@@ -119,7 +118,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   }
 
   // Initialize the Loop Closing thread and launch
-  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial(), odomSource);
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, /*mSensor.isInertial(),*/ odomSource);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);

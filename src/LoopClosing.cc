@@ -34,7 +34,7 @@
 
 namespace MORB_SLAM {
 
-LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC, bool bInertial,  const std::shared_ptr<Odometry> &odomSource)
+LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC, /*bool bInertial,*/  const std::shared_ptr<Odometry> &odomSource)
     : hasMergedLocalMap(false),
       mbResetRequested(false),
       mbResetActiveMapRequested(false),
@@ -53,7 +53,7 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDataba
       mbFixScale(bFixScale),
       mnFullBAIdx(0),
       mbActiveLC(bActiveLC),
-      mbInertial(bInertial),
+      // mbInertial(bInertial),
       mpOdomSource(odomSource) {}
 
 void LoopClosing::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
@@ -70,8 +70,8 @@ void LoopClosing::Run() {
       bool bFindedRegion = NewDetectCommonRegions();
       if (bFindedRegion) {
         if (mbMergeDetected) {
-          if (mbInertial && (!mpCurrentKF->GetMap()->isOdomInitialized())) {
-            std::cout << "IMU is not initilized, merge is aborted" << std::endl;
+          if (mpOdomSource && (!mpCurrentKF->GetMap()->isOdomInitialized())) {
+            std::cout << "Odometry source is not initilized, merge is aborted" << std::endl;
           } else {
             Sophus::SE3d mTmw = mpMergeMatchedKF->GetPose().cast<double>();
             g2o::Sim3 gSmw2(mTmw.unit_quaternion(), mTmw.translation(), 1.0);
@@ -81,8 +81,8 @@ void LoopClosing::Run() {
 
             mSold_new = (gSw2c * gScw1);
 
-            if (mbInertial) {
-              std::cout << "Merge check transformation with IMU" << std::endl;
+            if (mpOdomSource) {
+              std::cout << "Merge check transformation with odom source" << std::endl;
               if (mSold_new.scale() < 0.90 || mSold_new.scale() > 1.1) {
                 mpMergeLastCurrentKF->SetErase();
                 mpMergeMatchedKF->SetErase();
@@ -95,7 +95,7 @@ void LoopClosing::Run() {
                 continue;
               }
               // If inertial, force only yaw
-              if ((mpTracker->mSensor == CameraType::IMU_MONOCULAR || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD) && mpCurrentKF->GetMap()->GetInertialBA1()) {
+              if (mpCurrentKF->GetMap()->GetInertialBA1()) {
                 Eigen::Vector3d phi = LogSO3(mSold_new.rotation().toRotationMatrix());
                 phi(0) = 0;
                 phi(1) = 0;
@@ -145,7 +145,7 @@ void LoopClosing::Run() {
           Verbose::PrintMess("*Loop detected", Verbose::VERBOSITY_QUIET);
 
           mg2oLoopScw = mg2oLoopSlw;
-          if (mbInertial) {
+          if (mpOdomSource) {
             Sophus::SE3d Twc = mpCurrentKF->GetPoseInverse().cast<double>();
             g2o::Sim3 g2oTwc(Twc.unit_quaternion(), Twc.translation(), 1.0);
             g2o::Sim3 g2oSww_new = g2oTwc * mg2oLoopScw;
@@ -226,7 +226,7 @@ bool LoopClosing::NewDetectCommonRegions() {
     mpLastMap = mpCurrentKF->GetMap();
   }
 
-  if (mbInertial && !mpLastMap->GetInertialBA2()) {
+  if (mpOdomSource && !mpLastMap->GetInertialBA2()) {
     mpKeyFrameDB->add(mpCurrentKF);
     mpCurrentKF->SetErase();
     return false;
@@ -892,7 +892,7 @@ void LoopClosing::MergeLocal() {
   std::set<std::shared_ptr<KeyFrame>> spLocalWindowKFs;
   // Get MPs in the welding area from the current map
   std::set<std::shared_ptr<MapPoint>> spLocalWindowMPs;
-  if (mbInertial){  // TODO Check the correct initialization
+  if (mpOdomSource){  // TODO Check the correct initialization
     std::shared_ptr<KeyFrame> pKFi = mpCurrentKF;
     int nInserted = 0;
     while (pKFi && nInserted < numTemporalKFs) {
@@ -943,7 +943,7 @@ void LoopClosing::MergeLocal() {
   }
 
   std::set<std::shared_ptr<KeyFrame>> spMergeConnectedKFs;
-  if (mbInertial) {  // TODO Check the correct initialization
+  if (mpOdomSource) {  // TODO Check the correct initialization
     std::shared_ptr<KeyFrame> pKFi = mpMergeMatchedKF;
     int nInserted = 0;
     while (pKFi && nInserted < numTemporalKFs / 2) {
