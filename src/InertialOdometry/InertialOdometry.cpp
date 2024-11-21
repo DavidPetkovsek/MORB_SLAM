@@ -389,14 +389,17 @@ void InertialOdometry::NewMapEvent() {
     }
 }
 
-void InertialOdometry::LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) {
+void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) {
     float dist = (curr_kf->mPrevKF->GetCameraCenter() - curr_kf->GetCameraCenter()).norm() +
         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
 
     if (mbStationaryImuInit || dist > 0.05)
         LocalMappingIncrementTimeInit(curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp);
 
-    int tracking_matches_inliers = TrackingGetMatchesInliers();
+    int tracking_matches_inliers;
+    if (std::shared_ptr<Tracking> pTracker = mwpTracker.lock())
+        tracking_matches_inliers = pTracker->GetMatchesInliers();
+
     bool b_large = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
     InertialOptimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->GetInertialBA2());  
 }

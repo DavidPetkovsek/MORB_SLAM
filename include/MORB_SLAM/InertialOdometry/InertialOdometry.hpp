@@ -28,9 +28,9 @@ public:
     void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) override;
     void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) override;
     void NewMapEvent() override;
+    void LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
 
     void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
-    void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
     void InitializeOdom() override;
     void PostInitializeOdom() override;
     void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) override;

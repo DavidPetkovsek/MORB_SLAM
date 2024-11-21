@@ -71,10 +71,14 @@ public:
     // Called in Tracking::CreateMapInAtlas() when Tracking needs to create a new map in the Atlas
     virtual void NewMapEvent() = 0;
 
+    /*
+        Core functionality used in the LocalMapping thread
+    */
+    // Called in the LocalMapping loop if the odom source is initialized. Performs a bundle adjustment on a local window of keyframes close to the current keyframe.
+    virtual void LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
 
     virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
     
-    virtual void LocalOdomBA(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
     virtual void InitializeOdom() = 0;
     virtual void PostInitializeOdom() = 0;
     virtual void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) = 0;
@@ -88,7 +92,6 @@ protected:
     std::weak_ptr<Tracking> mwpTracker;
 
     // TO-DO: Remove. Tracker was initially a private member of Odometry, so any child classes can't access it. This has been changed, so the below methods aren't needed anymore.
-    int TrackingGetMatchesInliers();
     void TrackingLockPreTeleportTranslation(bool is_locked);
     void TrackingSetTeleported(bool is_teleported);
     // void TrackingUpdateFrameOdom(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> curr_kf); // TODO: Rework this

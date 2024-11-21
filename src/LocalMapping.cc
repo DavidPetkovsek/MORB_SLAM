@@ -61,18 +61,12 @@ LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bIne
       mpOdomSource(odomSource) {
 }
 
-void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) {
-  mpLoopCloser = pLoopCloser;
-}
+void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) { mpLoopCloser = pLoopCloser; }
 
 void LocalMapping::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 
 void LocalMapping::Run() {
     mbFinished = false;
-
-    // //TODO: make these settings
-    // const float timerVIBA2 = mpTracker->fastIMUInitEnabled() ? 10 : 15;
-    // const float accelTimeout = mpTracker->fastIMUInitEnabled() ? 7.5 : 10;
 
     while (1) {
         try {
@@ -95,7 +89,6 @@ void LocalMapping::Run() {
             if (!CheckNewKeyFrames() && !stopRequested()) {
                 if(mpCurrentKeyFrame && mpCurrentKeyFrame->mPrevKF && mpCurrentKeyFrame->mPrevKF->mPrevKF) {
                     if (mpOdomSource /*mbInertial*/ && mpCurrentKeyFrame->GetMap()->isOdomInitialized()) {
-                        // ============= NEW external odom ==============
                         // float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
                         //     (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
 
@@ -104,8 +97,7 @@ void LocalMapping::Run() {
 
                         // bool bLarge = ((mpTracker->GetMatchesInliers() > 75) && mbMonocular) || ((mpTracker->GetMatchesInliers() > 100) && !mbMonocular);
                         // Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(), bLarge, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());  
-                        mpOdomSource->LocalOdomBA(mpCurrentKeyFrame, mbAbortBA);
-                        // ===========================================
+                        mpOdomSource->LocalBundleAdjustment(mpCurrentKeyFrame, mbAbortBA);
                     } else {
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(), mpOdomSource != nullptr /*mbInertial*/);
                     }
