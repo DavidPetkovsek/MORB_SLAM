@@ -11,27 +11,39 @@ namespace MORB_SLAM {
     void Odometry::SetAtlas(const std::shared_ptr<Atlas> &pAtlas) { mpAtlas = pAtlas; };
 
     // Local Mapping
-    bool Odometry::LocalMappingResetRequested() { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); return pLocalMapper->mbResetRequested; }
-    void Odometry::LocalMappingSetInitializing(bool is_initializing) { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); pLocalMapper->bInitializing = is_initializing; }
+    bool Odometry::LocalMappingResetRequested() {
+        if (std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
+            return pLocalMapper->mbResetRequested;
+        else
+            return false;    
+    }
+    void Odometry::LocalMappingSetInitializing(bool is_initializing) { if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) pLocalMapper->bInitializing = is_initializing; }
     void Odometry::LocalMappingProcessKeyFramesInQueue(std::vector<std::shared_ptr<KeyFrame>> &vpKF) {
-        std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock();
-        while (pLocalMapper->CheckNewKeyFrames()) {
-            pLocalMapper->ProcessNewKeyFrame();
-            vpKF.push_back(pLocalMapper->mpCurrentKeyFrame);
+        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) {
+            while (pLocalMapper->CheckNewKeyFrames()) {
+                pLocalMapper->ProcessNewKeyFrame();
+                vpKF.push_back(pLocalMapper->mpCurrentKeyFrame);
+            }
         }
     }
-    void Odometry::LocalMappingSetTimeInit(float t_init) { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); pLocalMapper->mTinit = t_init; }
-    float Odometry::LocalMappingGetTimeInit() { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); return pLocalMapper->mTinit; }
-    void Odometry::LocalMappingIncrementTimeInit(float t_increment) { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); pLocalMapper->mTinit += t_increment; }
-    void Odometry::LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose) { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); pLocalMapper->mPoseReverseAxisFlip = pose; }
+    void Odometry::LocalMappingSetTimeInit(float t_init) { if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) pLocalMapper->mTinit = t_init; }
+    float Odometry::LocalMappingGetTimeInit() {
+        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
+            return pLocalMapper->mTinit;
+        else
+            return 0;
+    }
+    void Odometry::LocalMappingIncrementTimeInit(float t_increment) { if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) pLocalMapper->mTinit += t_increment; }
+    void Odometry::LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose) { if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) pLocalMapper->mPoseReverseAxisFlip = pose; }
     void Odometry::LocalMappingSetNewKeyFramesBad() {
-        std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock();
-        for (std::shared_ptr<KeyFrame> newKeyFrame : pLocalMapper->mlNewKeyFrames) {
-            newKeyFrame->SetBadFlag();
+        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) {
+            for (std::shared_ptr<KeyFrame> newKeyFrame : pLocalMapper->mlNewKeyFrames) {
+                newKeyFrame->SetBadFlag();
+            }
+            pLocalMapper->mlNewKeyFrames.clear();
         }
-        pLocalMapper->mlNewKeyFrames.clear();
     }
-    std::shared_ptr<KeyFrame> Odometry::LocalMappingGetCurrentKeyFrame() { std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock(); return pLocalMapper->mpCurrentKeyFrame; }
+    std::shared_ptr<KeyFrame> Odometry::LocalMappingGetCurrentKeyFrame() { if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock()) return pLocalMapper->mpCurrentKeyFrame; }
 
 
 } //namespace MORB_SLAM
