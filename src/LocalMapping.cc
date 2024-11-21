@@ -106,7 +106,6 @@ void LocalMapping::Run() {
                 // Initialize IMU here
                 if (!mpCurrentKeyFrame->GetMap()->isOdomInitialized() && mpOdomSource /*mbInertial*/) {
                     isDoneVIBA = false;
-                    // ============== NEW external odom ==============
                     // mpTracker->mLockPreTeleportTranslation = true;
                     // if (mbMonocular) {
                     //     InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
@@ -115,12 +114,10 @@ void LocalMapping::Run() {
                     // }
                     // mpTracker->mTeleported = true;
                     mpOdomSource->InitializeOdom();
-                    // =======================================
                 }
                 // Check redundant local Keyframes
                 if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetInertialBA2()) KeyFrameCulling();
                 
-                // =================== NEW external odom =============
                 // if ((mTinit < 50.0f) && mbInertial) {
                 //     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
                 //         if (!mpCurrentKeyFrame->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
@@ -146,11 +143,8 @@ void LocalMapping::Run() {
                 //         }
                 //     }
                 // }
-
-                if(mpOdomSource) {
+                if(mpOdomSource)
                     mpOdomSource->PostInitializeOdom();
-                }
-                // ===============================================
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);

@@ -74,13 +74,16 @@ public:
     /*
         Core functionality used in the LocalMapping thread
     */
-    // Called in the LocalMapping loop if the odom source is initialized. Performs a bundle adjustment on a local window of keyframes close to the current keyframe.
+    // Called in every LocalMapping loop once the odom source is initialized. Performs a bundle adjustment on a local window of keyframes close to the current keyframe.
     virtual void LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) = 0;
 
-    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
-    
+    // Called once in the LocalMapping loop if the odometry source has not been initialized yet i.e Map::mbOdomInitialized == false. Any odometry parameters that need to be initialized can be done here.
     virtual void InitializeOdom() = 0;
+
+    // Called in every LocalMapping loop once the odometry source has been initialized. Any refinement in the odometry parameters can be done here.
     virtual void PostInitializeOdom() = 0;
+    
+    virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
     virtual void MergeLocalInitializeMap(const std::shared_ptr<Map> &curr_map) = 0;
     virtual void MergeOdomBA(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) = 0;
     virtual void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) = 0;

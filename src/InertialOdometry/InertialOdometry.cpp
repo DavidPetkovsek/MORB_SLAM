@@ -405,13 +405,14 @@ void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, 
 }
 
 void InertialOdometry::InitializeOdom() {
-    TrackingLockPreTeleportTranslation(true);
-    if (mbMonocular) {
-        initializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
-    } else {
-        initializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
+    if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock()) {
+        pTracker->mLockPreTeleportTranslation = true;
+        if (mbMonocular)
+            initializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
+        else
+            initializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
+        pTracker->mTeleported = true;
     }
-    TrackingSetTeleported(true);
 }
 
 void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA) {
@@ -468,12 +469,14 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
         for (std::vector<std::shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
 
-            if (!(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
+            if (auto itKF_eKFd = (*itKF)->External<InertialKeyFrameData>()) {
+                if (!itKF_eKFd->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
-            dirG -= getImuRotation((*itKF)->mPrevKF) * (*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->GetUpdatedDeltaVelocity();
-            Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
-            (*itKF)->SetVelocity(_vel);
-            (*itKF)->mPrevKF->SetVelocity(_vel);
+                dirG -= getImuRotation((*itKF)->mPrevKF) * itKF_eKFd->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+                Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/itKF_eKFd->mpImuPreintegrated->dT;
+                (*itKF)->SetVelocity(_vel);
+                (*itKF)->mPrevKF->SetVelocity(_vel);
+            }
         }
 
         dirG = dirG / dirG.norm();
@@ -491,21 +494,27 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero()));
     } else if(mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isOdomInitialized()) {
         for (std::vector<std::shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
-            if (!(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
+            if (auto itKF_eKFd = (*itKF)->External<InertialKeyFrameData>()) {
+                if (!itKF_eKFd->mpImuPreintegrated || !(*itKF)->mPrevKF) continue;
 
-            Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/(*itKF)->External<InertialKeyFrameData>()->mpImuPreintegrated->dT;
-            (*itKF)->SetVelocity(_vel);
-            (*itKF)->mPrevKF->SetVelocity(_vel);
+                Eigen::Vector3f _vel = (getImuPosition(*itKF) - getImuPosition((*itKF)->mPrevKF))/itKF_eKFd->mpImuPreintegrated->dT;
+                (*itKF)->SetVelocity(_vel);
+                (*itKF)->mPrevKF->SetVelocity(_vel);
+            }
         }
 
         mRwg = Eigen::Matrix3d::Identity();
         LocalMappingSetTimeInit(curr_kf->mTimeStamp - first_ts);
-        mbg = curr_kf->External<InertialKeyFrameData>()->GetGyroBias().cast<double>();
-        mba = curr_kf->External<InertialKeyFrameData>()->GetAccBias().cast<double>();
+        if(auto curr_eKFd = curr_kf->External<InertialKeyFrameData>()) {
+            mbg = curr_eKFd->GetGyroBias().cast<double>();
+            mba = curr_eKFd->GetAccBias().cast<double>();
+        }
     } else {
         mRwg = Eigen::Matrix3d::Identity();
-        mbg = curr_kf->External<InertialKeyFrameData>()->GetGyroBias().cast<double>();
-        mba = curr_kf->External<InertialKeyFrameData>()->GetAccBias().cast<double>();
+        if(auto curr_eKFd = curr_kf->External<InertialKeyFrameData>()) {
+            mbg = curr_eKFd->GetGyroBias().cast<double>();
+            mba = curr_eKFd->GetAccBias().cast<double>();
+        }
     }
 
     mScale = 1.0;
@@ -524,8 +533,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
-            // TrackingUpdateFrameOdom(mScale, vpKF[0]->GetImuBias(), curr_kf);
-            updateFrameIMU(mScale, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
+            if(auto eKFd = vpKF[0]->External<InertialKeyFrameData>())
+                updateFrameIMU(mScale, eKFd->GetImuBias(), curr_kf);
         }
 
         // Check if initialization OK
@@ -537,8 +546,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         }
     }
 
-    // TrackingUpdateFrameOdom(1.0, vpKF[0]->GetImuBias(), curr_kf);
-    updateFrameIMU(1.0, vpKF[0]->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
+    if(auto eKFd = vpKF[0]->External<InertialKeyFrameData>())
+        updateFrameIMU(1.0, eKFd->GetImuBias(), curr_kf);
 
     if (!mpAtlas->isOdomInitialized()) {
         mpAtlas->SetOdomInitialized();
@@ -593,7 +602,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
                     Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
                 }
 
-                // pChild->mBiasGBA = pChild->GetImuBias();
                 pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
 
                 pChild->mnBAGlobalForKF = GBAid;
@@ -608,7 +616,6 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             pKF->mVwbBefGBA = pKF->GetVelocity();
             pKF->SetVelocity(pKF->mVwbGBA);
             
-            // pKF->SetNewBias(pKF->mBiasGBA);
             pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         } else {
             std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
@@ -644,7 +651,8 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     LocalMappingSetNewKeyFramesBad();
 
-    TrackingSetState(TrackingState::OK);
+    if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock())
+        pTracker->mState = TrackingState::OK;
     
     LocalMappingSetInitializing(false);
 
@@ -656,32 +664,34 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 }
 
 void InertialOdometry::PostInitializeOdom() {
-    const float timerVIBA2 = mbFastInit ? 10 : 15;
+    if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock()) {
+        const float timerVIBA2 = mbFastInit ? 10 : 15;
 
-    std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
-    float mTinit = LocalMappingGetTimeInit();
-    if ((mTinit < 50.0f)) {
-        if (curr_kf->GetMap()->isOdomInitialized() && TrackingGetState() == TrackingState::OK) {  // Enter here everytime local-mapping is called
-            if (!curr_kf->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
-                TrackingLockPreTeleportTranslation(true);
-                std::cout << "start VIBA 1" << std::endl;
-                curr_kf->GetMap()->SetInertialBA1();
-                initializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
-                TrackingSetTeleported(true);
-                std::cout << "end VIBA 1" << std::endl;
-            } else if (!curr_kf->GetMap()->GetInertialBA2() && mTinit > timerVIBA2) {
-                TrackingLockPreTeleportTranslation(true);
-                std::cout << "start VIBA 2" << std::endl;
-                curr_kf->GetMap()->SetInertialBA2();
-                initializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
-                TrackingSetTeleported(true);
-                std::cout << "end VIBA 2" << std::endl;
-            }
+        std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
+        float mTinit = LocalMappingGetTimeInit();
+        if ((mTinit < 50.0f)) {
+            if (curr_kf->GetMap()->isOdomInitialized() && pTracker->mState == TrackingState::OK) {  // Enter here everytime local-mapping is called
+                if (!curr_kf->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
+                    pTracker->mLockPreTeleportTranslation = true;
+                    std::cout << "start VIBA 1" << std::endl;
+                    curr_kf->GetMap()->SetInertialBA1();
+                    initializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
+                    pTracker->mTeleported = true;
+                    std::cout << "end VIBA 1" << std::endl;
+                } else if (!curr_kf->GetMap()->GetInertialBA2() && mTinit > timerVIBA2) {
+                    pTracker->mLockPreTeleportTranslation = true;
+                    std::cout << "start VIBA 2" << std::endl;
+                    curr_kf->GetMap()->SetInertialBA2();
+                    initializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
+                    pTracker->mTeleported = true;
+                    std::cout << "end VIBA 2" << std::endl;
+                }
 
-            // scale refinement
-            if (mbMonocular && ((mpAtlas->KeyFramesInMap()) <= 200) &&
-                ((mTinit > 25.0f && mTinit < 25.5f) || (mTinit > 35.0f && mTinit < 35.5f) || (mTinit > 45.0f && mTinit < 45.5f))) {
-                scaleRefinement();
+                // scale refinement
+                if (mbMonocular && ((mpAtlas->KeyFramesInMap()) <= 200) &&
+                    ((mTinit > 25.0f && mTinit < 25.5f) || (mTinit > 35.0f && mTinit < 35.5f) || (mTinit > 45.0f && mTinit < 45.5f))) {
+                    scaleRefinement();
+                }
             }
         }
     }
@@ -724,8 +734,8 @@ void InertialOdometry::scaleRefinement() {
     if ((fabs(mScale - 1.f) > 0.002) || !mbMonocular) {
     Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
-        // TrackingUpdateFrameOdom(mScale, curr_kf->GetImuBias(), curr_kf);
-        updateFrameIMU(mScale, curr_kf->External<InertialKeyFrameData>()->GetImuBias(), curr_kf);
+        if(auto eKFd = curr_kf->External<InertialKeyFrameData>())
+            updateFrameIMU(mScale, eKFd->GetImuBias(), curr_kf);
     }
 
     LocalMappingSetNewKeyFramesBad();
