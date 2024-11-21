@@ -34,7 +34,6 @@
 #include "MORB_SLAM/MLPnPsolver.h"
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
-#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp" // to be removed
 #include "MORB_SLAM/CameraModels/Pinhole.h"
 #include "MORB_SLAM/Settings/SystemSettings.hpp"
 
@@ -183,14 +182,15 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
     }
   }
 
-  // TO DO: Change these conditions
-  if (mSensor == CameraType::STEREO && !mpCamera2)
+  // TO DO: Change these conditions - diff between rectified and non-rectified is the latter requires additional arguments: pCamera2 and Tlr
+  // The difference between odom and non odom is the former requires external data and the last frame
+  if (mSensor == CameraType::STEREO && !mpCamera2) // Rectfied stereo with no odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera);
-  else if (mSensor == CameraType::STEREO && mpCamera2)
+  else if (mSensor == CameraType::STEREO && mpCamera2) // Non-rectified stereo with no odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr);
-  else if (mSensor == CameraType::IMU_STEREO && !mpCamera2 && mpOdomSource)
+  else if (mSensor == CameraType::IMU_STEREO && !mpCamera2 && mpOdomSource) // Rectified stereo with odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame/* , *mpImuCalib */, ed);
-  else if (mSensor == CameraType::IMU_STEREO && mpCamera2 && mpOdomSource)
+  else if (mSensor == CameraType::IMU_STEREO && mpCamera2 && mpOdomSource) // Non-rectified stereo with odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame/* , *mpImuCalib */, ed);
 
   Track();
@@ -438,7 +438,7 @@ void Tracking::Track() {
           std::cout << "TrackReferenceKeyFrame failed, is LOST" << std::endl;
           
           // if there's enough KeyFrames in the map we're recently lost, if not we're lost
-          if (pCurrentMap->KeyFramesInMap() > 10 && (mCurrentFrame.mnId > (mnLastRelocFrameId + mFPS) || !mSensor.isInertial())) {
+          if (pCurrentMap->KeyFramesInMap() > 10 && (mCurrentFrame.mnId > (mnLastRelocFrameId + mFPS) || /* !mSensor.isInertial() */mpOdomSource==nullptr)) {
             mState = TrackingState::RECENTLY_LOST;
             mTimeStampLost = mCurrentFrame.mTimeStamp;
           } else {
@@ -448,7 +448,7 @@ void Tracking::Track() {
         }
       } else if (mState == TrackingState::RECENTLY_LOST) {
         bOK = true;
-        if (mSensor.isInertial()) {
+        if (/* mSensor.isInertial() */mpOdomSource) {
           // bOK = (pCurrentMap->isImuInitialized()) ? PredictStateIMU() : false;
           if(pCurrentMap->isOdomInitialized())
             bOK = mpOdomSource->PredictStateOdom(mCurrentFrame, mLastFrame, mpLastKeyFrame, mbMapUpdated);
@@ -497,8 +497,8 @@ void Tracking::Track() {
     } else {
       // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
       if (mState == TrackingState::LOST) {
-        if (mSensor.isInertial())
-          Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
+        if (/* mSensor.isInertial() */mpOdomSource)
+          Verbose::PrintMess("ODOM. State LOST", Verbose::VERBOSITY_NORMAL);
         bOK = Relocalization();
       } else {
         if (!notEnoughMatchPoints_trackOnlyMode) {
@@ -570,8 +570,8 @@ void Tracking::Track() {
       mState = TrackingState::OK;
     // Occurs if this the Frame we're becoming lost
     } else if (mState == TrackingState::OK) {
-      if (mSensor.isInertial() && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->GetInertialBA2())) {
-          std::cout << "IMU is not or recently initialized. Reseting active map..." << std::endl;
+      if (/* mSensor.isInertial() */mpOdomSource && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->GetInertialBA2())) {
+          std::cout << "Odometry source is not or recently initialized. Reseting active map..." << std::endl;
           mForcedLost = false;
           RequestResetActiveMap();
       }
@@ -621,9 +621,9 @@ void Tracking::Track() {
         return;
       }
 
-      if (mSensor.isInertial()) {
+      if (/* mSensor.isInertial() */mpOdomSource) {
         if (!pCurrentMap->isOdomInitialized()) {
-          Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
+          Verbose::PrintMess("Track lost before odometry initialisation, reseting...", Verbose::VERBOSITY_QUIET);
           RequestResetActiveMap();
           return;
         }
@@ -673,7 +673,6 @@ void Tracking::StereoInitialization() {
     return;
   }
 
-  // ========= NEW external odom ==============
   // if (mSensor.isInertial()) {
   //   if (!mCurrentFrame.mpImuPreintegrated || !mLastFrame.mpImuPreintegrated) {
   //     return;
@@ -690,7 +689,6 @@ void Tracking::StereoInitialization() {
 
   if(mpOdomSource && !mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame))
     return;
-  // =======================
 
   // This if statement runs Relocalization() only if there's an existing map and relocalization is enabled 
   if(mpAtlas->CountMaps() > 1 && newMapRelocalizationEnabled() && Relocalization(true)) {
@@ -1076,7 +1074,7 @@ bool Tracking::TrackReferenceKeyFrame() {
     }
   }
 
-  return (mSensor.isInertial() || (nmatchesMap >= 10));
+  return (/* mSensor.isInertial() */mpOdomSource!=nullptr || (nmatchesMap >= 10));
 }
 
 void Tracking::UpdateLastFrame() {
@@ -1165,7 +1163,7 @@ bool Tracking::TrackWithMotionModel() {
 
   if (nmatches < 20) {
     Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
-    return mSensor.isInertial();
+    return mpOdomSource!=nullptr/* mSensor.isInertial() */;
   }
 
   // Optimize frame pose with all matches
@@ -1198,7 +1196,7 @@ bool Tracking::TrackWithMotionModel() {
     notEnoughMatchPoints_trackOnlyMode = nmatchesMap < 10;
     return nmatches > 20;
   }
-  return (mSensor.isInertial() || (nmatchesMap >= 10));
+  return (/* mSensor.isInertial() */mpOdomSource!=nullptr || (nmatchesMap >= 10));
 }
 
 bool Tracking::TrackLocalMap() {
@@ -1248,7 +1246,7 @@ bool Tracking::TrackLocalMap() {
 
   if (mState == TrackingState::RECENTLY_LOST) return mnMatchesInliers >= 150;
 
-  if(mSensor.isInertial()){
+  if(/* mSensor.isInertial() */mpOdomSource){
     if (!mSensor.hasMulticam()) {
       return !((mnMatchesInliers < 15 && mpAtlas->isOdomInitialized()) || (mnMatchesInliers < 50 && !mpAtlas->isOdomInitialized()));
     } else {
@@ -1260,7 +1258,7 @@ bool Tracking::TrackLocalMap() {
 }
 
 bool Tracking::NeedNewKeyFrame() {
-  if (mSensor.isInertial() && !mpAtlas->GetCurrentMap()->isOdomInitialized()) 
+  if (/* mSensor.isInertial() */mpOdomSource && !mpAtlas->GetCurrentMap()->isOdomInitialized()) 
     return (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.25;
 
   if (mbOnlyTracking) return false;
@@ -1316,11 +1314,11 @@ bool Tracking::NeedNewKeyFrame() {
   // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle (MinFrames was always hardcoded to 0, removed)
   const bool c1b = ((mCurrentFrame.mnId >= mnLastKeyFrameId) && bLocalMappingIdle);
   // Condition 1c: tracking is weak
-  const bool c1c = mSensor.hasMulticam() && !mSensor.isInertial() && (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose);
+  const bool c1c = mSensor.hasMulticam() && /* !mSensor.isInertial() */ mpOdomSource==nullptr && (mnMatchesInliers < nRefMatches * 0.25 || bNeedToInsertClose);
   // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
   const bool c2 = (((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose)) && mnMatchesInliers > 15);
   // Temporal condition for Inertial cases
-  const bool c3 = mpLastKeyFrame && mSensor.isInertial() && (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.5;
+  const bool c3 = mpLastKeyFrame && /* mSensor.isInertial() */mpOdomSource!=nullptr && (mCurrentFrame.mTimeStamp - mpLastKeyFrame->mTimeStamp) >= 0.5;
   const bool c4 = (((mnMatchesInliers < 75) && (mnMatchesInliers > 15)) || mState == TrackingState::RECENTLY_LOST) && (mSensor == CameraType::IMU_MONOCULAR);
 
   if (((c1a || c1b || c1c) && c2) || c3 || c4) {
@@ -1349,12 +1347,10 @@ void Tracking::CreateNewKeyFrame() {
     
   mpReferenceKF = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB, eKFd);
 
-  // ====== To be Removed ======
   if (mpAtlas->isOdomInitialized())
     mpReferenceKF->bOdom = true;
 
   // mpReferenceKF->SetNewBias(mCurrentFrame.mImuBias); // this line isn't needed because the bias is already copied over in the constructor?
-  // ============================
 
   mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
@@ -1367,9 +1363,8 @@ void Tracking::CreateNewKeyFrame() {
   // Reset preintegration from last KF (Create new object)
   // if (mSensor.isInertial())
   //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(mpReferenceKF->GetImuBias(), mpReferenceKF->mImuCalib);
-  if(mpOdomSource) {
+  if(mpOdomSource)
     mpOdomSource->NewKeyFrameEvent(mpReferenceKF);
-  }
 
   if (mSensor.hasMulticam()){  // TODO check if incluide imu_stereo
     mCurrentFrame.UpdatePoseMatrices();
@@ -1484,7 +1479,7 @@ void Tracking::SearchLocalPoints() {
       th = 5;
     else if (mpAtlas->isOdomInitialized())
       th = mpAtlas->GetCurrentMap()->GetInertialBA2() ? 2 : 6;
-    else if (!mpAtlas->isOdomInitialized() && mSensor.isInertial())
+    else if (!mpAtlas->isOdomInitialized() && /* mSensor.isInertial() */mpOdomSource)
       th = 10;
     else
       th = (mSensor == CameraType::RGBD || mSensor == CameraType::IMU_RGBD) ? 3 : 1;
@@ -1610,8 +1605,8 @@ void Tracking::UpdateLocalKeyFrames() {
     }
   }
 
-  // Add 20 last temporal KFs (mainly for IMU)
-  if (mSensor.isInertial() && mvpLocalKeyFrames.size() < 80 && !mCurrentFrame.isPartiallyConstructed) {
+  // Add 20 last temporal KFs (mainly for odometry)
+  if (/* mSensor.isInertial() */mpOdomSource && mvpLocalKeyFrames.size() < 80 && !mCurrentFrame.isPartiallyConstructed) {
     std::shared_ptr<KeyFrame> tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
     const int Nd = 20;

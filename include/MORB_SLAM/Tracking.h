@@ -30,7 +30,6 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
-#include "MORB_SLAM/InertialOdometry/ImuTypes.h" // to remove, since IMU types will soon be decoupled from the tracking thread
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/LocalMapping.h"
 #include "MORB_SLAM/LoopClosing.h"
