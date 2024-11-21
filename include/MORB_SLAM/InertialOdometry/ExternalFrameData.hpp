@@ -8,32 +8,28 @@ namespace MORB_SLAM {
 
 
 struct InertialFrameData : public ExternalFrameData {
-    // default constructor
     InertialFrameData()
         : mpImuPreintegrated(nullptr),
           mpImuPreintegratedFrame(nullptr),
           mbImuPreintegrated(false),
-          mpcpi(nullptr)
-    {
-        mpMutexImu = std::make_shared<std::mutex>();
-    }
+          mpcpi(nullptr),
+          mpMutexImu(std::make_shared<std::mutex>()) { }
 
     InertialFrameData(IMU::Calib imuCalib)
         : mImuCalib(imuCalib),
           mpImuPreintegrated(nullptr),
           mpImuPreintegratedFrame(nullptr),
           mbImuPreintegrated(false),
-          mpcpi(nullptr)
-    {
-        mpMutexImu = std::make_shared<std::mutex>();
-    } 
+          mpcpi(nullptr),
+          mpMutexImu(std::make_shared<std::mutex>()) {}
+
     IMU::Bias mImuBias;
     IMU::Calib mImuCalib;
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
     bool mbImuPreintegrated;
-    std::shared_ptr<std::mutex> mpMutexImu;
     std::shared_ptr<ConstraintPoseImu> mpcpi;
+    std::shared_ptr<std::mutex> mpMutexImu;
 
     bool imuIsPreintegrated() {
         std::unique_lock<std::mutex> lock(*mpMutexImu);
@@ -52,7 +48,6 @@ struct InertialFrameData : public ExternalFrameData {
         mImuBias = b;
         if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
     }
-
 };
 
 
@@ -64,8 +59,12 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
     InertialKeyFrameData(InertialFrameData frame_data)
         : mpImuPreintegrated(frame_data.mpImuPreintegrated),
           mImuCalib(frame_data.mImuCalib),
-          mImuBias(frame_data.mImuBias)
-    { }
+          mImuBias(frame_data.mImuBias) { }
+
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    IMU::Calib mImuCalib;
+    IMU::Bias mImuBias;
+    IMU::Bias mBiasGBA;
 
     void SetNewBias(const IMU::Bias& b) {
         if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
@@ -105,11 +104,6 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
         }
     }
 
-    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
-    IMU::Calib mImuCalib;
-    IMU::Bias mImuBias;
-    IMU::Bias mBiasGBA;
-
     void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
         std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);
         if(mpImuPreintegrated && inertial_eKFd_prev->mpImuPreintegrated) {
@@ -124,7 +118,6 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
     void UpdateParentSpanningTree() override {
         SetNewBias(mBiasGBA);
     }
-    
 };
 
 

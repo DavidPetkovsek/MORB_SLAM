@@ -18,6 +18,7 @@
 
 #pragma once
 #include "MORB_SLAM/G2oTypes.h"
+#include "MORB_SLAM/ImuTypes.h"
 
 namespace MORB_SLAM{
 namespace IMUProcessor{

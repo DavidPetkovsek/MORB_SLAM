@@ -109,9 +109,6 @@ class Bias {
 
   friend std::ostream &operator<<(std::ostream &out, const Bias &b);
 
-  // TO REMOVE
-  bool operator==(const Bias &b) const { return ((bax==b.bax) && (bay==b.bay) && (baz==b.baz) && (bwx==b.bwx) && (bwy==b.bwy) && (bwz==b.bwz)); }
-
  public:
   float bax, bay, baz;
   float bwx, bwy, bwz;
