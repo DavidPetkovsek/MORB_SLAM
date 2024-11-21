@@ -54,29 +54,25 @@ private:
     std::vector<double> mvGyroTimestampQueue;
     std::vector<IMU::Point> mvImuBatch;
 
-    void newParameterLoader(InertialOdometrySettings &settings);
-    std::shared_ptr<IMU::Calib> mpImuCalib;
-    bool mbStationaryInitEnabled = false;
-
-    std::vector<IMU::Point> interpolateImu(const std::vector<Eigen::Vector3f> &v_imu, const std::vector<double> &v_imu_timestamp_s, const double &curr_frame_timestamp_s, const double &prev_frame_timestamp_s, const bool &is_accel) const;
-    void combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined);
-
-    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
-
     bool mbMonocular;
-
-    void initializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA);
-
     Eigen::Matrix3d mRwg;
     Eigen::Vector3d mbg;
     Eigen::Vector3d mba;
     double mScale;
 
+    void newParameterLoader(InertialOdometrySettings &settings);
+    std::shared_ptr<IMU::Calib> mpImuCalib;
+    bool mbStationaryInitEnabled = false;
     bool mbFastInit;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
+    std::vector<IMU::Point> interpolateImu(const std::vector<Eigen::Vector3f> &v_imu, const std::vector<double> &v_imu_timestamp_s, const double &curr_frame_timestamp_s, const double &prev_frame_timestamp_s, const bool &is_accel) const;
+    void combineImu(std::vector<IMU::Point> &v_accel, std::vector<IMU::Point>& v_gyro, std::vector<IMU::Point> &v_imu_combined);
+
+    void initializeIMU(ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA, bool bFIBA);
     void scaleRefinement();
 
-    void updateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+    void updateFrameIMU(const IMU::Bias& b);
 
     const inline Eigen::Vector3f getImuPosition(const std::shared_ptr<KeyFrame> &kf) { return (kf->GetPoseInverse() * mpImuCalib->mTcb).translation(); }
     const inline Eigen::Matrix3f getImuRotation(const std::shared_ptr<KeyFrame> &kf) { return (kf->GetPoseInverse() * mpImuCalib->mTcb).rotationMatrix(); }
