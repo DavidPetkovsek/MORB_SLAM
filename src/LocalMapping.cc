@@ -56,7 +56,7 @@ LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bIne
       mbAcceptKeyFrames(true),
       bInitializing(false),
       mTinit(0.f),
-      isDoneVIBA(false),
+      isDoneBA(false),
       mPoseReverseAxisFlip(Sophus::SE3f()),
       mpOdomSource(odomSource) {
 }
@@ -105,7 +105,7 @@ void LocalMapping::Run() {
 
                 // Initialize IMU here
                 if (!mpCurrentKeyFrame->GetMap()->isOdomInitialized() && mpOdomSource /*mbInertial*/) {
-                    isDoneVIBA = false;
+                    isDoneBA = false;
                     // mpTracker->mLockPreTeleportTranslation = true;
                     // if (mbMonocular) {
                     //     InitializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
@@ -669,8 +669,8 @@ void LocalMapping::KeyFrameCulling() {
     mpCurrentKeyFrame->UpdateBestCovisibles();
 
     if(mpAtlas->KeyFramesInMap() <= Nd) return;
-    const bool mapVIBA2 = mpCurrentKeyFrame->GetMap()->isMature(); // called here to not lock/unlock the mutex multiple times in the for loops
-    if(!mapVIBA2 && mpTracker->stationaryIMUInitEnabled()) return;
+    const bool mapMature = mpCurrentKeyFrame->GetMap()->isMature(); // called here to not lock/unlock the mutex multiple times in the for loops
+    if(!mapMature && mpTracker->stationaryIMUInitEnabled()) return;
 
     std::vector<std::shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
@@ -698,10 +698,10 @@ void LocalMapping::KeyFrameCulling() {
 
         bool longTimeNotMoving = false;
         float t = pKF->mNextKF->mTimeStamp - pKF->mPrevKF->mTimeStamp;
-        if(t < 0.5 && mapVIBA2) {
+        if(t < 0.5 && mapMature) {
             count++;
         } else if(pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) {
-            if(t >= 3 || !mapVIBA2) {
+            if(t >= 3 || !mapMature) {
                 // TO DO: REVISIT THIS!! Should this condition consider IMU/Odom information? If so, should extend a method for the developer to define longTimeNotMoving
                 if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) /*|| ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)*/) continue; // TO-DO
                 longTimeNotMoving = true;

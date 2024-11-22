@@ -98,7 +98,7 @@ class System {
     friend ExternalMapViewer;
 
     bool getHasMergedLocalMap();
-    bool getIsDoneVIBA();
+    bool getIsDoneBA();
 
     std::shared_ptr<SystemSettings> getSysSettings() const;
     std::shared_ptr<CameraSettings> getCamSettings() const;

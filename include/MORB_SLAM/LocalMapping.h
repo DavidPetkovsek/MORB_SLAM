@@ -74,8 +74,8 @@ class LocalMapping {
 
   int KeyframesInQueue();
 
-  inline bool getIsDoneVIBA() { return isDoneVIBA; }
-  inline void setIsDoneVIBA(bool viba) { isDoneVIBA = viba; }
+  inline bool getIsDoneBA() { return isDoneBA; }
+  inline void setIsDoneBA(bool ba) { isDoneBA = ba; }
 
   bool IsInitializing();
 
@@ -148,7 +148,7 @@ class LocalMapping {
 
   float mTinit;
 
-  bool isDoneVIBA;
+  bool isDoneBA;
 
   // used when returning from TrackStereo to undo the Axis Flip bug
   Sophus::SE3f mPoseReverseAxisFlip;

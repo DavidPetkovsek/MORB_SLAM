@@ -106,7 +106,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
-    mpLocalMapper->setIsDoneVIBA(true);
+    mpLocalMapper->setIsDoneBA(true);
   }
 
   mpLocalMapper->mThFarPoints = mpSysSettings->thFarPoints();
@@ -449,8 +449,8 @@ bool System::getHasMergedLocalMap() {
   return mpLoopCloser->hasMergedLocalMap; 
 }
 
-bool System::getIsDoneVIBA() {
-  return mpLocalMapper->getIsDoneVIBA();
+bool System::getIsDoneBA() {
+  return mpLocalMapper->getIsDoneBA();
 }
 
 std::shared_ptr<SystemSettings> System::getSysSettings() const { return mpSysSettings; }

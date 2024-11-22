@@ -646,10 +646,10 @@ void Tracking::Track() {
       mBaseTranslation -= (mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation()) - mPreTeleportTranslation;
       mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
       if(pCurrentMap->isMature())
-        mpLocalMapper->setIsDoneVIBA(true);
+        mpLocalMapper->setIsDoneBA(true);
     }
 
-    if(mpLocalMapper->getIsDoneVIBA()) {
+    if(mpLocalMapper->getIsDoneBA()) {
       Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
       mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), mCurrentFrame.GetPose().rotationMatrix()*(translation_print+mBaseTranslation));
     } else {
@@ -1927,7 +1927,7 @@ Sophus::SE3f Tracking::GetPoseRelativeToBase(Sophus::SE3f initialPose) {
   Eigen::Vector3f translation0 = initialPose.rotationMatrix().transpose()*initialPose.translation();
   Eigen::Vector3f translation1 = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation()+mBaseTranslation;
   
-  if(!mpLocalMapper->getIsDoneVIBA())
+  if(!mpLocalMapper->getIsDoneBA())
     translation1.setZero();
   return Sophus::SE3f(initialPose.rotationMatrix(), translation1);
 }

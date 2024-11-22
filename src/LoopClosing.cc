@@ -107,7 +107,7 @@ void LoopClosing::Run() {
 
             Verbose::PrintMess("*Merge detected", Verbose::VERBOSITY_QUIET);
 
-            mpLocalMapper->setIsDoneVIBA(false);
+            mpLocalMapper->setIsDoneBA(false);
             mpTracker->mLockPreTeleportTranslation = true;
             // TODO UNCOMMENT
             if (mpTracker->mSensor == CameraType::IMU_MONOCULAR || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD)
@@ -172,7 +172,7 @@ void LoopClosing::Run() {
 
           if (bGoodLoop) {
             mvpLoopMapPoints = mvpLoopMPs;
-            mpLocalMapper->setIsDoneVIBA(false);
+            mpLocalMapper->setIsDoneBA(false);
             mpTracker->mLockPreTeleportTranslation = true;
             CorrectLoop();
             mpTracker->mTeleported = true;
