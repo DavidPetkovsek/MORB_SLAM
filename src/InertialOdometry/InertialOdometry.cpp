@@ -402,7 +402,7 @@ void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, 
         tracking_matches_inliers = pTracker->GetMatchesInliers();
 
     bool b_large = ((tracking_matches_inliers > 75) && mbMonocular) || ((tracking_matches_inliers > 100) && !mbMonocular);
-    InertialOptimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->GetInertialBA2());  
+    InertialOptimizer::LocalInertialBA(curr_kf, &b_abortBA, curr_kf->GetMap(), b_large, !curr_kf->GetMap()->isMature());  
 }
 
 void InertialOdometry::InitializeOdom() {
@@ -666,7 +666,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     curr_kf->GetMap()->IncreaseChangeIndex();
 
-    if(!curr_kf->GetMap()->GetInertialBA1())
+    if(!curr_kf->GetMap()->isPartialMature())
         std::cout << "end IMU initialization" << std::endl;
     
 }
@@ -679,17 +679,17 @@ void InertialOdometry::PostInitializeOdom() {
         float mTinit = LocalMappingGetTimeInit();
         if ((mTinit < 50.0f)) {
             if (curr_kf->GetMap()->isOdomInitialized() && pTracker->mState == TrackingState::OK) {  // Enter here everytime local-mapping is called
-                if (!curr_kf->GetMap()->GetInertialBA1() && mTinit > 5.0f) {
+                if (!curr_kf->GetMap()->isPartialMature() && mTinit > 5.0f) {
                     pTracker->mLockPreTeleportTranslation = true;
                     std::cout << "start VIBA 1" << std::endl;
-                    curr_kf->GetMap()->SetInertialBA1();
+                    curr_kf->GetMap()->SetPartialMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
                     pTracker->mTeleported = true;
                     std::cout << "end VIBA 1" << std::endl;
-                } else if (!curr_kf->GetMap()->GetInertialBA2() && mTinit > timerVIBA2) {
+                } else if (!curr_kf->GetMap()->isMature() && mTinit > timerVIBA2) {
                     pTracker->mLockPreTeleportTranslation = true;
                     std::cout << "start VIBA 2" << std::endl;
-                    curr_kf->GetMap()->SetInertialBA2();
+                    curr_kf->GetMap()->SetMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
                     pTracker->mTeleported = true;
                     std::cout << "end VIBA 2" << std::endl;
@@ -773,8 +773,8 @@ void InertialOdometry::InitializeMergeMap(const std::shared_ptr<Map> &curr_map) 
         updateFrameIMU(b);
 
     // Set map initialized
-    curr_map->SetInertialBA2();
-    curr_map->SetInertialBA1();
+    curr_map->SetMature();
+    curr_map->SetPartialMature();
     curr_map->SetOdomInitialized();
 }
 

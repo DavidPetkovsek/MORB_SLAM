@@ -35,8 +35,8 @@ Map::Map()
       mnMaxKFid(0),
       mnBigChangeIdx(0),
       mbBad(false),
-      mbIMU_BA1(false),
-      mbIMU_BA2(false) {
+      mbBA1(false),
+      mbBA2(false) {
   mnId = nNextId++;
 }
 
@@ -49,8 +49,8 @@ Map::Map(int initKFid)
       mnMaxKFid(initKFid),
       mnBigChangeIdx(0),
       mbBad(false),
-      mbIMU_BA1(false),
-      mbIMU_BA2(false) {
+      mbBA1(false),
+      mbBA2(false) {
   mnId = nNextId++;
 }
 
@@ -181,8 +181,8 @@ void Map::clear() {
   mbOdomInitialized = false;
   mvpReferenceMapPoints.clear();
   mvpKeyFrameOrigins.clear();
-  mbIMU_BA1 = false;
-  mbIMU_BA2 = false;
+  mbBA1 = false;
+  mbBA2 = false;
 }
 
 void Map::SetBad() { mbBad = true; }
@@ -217,24 +217,24 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
   mnMapChange++;
 }
 
-void Map::SetInertialBA1() {
+void Map::SetPartialMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbIMU_BA1 = true;
+  mbBA1 = true;
 }
 
-void Map::SetInertialBA2() {
+void Map::SetMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbIMU_BA2 = true;
+  mbBA2 = true;
 }
 
-bool Map::GetInertialBA1() {
+bool Map::isPartialMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbIMU_BA1;
+  return mbBA1;
 }
 
-bool Map::GetInertialBA2() {
+bool Map::isMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbIMU_BA2;
+  return mbBA2;
 }
 
 void Map::ChangeId(long unsigned int nId) { mnId = nId; }

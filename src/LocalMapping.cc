@@ -116,7 +116,7 @@ void LocalMapping::Run() {
                     mpOdomSource->InitializeOdom();
                 }
                 // Check redundant local Keyframes
-                if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->GetInertialBA2()) KeyFrameCulling();
+                if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->isMature()) KeyFrameCulling();
                 
                 // if ((mTinit < 50.0f) && mbInertial) {
                 //     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
@@ -309,7 +309,7 @@ void LocalMapping::CreateNewMapPoints() {
 
         // Search matches that fullfil epipolar constraint
         std::vector<std::pair<size_t, size_t>> vMatchedIndices;
-        bool bCoarse = mpOdomSource /*mbInertial*/ && mpTracker->mState == TrackingState::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
+        bool bCoarse = mpOdomSource /*mbInertial*/ && mpTracker->mState == TrackingState::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->isMature();
 
         matcher.SearchForTriangulation(mpCurrentKeyFrame, pKF2, vMatchedIndices, false, bCoarse);
 
@@ -669,7 +669,7 @@ void LocalMapping::KeyFrameCulling() {
     mpCurrentKeyFrame->UpdateBestCovisibles();
 
     if(mpAtlas->KeyFramesInMap() <= Nd) return;
-    const bool mapVIBA2 = mpCurrentKeyFrame->GetMap()->GetInertialBA2(); // called here to not lock/unlock the mutex multiple times in the for loops
+    const bool mapVIBA2 = mpCurrentKeyFrame->GetMap()->isMature(); // called here to not lock/unlock the mutex multiple times in the for loops
     if(!mapVIBA2 && mpTracker->stationaryIMUInitEnabled()) return;
 
     std::vector<std::shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();

@@ -63,8 +63,10 @@ class Map
 
         // ar & mbImuInitialized;
         ar & mbOdomInitialized;
-        ar & mbIMU_BA1;
-        ar & mbIMU_BA2;
+        // ar & mbIMU_BA1;
+        // ar & mbIMU_BA2;
+        ar & mbBA1;
+        ar & mbBA2;
     }
 
 public:
@@ -112,10 +114,10 @@ public:
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
-    void SetInertialBA1();
-    void SetInertialBA2();
-    bool GetInertialBA1();
-    bool GetInertialBA2();
+    void SetPartialMature();
+    void SetMature();
+    bool isPartialMature();
+    bool isMature();
 
     bool CheckEssentialGraph();
     void ChangeId(long unsigned int nId);
@@ -169,8 +171,10 @@ protected:
 
     bool mbBad = false;
 
-    bool mbIMU_BA1;
-    bool mbIMU_BA2;
+    // bool mbIMU_BA1;
+    // bool mbIMU_BA2;
+    bool mbBA1;
+    bool mbBA2;
 
     // Mutex
     std::mutex mMutexMap;

@@ -570,7 +570,7 @@ void Tracking::Track() {
       mState = TrackingState::OK;
     // Occurs if this the Frame we're becoming lost
     } else if (mState == TrackingState::OK) {
-      if (/* mSensor.isInertial() */mpOdomSource && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->GetInertialBA2())) {
+      if (/* mSensor.isInertial() */mpOdomSource && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->isMature())) {
           std::cout << "Odometry source is not or recently initialized. Reseting active map..." << std::endl;
           mForcedLost = false;
           RequestResetActiveMap();
@@ -645,7 +645,7 @@ void Tracking::Track() {
       mLockPreTeleportTranslation = false;
       mBaseTranslation -= (mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation()) - mPreTeleportTranslation;
       mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
-      if(pCurrentMap->GetInertialBA2())
+      if(pCurrentMap->isMature())
         mpLocalMapper->setIsDoneVIBA(true);
     }
 
@@ -1478,7 +1478,7 @@ void Tracking::SearchLocalPoints() {
     else if (mCurrentFrame.mnId < mnLastRelocFrameId + 2)
       th = 5;
     else if (mpAtlas->isOdomInitialized())
-      th = mpAtlas->GetCurrentMap()->GetInertialBA2() ? 2 : 6;
+      th = mpAtlas->GetCurrentMap()->isMature() ? 2 : 6;
     else if (!mpAtlas->isOdomInitialized() && /* mSensor.isInertial() */mpOdomSource)
       th = 10;
     else

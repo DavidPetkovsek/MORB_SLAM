@@ -95,7 +95,7 @@ void LoopClosing::Run() {
                 continue;
               }
               // If inertial, force only yaw
-              if (mpCurrentKF->GetMap()->GetInertialBA1()) {
+              if (mpCurrentKF->GetMap()->isPartialMature()) {
                 Eigen::Vector3d phi = LogSO3(mSold_new.rotation().toRotationMatrix());
                 phi(0) = 0;
                 phi(1) = 0;
@@ -157,7 +157,7 @@ void LoopClosing::Run() {
               // Less Strict conditions
             if (fabs(phi(0)) < 0.032f && fabs(phi(1)) < 0.032f) {
               // If inertial, force only yaw (pitch+roll are aligned by gravity, forcing them to change would cause SLAM to fly off)
-              if (mpCurrentKF->GetMap()->GetInertialBA2()) {
+              if (mpCurrentKF->GetMap()->isMature()) {
                 phi(0) = 0;
                 phi(1) = 0;
                 g2oSww_new = g2o::Sim3(ExpSO3(phi), g2oSww_new.translation(), 1.0);
@@ -226,7 +226,7 @@ bool LoopClosing::NewDetectCommonRegions() {
     mpLastMap = mpCurrentKF->GetMap();
   }
 
-  if (mpOdomSource && !mpLastMap->GetInertialBA2()) {
+  if (mpOdomSource && !mpLastMap->isMature()) {
     mpKeyFrameDB->add(mpCurrentKF);
     mpCurrentKF->SetErase();
     return false;
@@ -376,7 +376,7 @@ bool LoopClosing::DetectAndReffineSim3FromLastKF(std::shared_ptr<KeyFrame> pCurr
     Eigen::Matrix<double, 7, 7> mHessian7x7;
 
     bool bFixedScale = mbFixScale;  // TODO CHECK; Solo para el monocular inertial
-    if (mpTracker->mSensor == CameraType::IMU_MONOCULAR && !pCurrentKF->GetMap()->GetInertialBA2())
+    if (mpTracker->mSensor == CameraType::IMU_MONOCULAR && !pCurrentKF->GetMap()->isMature())
       bFixedScale = false;
     int numOptMatches = Optimizer::OptimizeSim3(mpCurrentKF, pMatchedKF, vpMatchedMPs, gScm, 10, bFixedScale, mHessian7x7, true);
 
@@ -474,7 +474,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<std::shared_ptr<KeyFram
 
     if (numBoWMatches >= nBoWMatches) { // TODO pick a good threshold
       // Scale is not fixed if the cam is IMU_MONO and the IMU's unititialized
-      bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->GetInertialBA2());
+      bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->isMature());
 
       Sim3Solver solver = Sim3Solver(mpCurrentKF, pMostBoWMatchesKF, vpMatchedPoints, bFixedScale, vpKeyFrameMatchedMP);
       solver.SetRansacParameters(0.99, nBoWInliers, 300);  // at least 15 inliers
@@ -812,7 +812,7 @@ void LoopClosing::CorrectLoop() {
   }
 
   // Optimize graph
-  bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->GetInertialBA2());
+  bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->isMature());
   // TODO CHECK; Solo para el monocular inertial
 
   // if (mbInertial && pLoopMap->isImuInitialized()) {
@@ -1334,7 +1334,7 @@ void LoopClosing::MergeLocal2() {
   //   pCurrentMap->SetInertialBA1();
   //   pCurrentMap->SetImuInitialized();
   // }
-  if(!pCurrentMap->GetInertialBA2())
+  if(!pCurrentMap->isMature())
     mpOdomSource->InitializeMergeMap(pCurrentMap);
 
   // Load KFs and MPs from merge map
