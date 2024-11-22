@@ -125,8 +125,6 @@ class Tracking {
 
   Sophus::SE3f mRelativeFramePose;
 
-  bool mFastInit;
-  bool mStationaryInit;
   bool mNewMapRelocalization;
 
   Sophus::SE3f mStereoInitDefaultPose;
@@ -153,8 +151,6 @@ public:
   void RequestSystemReset();
   void RequestResetActiveMap();
 
-  bool fastIMUInitEnabled() const { return mFastInit; }
-  bool stationaryIMUInitEnabled() const { return mStationaryInit; }
   bool newMapRelocalizationEnabled() const { return mNewMapRelocalization; }
 
   void setForcedLost(bool forceLost);

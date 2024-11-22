@@ -705,6 +705,13 @@ void InertialOdometry::PostInitializeOdom() {
     }
 }
 
+bool InertialOdometry::ReadyForKeyFrameCulling(const std::shared_ptr<KeyFrame> &curr_kf) {
+    if(mbStationaryInitEnabled && !curr_kf->GetMap()->isMature())
+        return false;
+    else
+        return true;
+}
+
 void InertialOdometry::scaleRefinement() {
     if (LocalMappingResetRequested()) return;
 

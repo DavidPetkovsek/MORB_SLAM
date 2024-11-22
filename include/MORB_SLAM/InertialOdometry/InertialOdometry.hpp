@@ -31,6 +31,7 @@ public:
     void LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) override;
     void InitializeOdom() override;
     void PostInitializeOdom() override;
+    bool ReadyForKeyFrameCulling(const std::shared_ptr<KeyFrame> &curr_kf) override;
     void InitializeMergeMap(const std::shared_ptr<Map> &curr_map) override;
     void MergeLocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> merge_kf, std::shared_ptr<Map> curr_map, KeyFrameAndPose& corr_poses) override;
     void MergeLocalUpdateTrackingFrame(std::shared_ptr<KeyFrame> pCurrentKF) override;

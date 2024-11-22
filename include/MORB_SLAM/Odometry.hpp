@@ -83,6 +83,9 @@ public:
     // Called in every LocalMapping loop once the odometry source has been initialized. Any refinement in the odometry parameters can be done here.
     virtual void PostInitializeOdom() = 0;
 
+    // KeyFrame culling will not occur unless this method returns true. Any custom conditions for KeyFrame culling are defined here.
+    virtual bool ReadyForKeyFrameCulling(const std::shared_ptr<KeyFrame> &curr_kf) = 0;
+
     /*
         Core functionality in the LoopClosing thread
     */

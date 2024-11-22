@@ -116,7 +116,7 @@ void LocalMapping::Run() {
                     mpOdomSource->InitializeOdom();
                 }
                 // Check redundant local Keyframes
-                if(!mpTracker->stationaryIMUInitEnabled() || mpCurrentKeyFrame->GetMap()->isMature()) KeyFrameCulling();
+                KeyFrameCulling();
                 
                 // if ((mTinit < 50.0f) && mbInertial) {
                 //     if (mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState == TrackingState::OK){  // Enter here everytime local-mapping is called
@@ -670,7 +670,8 @@ void LocalMapping::KeyFrameCulling() {
 
     if(mpAtlas->KeyFramesInMap() <= Nd) return;
     const bool mapMature = mpCurrentKeyFrame->GetMap()->isMature(); // called here to not lock/unlock the mutex multiple times in the for loops
-    if(!mapMature && mpTracker->stationaryIMUInitEnabled()) return;
+
+    if(mpOdomSource && !mpOdomSource->ReadyForKeyFrameCulling(mpCurrentKeyFrame)) return;
 
     std::vector<std::shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
@@ -702,8 +703,7 @@ void LocalMapping::KeyFrameCulling() {
             count++;
         } else if(pKF->mnId < id_keyframe_upto_Nd_older_than_currentKeyFrame) {
             if(t >= 3 || !mapMature) {
-                // TO DO: REVISIT THIS!! Should this condition consider IMU/Odom information? If so, should extend a method for the developer to define longTimeNotMoving
-                if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) /*|| ((pKF->GetImuPosition() - pKF->mPrevKF->GetImuPosition()).norm() > 0.02)*/) continue; // TO-DO
+                if(((LogSO3((pKF->GetRotation().transpose()*pKF->mPrevKF->GetRotation()).cast<double>())).norm() > 0.1) || ((pKF->GetCameraCenter() - pKF->mPrevKF->GetCameraCenter()).norm() > 0.02)) continue;
                 longTimeNotMoving = true;
             }
             count++;
