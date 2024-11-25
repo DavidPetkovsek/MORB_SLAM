@@ -280,7 +280,7 @@ void System::SaveAtlas(int type) const {
     // Create the folder if it does not exist
     std::filesystem::path fsPath = pathSaveFileName;
     fsPath = fsPath.parent_path();
-    if(!std::filesystem::exists(fsPath)){
+    if(!fsPath.empty() && !std::filesystem::exists(fsPath)){
       std::filesystem::create_directory(fsPath);
     }
 
@@ -339,8 +339,7 @@ bool System::LoadAtlas(int type) {
   std::string strFileVoc, strVocChecksum, strSerializedAtlasFormatVersion;
   bool isRead = false;
 
-  std::string pathLoadFileName = "/";
-  pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
+  std::string pathLoadFileName = mStrLoadAtlasFromFile;
   pathLoadFileName = pathLoadFileName.append(".osa");
 
   if (type == TEXT_FILE) {
