@@ -108,15 +108,16 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
   // IMU links with gravity and scale
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
+    auto eKFd = pKFi->External<InertialKeyFrameData>();
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (!pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
+      if (!eKFd->mpImuPreintegrated) {
         std::cout << "Not preintegrated measurement" << std::endl;
         continue;
       }
 
-      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
+      eKFd->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -129,7 +130,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
         std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
         continue;
       }
-      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
+      EdgeInertialGS* ei = new EdgeInertialGS(eKFd->mpImuPreintegrated);
       ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
       ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
@@ -170,14 +171,15 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
   for (size_t i = 0; i < N; i++) {
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
+    auto eKFd = pKFi->External<InertialKeyFrameData>();
 
     VertexVelocity* VV = static_cast<VertexVelocity*>(optimizer.vertex(maxKFid + (pKFi->mnId) + 1));
     Eigen::Vector3d Vw = VV->estimate();  // Velocity is scaled after
     pKFi->SetVelocity(Vw.cast<float>());
 
-    pKFi->External<InertialKeyFrameData>()->SetNewBias(b);
-    if (((pKFi->External<InertialKeyFrameData>()->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated)
-      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
+    eKFd->SetNewBias(b);
+    if (((eKFd->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && eKFd->mpImuPreintegrated)
+      eKFd->mpImuPreintegrated->Reintegrate();
   }
   Verbose::PrintMess("end inertial optimization", Verbose::VERBOSITY_NORMAL);
 }
@@ -254,11 +256,12 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
   // IMU links with gravity and scale
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
+    auto eKFd = pKFi->External<InertialKeyFrameData>();
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
-      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) continue;
+      if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid || !eKFd->mpImuPreintegrated) continue;
 
-      pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
+      eKFd->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
       g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
       g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + (pKFi->mPrevKF->mnId) + 1);
       g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
@@ -271,7 +274,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
         std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
         continue;
       }
-      EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
+      EdgeInertialGS* ei = new EdgeInertialGS(eKFd->mpImuPreintegrated);
       ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
       ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
       ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
@@ -307,16 +310,18 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) continue;
 
+    auto eKFd = pKFi->External<InertialKeyFrameData>();
+
     VertexVelocity* VV = static_cast<VertexVelocity*>(
         optimizer.vertex(maxKFid + (pKFi->mnId) + 1));
     Eigen::Vector3d Vw = VV->estimate();
     pKFi->SetVelocity(Vw.cast<float>());
 
-    if ((pKFi->External<InertialKeyFrameData>()->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
-      pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
-      if (pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->Reintegrate();
+    if ((eKFd->GetGyroBias() - bg.cast<float>()).norm() > 0.01) {
+      eKFd->SetNewBias(b);
+      if (eKFd->mpImuPreintegrated) eKFd->mpImuPreintegrated->Reintegrate();
     } else
-      pKFi->External<InertialKeyFrameData>()->SetNewBias(b); // NEW
+      eKFd->SetNewBias(b);
   }
 }
 
@@ -582,7 +587,8 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   VAk->setFixed(true);
   optimizer.addVertex(VAk);
 
-  EdgeInertial* ei = new EdgeInertial(pFrame->External<InertialFrameData>()->mpImuPreintegrated);
+  auto pFrame_ed = pFrame->External<InertialFrameData>();
+  EdgeInertial* ei = new EdgeInertial(pFrame_ed->mpImuPreintegrated);
 
   ei->setVertex(0, VPk);
   ei->setVertex(1, VVk);
@@ -595,14 +601,14 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame_ed->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+  Eigen::Matrix3d InfoA = pFrame_ed->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
@@ -713,14 +719,14 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
   // =======ExternalData test ========
   Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
   Sophus::SE3f Tbw = Twb.inverse();
-  Sophus::SE3f Tcw = pFrame->External<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  Sophus::SE3f Tcw = pFrame_ed->mImuCalib.mTcb * Tbw;
   pFrame->SetPose(Tcw);
   pFrame->SetVelocity(VV->estimate().cast<float>());
   // ===== ExternalData test =======
 
   Vector6d b;
   b << VG->estimate(), VA->estimate();
-  pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
+  pFrame_ed->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize keyFframe states and generate new prior for frame
   Eigen::Matrix<double, 15, 15> H;
@@ -748,7 +754,7 @@ int InertialOptimizer::PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool 
     }
   }
 
-  pFrame->External<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H);
+  pFrame_ed->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H);
 
   return nInitialCorrespondences - nBad;
 }
@@ -903,6 +909,9 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
     return 0;
   }
 
+  auto pFrame_ed = pFrame->External<InertialFrameData>();
+  auto pFp_ed = pFp->External<InertialFrameData>();
+
   VertexPose* VPk = new VertexPose(pFp);
   VPk->setId(4);
   VPk->setFixed(false);
@@ -920,7 +929,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   VAk->setFixed(false);
   optimizer.addVertex(VAk);
 
-  EdgeInertial* ei = new EdgeInertial(pFrame->External<InertialFrameData>()->mpImuPreintegratedFrame);
+  EdgeInertial* ei = new EdgeInertial(pFrame_ed->mpImuPreintegratedFrame);
 
   ei->setVertex(0, VPk);
   ei->setVertex(1, VVk);
@@ -933,14 +942,14 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   EdgeGyroRW* egr = new EdgeGyroRW();
   egr->setVertex(0, VGk);
   egr->setVertex(1, VG);
-  Eigen::Matrix3d InfoG = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+  Eigen::Matrix3d InfoG = pFrame_ed->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
   egr->setInformation(InfoG);
   optimizer.addEdge(egr);
 
   EdgeAccRW* ear = new EdgeAccRW();
   ear->setVertex(0, VAk);
   ear->setVertex(1, VA);
-  Eigen::Matrix3d InfoA = pFrame->External<InertialFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+  Eigen::Matrix3d InfoA = pFrame_ed->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
   ear->setInformation(InfoA);
   optimizer.addEdge(ear);
 
@@ -948,7 +957,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
     std::cout << "NO MPCPI" << std::endl;
     return 0;
   }
-  EdgePriorPoseImu* ep = new EdgePriorPoseImu(pFp->External<InertialFrameData>()->mpcpi);
+  EdgePriorPoseImu* ep = new EdgePriorPoseImu(pFp_ed->mpcpi);
 
   ep->setVertex(0, VPk);
   ep->setVertex(1, VVk);
@@ -1070,14 +1079,14 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   // =======ExternalData test ========
   Sophus::SE3f Twb(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>());
   Sophus::SE3f Tbw = Twb.inverse();
-  Sophus::SE3f Tcw = pFrame->External<InertialFrameData>()->mImuCalib.mTcb * Tbw;
+  Sophus::SE3f Tcw = pFrame_ed->mImuCalib.mTcb * Tbw;
   pFrame->SetPose(Tcw);
   pFrame->SetVelocity(VV->estimate().cast<float>());
   // ===== ExternalData test =======
   
   Vector6d b;
   b << VG->estimate(), VA->estimate();
-  pFrame->External<InertialFrameData>()->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
+  pFrame_ed->mImuBias = IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]); // NEW!!!
 
   // Recover Hessian, marginalize previous frame states and generate new prior for frame
   Eigen::Matrix<double, 30, 30> H;
@@ -1119,12 +1128,12 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
 
   H = Optimizer::Marginalize(H, 0, 14);
 
-  pFrame->External<InertialFrameData>()->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
-  if (oldMpcpi == pFp->External<InertialFrameData>()->mpcpi) {
+  pFrame_ed->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
+  if (oldMpcpi == pFp_ed->mpcpi) {
     std::cerr << "\033[22;34mSAME MPCPI\033[0m" << std::endl;
   } else {
-    oldMpcpi = pFp->External<InertialFrameData>()->mpcpi;
-    pFp->External<InertialFrameData>()->mpcpi = nullptr;
+    oldMpcpi = pFp_ed->mpcpi;
+    pFp_ed->mpcpi = nullptr;
   }
   return nInitialCorrespondences - nBad;
 }

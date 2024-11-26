@@ -107,6 +107,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
   // IMU links
   for (size_t i = 0; i < vpKFs.size(); i++) {
     std::shared_ptr<KeyFrame> pKFi = vpKFs[i];
+    auto eKFd = pKFi->External<InertialKeyFrameData>();
 
     if (!pKFi->mPrevKF) {
       if(pMap->GetOriginKF() != pKFi)
@@ -116,8 +117,8 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
-      if (pKFi->bOdom && pKFi->mPrevKF->bOdom && pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated) {
-        pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
+      if (pKFi->bOdom && pKFi->mPrevKF->bOdom && eKFd->mpImuPreintegrated) {
+        eKFd->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->External<InertialKeyFrameData>()->GetImuBias());
         g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
         g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid + 3 * (pKFi->mPrevKF->mnId) + 1);
 
@@ -150,7 +151,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           }
         }
 
-        EdgeInertial* ei = new EdgeInertial(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
+        EdgeInertial* ei = new EdgeInertial(eKFd->mpImuPreintegrated);
         ei->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
         ei->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV1));
         ei->setVertex(2, dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG1));
@@ -168,7 +169,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           EdgeGyroRW* egr = new EdgeGyroRW();
           egr->setVertex(0, VG1);
           egr->setVertex(1, VG2);
-          Eigen::Matrix3d InfoG = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
+          Eigen::Matrix3d InfoG = eKFd->mpImuPreintegrated->C.block<3, 3>(9, 9).cast<double>().inverse();
           egr->setInformation(InfoG);
           egr->computeError();
           optimizer.addEdge(egr);
@@ -176,7 +177,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           EdgeAccRW* ear = new EdgeAccRW();
           ear->setVertex(0, VA1);
           ear->setVertex(1, VA2);
-          Eigen::Matrix3d InfoA = pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
+          Eigen::Matrix3d InfoA = eKFd->mpImuPreintegrated->C.block<3, 3>(12, 12).cast<double>().inverse();
           ear->setInformation(InfoA);
           ear->computeError();
           optimizer.addEdge(ear);
