@@ -52,6 +52,22 @@ struct InertialFrameData : public ExternalFrameData {
 
 
 struct InertialKeyFrameData : public ExternalKeyFrameData {
+    // template<class Archive>
+    // void serialize(Archive & ar, unsigned int version) { 
+    //     ar & boost::serialization::base_object<ExternalKeyFrameData>(*this);
+    //     ar& mImuBias;
+    //     ar& mBackupImuPreintegrated;
+    //     ar& mImuCalib;
+    // }
+
+    // void PreSave() override {
+    //     if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+    // }
+
+    // void PostLoad() override {
+    //     mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+    // }
+
     InertialKeyFrameData(IMU::Calib imuCalib)
         : mpImuPreintegrated(nullptr),
           mImuCalib(imuCalib) { }
@@ -62,6 +78,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
           mImuBias(frame_data.mImuBias) { }
 
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    // IMU::Preintegrated mBackupImuPreintegrated;
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
     IMU::Bias mBiasGBA;

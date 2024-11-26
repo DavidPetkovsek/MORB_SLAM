@@ -866,6 +866,8 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
 
   // TODO -- BACKING UP EXTERNALDATA
   // if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+  
+  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
@@ -933,6 +935,8 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   }
   // TODO -- BACKING UP EXTERNAL DATA
   // mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+
+  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PostLoad();
 
   // Remove all backup container
   mvBackupMapPointsId.clear();

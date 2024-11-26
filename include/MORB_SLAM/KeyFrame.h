@@ -63,6 +63,11 @@ struct ExternalKeyFrameData {
     void SetPoseMutex(const std::shared_ptr<std::mutex> &pMutexPose) { mpMutexPose = pMutexPose; }
     virtual void UpdateChildSpanningTree() = 0;
     virtual void UpdateParentSpanningTree() = 0;
+    // virtual void PreSave() {};
+    // virtual void PostLoad() {};
+
+    // template<class Archive>
+    // void serialize(Archive & ar, unsigned int version) { }
 };
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
@@ -154,6 +159,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
     // ar& boost::serialization::make_array(mOwb.data(), mOwb.size());
     ar& mbHasVelocity;
+
+    // ar& mpExternalKeyFrameData;
   }
 
  public:
