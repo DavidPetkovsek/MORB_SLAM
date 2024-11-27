@@ -61,7 +61,7 @@ class Optimizer {
   void static GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations = 5, bool *pbStopFlag = nullptr, const unsigned long nLoopKF = 0, const bool bRobust = true);
   
 
-  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial);
+  void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, bool bOdom);
 
   int static PoseOptimization(Frame *pFrame);
 
