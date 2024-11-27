@@ -61,10 +61,7 @@ class Map
         ar & mnBackupKFinitialID;
         ar & mnBackupKFlowerID;
 
-        // ar & mbImuInitialized;
         ar & mbOdomInitialized;
-        // ar & mbIMU_BA1;
-        // ar & mbIMU_BA2;
         ar & mbBA1;
         ar & mbBA2;
     }
@@ -107,8 +104,6 @@ public:
     int GetLastMapChange();
     void SetLastMapChange(int currentChangeId);
 
-    // void SetImuInitialized();
-    // bool isImuInitialized();
     void SetOdomInitialized();
     bool isOdomInitialized();
 
@@ -157,7 +152,6 @@ protected:
 
     std::vector<std::shared_ptr<MapPoint>> mvpReferenceMapPoints;
 
-    // bool mbImuInitialized;
     bool mbOdomInitialized;
 
     int mnMapChange;
@@ -171,8 +165,6 @@ protected:
 
     bool mbBad = false;
 
-    // bool mbIMU_BA1;
-    // bool mbIMU_BA2;
     bool mbBA1;
     bool mbBA2;
 

@@ -29,7 +29,6 @@ long unsigned int Map::nNextId = 0;
 
 Map::Map()
     : mbOdomInitialized(false),
-      // mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnMaxKFid(0),
@@ -42,7 +41,6 @@ Map::Map()
 
 Map::Map(int initKFid)
     : mbOdomInitialized(false),
-      // mbImuInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnInitKFid(initKFid),
@@ -192,7 +190,7 @@ bool Map::IsBad() { return mbBad; }
 void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool bScaledVel) {
   std::unique_lock<std::mutex> lock(mMutexMap);
 
-  // Body position (IMU) of first keyframe is fixed to (0,0,0)
+  // Body position of first keyframe is fixed to (0,0,0)
   Sophus::SE3f Tyw = T;
   Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
   Eigen::Vector3f tyw = Tyw.translation();
