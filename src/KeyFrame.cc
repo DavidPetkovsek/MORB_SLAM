@@ -139,8 +139,6 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mnMaxY(F.mnMaxY),
       mPrevKF(nullptr),
       mNextKF(nullptr),
-      // mpImuPreintegrated(F.mpImuPreintegrated),
-      // mImuCalib(F.mImuCalib),
       mbHasVelocity(false),
       mTlr(F.GetRelativePoseTlr()),
       mTrl(F.GetRelativePoseTrl()),
@@ -184,12 +182,11 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
     mbHasVelocity = true;
   }
 
-  // mImuBias = F.mImuBias;
   SetPose(F.GetPose());
 
   mnOriginMapId = pMap->GetId();
 
-  mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
 }
 
 KeyFrame::~KeyFrame() {
@@ -211,10 +208,6 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw) {
   mRcw = mTcw.rotationMatrix();
   mTwc = mTcw.inverse();
   mRwc = mTwc.rotationMatrix();
-
-  // if (mImuCalib.isSet()) {
-  //   mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
-  // }
 }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw) {
@@ -237,16 +230,6 @@ Eigen::Vector3f KeyFrame::GetCameraCenter() {
   std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTwc.translation();
 }
-
-// Eigen::Vector3f KeyFrame::GetImuPosition() {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   return mOwb;
-// }
-
-// Eigen::Matrix3f KeyFrame::GetImuRotation() {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   return (mTwc * mImuCalib.mTcb).rotationMatrix();
-// }
 
 Eigen::Matrix3f KeyFrame::GetRotation() {
   std::unique_lock<std::mutex> lock(*mpMutexPose);
@@ -592,15 +575,9 @@ bool KeyFrame::SetBadFlag() {
       mPrevKF->mNextKF = mNextKF;
     }
     if(mNextKF) {
-      // NEW
       if(mpExternalKeyFrameData && mNextKF->mpExternalKeyFrameData) {
         mNextKF->mpExternalKeyFrameData->MergePrevious(mpExternalKeyFrameData);
       }
-      // OLD
-      // if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
-      //   mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
-      // }
-
       mNextKF->mPrevKF = mPrevKF;
     }
     mPrevKF = nullptr;
@@ -777,27 +754,6 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   return vDepths[(vDepths.size() - 1) / q];
 }
 
-// void KeyFrame::SetNewBias(const IMU::Bias &b) {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   mImuBias = b;
-//   if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
-// }
-
-// Eigen::Vector3f KeyFrame::GetGyroBias() {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
-// }
-
-// Eigen::Vector3f KeyFrame::GetAccBias() {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
-// }
-
-// IMU::Bias KeyFrame::GetImuBias() {
-//   std::unique_lock<std::mutex> lock(*mpMutexPose);
-//   return mImuBias;
-// }
-
 std::shared_ptr<Map> KeyFrame::GetMap() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mpMap;
@@ -855,7 +811,7 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   if (mpCamera2 && spCam.find(mpCamera2) != spCam.end())
     mnBackupIdCamera2 = mpCamera2->GetId();
 
-  // Inertial data
+  // Odom data
   mBackupPrevKFId = -1;
   if (mPrevKF && spKF.find(mPrevKF) != spKF.end())
     mBackupPrevKFId = mPrevKF->mnId;
@@ -863,9 +819,6 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   mBackupNextKFId = -1;
   if (mNextKF && spKF.find(mNextKF) != spKF.end())
     mBackupNextKFId = mNextKF->mnId;
-
-  // TODO -- BACKING UP EXTERNALDATA
-  // if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
   
   // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
 }
@@ -926,15 +879,13 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
     mpCamera2 = mpCamId[mnBackupIdCamera2];
   }
 
-  // Inertial data
+  // Odom data
   if (mBackupPrevKFId != -1) {
     mPrevKF = mpKFid[mBackupPrevKFId];
   }
   if (mBackupNextKFId != -1) {
     mNextKF = mpKFid[mBackupNextKFId];
   }
-  // TODO -- BACKING UP EXTERNAL DATA
-  // mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
 
   // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PostLoad();
 
