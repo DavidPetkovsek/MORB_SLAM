@@ -6,6 +6,7 @@
 
 namespace MORB_SLAM {
 
+class ConstraintPoseImu;
 
 struct InertialFrameData : public ExternalFrameData {
     InertialFrameData()

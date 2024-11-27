@@ -46,18 +46,13 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame()
-    : /*mpcpi(nullptr),*/
-      mbHasPose(false),
+    : mbHasPose(false),
       mbHasVelocity(false),
-      // mpImuPreintegrated(nullptr),
       mpPrevFrame(nullptr),
-      // mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      // mbImuPreintegrated(false),
       mpLastKeyFrame(nullptr),
       isPartiallyConstructed(true),
       mpExternalFrameData(nullptr) {
-  // mpMutexImu = std::make_shared<std::mutex>();
   mnId = nNextId++;
 }
 
@@ -65,8 +60,7 @@ Frame::~Frame(){}
 
 // Copy Constructor.
 Frame::Frame(const Frame &frame)
-    : /*mpcpi(frame.mpcpi),*/
-      mTcw(frame.mTcw),
+    : mTcw(frame.mTcw),
       mbHasPose(false),
       mTlr(frame.mTlr),
       mTrl(frame.mTrl),
@@ -94,12 +88,8 @@ Frame::Frame(const Frame &frame)
       mDescriptors(frame.mDescriptors.clone()),
       mDescriptorsRight(frame.mDescriptorsRight.clone()),
       mvbOutlier(frame.mvbOutlier),
-      // mImuBias(frame.mImuBias),
-      // mImuCalib(frame.mImuCalib),
-      // mpImuPreintegrated(frame.mpImuPreintegrated),
       mpLastKeyFrame(frame.mpLastKeyFrame),
       mpPrevFrame(frame.mpPrevFrame),
-      // mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame),
       mnId(frame.mnId),
       mpReferenceKF(frame.mpReferenceKF),
       mnScaleLevels(frame.mnScaleLevels),
@@ -109,8 +99,6 @@ Frame::Frame(const Frame &frame)
       mvInvScaleFactors(frame.mvInvScaleFactors),
       mvLevelSigma2(frame.mvLevelSigma2),
       mvInvLevelSigma2(frame.mvInvLevelSigma2),
-      // mbImuPreintegrated(frame.mbImuPreintegrated),
-      // mpMutexImu(frame.mpMutexImu),
       camera{frame.camera},
       mpCamera(frame.mpCamera),
       mpCamera2(frame.mpCamera2),
@@ -150,9 +138,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF/* , const IMU::Calib &ImuCalib */, const std::shared_ptr<ExternalFrameData> &pExternalData)
-    : /*mpcpi(nullptr),*/
-      mbHasPose(false),
+             Frame *pPrevF, const std::shared_ptr<ExternalFrameData> &pExternalData)
+    : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractorLeft),
@@ -162,12 +149,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      // mImuCalib(ImuCalib),
-      // mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
-      // mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -222,8 +205,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
     mVw.setZero();
   }
 
-  // mpMutexImu = std::make_shared<std::mutex>();
-
   // Set no stereo fisheye information
   Nleft = -1;
   Nright = -1;
@@ -238,9 +219,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF/* , const IMU::Calib &ImuCalib */)
-    : /*mpcpi(nullptr),*/
-      mbHasPose(false),
+             Frame *pPrevF)
+    : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractor),
@@ -250,12 +230,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      // mImuCalib(ImuCalib),
-      // mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
-      // mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      // mbImuPreintegrated(false),
       camera(cam), 
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -310,8 +286,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
     mVw.setZero();
   }
 
-  // mpMutexImu = std::make_shared<std::mutex>();
-
   // Set no stereo fisheye information
   Nleft = -1;
   Nright = -1;
@@ -328,9 +302,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, std::shared_ptr<ORBVocabulary> voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
-             const float &thDepth, Frame *pPrevF/* , const IMU::Calib &ImuCalib */)
-    : /*mpcpi(nullptr),*/
-      mbHasPose(false),
+             const float &thDepth, Frame *pPrevF)
+    : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractor),
@@ -340,12 +313,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      // mImuCalib(ImuCalib),
-      // mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
-      // mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(nullptr),
@@ -414,8 +383,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
   } else {
     mVw.setZero();
   }
-
-  // mpMutexImu = std::make_shared<std::mutex>();
 }
 
 // Constructor for non-rectified stereo cameras.
@@ -424,9 +391,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
              const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K,
              cv::Mat &distCoef, const float &bf, const float &thDepth,
              const std::shared_ptr<const GeometricCamera> &pCamera, const std::shared_ptr<const GeometricCamera> &pCamera2,
-             Sophus::SE3f &Tlr, Frame *pPrevF/* , const IMU::Calib &ImuCalib */, const std::shared_ptr<ExternalFrameData> &pExternalData)
-    : /*mpcpi(nullptr),*/
-      mbHasPose(false),
+             Sophus::SE3f &Tlr, Frame *pPrevF, const std::shared_ptr<ExternalFrameData> &pExternalData)
+    : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
       mpORBextractorLeft(extractorLeft),
@@ -436,12 +402,8 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
       mDistCoef(distCoef.clone()),
       mbf(bf),
       mThDepth(thDepth),
-      // mImuCalib(ImuCalib),
-      // mpImuPreintegrated(nullptr),
       mpPrevFrame(pPrevF),
-      // mpImuPreintegratedFrame(nullptr),
       mpReferenceKF(nullptr),
-      // mbImuPreintegrated(false),
       camera(cam),
       mpCamera(pCamera),
       mpCamera2(pCamera2),
@@ -511,8 +473,6 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRigh
 
   AssignFeaturesToGrid();
 
-  // mpMutexImu = std::make_shared<std::mutex>();
-
   UndistortKeyPoints();
 }
 
@@ -560,30 +520,12 @@ void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
   mbHasPose = true;
 }
 
-// void Frame::SetNewBias(const IMU::Bias &b) {
-//   mImuBias = b;
-//   if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
-// }
-
 void Frame::SetVelocity(Eigen::Vector3f Vwb) {
   mVw = Vwb;
   mbHasVelocity = true;
 }
 
 Eigen::Vector3f Frame::GetVelocity() const { return mVw; }
-
-// void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb) {
-//   mVw = Vwb;
-//   mbHasVelocity = true;
-
-//   Sophus::SE3f Twb(Rwb, twb);
-//   Sophus::SE3f Tbw = Twb.inverse();
-
-//   mTcw = mImuCalib.mTcb * Tbw;
-
-//   UpdatePoseMatrices();
-//   mbHasPose = true;
-// }
 
 void Frame::UpdatePoseMatrices() {
   Sophus::SE3<float> Twc = mTcw.inverse();
@@ -592,14 +534,6 @@ void Frame::UpdatePoseMatrices() {
   mRcw = mTcw.rotationMatrix();
   mtcw = mTcw.translation();
 }
-
-// Eigen::Matrix<float, 3, 1> Frame::GetImuPosition() const {
-//   return mRwc * mImuCalib.mTcb.translation() + mOw;
-// }
-
-// Eigen::Matrix<float, 3, 3> Frame::GetImuRotation() {
-//   return mRwc * mImuCalib.mTcb.rotationMatrix();
-// }
 
 Sophus::SE3f Frame::GetRelativePoseTrl() { return mTrl; }
 
@@ -995,20 +929,6 @@ bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D) {
   }
   return false;
 }
-
-// bool Frame::imuIsPreintegrated() {
-//   std::unique_lock<std::mutex> lock(*mpMutexImu);
-//   return mbImuPreintegrated;
-// }
-
-// void Frame::setIntegrated() {
-//   while (!mpMutexImu)
-//     mpMutexImu = std::make_shared<std::mutex>();
-
-//   std::unique_lock<std::mutex> lock(*mpMutexImu);
-//   mbImuPreintegrated = true;
-// }
-
 
 void Frame::ComputeStereoFishEyeMatches() {
   // Speed it up by matching keypoints in the lapping area
