@@ -1592,7 +1592,8 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
             else
               Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
 
-            pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
+            if (pChild->mpExternalKeyFrameData)
+              pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
 
             pChild->mnBAGlobalForKF = nLoopKF;
           }
