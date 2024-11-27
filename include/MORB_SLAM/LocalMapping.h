@@ -43,7 +43,7 @@ class LocalMapping {
  public:
   friend class Odometry;
   
-  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, /*bool bInertial,*/ const std::shared_ptr<Odometry> &odomSource=nullptr);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
   void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
@@ -81,14 +81,8 @@ class LocalMapping {
 
   Sophus::SE3f GetPoseReverseAxisFlip();
 
-  // Eigen::Matrix3d mRwg;
-  // Eigen::Vector3d mbg;
-  // Eigen::Vector3d mba;
-  // double mScale;
-
   double mFirstTs;
 
-  // bool mbBadImu;
   bool mbBadOdom;
 
   // not consider far points (clouds)
@@ -105,7 +99,6 @@ class LocalMapping {
   void KeyFrameCulling();
 
   bool mbMonocular;
-  // bool mbInertial;
 
   void ResetIfRequested();
   bool mbResetRequested;
@@ -140,9 +133,6 @@ class LocalMapping {
 
   bool mbAcceptKeyFrames;
   std::mutex mMutexAccept;
-
-  // void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A, bool bFirst = false);
-  // void ScaleRefinement();
 
   bool bInitializing;
 
