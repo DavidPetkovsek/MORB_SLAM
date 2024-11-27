@@ -55,7 +55,7 @@ public:
     // Called within Tracking::StereoInitialization() (after Odometry::PreintegrateOdom()) if the Tracking state is NOT_INITIALIZED. Returns true if Tracking can proceed in intializing the map.
     virtual bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) = 0;
 
-    // TO DO ...
+    // ***Monocular SLAM is currently not maintained
     virtual bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) = 0;
     virtual void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) = 0;
 

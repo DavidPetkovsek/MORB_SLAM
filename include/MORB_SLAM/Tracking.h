@@ -55,11 +55,11 @@ class Tracking {
 
   ~Tracking();
 
-  // Preprocess the input and call Track(). Extract features and performs stereo
-  // matching.
+  // Preprocess the input and call Track(). Extract features and performs stereo matching.
   StereoPacket GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam);
-  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
-  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
+  
+  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam); // *** RGBD SLAM is currently not maintained
+  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam); // *** Monocular SLAM is currently not maintained
 
   void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
@@ -158,8 +158,8 @@ public:
   void StereoInitialization();
 
   // Map initialization for monocular
-  void MonocularInitialization();
-  void CreateInitialMapMonocular();
+  void MonocularInitialization(); // *** Monocular SLAM is currently not maintained
+  void CreateInitialMapMonocular(); // *** Monocular SLAM is currently not maintained
 
   void CheckReplacedInLastFrame();
   bool TrackReferenceKeyFrame();

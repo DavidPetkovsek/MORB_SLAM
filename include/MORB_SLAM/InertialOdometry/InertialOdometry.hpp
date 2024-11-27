@@ -22,8 +22,8 @@ public:
     bool GrabOdom(double curr_timestamp, double prev_timestamp) override;
     bool PreintegrateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf) override;
     bool ReadyForStereoInitialization(Frame &curr_frame, Frame &last_frame) override;
-    bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) override;
-    void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) override;
+    bool ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) override; // ***Monocular SLAM is currently not maintained
+    void InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, std::shared_ptr<KeyFrame> initial_kf) override; // ***Monocular SLAM is currently not maintained
     bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) override;
     void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) override;
     void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) override;

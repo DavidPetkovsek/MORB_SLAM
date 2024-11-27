@@ -75,12 +75,12 @@ class System {
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp);
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp); // *** RGBD SLAM is currently not maintained
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp);
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp); // *** Monocular SLAM is currently not maintained
 
     // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();
