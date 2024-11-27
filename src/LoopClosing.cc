@@ -29,7 +29,6 @@
 #include "MORB_SLAM/G2oTypes.h"
 #include "MORB_SLAM/ORBmatcher.h"
 #include "MORB_SLAM/Optimizer.h"
-#include "MORB_SLAM/InertialOdometry/InertialOptimizer.hpp"
 #include "MORB_SLAM/Sim3Solver.h"
 
 namespace MORB_SLAM {
@@ -109,10 +108,10 @@ void LoopClosing::Run() {
             mpLocalMapper->setIsDoneBA(false);
             mpTracker->mLockPreTeleportTranslation = true;
             // TODO UNCOMMENT
-            if (mpTracker->mSensor == CameraType::IMU_MONOCULAR || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD)
-              MergeLocal2(); // Perhaps a newer MergeLocal function they developed? Developed for only inertial cases.
+            if (mpOdomSource)
+              MergeLocal2();
             else
-              MergeLocal(); // Perhaps an older MergeLocal function they developed? Developed for both inertial and non inertial cases, but now only used for non inertial cases.
+              MergeLocal();
 
             mpTracker->mTeleported = true;
             Verbose::PrintMess("Merge finished!", Verbose::VERBOSITY_QUIET);
@@ -1139,14 +1138,14 @@ void LoopClosing::MergeLocal() {
     pKFi->UpdateConnections();
   }
 
-  bool bStop = false;
   vpLocalCurrentWindowKFs.clear();
   vpMergeConnectedKFs.clear();
   std::copy(spLocalWindowKFs.begin(), spLocalWindowKFs.end(), std::back_inserter(vpLocalCurrentWindowKFs));
   std::copy(spMergeConnectedKFs.begin(), spMergeConnectedKFs.end(), std::back_inserter(vpMergeConnectedKFs));
-  if (mpTracker->mSensor == CameraType::IMU_MONOCULAR || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD) {
-    InertialOptimizer::MergeInertialBA(mpCurrentKF, mpMergeMatchedKF, &bStop, pCurrentMap, vCorrectedSim3);
+  if (mpOdomSource) {
+    mpOdomSource->MergeLocalBundleAdjustment(mpCurrentKF, mpMergeMatchedKF, pCurrentMap, vCorrectedSim3);
   } else {
+    bool bStop = false;
     Optimizer::LocalBundleAdjustment(mpCurrentKF, vpLocalCurrentWindowKFs, vpMergeConnectedKFs, &bStop);
   }
 
