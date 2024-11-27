@@ -716,7 +716,11 @@ void Tracking::MonocularInitialization() {
 
       // mbReadyToInitialize = true;
 
-      mbReadyToInitialize = (mpOdomSource != nullptr) ? mpOdomSource->ReadyForMonocularInitialization(mCurrentFrame, mLastFrame) : true;
+      if (mpOdomSource)
+        mbReadyToInitialize = mpOdomSource->ReadyForMonocularInitialization(mCurrentFrame, mLastFrame);
+      else
+        mbReadyToInitialize = true;
+      
       mInitialFrame = Frame(mCurrentFrame);
       mLastFrame = Frame(mCurrentFrame);
       return;
@@ -761,11 +765,6 @@ void Tracking::CreateInitialMapMonocular() {
   // Create KeyFrames
   std::shared_ptr<KeyFrame> pKFini = std::make_shared<KeyFrame>(mInitialFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
   std::shared_ptr<KeyFrame> pKFcur = std::make_shared<KeyFrame>(mCurrentFrame, mpAtlas->GetCurrentMap(), mpKeyFrameDB);
-
-  // TODO
-  // if(mpOdomSource)
-  //   mpOdomSource->TrackingInitKeyFrameData(mInitialFrame, pKFini);
-  //   mpOdomSource->TrackingInitKeyFrameData(mCurrentFrame, pKFcur);
 
   // if (mSensor == CameraType::IMU_MONOCULAR)
   //   pKFini->mpImuPreintegrated = (std::shared_ptr<IMU::Preintegrated>)(nullptr);
@@ -849,9 +848,8 @@ void Tracking::CreateInitialMapMonocular() {
 
   //   mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(pKFcur->mpImuPreintegrated->GetUpdatedBias(), pKFcur->mImuCalib);
   // }
-  if(mpOdomSource) {
+  if(mpOdomSource)
     mpOdomSource->InitialMapMonocular(pKFcur, pKFini);
-  }
 
   mpLocalMapper->InsertKeyFrame(pKFini);
   mpLocalMapper->InsertKeyFrame(pKFcur);
