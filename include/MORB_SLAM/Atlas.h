@@ -112,8 +112,6 @@ class Atlas {
   void SetMapBad(std::shared_ptr<Map> pMap);
   void RemoveBadMaps();
 
-  // void SetImuInitialized();
-  // bool isImuInitialized();
   void SetOdomInitialized();
   bool isOdomInitialized();
 
