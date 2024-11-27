@@ -34,7 +34,7 @@
 
 namespace MORB_SLAM {
 
-LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC, /*bool bInertial,*/  const std::shared_ptr<Odometry> &odomSource)
+LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc, const bool bFixScale, const bool bActiveLC,  const std::shared_ptr<Odometry> &odomSource)
     : hasMergedLocalMap(false),
       mbResetRequested(false),
       mbResetActiveMapRequested(false),
@@ -53,7 +53,6 @@ LoopClosing::LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDataba
       mbFixScale(bFixScale),
       mnFullBAIdx(0),
       mbActiveLC(bActiveLC),
-      // mbInertial(bInertial),
       mpOdomSource(odomSource) {}
 
 void LoopClosing::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
@@ -94,7 +93,7 @@ void LoopClosing::Run() {
                 Verbose::PrintMess("scale bad estimated. Abort merging", Verbose::VERBOSITY_NORMAL);
                 continue;
               }
-              // If inertial, force only yaw
+              // force only yaw since there is odometry
               if (mpCurrentKF->GetMap()->isPartialMature()) {
                 Eigen::Vector3d phi = LogSO3(mSold_new.rotation().toRotationMatrix());
                 phi(0) = 0;
@@ -712,7 +711,7 @@ void LoopClosing::CorrectLoop() {
     // Get Map Mutex
     std::unique_lock<std::mutex> lock(pLoopMap->mMutexMapUpdate);
 
-    const bool bImuInit = pLoopMap->isOdomInitialized();
+    const bool bOdomInit = pLoopMap->isOdomInitialized();
 
     for (std::vector<std::shared_ptr<KeyFrame>>::iterator vit = vpCurrentConnectedKFs.begin(), vend = vpCurrentConnectedKFs.end(); vit != vend; vit++) {
       std::shared_ptr<KeyFrame> pKFi = *vit;
@@ -761,7 +760,7 @@ void LoopClosing::CorrectLoop() {
       }
 
       // Correct velocity according to orientation correction
-      if (bImuInit) {
+      if (bOdomInit) {
         Eigen::Quaternionf Rcor = (g2oCorrectedSiw.rotation().inverse() * g2oSiw.rotation()).cast<float>();
         pKFi->SetVelocity(Rcor * pKFi->GetVelocity());
       }
@@ -815,11 +814,6 @@ void LoopClosing::CorrectLoop() {
   bool bFixedScale = mbFixScale && !(mpTracker->mSensor == CameraType::IMU_MONOCULAR && !mpCurrentKF->GetMap()->isMature());
   // TODO CHECK; Solo para el monocular inertial
 
-  // if (mbInertial && pLoopMap->isImuInitialized()) {
-  //   Optimizer::OptimizeEssentialGraph4DoF(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
-  // } else {
-  //   Optimizer::OptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, bFixedScale);
-  // }
   if (mpOdomSource && pLoopMap->isOdomInitialized())
     mpOdomSource->LoopClosingOptimizeEssentialGraph(pLoopMap, mpLoopMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections);
   else
@@ -1314,26 +1308,10 @@ void LoopClosing::MergeLocal2() {
 
     mpTracker->UpdateScale(s_on);
     mpOdomSource->MergeLocalUpdateTrackingFrame(mpCurrentKF);
-    // mpTracker->UpdateFrameIMU(s_on, mpCurrentKF->GetImuBias(), mpTracker->GetLastKeyFrame());
   }
 
   const int numKFnew = pCurrentMap->KeyFramesInMap();
   
-  // if (mpTracker->mSensor.isInertial() && !pCurrentMap->GetInertialBA2()) {
-  //   // Map is not completly initialized
-  //   Eigen::Vector3d bg, ba;
-  //   bg << 0., 0., 0.;
-  //   ba << 0., 0., 0.;
-  //   Optimizer::InertialOptimization(pCurrentMap, bg, ba);
-  //   IMU::Bias b(ba[0], ba[1], ba[2], bg[0], bg[1], bg[2]);
-  //   std::unique_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-  //   mpTracker->UpdateFrameIMU(1.0f, b, mpTracker->GetLastKeyFrame());
-
-  //   // Set map initialized
-  //   pCurrentMap->SetInertialBA2();
-  //   pCurrentMap->SetInertialBA1();
-  //   pCurrentMap->SetImuInitialized();
-  // }
   if(!pCurrentMap->isMature())
     mpOdomSource->InitializeMergeMap(pCurrentMap);
 
@@ -1441,8 +1419,6 @@ void LoopClosing::MergeLocal2() {
     return;
   }
 
-  // bool bStopFlag = false;
-  // Optimizer::MergeInertialBA(pCurrKF, mpMergeMatchedKF, &bStopFlag, pCurrentMap, CorrectedSim3);
   mpOdomSource->MergeLocalBundleAdjustment(pCurrKF, mpMergeMatchedKF, pCurrentMap, CorrectedSim3);
 
   // Release Local Mapping.
@@ -1563,12 +1539,7 @@ void LoopClosing::ResetIfRequested() {
 void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, unsigned long nLoopKF) {
   Verbose::PrintMess("Starting Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
 
-  const bool bImuInit = pActiveMap->isOdomInitialized();
-
-  // if (!bImuInit)
-  //   Optimizer::GlobalBundleAdjustemnt(pActiveMap, 10, &mbStopGBA, nLoopKF, false);
-  // else
-  //   InertialOptimizer::FullInertialBA(pActiveMap, 7, false, nLoopKF, &mbStopGBA);
+  const bool bOdomInit = pActiveMap->isOdomInitialized();
 
   if(mpOdomSource)
     mpOdomSource->GlobalBundleAdjustment(pActiveMap, nLoopKF, mbStopGBA);
@@ -1584,7 +1555,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
     std::unique_lock<std::mutex> lock(mMutexGBA);
     if (idx != mnFullBAIdx) return;
 
-    if (!bImuInit && pActiveMap->isOdomInitialized()) return;
+    if (!bOdomInit && pActiveMap->isOdomInitialized()) return;
 
     if (!mbStopGBA) {
       Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);
@@ -1617,12 +1588,11 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
             pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;
 
             Sophus::SO3f Rcor = pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3();
-            if (pChild->isVelocitySet()) {
+            if (pChild->isVelocitySet())
               pChild->mVwbGBA = Rcor * pChild->GetVelocity();
-            } else
+            else
               Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
 
-            // pChild->mBiasGBA = pChild->GetImuBias();
             pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
 
             pChild->mnBAGlobalForKF = nLoopKF;
@@ -1638,7 +1608,6 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
           // assert(!pKF->mVwbGBA.empty());
           pKF->SetVelocity(pKF->mVwbGBA);
           
-          // pKF->SetNewBias(pKF->mBiasGBA);
           pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         }
 
