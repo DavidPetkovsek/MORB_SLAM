@@ -11,7 +11,6 @@
 #include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-// #include <MORB_SLAM/ExternalIMUProcessor.h>
 #include <MORB_SLAM/InertialOdometry/InertialOdometry.hpp>
 
 #include <Eigen/StdVector>
@@ -98,6 +97,7 @@ int main(int argc, char **argv) {
                     std::memcpy(accel.data(), msg->str.data()+1+timestamp_size, imu_size);
                     accel_measurements.push_back(accel);
                     accel_timestamps.push_back(accel_timestamp);
+                    // Add the accel measurements directly to the imu processor
                     inertial_odom->AddAccel(accel, accel_timestamp * time_unit_to_seconds_conversion_factor);
                 } else if(msg->str.data()[0] == 3) {
                     std::unique_lock<std::mutex> lock(gyro_mutex);
@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
                     std::memcpy(gyro.data(), msg->str.data()+1+timestamp_size, imu_size);
                     gyro_measurements.push_back(gyro);
                     gyro_timestamps.push_back(gyro_timestamp);
+                    // Add the gyro measurements directly to the imu processor
                     inertial_odom->AddGyro(gyro, gyro_timestamp * time_unit_to_seconds_conversion_factor);
                 }
             } else if(msg->type == ix::WebSocketMessageType::Open) {
@@ -116,8 +117,6 @@ int main(int argc, char **argv) {
             }
         }
     );
-
-    // std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
      
     std::vector<Eigen::Vector3f> local_accel_measurements;
     std::vector<double> local_accel_timestamps;
@@ -158,6 +157,9 @@ int main(int argc, char **argv) {
         }
 
         {
+            // Grab the batch of accel measurements up until the current timestamp. Currently, the batch of accel measurements aren't being used
+            // because the individual accel measurements are added to Inertialodometry class directly.
+            // This code is kept here in case it is needed in the future. 
             std::unique_lock<std::mutex> lk(accel_mutex);
             local_accel_measurements.insert(local_accel_measurements.end(), accel_measurements.begin(), accel_measurements.end());
             local_accel_timestamps.insert(local_accel_timestamps.end(), accel_timestamps.begin(), accel_timestamps.end());
@@ -167,6 +169,9 @@ int main(int argc, char **argv) {
         }
 
         {
+            // Grab the batch of gyro measurements up until the current timestamp. Currently, the batch of gyro measurements aren't being used
+            // because the individual gyro measurements are added to Inertialodometry class directly.
+            // This code is kept here in case it is needed in the future. 
             std::unique_lock<std::mutex> lk(gyro_mutex);
             local_gyro_measurements.insert(local_gyro_measurements.end(), gyro_measurements.begin(), gyro_measurements.end());
             local_gyro_timestamps.insert(local_gyro_timestamps.end(), gyro_timestamps.begin(), gyro_timestamps.end());
@@ -176,10 +181,8 @@ int main(int argc, char **argv) {
         }
         inertial_odom->GrabOdom(local_img_timestamp * time_unit_to_seconds_conversion_factor, prev_img_timestamp * time_unit_to_seconds_conversion_factor);
 
-        // slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_accel_measurements, local_accel_timestamps, local_gyro_measurements, local_gyro_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
         prev_img_timestamp = local_img_timestamp;
 
-        // MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
         MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp * time_unit_to_seconds_conversion_factor);
 
         viewer->update(sophusPose);
