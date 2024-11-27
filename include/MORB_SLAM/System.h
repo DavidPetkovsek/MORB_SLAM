@@ -66,21 +66,21 @@ class System {
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
-    // Proccess the given stereo frame. Images must be synchronized and rectified.
+    // Proccess the given stereo frame. Images must be synchronized.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
+    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp);
 
-    // Proccess the given monocular frame and optionally imu data
+    // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp/*, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>()*/);
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp);
 
     // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();

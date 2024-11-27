@@ -102,7 +102,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
   mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, mpSysSettings, mpCamSettings, odomSource);
 
-  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, /*mSensor.isInertial(),*/ odomSource);
+  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, odomSource);
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
@@ -118,7 +118,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   }
 
   // Initialize the Loop Closing thread and launch
-  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, /*mSensor.isInertial(),*/ odomSource);
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, odomSource);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -147,7 +147,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
-StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp/*, const std::vector<IMU::Point>& vImuMeas*/) {
+StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
     std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
@@ -175,16 +175,13 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   // Check reset
   mpTracker->CheckTrackingReset();
 
-  // if (mSensor == CameraType::IMU_STEREO)
-  //   mpTracker->GrabImuData(vImuMeas);
-
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
-RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp/*, const std::vector<IMU::Point>& vImuMeas*/) {
+RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
     std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
     throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
@@ -204,16 +201,13 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
   // Check reset
   mpTracker->CheckTrackingReset();
 
-  // if (mSensor == CameraType::IMU_RGBD)
-  //   mpTracker->GrabImuData(vImuMeas);
-
   RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
-MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp/*, const std::vector<IMU::Point>& vImuMeas*/) {
+MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp) {
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
     std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
@@ -231,9 +225,6 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp/*, const s
   mpTracker->CheckTrackingModeChanged();
   // Check reset
   mpTracker->CheckTrackingReset();
-
-  // if (mSensor == CameraType::IMU_MONOCULAR)
-  //   mpTracker->GrabImuData(vImuMeas);
 
   MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
