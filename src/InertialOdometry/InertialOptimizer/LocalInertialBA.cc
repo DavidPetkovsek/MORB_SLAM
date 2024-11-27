@@ -98,8 +98,8 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
     N--;
   }
   // don't delete the last optimizable KF (there's a chance that it only shares MPs with its previous KFs, and therefore doesn't deserve to be deleted)
-  vpOptimizableKFs.back()->mbVerifyLocalInertialBA = true;
-  lFixedKeyFrames.back()->mbVerifyLocalInertialBA = true;
+  vpOptimizableKFs.back()->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = true;
+  lFixedKeyFrames.back()->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = true;
 
   // Maximum allowed number of Fixed KeyFrames
   const int maxFixKF = 200;
@@ -131,7 +131,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
     for (std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++) {
       if(std::shared_ptr<KeyFrame> pKFi = (mit->first).lock()) {
         // this flag is true if KFi has been confirmed to observe 3 or more Local MPs 
-        if (pKFi->mbVerifyLocalInertialBA) continue;
+        if (pKFi->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA) continue;
 
         // CASE 1: it's the first time checking a non-optimizable KF, so we add it to the Fixed KeyFrames list
         //          don't add new KFs if there's already [maxFixKF] KeyFrames
@@ -141,14 +141,14 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
             // keep track of the local MP that KFi observed
             fixedKFsVisibleMPs[pKFi] = std::pair<std::shared_ptr<MapPoint>, std::shared_ptr<MapPoint>>((*lit), nullptr);
           } else {
-            pKFi->mbVerifyLocalInertialBA = true;
+            pKFi->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = true;
           }
 
         // CASE 2: KFi is in the Optimizable KeyFrames vector
         } else if(pKFi->mnBALocalForKF == pKF->mnId) {
           // if this is the 3rd MP that KFi has observed, KFi is a good KeyFrame
           if(optimizableKFsCounter[pKFi] >= 2) {
-            pKFi->mbVerifyLocalInertialBA = true;
+            pKFi->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = true;
             // remove KFi from the counter, since it's already verified
             optimizableKFsCounter.erase(pKFi);
           } else {
@@ -159,7 +159,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
         } else if(pKFi->mnBAFixedForKF == pKF->mnId) {
           // if this is the 3rd MP that KFi has observed, KFi is a good KeyFrame
           if(fixedKFsVisibleMPs[pKFi].second) {
-            pKFi->mbVerifyLocalInertialBA = true;
+            pKFi->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = true;
             lFixedKeyFrames.push_back(pKFi);
             // remove KFi from the counter, since it's already verified
             fixedKFsVisibleMPs.erase(pKFi);
@@ -177,13 +177,13 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
 
   // Reset the KFs booleans back to false (they're only used to speed up the previous step)
   for (int i = 0; i < N; i++) {
-    vpOptimizableKFs[i]->mbVerifyLocalInertialBA = false;
+    vpOptimizableKFs[i]->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = false;
   }
   for (std::list<std::shared_ptr<KeyFrame>>::iterator lit = lFixedKeyFrames.begin(), lend = lFixedKeyFrames.end(); lit != lend; lit++) {
-    (*lit)->mbVerifyLocalInertialBA = false;
+    (*lit)->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = false;
   }
   for (auto mit = fixedKFsVisibleMPs.begin(); mit != fixedKFsVisibleMPs.end(); mit++) {
-    mit->first->mbVerifyLocalInertialBA = false;
+    mit->first->External<InertialKeyFrameData>()->mbVerifyLocalInertialBA = false;
   }
 
   bool badCurrentFrame = false;

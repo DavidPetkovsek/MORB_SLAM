@@ -83,6 +83,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
     IMU::Bias mBiasGBA;
+    bool mbVerifyLocalInertialBA{false};
 
     void SetNewBias(const IMU::Bias& b) {
         if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {

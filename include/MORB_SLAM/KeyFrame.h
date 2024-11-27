@@ -278,7 +278,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   bool isPartiallyConstructed{false};
   
   // Only used in the new LocalInertialBA
-  bool mbVerifyLocalInertialBA{false};
+  // bool mbVerifyLocalInertialBA{false};
   
   static long unsigned int nNextId;
   long unsigned int mnId;
