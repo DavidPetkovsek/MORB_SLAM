@@ -61,8 +61,6 @@ class Tracking {
   RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
   MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
 
-  // void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
-
   void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
 
@@ -72,8 +70,9 @@ class Tracking {
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool& flag);
 
-  // void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
   std::shared_ptr<KeyFrame> GetLastKeyFrame() { return mpLastKeyFrame; }
+  void UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+  void UpdateScale(const float s);
 
   void CreateMapInAtlas();
 
@@ -82,10 +81,6 @@ class Tracking {
 
   Sophus::SE3f getStereoInitDefaultPose() const { return mStereoInitDefaultPose; }
   void setStereoInitDefaultPose(const Sophus::SE3f default_pose);
-
-  // TEST: putting this here for now...
-  void UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame);
-  void UpdateScale(const float s);
 
  public:
 
@@ -105,7 +100,7 @@ class Tracking {
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
-  // The sum of all the changes in translation (teleportations) caused by InitializeIMU(), Loop Closing, and Map Merging
+  // The sum of all the changes in translation (teleportations) caused by LocalMapping, Loop Closing, and Map Merging
   Eigen::Vector3f mBaseTranslation;
   // Stores the current KeyFrame's translation before each teleportation 
   Eigen::Vector3f mPreTeleportTranslation;
@@ -170,7 +165,6 @@ public:
   bool TrackReferenceKeyFrame();
   void UpdateLastFrame();
   bool TrackWithMotionModel();
-  // bool PredictStateIMU();
 
   bool Relocalization(bool isNewMap=false);
 
@@ -184,27 +178,12 @@ public:
   bool NeedNewKeyFrame();
   void CreateNewKeyFrame();
 
-  // Perform preintegration from last frame
-  // void PreintegrateIMU();
-
-  // Reset IMU biases and compute frame velocity
-  void ResetFrameIMU();
-
   Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
 
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);
 
   bool mbMapUpdated;
-
-  // Imu preintegration from last frame
-  // std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
-
-  // Queue of IMU measurements between frames
-  // std::vector<IMU::Point> mvImuData;
-
-  // // Imu calibration parameters
-  // std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // In case of performing only localization, this flag is true when there are no matches to points in the map. Still tracking will continue if there are
   // enough matches with temporal points. In that case we are doing visual odometry. The system will try to do relocalization to recover "zero-drift" localization to the map.
