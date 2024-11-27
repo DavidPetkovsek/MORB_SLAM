@@ -216,10 +216,18 @@ RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, con
   if ((fabs(mDepthMapFactor - 1.0f) > 1e-5) || imDepth.type() != CV_32F)
     imDepth.convertTo(imDepth, CV_32F, mDepthMapFactor);
 
+  std::shared_ptr<ExternalFrameData> ed;
+  if(mpOdomSource) {
+    if(mpLastKeyFrame)
+      ed = mpOdomSource->DefaultExternalFrameData(mpLastKeyFrame);
+    else
+      ed = mpOdomSource->DefaultExternalFrameData();
+  }
+
   if (mSensor == CameraType::RGBD)
     mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera);
-  else if (mSensor == CameraType::IMU_RGBD)
-    mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame);
+  else if (mSensor == CameraType::IMU_RGBD && mpOdomSource)
+    mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, ed);
 
   Track();
 
@@ -240,16 +248,24 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
     cvtColor(mImGray, mImGray, cv::COLOR_BGRA2GRAY);
   }
 
+  std::shared_ptr<ExternalFrameData> ed;
+  if(mpOdomSource) {
+    if(mpLastKeyFrame)
+      ed = mpOdomSource->DefaultExternalFrameData(mpLastKeyFrame);
+    else
+      ed = mpOdomSource->DefaultExternalFrameData();
+  }
+
   if (mSensor == CameraType::MONOCULAR) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET || (lastID - initID) < mFPS)
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
     else
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
-  } else if (mSensor == CameraType::IMU_MONOCULAR) {
+  } else if (mSensor == CameraType::IMU_MONOCULAR && mpOdomSource) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET)
-      mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame, ed);
     else
-      mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame);
+      mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame, ed);
   }
 
   lastID = mCurrentFrame.mnId;

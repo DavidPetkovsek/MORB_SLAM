@@ -219,7 +219,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractor,
              std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf,
              const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera,
-             Frame *pPrevF)
+             Frame *pPrevF, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
@@ -236,7 +236,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
       mpCamera(pCamera),
       mpCamera2(nullptr),
       mpLastKeyFrame(nullptr),
-      mpExternalFrameData(nullptr) {
+      mpExternalFrameData(pExternalData) {
   // Frame ID
   mnId = nNextId++;
 
@@ -302,7 +302,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const cv::Mat &imDept
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeStamp,
              const std::shared_ptr<ORBextractor> &extractor, std::shared_ptr<ORBVocabulary> voc,
              const std::shared_ptr<const GeometricCamera> &pCamera, cv::Mat &distCoef, const float &bf,
-             const float &thDepth, Frame *pPrevF)
+             const float &thDepth, Frame *pPrevF, const std::shared_ptr<ExternalFrameData> &pExternalData)
     : mbHasPose(false),
       mbHasVelocity(false),
       mpORBvocabulary(voc),
@@ -319,7 +319,7 @@ Frame::Frame(const Camera_ptr &cam, const cv::Mat &imGray, const double &timeSta
       mpCamera(pCamera),
       mpCamera2(nullptr),
       mpLastKeyFrame(nullptr),
-      mpExternalFrameData(nullptr) {
+      mpExternalFrameData(pExternalData) {
   // Frame ID
   mnId = nNextId++;
 
