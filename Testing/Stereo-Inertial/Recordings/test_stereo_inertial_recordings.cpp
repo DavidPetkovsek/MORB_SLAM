@@ -11,11 +11,9 @@
 
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-#include <MORB_SLAM/ExternalMapViewer.h>
-#include <MORB_SLAM/ExternalIMUProcessor.h>
-#include <MORB_SLAM/CameraSettings.hpp>
-
-#include <MORB_SLAM/ImuTypes.h>
+#include <MORB_SLAM/Settings/CameraSettings.hpp>
+#include <MORB_SLAM/Settings/SystemSettings.hpp>
+#include <MORB_SLAM/InertialOdometry/InertialOdometry.hpp>
 
 
 bool load_images(const std::filesystem::path &path_left_images, const std::filesystem::path &path_right_images, const std::filesystem::path &path_cam_csv,
@@ -25,12 +23,20 @@ bool load_imu(const std::filesystem::path &path_imu, std::vector<double> &v_time
 
 void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std::vector<std::string> &v_img_paths, float frame_rate);
 
-void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f &pose, double timestamp);
+void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f pose, double timestamp);
 
 int main(int argc, char **argv)
 {
-    if(argc < 4) {
-        std::cerr << "\nRequired arguments: <path_to_vocabulary> <path_to_camera_settings> <path_to_recording_sequence_folder> <results_file_path>" << std::endl;
+    // argv[0] program
+    // argv[1] path to vocab
+    // argv[2] path to slam settings
+    // argv[3] path to cam settings
+    // argv[4] path to odom settings
+    // argv[5] path to recorded sequence
+    // argv[6] optional path to results csvfile
+
+    if(argc < 6) {
+        std::cerr << "\nRequired arguments: <path_to_vocabulary> <path_to_slam_settings> <path_to_camera_settings> <path_to_odometry_settings> <path_to_recording_sequence_folder> <results_file_path>" << std::endl;
         return 1;
     }
 
@@ -46,7 +52,7 @@ int main(int argc, char **argv)
     int first_imu_idx;
     int first_cam_idx;
 
-    std::filesystem::path path_to_seq(argv[3]);
+    std::filesystem::path path_to_seq(argv[5]);
     std::filesystem::path path_cam0_images = path_to_seq / "cam0";
     std::filesystem::path path_cam1_images = path_to_seq / "cam1";
     std::filesystem::path path_cam_csv = path_to_seq / "cam_data.csv";
@@ -55,8 +61,8 @@ int main(int argc, char **argv)
     bool b_results_file;
     std::filesystem::path path_results_csv;
     std::ofstream results_file;
-    if(argc == 5) {
-        path_results_csv = argv[4];
+    if(argc == 7) {
+        path_results_csv = argv[6];
         std::filesystem::create_directories(path_results_csv.parent_path());
         results_file.open(path_results_csv); // csv file containing timestamped poses calculated by MORB_SLAM
         if(!results_file.is_open()) {
@@ -91,13 +97,6 @@ int main(int argc, char **argv)
         std::cout << "There are " << num_images << " stereo images and " << num_imu << " rows of IMU data." << std::endl;
     }
 
-    // Check if camera settings can be read
-    cv::FileStorage camera_settings(argv[2], cv::FileStorage::READ);
-    if(!camera_settings.isOpened()) {
-        std::cerr << "ERROR: Wrong path to camera settings: " << argv[2] << std::endl;
-        return 1;
-    }
-
     // Don't consider camera frames that started before the IMU
     while(v_timestamp_cam_s[first_cam_idx] < v_timestamp_imu_s[first_imu_idx]) {
         ++first_cam_idx;
@@ -110,8 +109,17 @@ int main(int argc, char **argv)
 
     std::cout << "The first imu measurement to be considered is at index " << first_imu_idx << std::endl;
 
+    // Create SLAM settings
+    std::shared_ptr<MORB_SLAM::SystemSettings> slam_settings = std::make_shared<MORB_SLAM::SystemSettings>(argv[2]);
     // Create CameraSettings object
-    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[2], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[3], MORB_SLAM::CameraType::IMU_STEREO);
+    // Create InertialOdometry settings
+    std::shared_ptr<MORB_SLAM::InertialOdometrySettings> imu_settings = std::make_shared<MORB_SLAM::InertialOdometrySettings>(argv[4]);
+
+    // Temporary solution for non-rectified stereo case.
+    if(cam_settings->cameraType() == MORB_SLAM::CameraType::IMU_STEREO && cam_settings->needToRectify()) {
+        imu_settings->SetTbc(imu_settings->Tbc() * cam_settings->Tr1u1().inverse());
+    }
 
     // Write the image sequences to a video, if a video doesn't exist
     std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
@@ -128,7 +136,8 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], cam_settings);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], slam_settings, cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
@@ -153,28 +162,27 @@ int main(int argc, char **argv)
         double t_frame = v_timestamp_cam_s[ni];
         double t_frame_prev = ni > 0 ? v_timestamp_cam_s[ni-1] : 0.0;
 
-        std::vector<Sophus::Vector6f> v_local_imu_meas;
-        std::vector<double> v_local_timestamp_imu_s;
-
         while(v_timestamp_imu_s[first_imu_idx] <= v_timestamp_cam_s[ni]) {
-            Sophus::Vector6f imu_meas;
-            imu_meas << v_acc[first_imu_idx].x, v_acc[first_imu_idx].y, v_acc[first_imu_idx].z, v_gyro[first_imu_idx].x, v_gyro[first_imu_idx].y, v_gyro[first_imu_idx].z;
-            v_local_imu_meas.push_back(imu_meas);
-            v_local_timestamp_imu_s.push_back(v_timestamp_imu_s[first_imu_idx]);
+            Eigen::Vector3f accel_meas;
+            Eigen::Vector3f gyro_meas;
+            accel_meas << v_acc[first_imu_idx].x, v_acc[first_imu_idx].y, v_acc[first_imu_idx].z;
+            gyro_meas << v_gyro[first_imu_idx].x, v_gyro[first_imu_idx].y, v_gyro[first_imu_idx].z;
+            inertial_odom->AddAccel(accel_meas, v_timestamp_imu_s[first_imu_idx]);
+            inertial_odom->AddGyro(gyro_meas, v_timestamp_imu_s[first_imu_idx]);
+
             ++first_imu_idx;
         }
 
         // Pass the images to the SLAM system
-        std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(v_local_imu_meas, v_local_timestamp_imu_s, t_frame_prev, t_frame);
-
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, slam_data.first, slam_data.second);
+        inertial_odom->GrabOdom(t_frame, t_frame_prev);
+        MORB_SLAM::StereoPacket sophus_pose = SLAM->TrackStereo(im_left, im_right, t_frame);
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
         viewer->update(sophus_pose);
 
         if (b_results_file && sophus_pose.pose.has_value()) { // write pose to results file if argument is provided
-            write_pose_to_results(results_file, *sophus_pose.pose, t_frame);
+            write_pose_to_results(results_file, sophus_pose.pose.value().inverse(), t_frame);
         }
 
         double duration_s = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count(); // in seconds
@@ -196,6 +204,11 @@ int main(int argc, char **argv)
     std::cout << "Stopping SLAM" << std::endl;
     SLAM.reset();
     std::cout << "Done :)" << std::endl;
+
+    float sum = 0;
+    for (float num : v_duration_track_s) { sum += num; }
+    std::cout << "The total processing time was: " << sum << " seconds" << std::endl;
+    std::cout << "The average processing time was: " << sum / v_duration_track_s.size() << " seconds/frame" << std::endl;
 
     return 0;
 }
@@ -322,7 +335,7 @@ void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std
     std::cout << output_vid_path << " created successfully!" << std::endl;
 }
 
-void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f &pose, double timestamp) {
+void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f pose, double timestamp) {
     Eigen::Quaternionf q = pose.unit_quaternion();
     Eigen::Vector3f twb = pose.translation();
     results_file << std::fixed << std::setprecision(9) << timestamp << ", " << twb(0) << ", " << twb(1) << ", " << twb(2) << ", " << q.w() << ", " << q.x() << ", " << q.y() << ", " << q.z() << std::endl;
