@@ -281,10 +281,13 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
       return false;
     }
 
-    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    curr_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-
     return true;
+}
+
+void InertialOdometry::StereoInitialization(Frame &curr_frame) {
+    mTinit = 0.f;
+    mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
+    curr_frame.External<InertialFrameData>()->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 }
 
 bool InertialOdometry::ReadyForMonocularInitialization(Frame &curr_frame, Frame &last_frame) {
@@ -386,12 +389,6 @@ void InertialOdometry::TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_
 void InertialOdometry::NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) {
     assert(ref_kf->External<InertialKeyFrameData>()!=nullptr);
     mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(ref_kf->External<InertialKeyFrameData>()->GetImuBias(), *mpImuCalib);
-}
-
-void InertialOdometry::NewMapEvent() {
-    if(mpImuPreintegratedFromLastKF) {
-        mpImuPreintegratedFromLastKF = std::make_shared<IMU::Preintegrated>(IMU::Bias(), *mpImuCalib);
-    }
 }
 
 void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, bool &b_abortBA) {

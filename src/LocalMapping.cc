@@ -775,8 +775,6 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
 
-            // Odom parameters
-            // mTinit = 0.f;
             mbBadOdom = false;
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
@@ -788,8 +786,6 @@ void LocalMapping::ResetIfRequested() {
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
 
-            // Odom parameters
-            // mTinit = 0.f;
             mbBadOdom = false;
 
             mbResetRequested = false;

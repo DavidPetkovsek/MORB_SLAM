@@ -596,8 +596,12 @@ void Tracking::StereoInitialization() {
     return;
   }
 
-  if(mpOdomSource && !mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame))
-    return;
+  if(mpOdomSource) {
+    if(!mpOdomSource->ReadyForStereoInitialization(mCurrentFrame, mLastFrame))
+      return;
+    else
+      mpOdomSource->StereoInitialization(mCurrentFrame);
+  }
 
   // This if statement runs Relocalization() only if there's an existing map and relocalization is enabled 
   if(mpAtlas->CountMaps() > 1 && newMapRelocalizationEnabled() && Relocalization(true)) {
@@ -893,9 +897,6 @@ void Tracking::CreateMapInAtlas() {
   // Reset the variables with information about the last KF
   mbHasPrevDeltaFramePose = false;
   notEnoughMatchPoints_trackOnlyMode = false;
-
-  if (mpOdomSource)
-    mpOdomSource->NewMapEvent();
 
   if (mpLastKeyFrame) mpLastKeyFrame = nullptr;
   if (mpReferenceKF) mpReferenceKF = nullptr;
