@@ -36,27 +36,6 @@ namespace MORB_SLAM {
         }
     }
 
-    void Odometry::LocalMappingSetTimeInit(float t_init) {
-        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
-            pLocalMapper->mTinit = t_init;
-        else
-            throw std::runtime_error("ERROR: Cannot access 'LocalMapping' object because it has been destroyed.");
-    }
-
-    float Odometry::LocalMappingGetTimeInit() {
-        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
-            return pLocalMapper->mTinit;
-        else
-            throw std::runtime_error("ERROR: Cannot access 'LocalMapping' object because it has been destroyed.");
-    }
-
-    void Odometry::LocalMappingIncrementTimeInit(float t_increment) {
-        if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
-            pLocalMapper->mTinit += t_increment;
-        else
-            throw std::runtime_error("ERROR: Cannot access 'LocalMapping' object because it has been destroyed.");
-    }
-
     void Odometry::LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose) {
         if(std::shared_ptr<LocalMapping> pLocalMapper = mwpLocalMapper.lock())
             pLocalMapper->mPoseReverseAxisFlip = pose;

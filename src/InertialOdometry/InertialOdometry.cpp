@@ -16,7 +16,8 @@ InertialOdometry::InertialOdometry(std::shared_ptr<InertialOdometrySettings> set
       mRwg(Eigen::Matrix3d::Identity()),
       mScale(1.0),
       mbStationaryInitEnabled(settings->stationaryIMUInit()),
-      mbFastInit(settings->fastIMUInit()) {
+      mbFastInit(settings->fastIMUInit()),
+      mTinit(0.f) {
     newParameterLoader(*settings);
 }
 
@@ -398,7 +399,7 @@ void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, 
         (curr_kf->mPrevKF->mPrevKF->GetCameraCenter() - curr_kf->mPrevKF->GetCameraCenter()).norm();
 
     if (mbStationaryInitEnabled || dist > 0.05)
-        LocalMappingIncrementTimeInit(curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp);
+        mTinit += curr_kf->mTimeStamp - curr_kf->mPrevKF->mTimeStamp;
 
     int tracking_matches_inliers;
     if (std::shared_ptr<Tracking> pTracker = mwpTracker.lock())
@@ -499,7 +500,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         Eigen::Vector3f vzg = v * ang / nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
-        LocalMappingSetTimeInit(curr_kf->mTimeStamp - first_ts);
+        mTinit = curr_kf->mTimeStamp - first_ts;
         LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero()));
     } else if(mpAtlas->UseGravityDirectionFromLastMap() && !curr_kf->GetMap()->isOdomInitialized()) {
         for (std::vector<std::shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF != vpKF.end(); itKF++) {
@@ -514,7 +515,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         }
 
         mRwg = Eigen::Matrix3d::Identity();
-        LocalMappingSetTimeInit(curr_kf->mTimeStamp - first_ts);
+        mTinit = curr_kf->mTimeStamp - first_ts;
         auto curr_eKFd = curr_kf->External<InertialKeyFrameData>();
         mbg = curr_eKFd->GetGyroBias().cast<double>();
         mba = curr_eKFd->GetAccBias().cast<double>();
@@ -676,7 +677,6 @@ void InertialOdometry::PostInitializeOdom() {
         const float timerVIBA2 = mbFastInit ? 10 : 15;
 
         std::shared_ptr<KeyFrame> curr_kf = LocalMappingGetCurrentKeyFrame();
-        float mTinit = LocalMappingGetTimeInit();
         if ((mTinit < 50.0f)) {
             if (curr_kf->GetMap()->isOdomInitialized() && pTracker->mState == TrackingState::OK) {  // Enter here everytime local-mapping is called
                 if (!curr_kf->GetMap()->isPartialMature() && mTinit > 5.0f) {

@@ -136,8 +136,6 @@ class LocalMapping {
 
   bool bInitializing;
 
-  float mTinit;
-
   bool isDoneBA;
 
   // used when returning from TrackStereo to undo the Axis Flip bug

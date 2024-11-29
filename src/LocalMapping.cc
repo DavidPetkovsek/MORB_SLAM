@@ -51,7 +51,6 @@ LocalMapping::LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, const std::
       mbNotStop(false),
       mbAcceptKeyFrames(true),
       bInitializing(false),
-      mTinit(0.f),
       isDoneBA(false),
       mPoseReverseAxisFlip(Sophus::SE3f()),
       mpOdomSource(odomSource) {
@@ -777,7 +776,7 @@ void LocalMapping::ResetIfRequested() {
             mbResetRequestedActiveMap = false;
 
             // Odom parameters
-            mTinit = 0.f;
+            // mTinit = 0.f;
             mbBadOdom = false;
 
             std::cout << "LM: End reseting Local Mapping..." << std::endl;
@@ -790,7 +789,7 @@ void LocalMapping::ResetIfRequested() {
             mlpRecentAddedMapPoints.clear();
 
             // Odom parameters
-            mTinit = 0.f;
+            // mTinit = 0.f;
             mbBadOdom = false;
 
             mbResetRequested = false;

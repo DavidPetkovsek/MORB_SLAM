@@ -113,9 +113,6 @@ protected:
     bool LocalMappingResetRequested();
     void LocalMappingSetInitializing(bool is_initializing);
     void LocalMappingProcessKeyFramesInQueue(std::vector<std::shared_ptr<KeyFrame>> &vpKF);
-    void LocalMappingSetTimeInit(float t_init);
-    float LocalMappingGetTimeInit();
-    void LocalMappingIncrementTimeInit(float t_increment);
     void LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose);
     void LocalMappingSetNewKeyFramesBad();
     std::shared_ptr<KeyFrame> LocalMappingGetCurrentKeyFrame();
