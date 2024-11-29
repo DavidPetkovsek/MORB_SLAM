@@ -1608,7 +1608,8 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
           // assert(!pKF->mVwbGBA.empty());
           pKF->SetVelocity(pKF->mVwbGBA);
           
-          pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
+          if(pKF->mpExternalKeyFrameData)
+            pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
         }
 
         lpKFtoCheck.pop_front();

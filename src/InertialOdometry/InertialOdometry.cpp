@@ -421,7 +421,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     if (LocalMappingResetRequested()) return;
 
     std::shared_ptr<Tracking> pTracker = mwpTracker.lock();
-    if(!pTracker) return;
+    if(!pTracker) throw std::runtime_error("ERROR: Cannot access 'Tracking' object because it has been destroyed.");
 
     float minTime = mbMonocular ? 2.0 : 1.0;
     size_t nMinKF = 10;
@@ -584,77 +584,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     
     curr_kf = LocalMappingGetCurrentKeyFrame();
 
-    // Correct keyframes starting at map first keyframe
-    std::list<std::shared_ptr<KeyFrame>> lpKFtoCheck(
-        mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.begin(),
-        mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end());
-
-    while (!lpKFtoCheck.empty()) {
-        std::shared_ptr<KeyFrame> pKF = lpKFtoCheck.front();
-        const std::set<std::shared_ptr<KeyFrame>> sChilds = pKF->GetChilds();
-        Sophus::SE3f Twc = pKF->GetPoseInverse();
-        for (std::set<std::shared_ptr<KeyFrame>>::const_iterator sit = sChilds.begin();
-            sit != sChilds.end(); sit++) {
-            std::shared_ptr<KeyFrame> pChild = *sit;
-            if (!pChild || pChild->isBad()) continue;
-
-            if (pChild->mnBAGlobalForKF != GBAid) {
-                Sophus::SE3f Tchildc = pChild->GetPose() * Twc;
-                pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;
-
-                Sophus::SO3f Rcor = pChild->mTcwGBA.so3().inverse() * pChild->GetPose().so3();
-                if (pChild->isVelocitySet()) {
-                    pChild->mVwbGBA = Rcor * pChild->GetVelocity();
-                } else {
-                    Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
-                }
-
-                pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
-
-                pChild->mnBAGlobalForKF = GBAid;
-            }
-            lpKFtoCheck.push_back(pChild);
-        }
-
-        pKF->mTcwBefGBA = pKF->GetPose();
-        pKF->SetPose(pKF->mTcwGBA);
-
-        if (pKF->bOdom) {
-            pKF->mVwbBefGBA = pKF->GetVelocity();
-            pKF->SetVelocity(pKF->mVwbGBA);
-            
-            pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
-        } else {
-            std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
-        }
-
-        lpKFtoCheck.pop_front();
-    }
-
-    // Correct MapPoints
-    const std::vector<std::shared_ptr<MapPoint>> vpMPs = mpAtlas->GetCurrentMap()->GetAllMapPoints();
-
-    for (size_t i = 0; i < vpMPs.size(); i++) {
-        std::shared_ptr<MapPoint> pMP = vpMPs[i];
-
-        if (pMP->isBad()) continue;
-
-        if (pMP->mnBAGlobalForKF == GBAid) {
-            // If optimized by Global BA, just update
-            pMP->SetWorldPos(pMP->mPosGBA);
-        // Update according to the correction of its reference keyframe
-        } else if(std::shared_ptr<KeyFrame> pRefKF = (pMP->GetReferenceKeyFrame()).lock()) {
-            if (pRefKF->mnBAGlobalForKF != GBAid) continue;
-
-            // Map to non-corrected camera
-            Eigen::Vector3f Xc = pRefKF->mTcwBefGBA * pMP->GetWorldPos();
-
-            // Backproject using corrected camera
-            pMP->SetWorldPos(pRefKF->GetPoseInverse() * Xc);
-        }
-    }
-
-    Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+    LocalMappingCorrectMapAfterGBA(mpAtlas->GetCurrentMap(), GBAid);
 
     LocalMappingSetNewKeyFramesBad();
 

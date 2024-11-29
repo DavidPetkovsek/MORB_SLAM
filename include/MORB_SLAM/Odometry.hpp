@@ -109,13 +109,29 @@ protected:
     std::shared_ptr<Atlas> mpAtlas;
     std::weak_ptr<Tracking> mwpTracker;
 
-    // Local Mapping
+    /*
+        Methods to interface with the LocalMapping thread. Should only be used in the LocalMapping related functions.
+    */
+    // Returns true if the LocalMapper was sent a request to reset (from elsewhere in the system)
     bool LocalMappingResetRequested();
+
+    // Sets the LocalMapper to an initializing state. Notifies other threads that the odometry is being initialized. During initializing, KeyFrames are not added to the map.
     void LocalMappingSetInitializing(bool is_initializing);
+
+    // The Tracking thread may have inserted KeyFrame into the LocalMapping queue while any of the LocalMapping functions above were called
+    // This method processes each KeyFrame in the queue and adds it to the map
     void LocalMappingProcessKeyFramesInQueue(std::vector<std::shared_ptr<KeyFrame>> &vpKF);
+    
     void LocalMappingSetPoseReverseAxisFlip(Sophus::SE3f pose);
+    
+    // Sets all KeyFrames in the LocalMapping queue as bad and erases them
     void LocalMappingSetNewKeyFramesBad();
+
+    // Get the most current KeyFrame in the LocalMapping thread
     std::shared_ptr<KeyFrame> LocalMappingGetCurrentKeyFrame();
+
+   // After a global bundle adjustment is performed, and new keyframes added to the map while the BA occured needs to be updated
+   void LocalMappingCorrectMapAfterGBA(const std::shared_ptr<Map> &pMap, unsigned long GBAid);
 
 private:
     std::weak_ptr<LocalMapping> mwpLocalMapper;
