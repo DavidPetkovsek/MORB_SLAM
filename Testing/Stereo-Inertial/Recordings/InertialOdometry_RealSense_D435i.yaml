@@ -5,7 +5,7 @@ File.version: "1.0"
 # IMU Parameters
 #--------------------------------------------------------------------------------------------
 
-IMU.FastIMUInit: "ON"
+IMU.FastIMUInit: "OFF"
 IMU.StationaryIMUInit: "OFF"
 
 # Transformation from body-frame (imu) to left camera
