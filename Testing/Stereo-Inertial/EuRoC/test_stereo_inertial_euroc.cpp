@@ -32,6 +32,7 @@
 #include <MORB_SLAM/Settings/CameraSettings.hpp>
 #include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/InertialOdometry/InertialOdometry.hpp>
+#include <MORB_SLAM/ExternalMapViewer.h>
 
 bool load_images(const std::filesystem::path &path_left_images, const std::filesystem::path &path_right_images, const std::filesystem::path &path_cam_csv,
                 std::vector<std::string> &v_str_image_left, std::vector<std::string> &v_str_image_right, std::vector<double> &v_timestamp_cam);
@@ -151,6 +152,7 @@ int main(int argc, char **argv)
     std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], slam_settings, cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+    auto external_viewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, "0.0.0.0", 9002);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
     v_duration_track_s.resize(num_images);
@@ -192,6 +194,12 @@ int main(int argc, char **argv)
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
         viewer->update(sophus_pose);
+        
+        if(sophus_pose.pose.has_value()) {
+            Sophus::SE3f returnedTwc = sophus_pose.pose.value().inverse();
+            Eigen::Vector3f returnedTranslation = returnedTwc.translation();
+            external_viewer->pushValues(returnedTranslation(0), returnedTranslation(1), returnedTranslation(2));
+        }
 
         if (b_results_file && sophus_pose.pose.has_value()) { // write pose to results file if argument is provided
             write_pose_to_results(results_file, sophus_pose.pose.value().inverse(), t_frame);
@@ -213,6 +221,8 @@ int main(int argc, char **argv)
 
     std::cout << "Stopping Viewer" << std::endl;
     viewer.reset();
+    std::cout << "Stopping ExternalViewer" << std::endl;
+    external_viewer.reset();
     std::cout << "Stopping SLAM" << std::endl;
     SLAM.reset();
     std::cout << "Done ( :" << std::endl;
