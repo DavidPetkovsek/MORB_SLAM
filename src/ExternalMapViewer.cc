@@ -62,7 +62,7 @@ void ExternalMapViewer::run() {
                     }
                     
                     currentPose = currentFrame.GetPose();
-                    webSocket.sendBinary(ExternalMapViewer::poseToBinary(currentPose.rotationMatrix(), currentPose.rotationMatrix().inverse()*currentPose.translation(), state, message, isKF));
+                    webSocket.sendBinary(ExternalMapViewer::poseToBinary(currentPose.inverse().rotationMatrix(), currentPose.inverse().translation(), state, message, isKF));
                 } 
 
                 if (valuesPushed) {
