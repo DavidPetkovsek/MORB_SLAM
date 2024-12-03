@@ -127,6 +127,34 @@ static void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc, float mCameraSize, fl
   glPopMatrix();
 }
 
+static void DrawAxis() {
+  glPushMatrix();
+  
+  glLineWidth(3);
+  // x-axis
+  glColor3f(1.0f, 0.0f, 0.0f); // Red
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f);
+  glVertex3f(0.5f, 0.0f, 0.0f);
+  glEnd();
+
+  // y-axis
+  glColor3f(0.0f, 1.0f, 0.0f); // Green
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f); 
+  glVertex3f(0.0f, 0.5f, 0.0f);
+  glEnd();
+
+  // z-axis
+  glColor3f(0.0f, 0.0f, 1.0f); // Blue
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f);
+  glVertex3f(0.0f, 0.0f, 0.5f);
+  glEnd();
+  
+  glPopMatrix();
+}
+
 static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw) {
   for (int i = 0; i < 4; i++) {
     M.m[4 * i] = Twc(0, i);
@@ -250,6 +278,8 @@ void Viewer::Run() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     DrawCurrentCamera(Twc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
     DrawCurrentCamera(returnedTwc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
+    
+    DrawAxis();
     
     if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph || menuShowOptLba)
       mpMapDrawer.DrawKeyFrames(menuShowKeyFrames, menuShowGraph, menuShowInertialGraph, menuShowOptLba);
