@@ -523,9 +523,8 @@ void Tracking::Track() {
       }
 
       // Check if we need to insert a new keyframe
-      if (mSensor.isInertial() && NeedNewKeyFrame()) { // These conditions are incorrect. TODO: fix
+      if (NeedNewKeyFrame() && bOK)
         CreateNewKeyFrame();
-      }
 
       //TK16
       // We allow points with high innovation (considererd outliers by the Huber Function) pass to the new keyframe, so that bundle adjustment will finally decide if they are outliers or not.
