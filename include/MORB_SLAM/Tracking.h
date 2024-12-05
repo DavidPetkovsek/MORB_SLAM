@@ -100,17 +100,6 @@ class Tracking {
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
-  // The sum of all the changes in translation (teleportations) caused by LocalMapping, Loop Closing, and Map Merging
-  Eigen::Vector3f mBaseTranslation;
-  // Stores the current KeyFrame's translation before each teleportation 
-  Eigen::Vector3f mPreTeleportTranslation;
-  // Set to true after teleportation occurs
-  bool mTeleported;
-  // Set to true right before a teleportation occurs, prevents mPreTeleportTranslation from being changed
-  bool mLockPreTeleportTranslation;
-
-  Sophus::SE3f mReturnPose;
-
   bool mHasGlobalOriginPose = false;
   Sophus::SE3f mGlobalOriginPose;
   Sophus::SE3f mInitialFramePose;
@@ -177,8 +166,6 @@ public:
 
   bool NeedNewKeyFrame();
   void CreateNewKeyFrame();
-
-  Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
 
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);

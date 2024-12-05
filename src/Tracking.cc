@@ -61,8 +61,6 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       mbCreatedMap(false),
       mpCamera2(nullptr),
       mForcedLost(false),
-      mTeleported(false),
-      mLockPreTeleportTranslation(false),
       mStereoInitDefaultPose(Sophus::SE3f()),
       mbReset(false),
       mbResetActiveMap(false),
@@ -89,9 +87,6 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
       std::cout << " is unknown" << std::endl;
     }
   }
-
-  mBaseTranslation.setZero();
-  mPreTeleportTranslation.setZero();
 
   if(mpAtlas->CountMaps() > 1)
     mGlobalOriginPose = mpAtlas->GetAllMaps()[0]->GetOriginKF()->GetPose();
@@ -197,8 +192,8 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   
   //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
   //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && !mReturnPose.translation().isZero(0) && !mForcedLost)
-    return StereoPacket(mReturnPose, imGrayLeft, imGrayRight);
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && !mForcedLost)
+    return StereoPacket(mCurrentFrame.GetPose(), imGrayLeft, imGrayRight);
 
   return StereoPacket(imGrayLeft, imGrayRight); // we do not have a new pose to report
 }
@@ -559,26 +554,6 @@ void Tracking::Track() {
 
     if (!mCurrentFrame.mpReferenceKF)
       mCurrentFrame.mpReferenceKF = mpReferenceKF;
-
-    if(!mTeleported && !mLockPreTeleportTranslation) {
-      mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
-    } else if(mTeleported) {
-      mTeleported = false;
-      mLockPreTeleportTranslation = false;
-      mBaseTranslation -= (mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation()) - mPreTeleportTranslation;
-      mPreTeleportTranslation = mpReferenceKF->GetRotation().transpose()*mpReferenceKF->GetTranslation();
-      if(pCurrentMap->isMature())
-        mpLocalMapper->setIsDoneBA(true);
-    }
-
-    if(mpLocalMapper->getIsDoneBA()) {
-      Eigen::Vector3f translation_print = mCurrentFrame.GetPose().rotationMatrix().inverse()*mCurrentFrame.GetPose().translation();
-      mReturnPose = Sophus::SE3f(mCurrentFrame.GetPose().rotationMatrix(), mCurrentFrame.GetPose().rotationMatrix()*(translation_print+mBaseTranslation));
-    } else {
-      Eigen::Vector3f zero;
-      zero.setZero();
-      mReturnPose = Sophus::SE3f(Eigen::Matrix3f::Identity(), zero);
-    }
 
     mLastFrame = Frame(mCurrentFrame);
   }
@@ -1758,15 +1733,6 @@ int Tracking::GetMatchesInliers() { return mnMatchesInliers; }
 void Tracking::setForcedLost(bool forceLost) { mForcedLost = forceLost; }
 
 void Tracking::setStereoInitDefaultPose(const Sophus::SE3f default_pose) { mStereoInitDefaultPose = default_pose; }
-
-Sophus::SE3f Tracking::GetPoseRelativeToBase(Sophus::SE3f initialPose) {
-  Eigen::Vector3f translation0 = initialPose.rotationMatrix().transpose()*initialPose.translation();
-  Eigen::Vector3f translation1 = mCurrentFrame.GetPose().rotationMatrix().transpose()*mCurrentFrame.GetPose().translation()+mBaseTranslation;
-  
-  if(!mpLocalMapper->getIsDoneBA())
-    translation1.setZero();
-  return Sophus::SE3f(initialPose.rotationMatrix(), translation1);
-}
 
 void Tracking::RequestSystemReset() {
   std::unique_lock<std::mutex> lock(mMutexReset);

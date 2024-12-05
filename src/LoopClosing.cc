@@ -106,14 +106,12 @@ void LoopClosing::Run() {
             Verbose::PrintMess("*Merge detected", Verbose::VERBOSITY_QUIET);
 
             mpLocalMapper->setIsDoneBA(false);
-            mpTracker->mLockPreTeleportTranslation = true;
             // TODO UNCOMMENT
             if (mpOdomSource)
               MergeLocal2();
             else
               MergeLocal();
 
-            mpTracker->mTeleported = true;
             Verbose::PrintMess("Merge finished!", Verbose::VERBOSITY_QUIET);
           }
 
@@ -171,9 +169,7 @@ void LoopClosing::Run() {
           if (bGoodLoop) {
             mvpLoopMapPoints = mvpLoopMPs;
             mpLocalMapper->setIsDoneBA(false);
-            mpTracker->mLockPreTeleportTranslation = true;
             CorrectLoop();
-            mpTracker->mTeleported = true;
             std::cout << "Loop Closed Successfully" << std::endl;
           }
 
