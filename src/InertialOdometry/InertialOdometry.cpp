@@ -408,12 +408,10 @@ void InertialOdometry::LocalBundleAdjustment(std::shared_ptr<KeyFrame> curr_kf, 
 
 void InertialOdometry::InitializeOdom() {
     if(std::shared_ptr<Tracking> pTracker = mwpTracker.lock()) {
-        pTracker->mLockPreTeleportTranslation = true;
         if (mbMonocular)
             initializeIMU(ImuInitializater::ImuInitType::MONOCULAR_INIT_G, ImuInitializater::ImuInitType::MONOCULAR_INIT_A, true);
         else
             initializeIMU(ImuInitializater::ImuInitType::STEREO_INIT_G, ImuInitializater::ImuInitType::STEREO_INIT_A, true);
-        pTracker->mTeleported = true;
     }
 }
 
@@ -538,7 +536,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
         std::scoped_lock<std::mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Sophus::SE3f Tgw(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-            mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true);
+            mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw, mScale, true); // rotates the entire map (KeyFrames and MapPoints so that the Z-axis is aligned with gravity)
             pTracker->UpdateScale(mScale);
             pTracker->UpdateLastKeyFrame(curr_kf);
             updateFrameIMU(vpKF[0]->External<InertialKeyFrameData>()->GetImuBias());
@@ -607,18 +605,14 @@ void InertialOdometry::PostInitializeOdom() {
         if ((mTinit < 50.0f)) {
             if (curr_kf->GetMap()->isOdomInitialized() && pTracker->mState == TrackingState::OK) {  // Enter here everytime local-mapping is called
                 if (!curr_kf->GetMap()->isPartialMature() && mTinit > 5.0f) {
-                    pTracker->mLockPreTeleportTranslation = true;
                     std::cout << "start VIBA 1" << std::endl;
                     curr_kf->GetMap()->SetPartialMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
-                    pTracker->mTeleported = true;
                     std::cout << "end VIBA 1" << std::endl;
                 } else if (!curr_kf->GetMap()->isMature() && mTinit > timerVIBA2) {
-                    pTracker->mLockPreTeleportTranslation = true;
                     std::cout << "start VIBA 2" << std::endl;
                     curr_kf->GetMap()->SetMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
-                    pTracker->mTeleported = true;
                     std::cout << "end VIBA 2" << std::endl;
                 }
 
