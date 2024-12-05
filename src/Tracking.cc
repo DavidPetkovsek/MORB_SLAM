@@ -181,13 +181,13 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   }
 
   // The difference between odom and non odom is the former requires external data and the last frame
-  if (mSensor == CameraType::STEREO && !mpCamera2) // Rectfied stereo with no odometry
+  if (!mpOdomSource && !mpCamera2) // Rectfied stereo with no odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera);
-  else if (mSensor == CameraType::STEREO && mpCamera2) // Non-rectified stereo with no odometry
+  else if (!mpOdomSource && mpCamera2) // Non-rectified stereo with no odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr);
-  else if (mSensor == CameraType::IMU_STEREO && !mpCamera2 && mpOdomSource) // Rectified stereo with odometry
+  else if (mpOdomSource && !mpCamera2) // Rectified stereo with odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, ed);
-  else if (mSensor == CameraType::IMU_STEREO && mpCamera2 && mpOdomSource) // Non-rectified stereo with odometry
+  else if (mpOdomSource && mpCamera2) // Non-rectified stereo with odometry
     mCurrentFrame = Frame(cam, imGrayLeft, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, mpCamera2, mTlr, &mLastFrame, ed);
 
   Track();
@@ -224,9 +224,9 @@ RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, con
       ed = mpOdomSource->DefaultExternalFrameData();
   }
 
-  if (mSensor == CameraType::RGBD)
+  if (!mpOdomSource) // RGBD with no odometry
     mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera);
-  else if (mSensor == CameraType::IMU_RGBD && mpOdomSource)
+  else if (mpOdomSource) // RGBD with odometry
     mCurrentFrame = Frame(cam, mImGray, imDepth, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, &mLastFrame, ed);
 
   Track();
@@ -256,12 +256,12 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
       ed = mpOdomSource->DefaultExternalFrameData();
   }
 
-  if (mSensor == CameraType::MONOCULAR) {
+  if (!mpOdomSource) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET || (lastID - initID) < mFPS)
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
     else
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
-  } else if (mSensor == CameraType::IMU_MONOCULAR && mpOdomSource) {
+  } else if (mpOdomSource) {
     if (mState == TrackingState::NOT_INITIALIZED || mState == TrackingState::NO_IMAGES_YET)
       mCurrentFrame = Frame(cam, mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth, &mLastFrame, ed);
     else
