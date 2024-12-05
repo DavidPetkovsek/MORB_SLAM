@@ -69,6 +69,10 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
       if (!bFixed) nNonFixed++;
       VP->setFixed(bFixed);
     }
+
+    // NEW: The pose of first KeyFrame in the map is fixed to prevent the map from shifting
+    if (pKFi->mnId == pMap->GetInitKFid()) VP->setFixed(true);
+
     optimizer.addVertex(VP);
 
     if (pKFi->bOdom) {
