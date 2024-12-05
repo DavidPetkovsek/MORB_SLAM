@@ -597,7 +597,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
       VertexAccBias* VA = static_cast<VertexAccBias*>(optimizer.vertex(maxKFid + 3*(pKFi->mnId) + 3));
       Vector6d b;
       b << VG->estimate(), VA->estimate();
-      pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2])); // NEW
+      pKFi->External<InertialKeyFrameData>()->SetNewBias(IMU::Bias(b[3], b[4], b[5], b[0], b[1], b[2]));
     }
   }
 

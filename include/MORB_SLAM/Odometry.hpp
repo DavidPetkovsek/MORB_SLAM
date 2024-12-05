@@ -66,7 +66,7 @@ public:
     virtual bool PredictStateOdom(Frame &curr_frame, Frame &prev_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) = 0;
 
     // A pose optimization that occurs during Tracking::TrackLocalMap() to determine the pose of the current frame 
-    virtual void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) = 0; // TO DO: b_map_updated and reloc_recently are TEMPORARY parameters, to be reworked
+    virtual void TrackLocalMapPoseOptimization(Frame &curr_frame, bool &b_map_updated, bool reloc_recently) = 0;
 
     // Called when a Frame become a KeyFrame in the Tracking thread.
     virtual void NewKeyFrameEvent(std::shared_ptr<KeyFrame> ref_kf) = 0;
