@@ -181,8 +181,8 @@ int main(int argc, char **argv)
 
         viewer->update(sophus_pose);
 
-        if (b_results_file && sophus_pose.pose.has_value()) { // write pose to results file if argument is provided
-            write_pose_to_results(results_file, sophus_pose.pose.value().inverse(), t_frame);
+        if (b_results_file && sophus_pose.mapPose.has_value()) { // write pose to results file if argument is provided
+            write_pose_to_results(results_file, sophus_pose.mapPose.value().inverse(), t_frame);
         }
 
         double duration_s = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count(); // in seconds

@@ -81,8 +81,8 @@ void Viewer::update(const Packet &pose){
   if(mpTracker->mState != TrackingState::NOT_INITIALIZED) {
     mpFrameDrawer.Update(mpTracker, pose);
     mpMapDrawer.SetCurrentCameraPose(mpTracker->mCurrentFrame.GetPose());
-    if(pose.pose.has_value())
-      mpMapDrawer.SetCurrentReturnedPose(pose.pose.value());
+    if(pose.mapPose.has_value())
+      mpMapDrawer.SetCurrentReturnedPose(pose.mapPose.value());
   }
 }
 

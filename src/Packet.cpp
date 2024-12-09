@@ -4,12 +4,12 @@
 
 namespace MORB_SLAM{
 
-Packet::Packet() {} // optional initialized to empty
-Packet::Packet(const Sophus::SE3f &pose) : pose{pose} {}
+Packet::Packet(std::optional<Sophus::SE3f> mapPose, std::optional<Sophus::SE3f> deltaPose) : mapPose{mapPose}, deltaPose{deltaPose} {}
 Packet::~Packet(){}
 
 StereoPacket::StereoPacket(const cv::Mat &imgLeft, const cv::Mat &imgRight): Packet(), imgLeft{imgLeft}, imgRight{imgRight} {}
-StereoPacket::StereoPacket(const Sophus::SE3f &pose, const cv::Mat &imgLeft, const cv::Mat &imgRight): Packet(pose), imgLeft{imgLeft}, imgRight{imgRight} {}
+StereoPacket::StereoPacket(const Sophus::SE3f &mapPose, const cv::Mat &imgLeft, const cv::Mat &imgRight): Packet(mapPose), imgLeft{imgLeft}, imgRight{imgRight} {}
+StereoPacket::StereoPacket(const Sophus::SE3f &mapPose, const Sophus::SE3f &deltaPose, const cv::Mat &imgLeft, const cv::Mat &imgRight): Packet(mapPose, deltaPose), imgLeft{imgLeft}, imgRight{imgRight} {}
 
 MonoPacket::MonoPacket(const cv::Mat &img): Packet(), img{img} {}
 MonoPacket::MonoPacket(const Sophus::SE3f &pose, const cv::Mat &img): Packet(pose), img{img} {}
