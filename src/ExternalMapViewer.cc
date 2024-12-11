@@ -22,9 +22,13 @@ ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::strin
     serverAddress(_serverAddress),
     serverPort(_serverPort),
     valuesPushed(false),
-    slamUpdated(false) {
+    slamUpdated(false),
+    clientConnected(false) {
         std::cout << "Creating ExternalMapViewer thread" << std::endl;
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
+        std::cout << "Waiting for a client to connect to the ExternalMapViewer socket server..." << std::endl;
+        while(!clientConnected)
+            usleep(1000);
     }
 
 ExternalMapViewer::~ExternalMapViewer() {
@@ -48,8 +52,6 @@ void ExternalMapViewer::updateSLAM(const Packet &packet) {
 void ExternalMapViewer::run() {
     ix::WebSocketServer server(serverPort, serverAddress);
 
-    std::cout << "ExternalMapViewer started" << std::endl;
-
     server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
             std::cout << "ExternalMapViewer socket opened..." << std::endl;
@@ -59,7 +61,9 @@ void ExternalMapViewer::run() {
             bool isKF;
             int state;
             Sophus::SE3f currentPose;
+            clientConnected = true;
 
+            std::cout << "Starting the ExternalMapViewer" << std::endl;
             while(true) {
                 std::unique_lock<std::mutex> lock(mutexEMV);
                 condvarEMV.wait(lock, [this]{ return (slamUpdated == true || valuesPushed == true); });

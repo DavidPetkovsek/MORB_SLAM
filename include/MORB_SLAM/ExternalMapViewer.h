@@ -42,6 +42,8 @@ class ExternalMapViewer {
         Packet slamPacket;
         bool slamUpdated;
 
+        bool clientConnected;
+
         void run();
         
         int parseTrackingState(const TrackingState state);
