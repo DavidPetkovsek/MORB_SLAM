@@ -21,7 +21,8 @@ ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::strin
     mpTracker(pSystem->mpTracker),
     serverAddress(_serverAddress),
     serverPort(_serverPort),
-    valuesPushed(false) {
+    valuesPushed(false),
+    slamUpdated(false) {
         std::cout << "Creating ExternalMapViewer thread" << std::endl;
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
     }
@@ -31,17 +32,27 @@ ExternalMapViewer::~ExternalMapViewer() {
 }
 
 void ExternalMapViewer::pushValues(float x, float y, float z) {
+    std::lock_guard<std::mutex> lock(mutexEMV);
     pushedValues = {x,y,z};
     valuesPushed = true;
+    condvarEMV.notify_all();
+}
+
+void ExternalMapViewer::updateSLAM(const Packet &packet) {
+    std::lock_guard<std::mutex> lock(mutexEMV);
+    slamPacket = packet;
+    slamUpdated = true;
+    condvarEMV.notify_all();
 }
 
 void ExternalMapViewer::run() {
     ix::WebSocketServer server(serverPort, serverAddress);
 
-    std::cout << "ExternalMapViewer Started" << std::endl;
+    std::cout << "ExternalMapViewer started" << std::endl;
 
     server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
+            std::cout << "ExternalMapViewer socket opened..." << std::endl;
             Frame currentFrame;
             long unsigned int prevFrameID = 0;
             int message = 0; // TODO
@@ -50,20 +61,29 @@ void ExternalMapViewer::run() {
             Sophus::SE3f currentPose;
 
             while(true) {
-                if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
-                    currentFrame = Frame(this->mpTracker->mLastFrame, true);
-                    prevFrameID = currentFrame.mnId;
-                    state = this->mpTracker->mState.getID();
+                std::unique_lock<std::mutex> lock(mutexEMV);
+                condvarEMV.wait(lock, [this]{ return (slamUpdated == true || valuesPushed == true); });
 
-                    if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
-                        isKF = true;
-                    } else {
-                        isKF = false;
+                if (slamUpdated) {
+                    if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
+                        currentFrame = Frame(this->mpTracker->mLastFrame, true);
+                        prevFrameID = currentFrame.mnId;
+                        state = this->mpTracker->mState.getID();
+
+                        if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
+                            isKF = true;
+                        } else {
+                            isKF = false;
+                        }
+                        
+                        currentPose = currentFrame.GetPose();
+                        Sophus::SE3f deltaPose = slamPacket.deltaPose.has_value() ? slamPacket.deltaPose.value() : Sophus::SE3f();
+
+                        webSocket.sendBinary(ExternalMapViewer::slamDataToBinary(currentPose.inverse().rotationMatrix(), currentPose.inverse().translation(), deltaPose.inverse().translation(), state, message, isKF));
                     }
-                    
-                    currentPose = currentFrame.GetPose();
-                    webSocket.sendBinary(ExternalMapViewer::poseToBinary(currentPose.inverse().rotationMatrix(), currentPose.inverse().translation(), state, message, isKF));
-                } 
+                    slamUpdated = false;
+                }
+
 
                 if (valuesPushed) {
                     webSocket.sendBinary(ExternalMapViewer::coordsToBinary(pushedValues));
@@ -85,18 +105,19 @@ void ExternalMapViewer::run() {
     server.wait();
 }
 
-std::vector<uint8_t> ExternalMapViewer::poseToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF) {
+std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const Sophus::Vector3f& deltaTranslation, const int state, const int message, const bool KF) {
     
-    size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool)*2;
+    size_t outputSize = sizeof(float)*15 + sizeof(int)*2 + sizeof(bool)*2;
     std::vector<uint8_t> binaryOutput(outputSize);
     bool isPose = true;
     
     memcpy(binaryOutput.data(), &isPose, sizeof(bool));
     memcpy(binaryOutput.data() + sizeof(bool), rotationMatrix.data(), 9*sizeof(float));
     memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), translation.data(), 3*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), &state, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float) + sizeof(int), &message, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float) + 2*sizeof(int), &KF, sizeof(bool));
+    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), deltaTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float), &state, sizeof(int));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + sizeof(int), &message, sizeof(int));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &KF, sizeof(bool));
 
     return binaryOutput;
 }

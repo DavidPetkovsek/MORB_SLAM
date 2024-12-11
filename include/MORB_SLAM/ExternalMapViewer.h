@@ -21,10 +21,11 @@ class ExternalMapViewer {
         std::mutex mutexEMV;
         std::condition_variable condvarEMV;
 
-        static std::vector<uint8_t> poseToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF);
+        static std::vector<uint8_t> slamDataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const Sophus::Vector3f& deltaTranslation, const int state, const int message, const bool KF);
         static std::vector<uint8_t> coordsToBinary(const std::vector<float>& coords);
 
         void pushValues(float x, float y, float z);
+        void updateSLAM(const Packet &packet);
 
     private:
         std::jthread threadEMV;
@@ -37,6 +38,9 @@ class ExternalMapViewer {
 
         std::vector<float> pushedValues;
         bool valuesPushed;
+
+        Packet slamPacket;
+        bool slamUpdated;
 
         void run();
         
