@@ -18,8 +18,8 @@ class ExternalMapViewer {
         ExternalMapViewer(const System_ptr &pSystem, const std::string& _serverAddress, const int _serverPort);
         virtual ~ExternalMapViewer();
 
-        std::mutex mutexEMV;
-        std::condition_variable condvarEMV;
+        std::mutex mMutexEMV;
+        std::condition_variable mCondvarEMV;
 
         static std::vector<uint8_t> slamDataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const Sophus::Vector3f& deltaTranslation, const int state, const int message, const bool KF);
         static std::vector<uint8_t> coordsToBinary(const std::vector<float>& coords);
@@ -32,17 +32,17 @@ class ExternalMapViewer {
         Tracking_ptr mpTracker;
         
         // Websocket host address
-        const std::string serverAddress;
+        const std::string mServerAddress;
         // Websocket port
-        const int serverPort;
+        const int mServerPort;
 
-        std::vector<float> pushedValues;
-        bool valuesPushed;
+        std::vector<float> mPushedValues;
+        bool mbValuesPushed;
 
-        Packet slamPacket;
-        bool slamUpdated;
+        Packet mSlamPacket;
+        bool mbSlamUpdated;
 
-        bool clientConnected;
+        bool mbClientConnnected;
 
         void run();
         
