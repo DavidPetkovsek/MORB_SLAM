@@ -19,15 +19,15 @@ namespace MORB_SLAM {
 
 ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::string& _serverAddress, const int _serverPort):
     mpTracker(pSystem->mpTracker),
-    serverAddress(_serverAddress),
-    serverPort(_serverPort),
-    valuesPushed(false),
-    slamUpdated(false),
-    clientConnected(false) {
+    mServerAddress(_serverAddress),
+    mServerPort(_serverPort),
+    mbValuesPushed(false),
+    mbSlamUpdated(false),
+    mbClientConnnected(false) {
         std::cout << "Creating ExternalMapViewer thread" << std::endl;
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
         std::cout << "Waiting for a client to connect to the ExternalMapViewer socket server..." << std::endl;
-        while(!clientConnected)
+        while(!mbClientConnnected)
             usleep(1000);
     }
 
@@ -36,21 +36,21 @@ ExternalMapViewer::~ExternalMapViewer() {
 }
 
 void ExternalMapViewer::pushValues(float x, float y, float z) {
-    std::lock_guard<std::mutex> lock(mutexEMV);
-    pushedValues = {x,y,z};
-    valuesPushed = true;
-    condvarEMV.notify_all();
+    std::lock_guard<std::mutex> lock(mMutexEMV);
+    mPushedValues = {x,y,z};
+    mbValuesPushed = true;
+    mCondvarEMV.notify_all();
 }
 
 void ExternalMapViewer::updateSLAM(const Packet &packet) {
-    std::lock_guard<std::mutex> lock(mutexEMV);
-    slamPacket = packet;
-    slamUpdated = true;
-    condvarEMV.notify_all();
+    std::lock_guard<std::mutex> lock(mMutexEMV);
+    mSlamPacket = packet;
+    mbSlamUpdated = true;
+    mCondvarEMV.notify_all();
 }
 
 void ExternalMapViewer::run() {
-    ix::WebSocketServer server(serverPort, serverAddress);
+    ix::WebSocketServer server(mServerPort, mServerAddress);
 
     server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
@@ -61,14 +61,14 @@ void ExternalMapViewer::run() {
             bool isKF;
             int state;
             Sophus::SE3f currentPose;
-            clientConnected = true;
+            mbClientConnnected = true;
 
             std::cout << "Starting the ExternalMapViewer" << std::endl;
             while(true) {
-                std::unique_lock<std::mutex> lock(mutexEMV);
-                condvarEMV.wait(lock, [this]{ return (slamUpdated == true || valuesPushed == true); });
+                std::unique_lock<std::mutex> lock(mMutexEMV);
+                mCondvarEMV.wait(lock, [this]{ return (mbSlamUpdated == true || mbValuesPushed == true); });
 
-                if (slamUpdated) {
+                if (mbSlamUpdated) {
                     if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
                         currentFrame = Frame(this->mpTracker->mLastFrame, true);
                         prevFrameID = currentFrame.mnId;
@@ -81,17 +81,17 @@ void ExternalMapViewer::run() {
                         }
                         
                         currentPose = currentFrame.GetPose();
-                        Sophus::SE3f deltaPose = slamPacket.deltaPose.has_value() ? slamPacket.deltaPose.value() : Sophus::SE3f();
+                        Sophus::SE3f deltaPose = mSlamPacket.deltaPose.has_value() ? mSlamPacket.deltaPose.value() : Sophus::SE3f();
 
                         webSocket.sendBinary(ExternalMapViewer::slamDataToBinary(currentPose.inverse().rotationMatrix(), currentPose.inverse().translation(), deltaPose.inverse().translation(), state, message, isKF));
                     }
-                    slamUpdated = false;
+                    mbSlamUpdated = false;
                 }
 
 
-                if (valuesPushed) {
-                    webSocket.sendBinary(ExternalMapViewer::coordsToBinary(pushedValues));
-                    valuesPushed = false;
+                if (mbValuesPushed) {
+                    webSocket.sendBinary(ExternalMapViewer::coordsToBinary(mPushedValues));
+                    mbValuesPushed = false;
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
