@@ -194,12 +194,7 @@ int main(int argc, char **argv)
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
         viewer->update(sophus_pose);
-        
-        if(sophus_pose.mapPose.has_value()) {
-            Sophus::SE3f returnedTwc = sophus_pose.mapPose.value().inverse();
-            Eigen::Vector3f returnedTranslation = returnedTwc.translation();
-            external_viewer->pushValues(returnedTranslation(0), returnedTranslation(1), returnedTranslation(2));
-        }
+        external_viewer->updateSLAM(sophus_pose);
 
         if (b_results_file && sophus_pose.mapPose.has_value()) { // write pose to results file if argument is provided
             write_pose_to_results(results_file, sophus_pose.mapPose.value().inverse(), t_frame);
