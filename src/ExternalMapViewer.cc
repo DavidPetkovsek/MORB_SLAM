@@ -55,12 +55,6 @@ void ExternalMapViewer::run() {
     server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
         if (msg->type == ix::WebSocketMessageType::Open) {
             std::cout << "ExternalMapViewer socket opened..." << std::endl;
-            Frame currentFrame;
-            long unsigned int prevFrameID = 0;
-            int message = 0; // TODO
-            bool isKF;
-            int state;
-            Sophus::SE3f currentPose;
             mbClientConnnected = true;
 
             std::cout << "Starting the ExternalMapViewer" << std::endl;
@@ -69,22 +63,7 @@ void ExternalMapViewer::run() {
                 mCondvarEMV.wait(lock, [this]{ return (mbSlamUpdated == true || mbValuesPushed == true); });
 
                 if (mbSlamUpdated) {
-                    if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
-                        currentFrame = Frame(this->mpTracker->mLastFrame, true);
-                        prevFrameID = currentFrame.mnId;
-                        state = this->mpTracker->mState.getID();
-
-                        if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
-                            isKF = true;
-                        } else {
-                            isKF = false;
-                        }
-                        
-                        currentPose = currentFrame.GetPose();
-                        Sophus::SE3f deltaPose = mSlamPacket.deltaPose.has_value() ? mSlamPacket.deltaPose.value() : Sophus::SE3f();
-
-                        webSocket.sendBinary(ExternalMapViewer::slamDataToBinary(currentPose.inverse().rotationMatrix(), currentPose.inverse().translation(), deltaPose.inverse().translation(), state, message, isKF));
-                    }
+                    webSocket.sendBinary(ExternalMapViewer::slamDataToBinary(mSlamPacket));
                     mbSlamUpdated = false;
                 }
 
@@ -109,19 +88,29 @@ void ExternalMapViewer::run() {
     server.wait();
 }
 
-std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const Sophus::Vector3f& deltaTranslation, const int state, const int message, const bool KF) {
+std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
+
+    bool isPose = true; // TODO
+    int state = 1; // TODO
+    bool isKF = false; // TODO
+    int message = 0; // TODO
     
+    Sophus::SE3f currentPose = packet.mapPose.has_value() ? packet.mapPose.value().inverse() : Sophus::SE3f();
+    Sophus::SE3f deltaPose = packet.deltaPose.has_value() ? packet.deltaPose.value().inverse() : Sophus::SE3f();
+    Sophus::Matrix3f poseRotation = currentPose.rotationMatrix();
+    Sophus::Vector3f poseTranslation = currentPose.translation();
+    Sophus::Vector3f deltaPoseTranslation = deltaPose.translation();
+
     size_t outputSize = sizeof(float)*15 + sizeof(int)*2 + sizeof(bool)*2;
     std::vector<uint8_t> binaryOutput(outputSize);
-    bool isPose = true;
     
     memcpy(binaryOutput.data(), &isPose, sizeof(bool));
-    memcpy(binaryOutput.data() + sizeof(bool), rotationMatrix.data(), 9*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), translation.data(), 3*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), deltaTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool), poseRotation.data(), 9*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), poseTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), deltaPoseTranslation.data(), 3*sizeof(float));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float), &state, sizeof(int));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + sizeof(int), &message, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &KF, sizeof(bool));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &isKF, sizeof(bool));
 
     return binaryOutput;
 }
