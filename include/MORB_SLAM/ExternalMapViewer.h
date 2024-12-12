@@ -6,6 +6,11 @@
 #include <iostream>
 #include <string>
 
+#include <ixwebsocket/IXNetSystem.h>
+#include <ixwebsocket/IXWebSocket.h>
+#include <ixwebsocket/IXUserAgent.h>
+#include <ixwebsocket/IXWebSocketServer.h>
+
 #include <condition_variable>
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/System.h"
@@ -31,20 +36,20 @@ class ExternalMapViewer {
         std::jthread threadEMV;
         Tracking_ptr mpTracker;
         
-        // Websocket host address
+        // Websocket Server
+        ix::WebSocketServer mServer;
         const std::string mServerAddress;
-        // Websocket port
         const int mServerPort;
-
+        bool mbFirstClientConnected;
+        
         std::vector<float> mPushedValues;
         bool mbValuesPushed;
 
         Packet mSlamPacket;
         bool mbSlamUpdated;
 
-        bool mbClientConnnected;
-
-        void run();
+        
+        void run(std::stop_token token);
 };
 
 }

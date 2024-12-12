@@ -5,11 +5,6 @@
 #include <iostream>
 #include <string>
 
-#include <ixwebsocket/IXNetSystem.h>
-#include <ixwebsocket/IXWebSocket.h>
-#include <ixwebsocket/IXUserAgent.h>
-#include <ixwebsocket/IXWebSocketServer.h>
-
 #include <condition_variable>
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/System.h"
@@ -21,18 +16,44 @@ ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::strin
     mpTracker(pSystem->mpTracker),
     mServerAddress(_serverAddress),
     mServerPort(_serverPort),
+    mServer(_serverPort, _serverAddress),
     mbValuesPushed(false),
     mbSlamUpdated(false),
-    mbClientConnnected(false) {
+    mbFirstClientConnected(false) {
+        
+        mServer.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
+            if (msg->type == ix::WebSocketMessageType::Open) {
+                std::cout << "New client connected to EMV WebSocket server..." << std::endl;
+                std::cout << "id: " << connectionState->getId() << std::endl;
+                std::cout << "Uri: " << msg->openInfo.uri << std::endl;
+                mbFirstClientConnected = true;
+            }
+        });
+
+        auto res = mServer.listen();
+        if (!res.first) {
+            std::cerr << res.second << std::endl;
+            return;
+        }
+
+        std::cout << "Starting ExternalMapViewer WebSocket server..." << std::endl;
+        mServer.start();
+        
         std::cout << "Creating ExternalMapViewer thread" << std::endl;
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
-        std::cout << "Waiting for a client to connect to the ExternalMapViewer socket server..." << std::endl;
-        while(!mbClientConnnected)
+
+        std::cout << "Waiting for atleast one client to connect to the ExternalMapViewer socket server before continuing..." << std::endl;
+        while(!mbFirstClientConnected)
             usleep(1000);
     }
 
 ExternalMapViewer::~ExternalMapViewer() {
+    threadEMV.request_stop();
+    mCondvarEMV.notify_all();
+
     if(threadEMV.joinable()) threadEMV.join();
+    
+    mServer.stop();
 }
 
 void ExternalMapViewer::pushValues(float x, float y, float z) {
@@ -49,43 +70,23 @@ void ExternalMapViewer::updateSLAM(const Packet &packet) {
     mCondvarEMV.notify_all();
 }
 
-void ExternalMapViewer::run() {
-    ix::WebSocketServer server(mServerPort, mServerAddress);
+void ExternalMapViewer::run(std::stop_token token) {
+    while(!token.stop_requested()) {
+        std::unique_lock<std::mutex> lock(mMutexEMV);
+        mCondvarEMV.wait(lock, [this, &token]{ return (mbSlamUpdated == true || mbValuesPushed == true || token.stop_requested()); });
+        
+        for(auto client : mServer.getClients()) {
+            if (mbSlamUpdated) {
+                client->sendBinary(ExternalMapViewer::slamDataToBinary(mSlamPacket));
+                mbSlamUpdated = false;
+            }
 
-    server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
-        if (msg->type == ix::WebSocketMessageType::Open) {
-            std::cout << "ExternalMapViewer socket opened..." << std::endl;
-            mbClientConnnected = true;
-
-            std::cout << "Starting the ExternalMapViewer" << std::endl;
-            while(true) {
-                std::unique_lock<std::mutex> lock(mMutexEMV);
-                mCondvarEMV.wait(lock, [this]{ return (mbSlamUpdated == true || mbValuesPushed == true); });
-
-                if (mbSlamUpdated) {
-                    webSocket.sendBinary(ExternalMapViewer::slamDataToBinary(mSlamPacket));
-                    mbSlamUpdated = false;
-                }
-
-
-                if (mbValuesPushed) {
-                    webSocket.sendBinary(ExternalMapViewer::coordsToBinary(mPushedValues));
-                    mbValuesPushed = false;
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            if (mbValuesPushed) {
+                client->sendBinary(ExternalMapViewer::coordsToBinary(mPushedValues));
+                mbValuesPushed = false;
             }
         }
-    });
-
-    auto res = server.listen();
-    if (!res.first) {
-        std::cerr << res.second << std::endl;
-        return;
     }
-
-    server.start();
-    server.wait();
 }
 
 std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
@@ -126,4 +127,5 @@ std::vector<uint8_t> ExternalMapViewer::coordsToBinary(const std::vector<float>&
         return binaryOutput;
 }
 
-}
+
+} // namespace MORB_SLAM
