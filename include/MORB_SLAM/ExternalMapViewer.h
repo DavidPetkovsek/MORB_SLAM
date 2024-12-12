@@ -21,7 +21,7 @@ class ExternalMapViewer {
         std::mutex mMutexEMV;
         std::condition_variable mCondvarEMV;
 
-        static std::vector<uint8_t> slamDataToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const Sophus::Vector3f& deltaTranslation, const int state, const int message, const bool KF);
+        static std::vector<uint8_t> slamDataToBinary(const Packet &packet);
         static std::vector<uint8_t> coordsToBinary(const std::vector<float>& coords);
 
         void pushValues(float x, float y, float z);
@@ -45,8 +45,6 @@ class ExternalMapViewer {
         bool mbClientConnnected;
 
         void run();
-        
-        int parseTrackingState(const TrackingState state);
 };
 
 }
