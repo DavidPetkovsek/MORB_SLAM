@@ -277,25 +277,11 @@ void MapDrawer::SetCurrentCameraPose(const Sophus::SE3f &Tcw) {
   mCameraPose = Tcw.inverse();
 }
 
-void MapDrawer::SetCurrentReturnedPose(const Sophus::SE3f &Tcw) {
-  std::unique_lock<std::mutex> lock(mMutexReturned);
-  mReturnedPose = Tcw.inverse();
-}
-
 Eigen::Matrix4f MapDrawer::getCameraPose(){
   Eigen::Matrix4f Twc;
   {
     std::unique_lock<std::mutex> lock(mMutexCamera);
     Twc = mCameraPose.matrix();
-  }
-  return Twc;
-}
-
-Eigen::Matrix4f MapDrawer::getReturnedPose() {
-  Eigen::Matrix4f Twc;
-  {
-    std::unique_lock<std::mutex> lock(mMutexReturned);
-    Twc = mReturnedPose.matrix();
   }
   return Twc;
 }
