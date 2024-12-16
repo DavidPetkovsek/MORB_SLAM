@@ -75,9 +75,6 @@ public:
     // Move assignment operator (default)
     Frame& operator=(Frame &&frame) = default;
 
-    // Copy for ExternalMapViewer.
-    Frame(const Frame &frame, const bool copyExternalMapViewer);
-
     // Constructor for rectified stereo cameras.
     Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft, const std::shared_ptr<ORBextractor> &extractorRight, std::shared_ptr<ORBVocabulary> voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const std::shared_ptr<const GeometricCamera> &pCamera, Frame* pPrevF = nullptr, const std::shared_ptr<ExternalFrameData> &pExternalData=nullptr);
 

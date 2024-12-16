@@ -125,13 +125,6 @@ Frame::Frame(const Frame &frame)
   }
 }
 
-// Copy for ExternalMapViewer.
-Frame::Frame(const Frame &frame, const bool copyExternalMapViewer)
-    : mTcw(frame.mTcw),
-      mnId(frame.mnId),
-      mpReferenceKF(frame.mpReferenceKF),
-      isPartiallyConstructed(true){}
-
 // Constructor for rectified stereo cameras.
 Frame::Frame(const Camera_ptr &cam, const cv::Mat &imLeft, const cv::Mat &imRight,
              const double &timeStamp, const std::shared_ptr<ORBextractor> &extractorLeft,
