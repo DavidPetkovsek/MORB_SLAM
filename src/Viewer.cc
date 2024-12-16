@@ -81,8 +81,6 @@ void Viewer::update(const Packet &pose){
   if(mpTracker->mState != TrackingState::NOT_INITIALIZED) {
     mpFrameDrawer.Update(mpTracker, pose);
     mpMapDrawer.SetCurrentCameraPose(mpTracker->mCurrentFrame.GetPose());
-    if(pose.mapPose.has_value())
-      mpMapDrawer.SetCurrentReturnedPose(pose.mapPose.value());
   }
 }
 
@@ -205,12 +203,6 @@ void Viewer::Run() {
   Twc.SetIdentity();
   pangolin::OpenGlMatrix Ow;  // Oriented with g in the z axis
   Ow.SetIdentity();
-
-  pangolin::OpenGlMatrix returnedTwc, returnedTwr;
-  returnedTwc.SetIdentity();
-  pangolin::OpenGlMatrix returnedOw;  // Oriented with g in the z axis
-  returnedOw.SetIdentity();
-
   cv::namedWindow("ORB-SLAM3: Current Frame");
 
   bool bFollow = true;
@@ -228,7 +220,6 @@ void Viewer::Run() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     GetCurrentOpenGLCameraMatrix(mpMapDrawer.getCameraPose(), Twc, Ow);
-    GetCurrentOpenGLCameraMatrix(mpMapDrawer.getReturnedPose(), returnedTwc, returnedOw);
 
     if (menuFollowCamera && bFollow) {
       if (bCameraView)
@@ -277,7 +268,6 @@ void Viewer::Run() {
     d_cam.Activate(s_cam);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     DrawCurrentCamera(Twc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
-    DrawCurrentCamera(returnedTwc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
     
     DrawAxis();
     

@@ -43,10 +43,8 @@ class MapDrawer
     float mCameraLineWidth;
 
     Sophus::SE3f mCameraPose;
-    Sophus::SE3f mReturnedPose;
 
     std::mutex mMutexCamera;
-    std::mutex mMutexReturned;
 
     float mfFrameColors[6][3] = {{0.0f, 0.0f, 1.0f},
                                 {0.8f, 0.4f, 1.0f},
@@ -64,9 +62,6 @@ public:
     float getCameraLineWidth() const;
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
     Eigen::Matrix4f getCameraPose();
-
-    void SetCurrentReturnedPose(const Sophus::SE3f &Tcw);
-    Eigen::Matrix4f getReturnedPose();
 
 };
 
