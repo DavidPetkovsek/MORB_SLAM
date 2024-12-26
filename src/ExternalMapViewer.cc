@@ -66,8 +66,11 @@ void ExternalMapViewer::pushValues(float x, float y, float z) {
 void ExternalMapViewer::updateSLAM(const Packet &packet) {
     std::lock_guard<std::mutex> lock(mMutexEMV);
     mSlamPacket = packet;
-    mbSlamUpdated = true;
-    mCondvarEMV.notify_all();
+
+    if(mSlamPacket.mapPose.has_value() && mSlamPacket.deltaPose.has_value()) {
+        mbSlamUpdated = true;
+        mCondvarEMV.notify_all();
+    }
 }
 
 void ExternalMapViewer::run(std::stop_token token) {
@@ -90,25 +93,37 @@ void ExternalMapViewer::run(std::stop_token token) {
 }
 
 std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
+    static Sophus::SE3f prevOdomPose = Sophus::SE3f(); // Twc
+    static bool isFirstPose = true;
 
-    bool isPose = true; // TODO
+    bool isFromSLAM = true;
     int state = 1; // TODO
     bool isKF = false; // TODO
     int message = 0; // TODO
     
-    Sophus::SE3f currentPose = packet.mapPose.has_value() ? packet.mapPose.value().inverse() : Sophus::SE3f();
-    Sophus::SE3f deltaPose = packet.deltaPose.has_value() ? packet.deltaPose.value().inverse() : Sophus::SE3f();
-    Sophus::Matrix3f poseRotation = currentPose.rotationMatrix();
-    Sophus::Vector3f poseTranslation = currentPose.translation();
-    Sophus::Vector3f deltaPoseTranslation = deltaPose.translation();
+    Sophus::SE3f currentMapPose = packet.mapPose.value().inverse(); // Twc
+    Sophus::SE3f currentOdomPose;
+
+    if(isFirstPose) { // the first pose has not been added yet
+        currentOdomPose = packet.mapPose.value().inverse(); // Twc
+        isFirstPose = false;
+    } else {
+        currentOdomPose = prevOdomPose * packet.deltaPose.value().inverse(); // Twc = Twc * Tcc
+    }
+
+    prevOdomPose = currentOdomPose;
+    
+    Sophus::Matrix3f currentMapPoseRotation = currentMapPose.rotationMatrix();
+    Sophus::Vector3f currentMapPoseTranslation = currentMapPose.translation();
+    Sophus::Vector3f currentOdomPoseTranslation = currentOdomPose.translation();
 
     size_t outputSize = sizeof(float)*15 + sizeof(int)*2 + sizeof(bool)*2;
     std::vector<uint8_t> binaryOutput(outputSize);
     
-    memcpy(binaryOutput.data(), &isPose, sizeof(bool));
-    memcpy(binaryOutput.data() + sizeof(bool), poseRotation.data(), 9*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), poseTranslation.data(), 3*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), deltaPoseTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data(), &isFromSLAM, sizeof(bool));
+    memcpy(binaryOutput.data() + sizeof(bool), currentMapPoseRotation.data(), 9*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), currentMapPoseTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), currentOdomPoseTranslation.data(), 3*sizeof(float));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float), &state, sizeof(int));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + sizeof(int), &message, sizeof(int));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &isKF, sizeof(bool));
@@ -119,9 +134,9 @@ std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
 std::vector<uint8_t> ExternalMapViewer::coordsToBinary(const std::vector<float>& coords) {
     size_t outputSize = sizeof(float)*3 + sizeof(bool);
         std::vector<uint8_t> binaryOutput(outputSize);
-        bool isPose = false;
+        bool isFromSLAM = false;
         
-        memcpy(binaryOutput.data(), &isPose, sizeof(bool));
+        memcpy(binaryOutput.data(), &isFromSLAM, sizeof(bool));
         memcpy(binaryOutput.data() + sizeof(bool), coords.data(), 3*sizeof(float));
 
         return binaryOutput;
