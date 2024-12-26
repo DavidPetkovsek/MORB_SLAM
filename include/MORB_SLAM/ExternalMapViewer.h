@@ -11,16 +11,13 @@
 #include <ixwebsocket/IXUserAgent.h>
 #include <ixwebsocket/IXWebSocketServer.h>
 
-#include <condition_variable>
-#include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/System.h"
-#include "MORB_SLAM/Tracking.h"
+#include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
 
 class ExternalMapViewer {
     public:
-        ExternalMapViewer(const System_ptr &pSystem, const std::string& _serverAddress, const int _serverPort);
+        ExternalMapViewer(const std::string& _serverAddress, const int _serverPort);
         virtual ~ExternalMapViewer();
 
         std::mutex mMutexEMV;
@@ -34,7 +31,6 @@ class ExternalMapViewer {
 
     private:
         std::jthread threadEMV;
-        Tracking_ptr mpTracker;
         
         // Websocket Server
         ix::WebSocketServer mServer;
