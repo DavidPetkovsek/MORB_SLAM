@@ -24,6 +24,7 @@
 #include <ctime>
 #include <sstream>
 #include <filesystem>
+#include <csignal>
 
 #include <opencv2/core/core.hpp>
 
@@ -43,6 +44,13 @@ void write_imgs_to_video(const std::filesystem::path &output_vid_path, const std
 
 void write_pose_to_results(std::ofstream &results_file, Sophus::SE3f pose, double timestamp);
 
+bool exitTest = false;
+
+void sigHandler(int sigNum) {
+    std::cout << "\nClosing EuRoC testing program w/ CTRL+C" << std::endl;
+    exitTest = true;
+}
+
 int main(int argc, char **argv)
 {
     // argv[0] program
@@ -57,6 +65,8 @@ int main(int argc, char **argv)
         std::cerr << "\nRequired arguments: <path_to_vocabulary> <path_to_slam_settings> <path_to_camera_settings> <path_to_odometry_settings> <path_to_euroc_sequence_folder> <results_file_path>" << std::endl;
         return 1;
     }
+
+    signal(SIGINT, sigHandler);
 
     std::vector<std::string> v_str_image_left; // vector containing path to each left frame in the sequence
     std::vector<std::string> v_str_image_right; // vector containing path to each right frame in the sequence
@@ -152,14 +162,14 @@ int main(int argc, char **argv)
     std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
     auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], slam_settings, cam_settings, inertial_odom);
     auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
-    auto external_viewer = std::make_shared<MORB_SLAM::ExternalMapViewer>(SLAM, "0.0.0.0", 9002);
+    auto external_viewer = std::make_shared<MORB_SLAM::ExternalMapViewer>("0.0.0.0", 9002);
 
     std::vector<float> v_duration_track_s; // keeping track of how long each frame took to process
     v_duration_track_s.resize(num_images);
 
     cv::Mat im_left, im_right;
 
-    for(int ni = 0; ni < num_images; ++ni) {
+    for(int ni = 0; ni < num_images && !exitTest; ++ni) {
         im_left = cv::imread(v_str_image_left[ni], cv::IMREAD_UNCHANGED);
         im_right = cv::imread(v_str_image_right[ni], cv::IMREAD_UNCHANGED);
 

@@ -1,19 +1,8 @@
 #include <MORB_SLAM/ExternalMapViewer.h>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
-#include <iostream>
-#include <string>
-
-#include <condition_variable>
-#include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/System.h"
-#include "MORB_SLAM/Tracking.h"
 
 namespace MORB_SLAM {
 
-ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::string& _serverAddress, const int _serverPort):
-    mpTracker(pSystem->mpTracker),
+ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const int _serverPort):
     mServerAddress(_serverAddress),
     mServerPort(_serverPort),
     mServer(_serverPort, _serverAddress),
