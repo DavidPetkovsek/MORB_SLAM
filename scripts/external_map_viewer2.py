@@ -6,29 +6,32 @@ import matplotlib.pyplot as plt
 from threading import Thread, Lock, Event
 import argparse
 
-def parse_binary_data(binary_data):
-        isFromSLAM = binary_data[0]
-        if isFromSLAM==1:
-            pose_data = np.frombuffer(binary_data, dtype=np.float32, count=6, offset=37)
-            return isFromSLAM, pose_data
-        else:
-            pose_data = np.frombuffer(binary_data, dtype=np.float32, count=3, offset=1)
-            return isFromSLAM, pose_data
+def parse_binary_data_SLAM(binary_data):
+    pose_data = np.frombuffer(binary_data, dtype=np.float32, count=6, offset=37)
+    return pose_data
+        
+def parse_binary_data_robot(binary_data):
+    pose_data = np.frombuffer(binary_data, dtype=np.float32, count=3, offset=1)
+    return pose_data
 
 async def main(event: Event):
-    uri = "ws://192.168.1.1:9002"
+    uri = "ws://172.25.60.226:9002"
     try:
         async with websockets.connect(uri, ping_interval=None) as websocket:
             print(f"Connected to WebSocket server: {uri}")
 
             while not event.is_set():
                 binary_data = await websocket.recv()
-                isFromSLAM, pose_data = parse_binary_data(binary_data)
+                isFromSLAM = binary_data[0]
 
                 if isFromSLAM:
-                    if p_SLAM: p_SLAM.update(pose_data[0], pose_data[1], pose_data[2], pose_data[3], pose_data[4], pose_data[5], doDraw=False)
+                    if p_SLAM:
+                        pose_data = parse_binary_data_SLAM(binary_data)
+                        p_SLAM.update(pose_data[0], pose_data[1], pose_data[2], pose_data[3], pose_data[4], pose_data[5], doDraw=False)
                 else:
-                    if p_robot: p_robot.update(pose_data[0], pose_data[1], pose_data[2], doDraw=False)
+                    if p_robot:
+                        pose_data = parse_binary_data_robot(binary_data)
+                        p_robot.update(pose_data[0], pose_data[1], pose_data[2], doDraw=False)
 
     except websockets.exceptions.ConnectionClosed as e:
         print(e)
@@ -69,25 +72,25 @@ class fancy_matplot:
     def update(self, pos_valX, pos_valY, pos_valZ, odom_valX=0, odom_valY=0, odom_valZ=0, doDraw=True):
         updated = False
         with self.lock:
-            # if len(self.pos_datX) < 4 or len(self.pos_datY) < 4 or (not (np.sqrt((pos_valX-self.pos_datX[-1])**2 + (pos_valY-self.pos_datY[-1])**2) < 0.0001)):
-            self.pos_datX.append(pos_valX)
-            self.pos_datY.append(pos_valY)
-            self.pos_datZ.append(pos_valZ)
+            if len(self.pos_datX) < 4 or len(self.pos_datY) < 4 or (np.sqrt((pos_valX-self.pos_datX[-1])**2 + (pos_valY-self.pos_datY[-1])**2) > 0.0001):
+                self.pos_datX.append(pos_valX)
+                self.pos_datY.append(pos_valY)
+                self.pos_datZ.append(pos_valZ)
 
-            self.odom_datX.append(odom_valX)
-            self.odom_datY.append(odom_valY)
-            self.odom_datZ.append(odom_valZ)
+                self.odom_datX.append(odom_valX)
+                self.odom_datY.append(odom_valY)
+                self.odom_datZ.append(odom_valZ)
 
-            self.minX = min(self.minX, pos_valX, odom_valX)
-            self.minY = min(self.minY, pos_valY, odom_valY)
-            self.minZ = min(self.minZ, pos_valZ, odom_valZ)
+                self.minX = min(self.minX, pos_valX, odom_valX)
+                self.minY = min(self.minY, pos_valY, odom_valY)
+                self.minZ = min(self.minZ, pos_valZ, odom_valZ)
 
-            self.maxX = max(self.maxX, pos_valX, odom_valX)
-            self.maxY = max(self.maxY, pos_valY, odom_valY)
-            self.maxZ = max(self.maxZ, pos_valZ, odom_valZ)
+                self.maxX = max(self.maxX, pos_valX, odom_valX)
+                self.maxY = max(self.maxY, pos_valY, odom_valY)
+                self.maxZ = max(self.maxZ, pos_valZ, odom_valZ)
 
-            self.updated = True
-            updated = True
+                self.updated = True
+                updated = True
         
         if doDraw:
             self.draw()
