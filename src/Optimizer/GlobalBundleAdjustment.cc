@@ -230,6 +230,8 @@ void Optimizer::GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIteration
       pMP->mnBAGlobalForKF = nLoopKF;
     }
   }
+
+  pMap->IncreaseChangeIndex();
 }
 
 }  // namespace MORB_SLAM
