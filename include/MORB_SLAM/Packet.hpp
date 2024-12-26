@@ -7,11 +7,15 @@
 #include <sophus/se3.hpp>
 #endif
 
+#include "MORB_SLAM/ImprovedTypes.hpp"
+
 namespace MORB_SLAM{
 
 struct Packet {
-    std::optional<Sophus::SE3f> mapPose; // Transformation from world to camera frame
-    std::optional<Sophus::SE3f> deltaPose; // Transformation from last frame to current frame, where c1 is current frame and c2 is last frame
+    std::optional<Sophus::SE3f> mapPose; // Tcw, Transformation from world to camera frame
+    std::optional<Sophus::SE3f> deltaPose; // Tc1c2, Transformation from last frame to current frame, where c1 is current frame and c2 is last frame
+    TrackingState state = TrackingState::SYSTEM_NOT_READY;
+    bool mapUpdated; // occurs after a LocalBA, GBA, MapMerge, LoopClose
 
     Packet(std::optional<Sophus::SE3f> mapPose = std::nullopt, std::optional<Sophus::SE3f> deltaPose = std::nullopt);
     virtual ~Packet();
