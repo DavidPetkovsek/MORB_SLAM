@@ -4,11 +4,11 @@ import websockets
 import numpy as np
 import matplotlib.pyplot as plt
 from threading import Thread, Lock, Event
+import argparse
 
 def parse_binary_data(binary_data):
         isFromSLAM = binary_data[0]
         if isFromSLAM==1:
-            # rotation_matrix = np.frombuffer(binary_data[1:37], dtype=np.float32).reshape(3, 3)
             pose_data = np.frombuffer(binary_data, dtype=np.float32, count=6, offset=37)
             return isFromSLAM, pose_data
         else:
@@ -26,10 +26,9 @@ async def main(event: Event):
                 isFromSLAM, pose_data = parse_binary_data(binary_data)
 
                 if isFromSLAM:
-                    p_SLAM.update(pose_data[0], pose_data[1], pose_data[2], pose_data[3], pose_data[4], pose_data[5], doDraw=False)
-
-                # else:
-                #     p_AIV.update(pose_data[0], pose_data[1], pose_data[2], doDraw=False)
+                    if p_SLAM: p_SLAM.update(pose_data[0], pose_data[1], pose_data[2], pose_data[3], pose_data[4], pose_data[5], doDraw=False)
+                else:
+                    if p_robot: p_robot.update(pose_data[0], pose_data[1], pose_data[2], doDraw=False)
 
     except websockets.exceptions.ConnectionClosed as e:
         print(e)
@@ -114,18 +113,30 @@ class fancy_matplot:
         return img
 
 if __name__ == "__main__":
-    p_SLAM = fancy_matplot("SLAM")
-    # p_AIV = fancy_matplot("AIV")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--slam', action='store_true')
+    parser.add_argument('--robot', action='store_true')
+    args = parser.parse_args()
 
+    p_SLAM = None
+    p_robot = None
+    
+    if args.slam: p_SLAM = fancy_matplot("SLAM")
+    if args.robot: p_robot = fancy_matplot("Robot")
+    
+    if p_SLAM is None and p_robot is None:
+        print("No arguments were passed.")
+        exit()
+    
     event = Event()
     thread = Thread(target=lambda:asyncio.run(main(event)))
     thread.start()
 
-    # asyncio.run(main())
     try:
         while True:
-            p_SLAM.draw()
-            # p_AIV.draw()
+            if p_SLAM: p_SLAM.draw()
+            if p_robot: p_robot.draw()
+            
             if thread.is_alive():
                 plt.pause(0.1)
             else:
