@@ -191,9 +191,8 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
     std::cout << "Current state on Frame " << mCurrentFrame.mnId << ": " << mState << std::endl;
   
   // Construct output StereoPacket
-  StereoPacket outputPacket(imGrayLeft, imGrayRight);
-  outputPacket.state = mState;
-  outputPacket.mapUpdated = mbMapUpdated;
+  StereoPacket outputPacket(mState, mbMapUpdated, imGrayLeft, imGrayRight);
+
   if(mpOdomSource && !mpAtlas->isOdomInitialized()) return outputPacket;  // early return if odometry is not initialized
   
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && !mForcedLost) {
@@ -232,12 +231,13 @@ RGBDPacket Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, con
 
   Track();
 
-  //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
-  //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    return RGBDPacket(mCurrentFrame.GetPose(), mImGray, imDepth);
+  RGBDPacket outputPacket = RGBDPacket(mState, mbMapUpdated, mImGray, imDepth);
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && !mForcedLost) {
+    outputPacket.mapPose = mCurrentFrame.GetPose(); // Set mapPose
+    if(mbHasPrevDeltaFramePose) outputPacket.deltaPose = mPrevDeltaFramePose; // Set deltaPose
+  }
 
-  return RGBDPacket(mImGray, imDepth);
+  return outputPacket;
 }
 
 MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam) {
@@ -272,12 +272,14 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
   lastID = mCurrentFrame.mnId;
   Track();
 
-  //if state isnt lost, its still possible that it is lost if it trails to infinity - note if its in lost state no keyframes will be produced, but if its in OK state, keyframe will show
-  //if mLastFrame.GetPose() from stereo is not close enough to IMU pose, then set to lost
-  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST)
-    return MonoPacket(mCurrentFrame.GetPose(), mImGray);
+  MonoPacket outputPacket(mState, mbMapUpdated, mImGray);
 
-  return MonoPacket(mImGray);
+  if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST) {
+    outputPacket.mapPose = mCurrentFrame.GetPose(); // Set mapPose
+    if(mbHasPrevDeltaFramePose) outputPacket.deltaPose = mPrevDeltaFramePose; // Set deltaPose
+  }
+
+  return outputPacket;
 }
 
 void Tracking::Track() {
