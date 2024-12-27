@@ -87,9 +87,9 @@ std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
 
     bool isFromSLAM = true;
     int state = 1; // TODO
-    bool isKF = false; // TODO
     int message = 0; // TODO
     
+    bool mapUpdated = packet.mapUpdated;
     Sophus::SE3f currentMapPose = packet.mapPose.value().inverse(); // Twc
     Sophus::SE3f currentOdomPose;
 
@@ -115,7 +115,7 @@ std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
     memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), currentOdomPoseTranslation.data(), 3*sizeof(float));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float), &state, sizeof(int));
     memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + sizeof(int), &message, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &isKF, sizeof(bool));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &mapUpdated, sizeof(bool));
 
     return binaryOutput;
 }
