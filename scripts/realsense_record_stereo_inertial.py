@@ -20,7 +20,11 @@ def main():
     parser.add_argument("--fps", type=int, default=15)
     
     args = parser.parse_args()
-    cam_data_dirs = (os.path.join(args.output_path, "cam0"), os.path.join(args.output_path, "cam1"))
+    data_dirs = [
+        os.path.join(args.output_path, "cam0"),
+        os.path.join(args.output_path, "cam1"),
+        os.path.join(args.output_path, "IMU"),
+    ]
 
     if os.path.exists(args.output_path): 
         while True:
@@ -34,20 +38,15 @@ def main():
             else:
                 print("Invalid input, try again.")
 
-        for dir in cam_data_dirs:
-            if not os.path.exists(dir):
-                print(f"Directory {dir} does not exist, creating one...")
-                os.makedirs(dir)
-            else:
-                print(f"Directory {dir} exists, removing it's contents...")
-                for item in os.listdir(dir):
-                    item_path = os.path.join(dir, item)
-                    if os.path.isfile(item_path):
-                        os.remove(item_path) 
-                    elif os.path.isdir(item_path):
-                        shutil.rmtree(item_path)
+        for dir in data_dirs:
+            if os.path.exists(dir):
+                print(f"Removing {dir}...")
+                shutil.rmtree(dir)
+
+            print(f"Creating {dir}...")
+            os.makedirs(dir)
     else:
-        for dir in cam_data_dirs:  
+        for dir in data_dirs:
             print(f"Creating {dir}...")
             os.makedirs(dir)
 
@@ -76,7 +75,7 @@ def main():
     cam_frame_count = 0 # keep track of how many frames we've read
 
     try:
-        with open(os.path.join(args.output_path, "accel.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam_data.csv"), 'w', newline='') as cam_csvfile:
+        with open(os.path.join(args.output_path, "IMU", "acc.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "IMU", "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam0", "times.csv"), 'w', newline='') as cam_csvfile:
             accel_csv_writer = csv.writer(accel_csvfile, delimiter=',')
             accel_csv_writer.writerow(["#timestamp [ms]", "a_x [m s^-2]", "a_y [m s^-2]", "a_z [m s^-2]"])
 
