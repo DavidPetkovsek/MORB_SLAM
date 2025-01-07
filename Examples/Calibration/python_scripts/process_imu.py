@@ -19,7 +19,8 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
+import csv
+import os
 
 class dataset:
 
@@ -33,45 +34,109 @@ class dataset:
         self.gyro = np.zeros((1, 4))
         self.timesCam = np.zeros((1, 1))
 
-        timesName = self.name + "/cam0/times.txt"
-        timeFile = open(timesName, "r")
-        i = 0
-        next = 0
-        for line in timeFile:
-            currentline = line.split(",")
-            if i%2 == 0:
-                self.timesCam[next] = currentline
-                next = next + 1
-                self.timesCam = np.pad(self.timesCam, ((0, 1), (0, 0)), mode='constant', constant_values=0)
-            i = i + 1
-            print(i, "/", next)
+        times_path = os.path.join(dirName, "cam0", "times")
+        acc_path = os.path.join(dirName, "IMU", "acc")
+        gyro_path = os.path.join(dirName, "IMU", "gyro")
 
+        is_csv = False
+        is_txt = False
 
-        accName = self.name + "/IMU/acc.txt"
-        accFile = open(accName, "r")
-        i = 0
-        for line in accFile:
-            currentline = line.split(",")
-            for j in range(0, 4):
-                self.acc[i][j] = currentline[j]
-            self.acc = np.pad(self.acc, ((0, 1), (0, 0)), mode='constant', constant_values=0)
-            i = i + 1
+        if os.path.exists(times_path + ".csv") and os.path.exists(acc_path + ".csv") and os.path.exists(gyro_path + ".csv"):
+            is_csv  = True
+        
+        if os.path.exists(times_path + ".txt") and os.path.exists(acc_path + ".txt") and os.path.exists(gyro_path + ".txt"):
+            is_txt  = True
 
-        gyroName = self.name + "/IMU/gyro.txt"
-        gyroFile = open(gyroName, "r")
-        i = 0
-        for line in gyroFile:
-            currentline = line.split(",")
-            for j in range(0, 4):
-                self.gyro[i][j] = currentline[j]
-            self.gyro = np.pad(self.gyro, ((0, 1), (0, 0)), mode='constant', constant_values=0)
-            i = i + 1
+        if is_csv:
+            print("Loading csv data...")
+            self.load_csv_data(times_path + ".csv", acc_path + ".csv", gyro_path + ".csv")
+        elif is_txt:
+            print("Loading txt data...")
+            self.load_txt_data(times_path + ".txt", acc_path + ".txt", gyro_path + ".txt")
+        else:
+            print("The required data files to process IMU do not exist.")
+            exit(1)
+
+        print("Finished")
+
+    def load_csv_data(self, times_file, acc_file, gyro_file):
+        with open(times_file, "r") as file:
+            i = 0
+            n = 0
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0][0] == '#': continue
+                if i % 2 == 0:
+                    self.timesCam[n] = row
+                    n += 1
+                    self.timesCam = np.pad(self.timesCam, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                i += 1
+                print(f"Processing CSV: {i}/{n}")
+
+        with open(acc_file, "r") as file:
+            i = 0
+            reader = csv.reader(file)
+            for currentline in reader:
+                if currentline[0][0] == '#': continue
+                if len(currentline) >= 4:
+                    for j in range(0, 4):
+                        self.acc[i][j] = currentline[j]
+                    self.acc = np.pad(self.acc, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                    i += 1 
+
+        with open(gyro_file, "r") as file:
+            i = 0
+            reader = csv.reader(file)
+            for currentline in reader:
+                if currentline[0][0] == '#': continue
+                if len(currentline) >= 4:
+                    for j in range(0, 4):
+                        self.gyro[i][j] = currentline[j]
+                    self.gyro = np.pad(self.gyro, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                    i += 1 
 
         self.timesCam = np.delete(self.timesCam, self.timesCam.shape[0] - 1, axis=0)
         self.acc = np.delete(self.acc, self.acc.shape[0] - 1, axis=0)
         self.gyro = np.delete(self.gyro, self.gyro.shape[0] - 1, axis=0)
 
-        print("Finished")
+
+    def load_txt_data(self, times_file, acc_file, gyro_file):
+        with open(times_file, "r") as file:
+            i = 0
+            next = 0
+            for line in file:
+                currentline = line.split(",")
+                if currentline[0][0] == '#': continue
+                if i%2 == 0:
+                    self.timesCam[next] = currentline
+                    next = next + 1
+                    self.timesCam = np.pad(self.timesCam, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                i = i + 1
+                print(i, "/", next)
+
+        with open(acc_file, "r") as file:
+            i = 0
+            for line in file:
+                currentline = line.split(",")
+                if currentline[0][0] == '#': continue
+                for j in range(0, 4):
+                    self.acc[i][j] = currentline[j]
+                self.acc = np.pad(self.acc, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                i = i + 1
+
+        with open(gyro_file, "r") as file:
+            i = 0
+            for line in file:
+                currentline = line.split(",")
+                if currentline[0][0] == '#': continue
+                for j in range(0, 4):
+                    self.gyro[i][j] = currentline[j]
+                self.gyro = np.pad(self.gyro, ((0, 1), (0, 0)), mode='constant', constant_values=0)
+                i = i + 1
+
+        self.timesCam = np.delete(self.timesCam, self.timesCam.shape[0] - 1, axis=0)
+        self.acc = np.delete(self.acc, self.acc.shape[0] - 1, axis=0)
+        self.gyro = np.delete(self.gyro, self.gyro.shape[0] - 1, axis=0)
 
     def interpolate(self):
         self.imuSync = np.zeros((self.gyro.shape[0], 7))
