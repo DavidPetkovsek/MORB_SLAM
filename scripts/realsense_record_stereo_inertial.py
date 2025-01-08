@@ -76,14 +76,15 @@ def main():
 
     try:
         with open(os.path.join(args.output_path, "IMU", "acc.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "IMU", "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam0", "times.csv"), 'w', newline='') as cam_csvfile:
+            # To maintain compatibility with the process_imu.py script, accel and gyro timestamps are in [s], and camera timestamps are in [ns]
             accel_csv_writer = csv.writer(accel_csvfile, delimiter=',')
-            accel_csv_writer.writerow(["#timestamp [ms]", "a_x [m s^-2]", "a_y [m s^-2]", "a_z [m s^-2]"])
+            accel_csv_writer.writerow(["#timestamp [s]", "a_x [m s^-2]", "a_y [m s^-2]", "a_z [m s^-2]"])
 
             gyro_csv_writer = csv.writer(gyro_csvfile, delimiter=',')
-            gyro_csv_writer.writerow(["#timestamp [ms]", "w_x [rad s^-1]", "w_y [rad s^-1]", "w_z [rad s^-1]"])
+            gyro_csv_writer.writerow(["#timestamp [s]", "w_x [rad s^-1]", "w_y [rad s^-1]", "w_z [rad s^-1]"])
 
             cam_csv_writer = csv.writer(cam_csvfile, delimiter=',')
-            cam_csv_writer.writerow(["#timestamp [ms]"])
+            cam_csv_writer.writerow(["#timestamp [ns]"])
 
             print("Recording started...")
 
@@ -97,7 +98,7 @@ def main():
                 cam_frames = cam_pipeline.poll_for_frames()
 
                 if accel_frames:
-                    accel_timestamp = accel_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) # backend timestamp is used because the frame timestamp is not from epoch
+                    accel_timestamp = accel_frames.get_timestamp() / 1000 # convert from milliseconds to seconds
                     accel_data = accel_frames[0].as_motion_frame().get_motion_data()
                     accel_csv_writer.writerow([
                         accel_timestamp,
@@ -107,7 +108,7 @@ def main():
                     ])
                 
                 if gyro_frames:
-                    gyro_timestamp = gyro_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) # backend timestamp is used because the frame timestamp is not from epoch
+                    gyro_timestamp = gyro_frames.get_timestamp() / 1000 # convert from milliseconds to seconds
                     gyro_data = gyro_frames[0].as_motion_frame().get_motion_data()
                     gyro_csv_writer.writerow([
                         gyro_timestamp,
@@ -120,11 +121,11 @@ def main():
                     left_cam_frame = np.asarray(cam_frames[0].get_data())
                     right_cam_frame = np.asarray(cam_frames[1].get_data())
 
-                    cam_timestamp = cam_frames.get_timestamp()
+                    cam_timestamp = cam_frames.get_timestamp() * 1000000 # convert from milliseconds to nanoseconds
 
                     cv2.imshow("Left Camera", left_cam_frame)
-                    cv2.imwrite(os.path.join(args.output_path, 'cam0', str(cam_timestamp) + '.png'), left_cam_frame)
-                    cv2.imwrite(os.path.join(args.output_path, 'cam1', str(cam_timestamp) + '.png'), right_cam_frame)
+                    cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
+                    cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
                     cam_csv_writer.writerow([cam_timestamp])
 
                     cam_frame_count += 1
