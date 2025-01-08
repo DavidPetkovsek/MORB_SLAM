@@ -122,11 +122,14 @@ def main():
 
                     cam_timestamp = cam_frames.get_timestamp()
 
+                    cv2.imshow("Left Camera", left_cam_frame)
                     cv2.imwrite(os.path.join(args.output_path, 'cam0', str(cam_timestamp) + '.png'), left_cam_frame)
                     cv2.imwrite(os.path.join(args.output_path, 'cam1', str(cam_timestamp) + '.png'), right_cam_frame)
                     cam_csv_writer.writerow([cam_timestamp])
 
                     cam_frame_count += 1
+
+                    cv2.waitKey(1) # 1 millisecond, just to display the image
 
     except KeyboardInterrupt:
         print("Caught KeyboardInterrupt!")
