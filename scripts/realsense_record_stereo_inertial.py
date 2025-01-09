@@ -126,7 +126,7 @@ def main():
                     cv2.imshow("Left Camera", left_cam_frame)
                     cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
                     cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
-                    cam_csv_writer.writerow([cam_timestamp])
+                    cam_csv_writer.writerow([f"{cam_timestamp:.0f}"])
 
                     cam_frame_count += 1
 
