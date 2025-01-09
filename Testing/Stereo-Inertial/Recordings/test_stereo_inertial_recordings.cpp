@@ -206,7 +206,11 @@ int main(int argc, char **argv)
         // Wait to load the next frame
         if(ni < num_images-1) {
             double T = v_timestamp_cam_s[ni+1]-t_frame; // time between current frame and next frame, in seconds
-            usleep((T - duration_s) * 1e6); // usleep uses microseconds
+            double t_wait = T - duration_s;
+            if(t_wait > 0)
+                usleep((t_wait) * 1e6); // usleep uses microseconds
+            else
+                std::cout << "WARNING: SLAM took " << -t_wait << " seconds too long to process the camera frame!" << std::endl;
         }
     }
 
