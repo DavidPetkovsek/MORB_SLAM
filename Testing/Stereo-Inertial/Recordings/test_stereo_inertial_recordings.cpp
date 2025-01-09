@@ -133,19 +133,19 @@ int main(int argc, char **argv)
         imu_settings->SetTbc(imu_settings->Tbc() * cam_settings->Tr1u1().inverse());
     }
 
-    // Write the image sequences to a video, if a video doesn't exist
-    std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
-    std::filesystem::path output_vid_path_right = path_to_seq / "stereo_right.avi";
+    // // Write the image sequences to a video, if a video doesn't exist
+    // std::filesystem::path output_vid_path_left = path_to_seq / "stereo_left.avi";
+    // std::filesystem::path output_vid_path_right = path_to_seq / "stereo_right.avi";
 
-    if(!std::filesystem::exists(output_vid_path_left)) {
-        std::cout << "Creating a video using the left image sequence: " << output_vid_path_left << std::endl;
-        write_imgs_to_video(output_vid_path_left, v_str_image_left, cam_settings->fps());
-    }
+    // if(!std::filesystem::exists(output_vid_path_left)) {
+    //     std::cout << "Creating a video using the left image sequence: " << output_vid_path_left << std::endl;
+    //     write_imgs_to_video(output_vid_path_left, v_str_image_left, cam_settings->fps());
+    // }
 
-    if (!std::filesystem::exists(output_vid_path_right)) {
-        std::cout << "Creating a video using the right image sequence: " << output_vid_path_right << std::endl;
-        write_imgs_to_video(output_vid_path_right, v_str_image_right, cam_settings->fps());
-    }
+    // if (!std::filesystem::exists(output_vid_path_right)) {
+    //     std::cout << "Creating a video using the right image sequence: " << output_vid_path_right << std::endl;
+    //     write_imgs_to_video(output_vid_path_right, v_str_image_right, cam_settings->fps());
+    // }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
