@@ -94,7 +94,7 @@ def main():
 
             while True:
                 accel_frames = accel_pipeline.poll_for_frames()
-                gyro_frames = accel_pipeline.poll_for_frames()
+                gyro_frames = gyro_pipeline.poll_for_frames()
                 cam_frames = cam_pipeline.poll_for_frames()
 
                 if accel_frames:
