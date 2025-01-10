@@ -139,9 +139,11 @@ def main():
                 
                 with accel_lock:
                     accel_csv_writer.writerows(accel_buffer)
+                    accel_buffer.clear()
                     
                 with gyro_lock:
                     gyro_csv_writer.writerows(gyro_buffer)
+                    gyro_buffer.clear()
 
                 cam_frame_count += 1
                 cv2.waitKey(1) # 1 millisecond, just to display the image
