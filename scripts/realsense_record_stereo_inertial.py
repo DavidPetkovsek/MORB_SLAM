@@ -22,7 +22,7 @@ gyro_buffer = []
 def run_accel(accel_pipeline, event):
     while not event.is_set():
         accel_frames = accel_pipeline.wait_for_frames()
-        accel_timestamp = accel_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) / 1000 # convert from milliseconds to seconds
+        accel_timestamp = accel_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) / 1000000 # convert from microseconds to seconds
         accel_data = accel_frames[0].as_motion_frame().get_motion_data()
         with accel_lock:
             accel_buffer.append([
@@ -35,7 +35,7 @@ def run_accel(accel_pipeline, event):
 def run_gyro(gyro_pipeline, event):
     while not event.is_set():
         gyro_frames = gyro_pipeline.wait_for_frames()
-        gyro_timestamp = gyro_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) / 1000 # convert from milliseconds to seconds
+        gyro_timestamp = gyro_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) / 1000000 # convert from microseconds to seconds
         gyro_data = gyro_frames[0].as_motion_frame().get_motion_data()
         with gyro_lock:
             gyro_buffer.append([
@@ -130,7 +130,7 @@ def main():
                 cam_frames = cam_pipeline.wait_for_frames()
                 left_cam_frame = np.asarray(cam_frames[0].get_data())
                 right_cam_frame = np.asarray(cam_frames[1].get_data())
-                cam_timestamp = cam_frames.get_timestamp() * 1000000 # convert from milliseconds to nanoseconds
+                cam_timestamp = cam_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) * 1000 # convert microseconds to nanoseconds
 
                 cv2.imshow("Left Camera", left_cam_frame)
                 cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
