@@ -12,7 +12,38 @@ import numpy as np
 import cv2
 import shutil
 import argparse
+from threading import Thread, Event, Lock
 
+accel_lock = Lock()
+gyro_lock = Lock()
+accel_buffer = []
+gyro_buffer = []
+
+def run_accel(accel_pipeline, event):
+    while not event.is_set():
+        accel_frames = accel_pipeline.wait_for_frames()
+        accel_timestamp = accel_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) / 1000 # convert from milliseconds to seconds
+        accel_data = accel_frames[0].as_motion_frame().get_motion_data()
+        with accel_lock:
+            accel_buffer.append([
+                accel_timestamp,
+                accel_data.x,
+                accel_data.y,
+                accel_data.z,
+            ])
+
+def run_gyro(gyro_pipeline, event):
+    while not event.is_set():
+        gyro_frames = gyro_pipeline.wait_for_frames()
+        gyro_timestamp = gyro_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) / 1000 # convert from milliseconds to seconds
+        gyro_data = gyro_frames[0].as_motion_frame().get_motion_data()
+        with gyro_lock:
+            gyro_buffer.append([
+                gyro_timestamp,
+                gyro_data.x,
+                gyro_data.y,
+                gyro_data.z,
+            ])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -63,16 +94,15 @@ def main():
     gyro_config = rs.config()
     gyro_config.enable_stream(rs.stream.gyro, format=rs.format.motion_xyz32f, framerate=200)
 
-    cam_pipeline.start(cam_config)
+    cam_pipeline_profile = cam_pipeline.start(cam_config)
     accel_pipeline.start(accel_config)
     gyro_pipeline.start(gyro_config)
 
-    cam_pipeline_profile = cam_pipeline.get_active_profile()
     depth_sensor = cam_pipeline_profile.get_device().query_sensors()[0]
     laser_range = depth_sensor.get_option_range(rs.option.laser_power)
     depth_sensor.set_option(rs.option.laser_power, laser_range.min)
 
-    cam_frame_count = 0 # keep track of how many frames we've read
+    cam_frame_count = 0
 
     try:
         with open(os.path.join(args.output_path, "IMU", "acc.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "IMU", "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam0", "times.csv"), 'w', newline='') as cam_csvfile:
@@ -87,53 +117,39 @@ def main():
             cam_csv_writer.writerow(["#timestamp [ns]"])
 
             print("Recording started...")
+            
+            event = Event()      
+            accel_thread = Thread(target=run_accel, args=[accel_pipeline, event])        
+            gyro_thread = Thread(target=run_gyro, args=[gyro_pipeline, event])
 
             cam_pipeline.wait_for_frames(10000)
-            gyro_pipeline.wait_for_frames(10000)
-            accel_pipeline.wait_for_frames(10000)
+            accel_thread.start()
+            gyro_thread.start()
 
             while True:
-                accel_frames = accel_pipeline.poll_for_frames()
-                gyro_frames = gyro_pipeline.poll_for_frames()
-                cam_frames = cam_pipeline.poll_for_frames()
+                cam_frames = cam_pipeline.wait_for_frames()
+                left_cam_frame = np.asarray(cam_frames[0].get_data())
+                right_cam_frame = np.asarray(cam_frames[1].get_data())
+                cam_timestamp = cam_frames.get_timestamp() * 1000000 # convert from milliseconds to nanoseconds
 
-                if accel_frames:
-                    accel_timestamp = accel_frames.get_timestamp() / 1000 # convert from milliseconds to seconds
-                    accel_data = accel_frames[0].as_motion_frame().get_motion_data()
-                    accel_csv_writer.writerow([
-                        accel_timestamp,
-                        accel_data.x,
-                        accel_data.y,
-                        accel_data.z,
-                    ])
+                cv2.imshow("Left Camera", left_cam_frame)
+                cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
+                cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
+                cam_csv_writer.writerow([f"{cam_timestamp:.0f}"])
                 
-                if gyro_frames:
-                    gyro_timestamp = gyro_frames.get_timestamp() / 1000 # convert from milliseconds to seconds
-                    gyro_data = gyro_frames[0].as_motion_frame().get_motion_data()
-                    gyro_csv_writer.writerow([
-                        gyro_timestamp,
-                        gyro_data.x,
-                        gyro_data.y,
-                        gyro_data.z,
-                    ])
-                
-                if cam_frames:
-                    left_cam_frame = np.asarray(cam_frames[0].get_data())
-                    right_cam_frame = np.asarray(cam_frames[1].get_data())
+                with accel_lock:
+                    accel_csv_writer.writerows(accel_buffer)
+                    
+                with gyro_lock:
+                    gyro_csv_writer.writerows(gyro_buffer)
 
-                    cam_timestamp = cam_frames.get_timestamp() * 1000000 # convert from milliseconds to nanoseconds
-
-                    cv2.imshow("Left Camera", left_cam_frame)
-                    cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
-                    cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
-                    cam_csv_writer.writerow([f"{cam_timestamp:.0f}"])
-
-                    cam_frame_count += 1
-
-                    cv2.waitKey(1) # 1 millisecond, just to display the image
+                cam_frame_count += 1
+                cv2.waitKey(1) # 1 millisecond, just to display the image
 
     except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt!")
+        event.set()
+        accel_thread.join()
+        gyro_thread.join()    
 
     finally:
         print("Exiting...")
@@ -141,9 +157,6 @@ def main():
         accel_pipeline.stop()
         gyro_pipeline.stop()
 
-        cam_csvfile.close()
-        accel_csvfile.close()
-        gyro_csvfile.close()
         print(f"Finished recording {cam_frame_count} frames!")
         
 
