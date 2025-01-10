@@ -208,9 +208,9 @@ int main(int argc, char **argv)
             double T = v_timestamp_cam_s[ni+1]-t_frame; // time between current frame and next frame, in seconds
             double t_wait = T - duration_s;
             if(t_wait > 0)
-                usleep((t_wait) * 1e6); // usleep uses microseconds
+                usleep((t_wait) * 1e6);
             else
-                std::cout << "WARNING: SLAM took " << -t_wait << " seconds too long to process the camera frame!" << std::endl;
+                std::cout << "WARNING: Next frame is " << T << " seconds after current frame, but it took " << duration_s << "s to process the frame, which is " << -t_wait << " seconds too long!" << std::endl;
         }
     }
 
