@@ -13,11 +13,14 @@ import cv2
 import shutil
 import argparse
 from threading import Thread, Event, Lock
+import time
 
 accel_lock = Lock()
 gyro_lock = Lock()
+cam_lock = Lock()
 accel_buffer = []
 gyro_buffer = []
+cam_buffer = []
 
 def run_accel(accel_pipeline, event):
     while not event.is_set():
@@ -104,7 +107,7 @@ def main():
 
     cam_frame_count = 0
 
-    try:
+    def write_to_files(event):
         with open(os.path.join(args.output_path, "IMU", "acc.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "IMU", "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam0", "times.csv"), 'w', newline='') as cam_csvfile:
             # To maintain compatibility with the process_imu.py script, accel and gyro timestamps are in [s], and camera timestamps are in [ns]
             accel_csv_writer = csv.writer(accel_csvfile, delimiter=',')
@@ -115,43 +118,59 @@ def main():
 
             cam_csv_writer = csv.writer(cam_csvfile, delimiter=',')
             cam_csv_writer.writerow(["#timestamp [ns]"])
-
-            print("Recording started...")
             
-            event = Event()      
-            accel_thread = Thread(target=run_accel, args=[accel_pipeline, event])        
-            gyro_thread = Thread(target=run_gyro, args=[gyro_pipeline, event])
-
-            cam_pipeline.wait_for_frames(10000)
-            accel_thread.start()
-            gyro_thread.start()
-
-            while True:
-                cam_frames = cam_pipeline.wait_for_frames()
-                left_cam_frame = np.asarray(cam_frames[0].get_data())
-                right_cam_frame = np.asarray(cam_frames[1].get_data())
-                cam_timestamp = cam_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) * 1000 # convert microseconds to nanoseconds
-
-                cv2.imshow("Left Camera", left_cam_frame)
-                cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
-                cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
-                cam_csv_writer.writerow([f"{cam_timestamp:.0f}"])
-                
-                with accel_lock:
-                    accel_csv_writer.writerows(accel_buffer)
-                    accel_buffer.clear()
+            while not event.is_set():
+                with cam_lock:
+                    if len(cam_buffer):
+                        cam_csv_writer.writerows(cam_buffer)
+                        cam_buffer.clear()
                     
+                with accel_lock:
+                    if len(accel_buffer):
+                        accel_csv_writer.writerows(accel_buffer)
+                        accel_buffer.clear()
+                            
                 with gyro_lock:
-                    gyro_csv_writer.writerows(gyro_buffer)
-                    gyro_buffer.clear()
+                    if len(gyro_buffer):
+                        gyro_csv_writer.writerows(gyro_buffer)
+                        gyro_buffer.clear()
 
-                cam_frame_count += 1
-                cv2.waitKey(1) # 1 millisecond, just to display the image
+                time.sleep(5)
+
+    try:
+        print("Recording started...")
+        
+        event = Event()      
+        accel_thread = Thread(target=run_accel, args=[accel_pipeline, event])        
+        gyro_thread = Thread(target=run_gyro, args=[gyro_pipeline, event])
+        file_thread = Thread(target=write_to_files, args=[event])
+
+        cam_pipeline.wait_for_frames(10000)
+        accel_thread.start()
+        gyro_thread.start()
+        file_thread.start()
+
+        while True:
+            cam_frames = cam_pipeline.wait_for_frames()
+            left_cam_frame = np.asarray(cam_frames[0].get_data())
+            right_cam_frame = np.asarray(cam_frames[1].get_data())
+            cam_timestamp = cam_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) * 1000 # convert microseconds to nanoseconds
+
+            cv2.imshow("Left Camera", left_cam_frame)
+            cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
+            cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
+            
+            with cam_lock:
+                cam_buffer.append([f"{cam_timestamp:.0f}"])
+
+            cam_frame_count += 1
+            cv2.waitKey(1) # 1 millisecond, just to display the image
 
     except KeyboardInterrupt:
         event.set()
         accel_thread.join()
-        gyro_thread.join()    
+        gyro_thread.join()  
+        file_thread.join()  
 
     finally:
         print("Exiting...")
