@@ -1,12 +1,18 @@
 #pragma once
 
+#ifdef FactoryEngine
+#include <apps/morb_sophus/se3.hpp>
+#include <apps/morb_g2o/g2o/types/sim3.h>
+#else
+#include <sophus/se3.hpp>
+#include <g2o/types/sim3.h>
+#endif
+
 #include <memory>
 #include <vector>
 #include <list>
-#include <sophus/se3.hpp>
 #include <map>
 #include <set>
-#include <g2o/types/sim3.h>
 
 #include "MORB_SLAM/ImprovedTypes.hpp"
 

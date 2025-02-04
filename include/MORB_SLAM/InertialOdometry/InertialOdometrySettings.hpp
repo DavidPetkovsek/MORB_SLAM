@@ -2,7 +2,11 @@
 
 #include "MORB_SLAM/Settings/Settings.h"
 
+#ifdef FactoryEngine
+#include <apps/morb_sophus/se3.hpp>
+#else
 #include <sophus/se3.hpp>
+#endif
 
 namespace MORB_SLAM {
 

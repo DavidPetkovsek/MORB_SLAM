@@ -44,7 +44,6 @@
         },
         {
             "name":"opencv4",
-            "default-features": false,
             "cmake":{
                 "package":"OpenCV",
                 "public-libs":["${OpenCV_LIBS}"]
