@@ -47,7 +47,8 @@
             "cmake":{
                 "package":"OpenCV",
                 "public-libs":["${OpenCV_LIBS}"]
-            }
+            },
+            "is-dynamic": true
         },
         {
             "name":"openssl",
