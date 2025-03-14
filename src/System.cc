@@ -243,6 +243,10 @@ bool System::MapChanged() {
   }
 }
 
+bool System::isMapMature() const {
+  return mpAtlas->GetCurrentMap()->isMature();
+}
+
 System::~System() {
   std::cout << "Shutdown" << std::endl;
 

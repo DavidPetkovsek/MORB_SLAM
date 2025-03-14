@@ -85,6 +85,8 @@ class System {
     // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();
 
+    bool isMapMature() const;
+
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
