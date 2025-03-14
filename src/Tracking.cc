@@ -198,6 +198,7 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   if (mState != TrackingState::LOST && mState != TrackingState::RECENTLY_LOST && !mForcedLost) {
     outputPacket.mapPose = mCurrentFrame.GetPose(); // Set mapPose
     if(mbHasPrevDeltaFramePose) outputPacket.deltaPose = mPrevDeltaFramePose; // Set deltaPose
+    if(mpOdomSource && mCurrentFrame.HasVelocity()) outputPacket.velocity = mCurrentFrame.GetRwc().transpose() * mCurrentFrame.GetVelocity(); // Set velocity
   }
 
   return outputPacket;

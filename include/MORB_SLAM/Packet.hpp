@@ -21,7 +21,9 @@ struct Packet {
     Packet(const TrackingState &trackingState, const bool &mapUpdated, std::optional<Sophus::SE3f> mapPose = std::nullopt, std::optional<Sophus::SE3f> deltaPose = std::nullopt);
     virtual ~Packet();
 };
-struct InertialPacket{};
+struct InertialPacket{
+    std::optional<Eigen::Vector3f> velocity;
+};
 
 struct StereoPacket : public Packet, public InertialPacket {
     cv::Mat imgLeft;
