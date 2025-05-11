@@ -15,8 +15,5 @@
                 "public-libs":["${OpenCV_LIBS}"]
             }
         }
-    ],
-    "vcpkg-overlay-ports":[
-        "vcpkg_overlay_ports/libcap"
     ]
 }
