@@ -3,10 +3,6 @@
         {
             "name":"boost-regex",
             "cmake":{
-                "before-find-package":[
-                    "set(Boost_NO_SYSTEM_PATHS ON)",
-                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
-                ],
                 "package":{
                     "name":"Boost",
                     "package-components":["regex"]
@@ -17,10 +13,6 @@
         {
             "name":"boost-serialization",
             "cmake":{
-                "before-find-package":[
-                    "set(Boost_NO_SYSTEM_PATHS ON)",
-                    "set(Boost_NO_WARN_NEW_VERSIONS ON)"
-                ],
                 "package":{
                     "name":"Boost",
                     "package-components":["serialization"]
@@ -69,9 +61,6 @@
         "include": "include",
         "src": "src"
     },
-    "vcpkg-overlay-ports":[
-        "vcpkg_overlay_ports/libcap"
-    ],
     "cmake":[
         {
             "package":"Threads",
@@ -81,6 +70,7 @@
     ],
     "system-deps":{
         "apt":[
+            "libgl1-mesa-dev", "libwayland-dev", "libxkbcommon-dev", "wayland-protocols", "libegl1-mesa-dev",
             "bison", "autoconf", "libtool", "curl", "pkg-config", "libxi-dev", "libxtst-dev", "libxrandr-dev", "nasm", "libgl-dev", "libxmu-dev", "libglu1-mesa-dev", "libudev-dev"
         ],
         "python":[

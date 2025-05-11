@@ -1,8 +1,8 @@
 #ifndef SE3mat_H
 #define SE3mat_H
 
-#include<eigen3/Eigen/Geometry>
-#include<eigen3/Eigen/Core>
+#include<Eigen/Geometry>
+#include<Eigen/Core>
 
 namespace g2o {
 
