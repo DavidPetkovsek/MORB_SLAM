@@ -71,7 +71,7 @@
     "system-deps":{
         "apt":[
             "libgl1-mesa-dev", "libwayland-dev", "libxkbcommon-dev", "wayland-protocols", "libegl1-mesa-dev",
-            "bison", "autoconf", "libtool", "curl", "pkg-config", "libxi-dev", "libxtst-dev", "libxrandr-dev", "nasm", "libgl-dev", "libxmu-dev", "libglu1-mesa-dev", "libudev-dev"
+            "bison", "autoconf", "libtool", "curl", "pkg-config", "libxi-dev", "libxtst-dev", "libxrandr-dev", "nasm", "libgl-dev", "libxmu-dev", "libglu1-mesa-dev", "libudev-dev", {"name": "libltdl-dev", "platform": "arm64"}
         ],
         "python":[
             {
