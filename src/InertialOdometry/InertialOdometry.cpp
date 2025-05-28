@@ -98,10 +98,10 @@ bool InertialOdometry::GrabOdom(double curr_timestamp, double prev_timestamp) {
     std::vector<Eigen::Vector3f> curr_gyro_batch;
     std::vector<double> curr_gyro_timestamp_batch;
     {
-        std::scoped_lock (mMutexAccel, mMutexGyro);
+        std::scoped_lock lock(mMutexAccel, mMutexGyro);
 
-        // Ensure the queues are synchronized... This if statement never returns true.
-        if(mvAccelQueue.size() != mvAccelTimestampQueue.size()|| mvGyroQueue.size() != mvGyroTimestampQueue.size()) {
+        // Ensure the queues are synchronized... This if statement never returns true. (surely)
+        if(mvAccelQueue.size() != mvAccelTimestampQueue.size() || mvGyroQueue.size() != mvGyroTimestampQueue.size()) {
             std::cerr << "ERROR: Could not grab odom measurements. The number of timestamps and IMU measurements don't match. Number of accel measurements: " << mvAccelQueue.size() << ". Number of accel timestamps: " << mvAccelTimestampQueue.size()
                         << ". Number of gyro measurements: " << mvGyroQueue.size() << ". Number of gyro timestamps: " << mvGyroTimestampQueue.size() << "." << std::endl;
             mvAccelQueue.clear();
@@ -169,20 +169,20 @@ std::vector<IMU::Point> InertialOdometry::interpolateImu(const std::vector<Eigen
         return imu_interpolated;
     } else if (n_imu == 2) {
         double t_step = curr_frame_timestamp_s - prev_frame_timestamp_s;
-        imu_interpolated.push_back(IMU::Point((v_imu[0] + v_imu[n_imu-1]) * 0.5, t_step, is_accel));
+        imu_interpolated.push_back(IMU::Point((v_imu[0] + v_imu[1]) * 0.5, t_step, is_accel));
         return imu_interpolated;
     }
 
+    double t_step;
+    Eigen::Vector3f data;
+
     for(int i = 0; i < n_imu-1; ++i) {
-        double t_ab = v_imu_timestamp_s[i+1] -  v_imu_timestamp_s[i]; // time between curr IMU meas and the next IMU meas
+        double t_ab = v_imu_timestamp_s[i+1] - v_imu_timestamp_s[i]; // time between curr IMU meas and the next IMU meas
 
         if(t_ab == 0) {
             std::cout << "WARNING: Two consecutive " << imu_type << " measurements have the same timestamp. Skipping iteration..." << std::endl;
             continue;
         }
-
-        double t_step;
-        Eigen::Vector3f data;
 
         if(i == 0) { // first iter
             double t_ini = v_imu_timestamp_s[i] - prev_frame_timestamp_s; // time from prev camera frame to curr IMU meas
