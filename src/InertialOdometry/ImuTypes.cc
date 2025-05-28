@@ -232,7 +232,7 @@ void Preintegrated::IntegrateNewIMUMeasurement(const Eigen::Vector3f &accelerati
   /* (each term is a 3x3 block)
   B = | ∂θ/∂ng   ∂θ/∂na |
       | ∂v/∂ng   ∂v/∂na |
-      | ∂v/∂ng   ∂p/∂na |
+      | ∂p/∂ng   ∂p/∂na |
   */
   Eigen::Matrix<float, 9, 6> B;
   // ∂θ/∂na = ∂v/∂ng = ∂v/∂ng = 0 (Null Matrix)
@@ -266,7 +266,7 @@ void Preintegrated::IntegrateNewIMUMeasurement(const Eigen::Vector3f &accelerati
   // B represents how the state variables change with a small change in accel or angular velo.
   // ∂v/∂na = dR*dt, since a small change in acceleration changes velocity by a factor of dt
   B.block<3, 3>(3, 3) = dR * dt;
-  // ∂v/∂na
+  // ∂p/∂na
   B.block<3, 3>(6, 3) = dR * 0.5f * dt * dt;
 
   // Update position and velocity jacobians wrt bias correction
