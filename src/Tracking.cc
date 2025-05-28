@@ -527,7 +527,7 @@ void Tracking::Track() {
       }
 
       // Check if we need to insert a new keyframe
-      if (NeedNewKeyFrame() && bOK)
+      if (NeedNewKeyFrame() && (bOK || mSensor.isInertial()))
         CreateNewKeyFrame();
 
       //TK16
