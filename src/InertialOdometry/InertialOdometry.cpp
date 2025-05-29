@@ -246,7 +246,7 @@ bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   }
 
   if (mvImuBatch.size() == 0) {
-    Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::INFO);
     curr_frame_ed->setIntegrated();
     return false;
   }
@@ -262,7 +262,7 @@ bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     curr_frame_ed->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   } else {
-    Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::INFO);
   }
   curr_frame_ed->setIntegrated();
   return hasPreintKF;
@@ -314,7 +314,7 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
   //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    Verbose::PrintMess("No last frame", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("No last frame", Verbose::INFO);
     return false;
   }
 
@@ -560,7 +560,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     }
 
     if(bFIBA) {
-        Verbose::PrintMess("start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("start Global Bundle Adjustment", Verbose::INFO);
         if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
             InertialOptimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, true, priorG, priorA);
         } else {
@@ -569,7 +569,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             LocalMappingSetPoseReverseAxisFlip(curr_kf->GetPose());
         }  
 
-        Verbose::PrintMess("end Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("end Global Bundle Adjustment", Verbose::INFO);
     }
 
     // Get Map Mutex

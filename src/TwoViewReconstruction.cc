@@ -120,6 +120,10 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
 }
 
 void TwoViewReconstruction::FindHomography(std::vector<bool> &vbMatchesInliers, float &score, Eigen::Matrix3f &H21) {
+  #ifdef FactoryEngine
+    fe::Logger::setThreadName("2ViewReconstruction_FH");
+  #endif
+
   // Number of putative matches
   const int N = mvMatches12.size();
 
@@ -166,6 +170,9 @@ void TwoViewReconstruction::FindHomography(std::vector<bool> &vbMatchesInliers, 
 }
 
 void TwoViewReconstruction::FindFundamental(std::vector<bool> &vbMatchesInliers, float &score, Eigen::Matrix3f &F21) {
+  #ifdef FactoryEngine
+    fe::Logger::setThreadName("2ViewReconstruction_FF");
+  #endif
   // Number of putative matches
   const int N = vbMatchesInliers.size();
 

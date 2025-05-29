@@ -115,7 +115,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
     if (!pKFi->mPrevKF) {
       if(pMap->GetOriginKF() != pKFi)
-        Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!", Verbose::INFO);
       continue;
     }
 

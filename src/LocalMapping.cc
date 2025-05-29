@@ -61,6 +61,10 @@ void LocalMapping::SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser) { mpL
 void LocalMapping::SetTracker(Tracking_ptr pTracker) { mpTracker = pTracker; }
 
 void LocalMapping::Run() {
+    #ifdef FactoryEngine
+        fe::Logger::setThreadName("LocalMapping");
+    #endif
+
     mbFinished = false;
 
     while (1) {
@@ -120,7 +124,7 @@ void LocalMapping::Run() {
 
         usleep(3000);
         } catch(const ResetActiveMapSignal & e) {
-            std::cout << "ERROR, ResetActiveMap!!" << std::endl;
+            Verbose::PrintMess("Error detected, reset active Map", Verbose::ERROR);
             mpTracker->RequestResetActiveMap();
         }
     }
@@ -564,7 +568,7 @@ bool LocalMapping::Stop() {
     std::scoped_lock<std::mutex> lock(mMutexStop);
     if (mbStopRequested && !mbNotStop) {
         mbStopped = true;
-        std::cout << "Local Mapping STOP" << std::endl;
+        Verbose::PrintMess("Local Mapping STOP", Verbose::INFO);
         return true;
     }
 
@@ -590,7 +594,7 @@ void LocalMapping::Release() {
     mbStopRequested = false;
     mlNewKeyFrames.clear();
 
-    std::cout << "Local Mapping RELEASE" << std::endl;
+    Verbose::PrintMess("Local Mapping RELEASE", Verbose::INFO);
 }
 
 bool LocalMapping::AcceptKeyFrames() {
@@ -729,10 +733,10 @@ void LocalMapping::KeyFrameCulling() {
 void LocalMapping::RequestReset() {
     {
         std::scoped_lock<std::mutex> lock(mMutexReset);
-        std::cout << "LM: Map reset recieved" << std::endl;
+        Verbose::PrintMess("Map reset request recieved", Verbose::DEBUG);
         mbResetRequested = true;
     }
-    std::cout << "LM: Map reset, waiting..." << std::endl;
+    Verbose::PrintMess("Map reset, waiting...", Verbose::DEBUG);
 
     while (1) {
         {
@@ -741,16 +745,16 @@ void LocalMapping::RequestReset() {
         }
         usleep(3000);
     }
-    std::cout << "LM: Map reset, Done!!!" << std::endl;
+    Verbose::PrintMess("Map reset finished", Verbose::SUCCESS);
 }
 
 void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
     {
         std::scoped_lock<std::mutex> lock(mMutexReset);
-        std::cout << "LM: Active map reset recieved" << std::endl;
+        Verbose::PrintMess("Active map reset request recieved", Verbose::DEBUG);
         mbResetRequestedActiveMap = true;
     }
-    std::cout << "LM: Active map reset, wait for loop..." << std::endl;
+    Verbose::PrintMess("Active map reset, waiting...", Verbose::DEBUG);
     mbResetRequested = true;
     while (1) {
         {
@@ -759,7 +763,7 @@ void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
         }
         usleep(100);
     }
-    std::cout << "LM: Active map reset, Done!!!" << std::endl;
+    Verbose::PrintMess("Active map reset finished", Verbose::DEBUG);
 }
 
 void LocalMapping::ResetIfRequested() {
@@ -769,7 +773,7 @@ void LocalMapping::ResetIfRequested() {
         if (mbResetRequested) {
             executed_reset = true;
 
-            std::cout << "LM: Reseting Atlas in Local Mapping..." << std::endl;
+            Verbose::PrintMess("Reseting Atlas...", Verbose::DEBUG);
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
             mbResetRequested = false;
@@ -777,12 +781,12 @@ void LocalMapping::ResetIfRequested() {
 
             mbBadOdom = false;
 
-            std::cout << "LM: End reseting Local Mapping..." << std::endl;
+            Verbose::PrintMess("End reseting...", Verbose::DEBUG);
         }
 
         if (mbResetRequestedActiveMap) {
             executed_reset = true;
-            std::cout << "LM: Reseting current map in Local Mapping..." << std::endl;
+            Verbose::PrintMess("Reseting current Map...", Verbose::DEBUG);
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
 
@@ -794,10 +798,10 @@ void LocalMapping::ResetIfRequested() {
             mPoseReverseAxisFlip = Sophus::SE3f();
             mpAtlas->setUseGravityDirectionFromLastMap(false);
 
-            std::cout << "LM: End reseting Local Mapping..." << std::endl;
+            Verbose::PrintMess("End reseting..." , Verbose::DEBUG);
         }
     }
-    if (executed_reset) std::cout << "LM: Reset free the mutex" << std::endl;
+    if (executed_reset) Verbose::PrintMess("Reset free the mutex", Verbose::DEBUG);
 }
 
 void LocalMapping::RequestFinish() {

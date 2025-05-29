@@ -169,6 +169,9 @@ static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::O
 
 
 void Viewer::Run() {
+  #ifdef FactoryEngine
+      fe::Logger::setThreadName("Viewer");
+  #endif
 
   pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
 

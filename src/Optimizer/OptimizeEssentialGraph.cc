@@ -278,10 +278,10 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_pt
 }
 
 void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF, std::vector<std::shared_ptr<KeyFrame>>& vpFixedKFs, std::vector<std::shared_ptr<KeyFrame>>& vpFixedCorrectedKFs, std::vector<std::shared_ptr<KeyFrame>>& vpNonFixedKFs, std::vector<std::shared_ptr<MapPoint>>& vpNonCorrectedMPs) {
-  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpFixedKFs.size()) + " KFs fixed in the merged map", Verbose::VERBOSITY_DEBUG);
-  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpFixedCorrectedKFs.size()) + " KFs fixed in the old map", Verbose::VERBOSITY_DEBUG);
-  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpNonFixedKFs.size()) + " KFs non-fixed in the merged map", Verbose::VERBOSITY_DEBUG);
-  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpNonCorrectedMPs.size()) + " MPs non-corrected in the merged map", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpFixedKFs.size()) + " KFs fixed in the merged map", Verbose::DEBUG);
+  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpFixedCorrectedKFs.size()) + " KFs fixed in the old map", Verbose::DEBUG);
+  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpNonFixedKFs.size()) + " KFs non-fixed in the merged map", Verbose::DEBUG);
+  Verbose::PrintMess("Opt_Essential: There are " + std::to_string(vpNonCorrectedMPs.size()) + " MPs non-corrected in the merged map", Verbose::DEBUG);
 
   g2o::SparseOptimizer optimizer;
   optimizer.setVerbose(false);
@@ -327,7 +327,7 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF, std::ve
     vpGoodPose[nIDi] = true;
     vpBadPose[nIDi] = false;
   }
-  Verbose::PrintMess("Opt_Essential: vpFixedKFs loaded", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Opt_Essential: vpFixedKFs loaded", Verbose::DEBUG);
 
   std::set<unsigned long> sIdKF;
   for (std::shared_ptr<KeyFrame> pKFi : vpFixedCorrectedKFs) {
@@ -499,7 +499,7 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF, std::ve
     }
 
     if (num_connections == 0) {
-      Verbose::PrintMess("Opt_Essential: KF " + std::to_string(pKFi->mnId) + " has 0 connections", Verbose::VERBOSITY_DEBUG);
+      Verbose::PrintMess("Opt_Essential: KF " + std::to_string(pKFi->mnId) + " has 0 connections", Verbose::DEBUG);
     }
   }
 
@@ -533,7 +533,7 @@ void Optimizer::OptimizeEssentialGraph(std::shared_ptr<KeyFrame> pCurKF, std::ve
     if(std::shared_ptr<KeyFrame> pRefKF = (pMPi->GetReferenceKeyFrame()).lock()) {
       while (pRefKF->isBad()) {
         if (!pRefKF) {
-          Verbose::PrintMess("MP " + std::to_string(pMPi->mnId) + " without a valid reference KF", Verbose::VERBOSITY_DEBUG);
+          Verbose::PrintMess("MP " + std::to_string(pMPi->mnId) + " without a valid reference KF", Verbose::DEBUG);
           break;
         }
 

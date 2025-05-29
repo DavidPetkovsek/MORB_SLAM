@@ -195,7 +195,7 @@ void Optimizer::GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIteration
   optimizer.setVerbose(false);
   optimizer.initializeOptimization();
   optimizer.optimize(nIterations);
-  Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("BA: End of the optimization", Verbose::INFO);
 
   // Recover optimized data
   // KeyFrames

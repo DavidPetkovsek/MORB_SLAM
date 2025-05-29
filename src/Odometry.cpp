@@ -84,7 +84,7 @@ namespace MORB_SLAM {
                     if (pChild->isVelocitySet()) {
                         pChild->mVwbGBA = Rcor * pChild->GetVelocity();
                     } else {
-                        Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Child velocity empty!! ", Verbose::INFO);
                     }
                     
                     if(pChild->mpExternalKeyFrameData)
@@ -134,7 +134,7 @@ namespace MORB_SLAM {
             }
         }
 
-        Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Map updated!", Verbose::INFO);
     }
 
 } //namespace MORB_SLAM

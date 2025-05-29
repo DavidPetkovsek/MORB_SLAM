@@ -12,7 +12,7 @@ ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const in
         
         mServer.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
             if (msg->type == ix::WebSocketMessageType::Open) {
-                std::cout << "New client connected to EMV WebSocket server..." << std::endl;
+                Verbose::PrintMess("New client connected to EMV WebSocket server...", Verbose::SUCCESS);
                 std::cout << "id: " << connectionState->getId() << std::endl;
                 std::cout << "Uri: " << msg->openInfo.uri << std::endl;
                 mbFirstClientConnected = true;
@@ -25,13 +25,13 @@ ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const in
             return;
         }
 
-        std::cout << "Starting ExternalMapViewer WebSocket server..." << std::endl;
+        Verbose::PrintMess("Starting ExternalMapViewer WebSocket server...", Verbose::INFO);
         mServer.start();
         
-        std::cout << "Creating ExternalMapViewer thread" << std::endl;
+        Verbose::PrintMess("Creating ExternalMapViewer thread", Verbose::INFO);
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
 
-        std::cout << "Waiting for atleast one client to connect to the ExternalMapViewer socket server before continuing..." << std::endl;
+        Verbose::PrintMess("Waiting for atleast one client to connect to the ExternalMapViewer socket server before continuing...", Verbose::INFO);
         while(!mbFirstClientConnected)
             usleep(1000);
     }
@@ -63,6 +63,9 @@ void ExternalMapViewer::updateSLAM(const Packet &packet) {
 }
 
 void ExternalMapViewer::run(std::stop_token token) {
+    #ifdef FactoryEngine
+        fe::Logger::setThreadName("ExternalMapViewer");
+    #endif
     while(!token.stop_requested()) {
         std::unique_lock<std::mutex> lock(mMutexEMV);
         mCondvarEMV.wait(lock, [this, &token]{ return (mbSlamUpdated == true || mbValuesPushed == true || token.stop_requested()); });

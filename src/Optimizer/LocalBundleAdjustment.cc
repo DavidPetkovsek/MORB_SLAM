@@ -86,7 +86,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   num_fixedKF += lFixedCameras.size();
 
   if (num_fixedKF == 0) {
-    Verbose::PrintMess("LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::INFO);
     return;
   }
 
@@ -380,7 +380,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF, std::ve
   int numInsertedPoints = 0;
   for (std::shared_ptr<KeyFrame> pKFi : vpFixedKF) {
     if (pKFi->isBad() || pKFi->GetMap() != pCurrentMap) {
-      Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current map", Verbose::VERBOSITY_NORMAL);
+      Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current map", Verbose::INFO);
       continue;
     }
 

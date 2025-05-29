@@ -75,8 +75,8 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
   int index_cam = -1;
   for (size_t i = 0; i < mvpCameras.size(); ++i) {
     std::shared_ptr<const GeometricCamera> pCam_i = mvpCameras[i];
-    if (!pCam) std::cout << "Not pCam" << std::endl;
-    if (!pCam_i) std::cout << "Not pCam_i" << std::endl;
+    if (!pCam) Verbose::PrintMess("Not pCam", Verbose::WARNING);
+    if (!pCam_i) Verbose::PrintMess("Not pCam_i", Verbose::WARNING);
     
     if (pCam->GetType() != pCam_i->GetType())
       continue;

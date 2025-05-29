@@ -48,7 +48,7 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame>
   if (vpKeyFrameMatchedMP.empty()) {
     bDifferentKFs = true;
     vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>(mN1, pKF2);
-    std::cout << "\033[22;34mEmpty Keyframe\n" << std::endl;
+    Verbose::PrintMess("Empty KeyFrame", Verbose::WARNING);
   }
 
   std::vector<std::shared_ptr<MapPoint>> vpKeyFrameMP1 = pKF1->GetMapPointMatches();

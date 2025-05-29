@@ -98,7 +98,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
             std::unique_lock<std::mutex> lock(*pMutexPose);
             return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
         } else {
-            std::cout<<"ERROR: Getting gyro bias from a KeyFrame that doesn't exist." <<std::endl;
+            Verbose::PrintMess("Getting gyro bias from a KeyFrame that doesn't exist.", Verbose::ERROR);
             return Eigen::Vector3f();
         }
     }
@@ -108,7 +108,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
             std::unique_lock<std::mutex> lock(*pMutexPose);
             return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
         } else {
-            std::cout<<"ERROR: Getting accel bias from a KeyFrame that doesn't exist." <<std::endl;
+            Verbose::PrintMess("Getting accel bias from a KeyFrame that doesn't exist.", Verbose::ERROR);
             return Eigen::Vector3f();
         }
     }
@@ -118,7 +118,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
             std::unique_lock<std::mutex> lock(*pMutexPose);
             return mImuBias;
         } else {
-            std::cout<<"ERROR: Getting imu bias from a KeyFrame that doesn't exist." <<std::endl;
+            Verbose::PrintMess("Getting imu bias from a KeyFrame that doesn't exist.", Verbose::ERROR);
             return IMU::Bias();
         }
     }

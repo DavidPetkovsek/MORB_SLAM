@@ -45,7 +45,7 @@
 
 namespace MORB_SLAM {
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+Verbose::eLevel Verbose::th = Verbose::INFO;
 
 System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
     : mSensor(camSettings->cameraType()),
@@ -71,7 +71,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   bool isRead = false;
 
   // Load ORB Vocabulary
-  std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
+  Verbose::PrintMess("Loading ORB Vocabulary. This could take a while...", Verbose::INFO);
 
   mpVocabulary = std::make_shared<ORBVocabulary>();
   bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
@@ -80,20 +80,20 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
     std::cerr << "Failed to open at: " << strVocFile << std::endl;
     throw std::invalid_argument("Failed to open at: " + strVocFile);
   }
-  std::cout << "Vocabulary loaded!" << std::endl << std::endl;
+  Verbose::PrintMess("Vocabulary loaded!", Verbose::SUCCESS);
 
   // Create KeyFrame Database
   mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
-    std::cout << "Initialization of Atlas from scratch " << std::endl;
+    Verbose::PrintMess("Initialization of Atlas from scratch", Verbose::INFO);
   } else {
     // Load the file with an earlier session
-    std::cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile << std::endl;
+    Verbose::PrintMess("Initialization of Atlas from file: " + mStrLoadAtlasFromFile, Verbose::INFO);
     isRead = LoadAtlas(FileType::BINARY_FILE);
 
     if (!isRead) {
-      std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
+      Verbose::PrintMess("Error to load the file, please try with other session file or vocabulary file", Verbose::FATAL);
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     mpAtlas->CreateNewMap();
@@ -137,14 +137,13 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
     odomSource->SetAtlas(mpAtlas);
   }
 
-  std::cout << "Creating LocalMapping thread" << std::endl;
+  Verbose::PrintMess("Creating LocalMapping thread", Verbose::DEBUG);
   mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
 
-  std::cout << "Creating LoopClosing thread" << std::endl;
+  Verbose::PrintMess("Creating LoopClosing thread", Verbose::DEBUG);
   mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
 
-  // Fix verbosity
-  Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+  Verbose::SetTh(Verbose::DEBUG);
 }
 
 StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp) {
@@ -248,7 +247,7 @@ bool System::isMapMature() const {
 }
 
 System::~System() {
-  std::cout << "Shutdown" << std::endl;
+  Verbose::PrintMess("Shutdown", Verbose::DEBUG);
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -266,7 +265,7 @@ TrackingState System::GetTrackingState() { return mTrackingState; }
 void System::SaveAtlas(int type) const {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::DEBUG);
     // Save the current session
     mpAtlas->PreSave();
     std::cout << "presaved" << std::endl;
@@ -338,10 +337,10 @@ bool System::LoadAtlas(int type) {
   pathLoadFileName = pathLoadFileName.append(".osa");
 
   if (type == TEXT_FILE) {
-    std::cout << "Starting to read the save text file " << std::endl;
+    Verbose::PrintMess("Starting to read the save text file ", Verbose::INFO);
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
-      std::cout << "Load file not found" << std::endl;
+      Verbose::PrintMess("Load file not found", Verbose::WARNING);
       return false;
     }
     boost::archive::text_iarchive ia(ifs);

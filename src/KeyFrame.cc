@@ -489,7 +489,7 @@ void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame> pKF) {
   std::shared_ptr<KeyFrame> self = shared_from_this();
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   if (pKF == self) {
-    std::cout << "ERROR: Change parent KF, the parent and child are the same KF" << std::endl;
+    Verbose::PrintMess("Change parent KF, the parent and child are the same KF", Verbose::FATAL);
     throw std::invalid_argument("The parent and child can not be the same");
   }
 

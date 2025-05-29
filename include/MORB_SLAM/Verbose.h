@@ -11,11 +11,14 @@ namespace MORB_SLAM
 class Verbose {
  public:
     enum eLevel {
-        VERBOSITY_QUIET=0,
-        VERBOSITY_NORMAL=1,
-        VERBOSITY_VERBOSE=2,
-        VERBOSITY_VERY_VERBOSE=3,
-        VERBOSITY_DEBUG=4
+        SUCCESS=0,
+        INFO=1,
+        WARNING=2,
+        ERROR=3,
+        CRITICAL=4,
+        FATAL=5,
+        TODO=6,
+        DEBUG=7
     };
 
     static eLevel th;
@@ -23,7 +26,35 @@ class Verbose {
 public:
     static void PrintMess(std::string str, eLevel lev) {
         #ifdef FactoryEngine
-            fe::Logger::info("Level: ", lev, " | ", str);
+            switch(lev){
+                case SUCCESS:
+                    fe::Logger::success(str);
+                    break;
+                case INFO:
+                    fe::Logger::info(str);
+                    break;
+                case WARNING:
+                    fe::Logger::warning(str);
+                    break;
+                case ERROR:
+                    fe::Logger::error(str);
+                    break;
+                case CRITICAL:
+                    fe::Logger::critical(str);
+                    break;
+                case FATAL:
+                    fe::Logger::fatal(str);
+                    break;
+                case TODO:
+                    fe::Logger::todo(str);
+                    break;
+                case DEBUG:
+                    fe::Logger::debug(str);
+                    break;
+                default:
+                    fe::Logger::info(str);
+                    break;
+            }
         #else
             std::cout << "Level: " << lev << " | " << str << std::endl;
         #endif

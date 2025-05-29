@@ -36,7 +36,7 @@ namespace MORB_SLAM {
 
 // used in LocalMapping::InitializeIMU()
 void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale, Eigen::Vector3d& bg, Eigen::Vector3d& ba, bool bMono, bool bFixedVel, bool bGauss, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
-  Verbose::PrintMess("start inertial optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("start inertial optimization", Verbose::INFO);
   const int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
@@ -181,7 +181,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     if (((eKFd->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && eKFd->mpImuPreintegrated)
       eKFd->mpImuPreintegrated->Reintegrate();
   }
-  Verbose::PrintMess("end inertial optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("end inertial optimization", Verbose::INFO);
 }
 
 // used in LoopClosing
@@ -390,7 +390,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
       g2o::HyperGraph::Vertex* VGDir = optimizer.vertex(4 * (maxKFid + 1));
       g2o::HyperGraph::Vertex* VS = optimizer.vertex(4 * (maxKFid + 1) + 1);
       if (!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS) {
-        Verbose::PrintMess("Error" + std::to_string(VP1->id()) + ", " + std::to_string(VV1->id()) + ", " + std::to_string(VG->id()) + ", " + std::to_string(VA->id()) + ", " + std::to_string(VP2->id()) + ", " + std::to_string(VV2->id()) + ", " + std::to_string(VGDir->id()) + ", " + std::to_string(VS->id()), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Error" + std::to_string(VP1->id()) + ", " + std::to_string(VV1->id()) + ", " + std::to_string(VG->id()) + ", " + std::to_string(VA->id()) + ", " + std::to_string(VP2->id()) + ", " + std::to_string(VV2->id()) + ", " + std::to_string(VGDir->id()) + ", " + std::to_string(VS->id()), Verbose::INFO);
         continue;
       }
       EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
