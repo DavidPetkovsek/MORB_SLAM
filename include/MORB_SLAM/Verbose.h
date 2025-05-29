@@ -1,6 +1,10 @@
 #pragma once
 #include <iostream>
 
+#ifdef FactoryEngine
+#include <fe/Logger.hpp>
+#endif
+
 namespace MORB_SLAM
 {
 
@@ -18,7 +22,11 @@ class Verbose {
 
 public:
     static void PrintMess(std::string str, eLevel lev) {
-        std::cout << "Level: " << lev << " | " << str << std::endl;
+        #ifdef FactoryEngine
+            fe::Logger::info("Level: ", lev, " | ", str);
+        #else
+            std::cout << "Level: " << lev << " | " << str << std::endl;
+        #endif
     }
 
     static void SetTh(eLevel _th) {
