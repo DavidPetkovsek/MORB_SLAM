@@ -820,7 +820,7 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   if (mNextKF && spKF.find(mNextKF) != spKF.end())
     mBackupNextKFId = mNextKF->mnId;
   
-  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
@@ -887,7 +887,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
     mNextKF = mpKFid[mBackupNextKFId];
   }
 
-  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PostLoad();
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->PostLoad();
 
   // Remove all backup container
   mvBackupMapPointsId.clear();

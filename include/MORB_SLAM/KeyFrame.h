@@ -24,6 +24,9 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <mutex>
 #include <map>
 #include <set>
@@ -56,6 +59,12 @@ class KeyFrameDatabase;
 class GeometricCamera;
 
 struct ExternalKeyFrameData {
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {}
+
+    ExternalKeyFrameData() {}
     virtual ~ExternalKeyFrameData() {}
     virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) = 0;
 
@@ -63,18 +72,19 @@ struct ExternalKeyFrameData {
     void SetPoseMutex(const std::shared_ptr<std::mutex> &pMutexPose) { mpMutexPose = pMutexPose; }
     virtual void UpdateChildSpanningTree() = 0;
     virtual void UpdateParentSpanningTree() = 0;
-    // virtual void PreSave() {};
-    // virtual void PostLoad() {};
 
-    // template<class Archive>
-    // void serialize(Archive & ar, unsigned int version) { }
+    virtual void PreSave() {};
+    virtual void PostLoad() {};
 };
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(ExternalKeyFrameData);
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   friend class boost::serialization::access;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version) {
+    // ar.template register_type<ExternalKeyFrameData>();
+
     ar& mnId;
     ar& const_cast<long unsigned int&>(mnFrameId);
     ar& const_cast<double&>(mTimeStamp);
@@ -155,7 +165,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
     ar& mbHasVelocity;
 
-    // ar& mpExternalKeyFrameData;
+    ar& mpExternalKeyFrameData;
   }
 
  public:
