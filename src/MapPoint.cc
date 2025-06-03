@@ -43,6 +43,7 @@ MapPoint::MapPoint()
       mnBAGlobalForKF(0),
       mnVisible(1),
       mnFound(1),
+      mbIsMature(false),
       mbBad(false),
       mpReplaced(nullptr) {
   nMPsInMemory++;
@@ -61,6 +62,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<KeyFrame> pRefKF,
       mpRefKF(pRefKF),
       mnVisible(1),
       mnFound(1),
+      mbIsMature(false),
       mbBad(false),
       mpReplaced(nullptr),
       mfMinDistance(0),
@@ -92,6 +94,7 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, std::shared_ptr<K
       mpRefKF(pRefKF),
       mnVisible(1),
       mnFound(1),
+      mbIsMature(false),
       mbBad(false),
       mpReplaced(nullptr),
       mfMinDistance(0),
@@ -119,6 +122,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, std::shared_ptr<Map> pMap, Frame*
       mnBAGlobalForKF(0),
       mnVisible(1),
       mnFound(1),
+      mbIsMature(false),
       mbBad(false),
       mpReplaced(nullptr),
       mpMap(pMap) {
@@ -288,6 +292,8 @@ void MapPoint::Replace(std::shared_ptr<MapPoint> pMP) {
   std::shared_ptr<MapPoint> self = shared_from_this();
   if (pMP->mnId == self->mnId) return;
 
+  pMP->SetMature(false);
+
   int nvisible, nfound;
   std::map<std::weak_ptr<KeyFrame>, std::tuple<int, int>, std::owner_less<>> obs;
   {
@@ -299,6 +305,7 @@ void MapPoint::Replace(std::shared_ptr<MapPoint> pMP) {
     nvisible = mnVisible;
     nfound = mnFound;
     mpReplaced = pMP;
+    mbIsMature = false;
   }
 
   for (auto &pair : obs) {
@@ -341,6 +348,16 @@ bool MapPoint::isBad() {
   return mbBad;
 }
 
+void MapPoint::SetMature(bool mature) {
+  std::unique_lock<std::mutex> lock(mMutexFeatures);
+  mbIsMature = mature;
+}
+
+bool MapPoint::isMature() {
+  std::unique_lock<std::mutex> lock(mMutexFeatures);
+  return mbIsMature;
+}
+
 void MapPoint::IncreaseVisible(int n) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   mnVisible += n;
@@ -357,6 +374,8 @@ float MapPoint::GetFoundRatio() {
 }
 
 void MapPoint::ComputeDistinctiveDescriptors() {
+  if(isMature()) return;
+  
   // Retrieve all observed descriptors
   std::vector<cv::Mat> vDescriptors;
 
@@ -382,6 +401,8 @@ void MapPoint::ComputeDistinctiveDescriptors() {
       }
     }
   }
+
+  if(vDescriptors.size() > 50) SetMature(true);
 
   if (vDescriptors.empty()) return;
 

@@ -59,6 +59,7 @@ class MapPoint : public std::enable_shared_from_this<MapPoint> {
         serializeMatrix(ar,mDescriptor,version);
         ar & mBackupRefKFId;
 
+        ar & mbIsMature;
         ar & mbBad;
         ar & mBackupReplacedId;
 
@@ -117,6 +118,9 @@ class MapPoint : public std::enable_shared_from_this<MapPoint> {
 
     std::shared_ptr<Map> GetMap();
     void UpdateMap(std::shared_ptr<Map> pMap);
+
+    void SetMature(bool mature);
+    bool isMature();
 
     void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF,std::set<std::shared_ptr<MapPoint>>& spMP);
     void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid);
@@ -183,6 +187,7 @@ class MapPoint : public std::enable_shared_from_this<MapPoint> {
     int mnVisible;
     int mnFound;
 
+    bool mbIsMature;
     // Bad flag (we do not currently erase MapPoint from memory)
     bool mbBad;
     std::shared_ptr<MapPoint> mpReplaced;
