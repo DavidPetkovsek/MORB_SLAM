@@ -84,13 +84,13 @@ KeyFrame::KeyFrame()
       NLeft(0),
       NRight(0),
       isPartiallyConstructed(true),
-      mpExternalKeyFrameData(nullptr) {
+      mpExternalKeyFrameData(nullptr),
+      bOdom(false) {
         nKFsInMemory++;
       }
 
 KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed)
-    : bOdom(pMap->isOdomInitialized()),
-      mnFrameId(F.mnId),
+    : mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
       mnGridCols(FRAME_GRID_COLS),
       mnGridRows(FRAME_GRID_ROWS),
@@ -157,7 +157,8 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
       NRight(F.Nright),
-      mpExternalKeyFrameData(ed) {
+      mpExternalKeyFrameData(ed),
+      bOdom(pMap->isOdomInitialized()) {
   mnId = nNextId++;
   nKFsInMemory++;
 
