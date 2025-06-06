@@ -7,8 +7,7 @@ namespace MORB_SLAM {
 InertialOdometrySettings::InertialOdometrySettings(const std::string &configFile) {
     cv::FileStorage fSettings = loadFile(configFile);
     readIMU(fSettings);
-    std::cout << "\t-Loaded IMU calibration" << std::endl;
-    std::cout << "----------------------------------" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded IMU calibration\n---");
 }
 
 void InertialOdometrySettings::readIMU(cv::FileStorage& fSettings) {

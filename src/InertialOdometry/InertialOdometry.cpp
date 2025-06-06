@@ -68,7 +68,7 @@ void InertialOdometry::AddAccel(const Eigen::Vector3f &accel_meas, const double 
 void InertialOdometry::AddAccel(const std::vector<Eigen::Vector3f> &v_accel_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexAccel);
     if(v_accel_meas.size() != v_timestamp_s.size()) {
-        std::cerr << "ERROR: Could not add batch of accel measurements, the number of timestamps and accel measurements don't match" << std::endl;
+        Verbose::Log(Verbose::CRITICAL, "Could not add batch of accel measurements, the number of timestamps and accel measurements don't match");
         return;
     }
     mvAccelQueue.insert(mvAccelQueue.end(), v_accel_meas.begin(), v_accel_meas.end());
@@ -84,7 +84,7 @@ void InertialOdometry::AddGyro(const Eigen::Vector3f &gyro_meas, const double ti
 void InertialOdometry::AddGyro(const std::vector<Eigen::Vector3f> &v_gyro_meas, const std::vector<double> v_timestamp_s) {
     std::scoped_lock lock(mMutexGyro);
     if(v_gyro_meas.size() != v_timestamp_s.size()) {
-        std::cerr << "ERROR: Could not add batch of gyro measurements, the number of timestamps and gyro measurements don't match" << std::endl;
+        Verbose::Log(Verbose::CRITICAL, "Could not add batch of gyro measurements, the number of timestamps and gyro measurements don't match");
         return;
     }
     mvGyroQueue.insert(mvGyroQueue.end(), v_gyro_meas.begin(), v_gyro_meas.end());
@@ -102,8 +102,8 @@ bool InertialOdometry::GrabOdom(double curr_timestamp, double prev_timestamp) {
 
         // Ensure the queues are synchronized... This if statement never returns true. (surely)
         if(mvAccelQueue.size() != mvAccelTimestampQueue.size() || mvGyroQueue.size() != mvGyroTimestampQueue.size()) {
-            std::cerr << "ERROR: Could not grab odom measurements. The number of timestamps and IMU measurements don't match. Number of accel measurements: " << mvAccelQueue.size() << ". Number of accel timestamps: " << mvAccelTimestampQueue.size()
-                        << ". Number of gyro measurements: " << mvGyroQueue.size() << ". Number of gyro timestamps: " << mvGyroTimestampQueue.size() << "." << std::endl;
+            Verbose::Log(Verbose::CRITICAL, "Could not grab odom measurements. The number of timestamps and IMU measurements don't match. Number of accel measurements: ", mvAccelQueue.size(), ". Number of accel timestamps: ",
+                        mvAccelTimestampQueue.size(), ". Number of gyro measurements: ", mvGyroQueue.size(), ". Number of gyro timestamps: ", mvGyroTimestampQueue.size(), ".");
             mvAccelQueue.clear();
             mvAccelTimestampQueue.clear();
             mvGyroQueue.clear();
@@ -142,14 +142,14 @@ bool InertialOdometry::GrabOdom(double curr_timestamp, double prev_timestamp) {
     size_t n_timestamp_gyro = curr_gyro_timestamp_batch.size();
 
     if(n_accel == 0 || n_gyro == 0) {
-        std::cerr << "ERROR: No accel measurements or gyro measurements occured between the previous and current frame." << std::endl; // atleast one accel AND gyro need to be provided
+        Verbose::Log(Verbose::CRITICAL, "ERROR: No accel measurements or gyro measurements occured between the previous and current frame."); // atleast one accel AND gyro need to be provided
         return false;
     }
 
     std::vector<IMU::Point> v_accel_interpolated = interpolateImu(curr_accel_batch, curr_accel_timestamp_batch, curr_timestamp, prev_timestamp, true);
     std::vector<IMU::Point> v_gyro_interpolated = interpolateImu(curr_gyro_batch, curr_gyro_timestamp_batch, curr_timestamp, prev_timestamp, false);
     if(v_accel_interpolated.empty() || v_gyro_interpolated.empty()) {
-        std::cerr << "ERROR: Interpolation of IMU measurements failed." << std::endl;
+        Verbose::Log(Verbose::CRITICAL, "Interpolation of IMU measurements failed.");
         return false;
     }
 
@@ -180,7 +180,7 @@ std::vector<IMU::Point> InertialOdometry::interpolateImu(const std::vector<Eigen
         double t_ab = v_imu_timestamp_s[i+1] - v_imu_timestamp_s[i]; // time between curr IMU meas and the next IMU meas
 
         if(t_ab == 0) {
-            std::cout << "WARNING: Two consecutive " << imu_type << " measurements have the same timestamp. Skipping iteration..." << std::endl;
+            Verbose::Log(Verbose::WARNING, "Two consecutive ", imu_type, " measurements have the same timestamp. Skipping iteration...");
             continue;
         }
 
@@ -246,7 +246,7 @@ bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
   }
 
   if (mvImuBatch.size() == 0) {
-    Verbose::PrintMess("No IMU data in mvImuBatch!! Did not preintegrate.", Verbose::INFO);
+    Verbose::Log(Verbose::ERROR, "No IMU data in mvImuBatch!! Did not preintegrate.");
     curr_frame_ed->setIntegrated();
     return false;
   }
@@ -262,7 +262,7 @@ bool InertialOdometry::PreintegrateOdom(Frame &curr_frame, Frame &last_frame, st
     curr_frame_ed->mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     curr_frame_ed->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
   } else {
-    Verbose::PrintMess("mvImuBatch is missing either accel or gyro stream", Verbose::INFO);
+    Verbose::Log(Verbose::WARNING, "mvImuBatch is missing either accel or gyro stream");
   }
   curr_frame_ed->setIntegrated();
   return hasPreintKF;
@@ -277,7 +277,7 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
       return false;
 
     if (!mbStationaryInitEnabled && (mpAtlas->CountMaps() <= 1) && (curr_ed->mpImuPreintegratedFrame->avgA - last_ed->mpImuPreintegratedFrame->avgA).norm() < 0.5) {
-      std::cout << "More acceleration is required to initialize the Map" << std::endl;
+      Verbose::Log(Verbose::INFO, "More acceleration is required to initialize the Map");
       return false;
     }
 
@@ -314,7 +314,7 @@ void InertialOdometry::InitialMapMonocular(std::shared_ptr<KeyFrame> curr_kf, st
 bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, std::shared_ptr<KeyFrame> last_kf, bool map_updated) {
   //Is it even possible to get here with no previous frame? Maybe through LocalMappingDisabled shenanigans?
   if (!curr_frame.mpPrevFrame || curr_frame.mpPrevFrame->isPartiallyConstructed) {
-    Verbose::PrintMess("No last frame", Verbose::INFO);
+    Verbose::Log(Verbose::ERROR, "No last frame");
     return false;
   }
 
@@ -368,7 +368,7 @@ bool InertialOdometry::PredictStateOdom(Frame &curr_frame, Frame &last_frame, st
     return true;
   }
 
-  std::cout << "not IMU prediction!!" << std::endl;
+  Verbose::Log(Verbose::ERROR, "not IMU prediction!!");
   return false;
 }
 
@@ -426,10 +426,9 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
 
     int numMoreFramesNeeded = nMinKF - mpAtlas->KeyFramesInMap();
     if (numMoreFramesNeeded > 0) {
-        if(numMoreFramesNeeded == 1)
-            std::cout << "Waiting for 1 more KeyFrame before IMU initialization" << std::endl;
-        else
-            std::cout << "Waiting for " << numMoreFramesNeeded << " more KeyFrames before IMU initialization" << std::endl;
+        std::string plural = "s";
+        if(numMoreFramesNeeded == 1) plural = "";
+        Verbose::Log(Verbose::DEBUG, "Waiting for ", numMoreFramesNeeded, " more KeyFrame", plural, " before IMU initialization");
         return;
     }
 
@@ -448,12 +447,12 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     std::vector<std::shared_ptr<KeyFrame>> vpKF(lpKF.begin(), lpKF.end());
 
     if (vpKF.size() < nMinKF) {
-        std::cout << "cannot initialize, not enough frames in map vpKF?" << std::endl;
+        Verbose::Log(Verbose::ERROR, "cannot initialize, not enough frames in map vpKF?");
         return; // condition could be here too
     }
 
     if (!curr_kf->GetMap()->isOdomInitialized())
-        std::cout << "start IMU initialization" << std::endl;
+        Verbose::Log(Verbose::INFO, "Starting IMU initialization");
 
     double first_ts = vpKF.front()->mTimeStamp;
     if (curr_kf->mTimeStamp - first_ts < minTime) return;
@@ -526,7 +525,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     InertialOptimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, false, false, priorG, priorA);
 
     if (mScale < 1e-1) {
-        std::cout << "scale too small" << std::endl;
+        Verbose::Log(Verbose::ERROR, "scale too small");
         LocalMappingSetInitializing(false);
         return;
     }
@@ -560,7 +559,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     }
 
     if(bFIBA) {
-        Verbose::PrintMess("start Global Bundle Adjustment", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "start Global Bundle Adjustment");
         if (priorA != ImuInitializater::ImuInitType::VIBA2_A) {
             InertialOptimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, curr_kf->mnId, nullptr, true, priorG, priorA);
         } else {
@@ -569,7 +568,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
             LocalMappingSetPoseReverseAxisFlip(curr_kf->GetPose());
         }  
 
-        Verbose::PrintMess("end Global Bundle Adjustment", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "end Global Bundle Adjustment");
     }
 
     // Get Map Mutex
@@ -593,7 +592,7 @@ void InertialOdometry::initializeIMU(ImuInitializater::ImuInitType priorG, ImuIn
     curr_kf->GetMap()->IncreaseChangeIndex();
 
     if(!curr_kf->GetMap()->isPartialMature())
-        std::cout << "end IMU initialization" << std::endl;
+        Verbose::Log(Verbose::SUCCESS, "Finished IMU initialization");
     
 }
 
@@ -605,15 +604,15 @@ void InertialOdometry::PostInitializeOdom() {
         if ((mTinit < 50.0f)) {
             if (curr_kf->GetMap()->isOdomInitialized() && pTracker->mState == TrackingState::OK) {  // Enter here everytime local-mapping is called
                 if (!curr_kf->GetMap()->isPartialMature() && mTinit > 5.0f) {
-                    std::cout << "start VIBA 1" << std::endl;
+                    Verbose::Log(Verbose::INFO, "Starting VIBA 1");
                     curr_kf->GetMap()->SetPartialMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA1_G, ImuInitializater::ImuInitType::VIBA1_A, true);
-                    std::cout << "end VIBA 1" << std::endl;
+                    Verbose::Log(Verbose::SUCCESS, "Finished VIBA 1");
                 } else if (!curr_kf->GetMap()->isMature() && mTinit > timerVIBA2) {
-                    std::cout << "start VIBA 2" << std::endl;
+                    Verbose::Log(Verbose::INFO, "Starting VIBA 2");
                     curr_kf->GetMap()->SetMature();
                     initializeIMU(ImuInitializater::ImuInitType::VIBA2_G, ImuInitializater::ImuInitType::VIBA2_A, true);
-                    std::cout << "end VIBA 2" << std::endl;
+                    Verbose::Log(Verbose::SUCCESS, "Finished VIBA 2");
                 }
 
                 // scale refinement
@@ -662,7 +661,7 @@ void InertialOdometry::scaleRefinement() {
 
     if (mScale < 1e-1)  // 1e-1
     {
-        std::cout << "scale too small" << std::endl;
+        Verbose::Log(Verbose::ERROR, "scale too small");
         LocalMappingSetInitializing(false);
         return;
     }

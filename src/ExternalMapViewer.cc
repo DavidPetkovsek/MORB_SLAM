@@ -12,26 +12,27 @@ ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const in
         
         mServer.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
             if (msg->type == ix::WebSocketMessageType::Open) {
-                Verbose::PrintMess("New client connected to EMV WebSocket server...", Verbose::SUCCESS);
-                std::cout << "id: " << connectionState->getId() << std::endl;
-                std::cout << "Uri: " << msg->openInfo.uri << std::endl;
+                Verbose::Log(Verbose::SUCCESS, "New client connected to EMV WebSocket server...");
+                Verbose::Log(Verbose::DEBUG, "id: ", connectionState->getId());
+                Verbose::Log(Verbose::DEBUG, "Uri: ", msg->openInfo.uri);
                 mbFirstClientConnected = true;
             }
         });
 
         auto res = mServer.listen();
         if (!res.first) {
-            std::cerr << res.second << std::endl;
+
+            Verbose::Log(Verbose::ERROR, res.second);
             return;
         }
 
-        Verbose::PrintMess("Starting ExternalMapViewer WebSocket server...", Verbose::INFO);
+        Verbose::Log(Verbose::INFO, "Starting ExternalMapViewer WebSocket server...");
         mServer.start();
         
-        Verbose::PrintMess("Creating ExternalMapViewer thread", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "Creating ExternalMapViewer thread");
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
 
-        Verbose::PrintMess("Waiting for atleast one client to connect to the ExternalMapViewer socket server before continuing...", Verbose::INFO);
+        Verbose::Log(Verbose::INFO, "Waiting for at least one client to connect to the ExternalMapViewer socket server before continuing...");
         while(!mbFirstClientConnected)
             usleep(1000);
     }

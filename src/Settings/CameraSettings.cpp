@@ -20,30 +20,29 @@ CameraSettings::CameraSettings(const std::string& configFile, const CameraType& 
 
   // Read first camera
   readCamera1(fSettings);
-  std::cout << "\t-Loaded camera 1" << std::endl;
+  Verbose::Log(Verbose::SUCCESS, "Loaded camera 1");
 
   // Read second camera if stereo (not rectified)
   if (sensor_ == MORB_SLAM::CameraType::STEREO || sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
     readCamera2(fSettings);
-    std::cout << "\t-Loaded camera 2" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded camera 2");
   }
 
   // Read image info
   readImageInfo(fSettings);
-  std::cout << "\t-Loaded image info" << std::endl;
+  Verbose::Log(Verbose::SUCCESS, "Loaded image info");
 
   if (sensor_ == MORB_SLAM::CameraType::RGBD || sensor_ == MORB_SLAM::CameraType::IMU_RGBD) {
     readRGBD(fSettings);
-    std::cout << "\t-Loaded RGB-D calibration" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded RGB-D calibration");
   }
-
 
   if (bNeedToRectify_) {
     precomputeRectificationMaps();
-    std::cout << "\t-Computed rectification maps" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Computed rectification maps");
   }
 
-  std::cout << "----------------------------------" << std::endl;
+  Verbose::Log(Verbose::SUCCESS, "Loaded camera settings\n---");
 }
 
 void CameraSettings::readCamera1(cv::FileStorage& fSettings) {
@@ -127,7 +126,7 @@ void CameraSettings::readCamera1(cv::FileStorage& fSettings) {
       calibration1_ = std::make_shared<KannalaBrandt8>(vCalibration);
     }
   } else {
-    std::cerr << "Error: " << cameraModel << " not known" << std::endl;
+    Verbose::Log(Verbose::FATAL, "Error: ", cameraModel, " not known");
     throw std::invalid_argument("Error: " + cameraModel + " not known");
   }
 }
@@ -326,7 +325,7 @@ std::ostream& operator<<(std::ostream& output, const CameraSettings& settings) {
     }
     output << " ]" << std::endl;
   }
-  std::cout << "bout to start camera 2 stuff" << std::endl;
+
   if (settings.sensor_ == MORB_SLAM::CameraType::STEREO || settings.sensor_ == MORB_SLAM::CameraType::IMU_STEREO) {
     output << "\t-Camera 2 parameters (";
     if (settings.cameraModelType_ == CameraSettings::PinHole || settings.cameraModelType_ == CameraSettings::Rectified) {

@@ -399,13 +399,13 @@ int Optimizer::OptimizeSim3(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyF
     }
 
     if (i2 < 0 && !bAllPoints) {
-      Verbose::PrintMess("Remove point -> i2: " + std::to_string(i2) + "; bAllPoints: " + std::to_string(bAllPoints), Verbose::DEBUG);
+      Verbose::Log(Verbose::DEBUG, "Remove point -> i2: ", i2, "; bAllPoints: ", bAllPoints);
       continue;
     }
 
     // the direction the camera is facing defines the positive Z direction. Therefore it should not be able to see MapPoints that are behind it
     if (P3D2c(2) <= 0) {
-      Verbose::PrintMess("Sim3: Z coordinate is negative", Verbose::DEBUG);
+      Verbose::Log(Verbose::DEBUG, "Sim3: Z coordinate is negative");
       continue;
     }
 

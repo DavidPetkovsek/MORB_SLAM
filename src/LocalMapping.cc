@@ -124,7 +124,7 @@ void LocalMapping::Run() {
 
         usleep(3000);
         } catch(const ResetActiveMapSignal & e) {
-            Verbose::PrintMess("Error detected, reset active Map", Verbose::ERROR);
+            Verbose::Log(Verbose::ERROR, "Error detected, reset active Map");
             mpTracker->RequestResetActiveMap();
         }
     }
@@ -568,7 +568,7 @@ bool LocalMapping::Stop() {
     std::scoped_lock<std::mutex> lock(mMutexStop);
     if (mbStopRequested && !mbNotStop) {
         mbStopped = true;
-        Verbose::PrintMess("Local Mapping STOP", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "Local Mapping STOP");
         return true;
     }
 
@@ -594,7 +594,7 @@ void LocalMapping::Release() {
     mbStopRequested = false;
     mlNewKeyFrames.clear();
 
-    Verbose::PrintMess("Local Mapping RELEASE", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "Local Mapping RELEASE");
 }
 
 bool LocalMapping::AcceptKeyFrames() {
@@ -733,10 +733,10 @@ void LocalMapping::KeyFrameCulling() {
 void LocalMapping::RequestReset() {
     {
         std::scoped_lock<std::mutex> lock(mMutexReset);
-        Verbose::PrintMess("Map reset request recieved", Verbose::DEBUG);
+        Verbose::Log(Verbose::DEBUG, "Map reset request recieved");
         mbResetRequested = true;
     }
-    Verbose::PrintMess("Map reset, waiting...", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Map reset, waiting...");
 
     while (1) {
         {
@@ -745,16 +745,16 @@ void LocalMapping::RequestReset() {
         }
         usleep(3000);
     }
-    Verbose::PrintMess("Map reset finished", Verbose::SUCCESS);
+    Verbose::Log(Verbose::SUCCESS, "Map reset finished");
 }
 
 void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
     {
         std::scoped_lock<std::mutex> lock(mMutexReset);
-        Verbose::PrintMess("Active map reset request recieved", Verbose::DEBUG);
+        Verbose::Log(Verbose::DEBUG, "Active map reset request recieved");
         mbResetRequestedActiveMap = true;
     }
-    Verbose::PrintMess("Active map reset, waiting...", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Active map reset, waiting...");
     mbResetRequested = true;
     while (1) {
         {
@@ -763,7 +763,7 @@ void LocalMapping::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
         }
         usleep(100);
     }
-    Verbose::PrintMess("Active map reset finished", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Active map reset finished");
 }
 
 void LocalMapping::ResetIfRequested() {
@@ -773,7 +773,7 @@ void LocalMapping::ResetIfRequested() {
         if (mbResetRequested) {
             executed_reset = true;
 
-            Verbose::PrintMess("Reseting Atlas...", Verbose::DEBUG);
+            Verbose::Log(Verbose::DEBUG, "Reseting Atlas...");
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
             mbResetRequested = false;
@@ -781,12 +781,12 @@ void LocalMapping::ResetIfRequested() {
 
             mbBadOdom = false;
 
-            Verbose::PrintMess("End reseting...", Verbose::DEBUG);
+            Verbose::Log(Verbose::DEBUG, "End reseting...");
         }
 
         if (mbResetRequestedActiveMap) {
             executed_reset = true;
-            Verbose::PrintMess("Reseting current Map...", Verbose::DEBUG);
+            Verbose::Log(Verbose::DEBUG, "Reseting current Map...");
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
 
@@ -798,10 +798,10 @@ void LocalMapping::ResetIfRequested() {
             mPoseReverseAxisFlip = Sophus::SE3f();
             mpAtlas->setUseGravityDirectionFromLastMap(false);
 
-            Verbose::PrintMess("End reseting..." , Verbose::DEBUG);
+            Verbose::Log(Verbose::DEBUG, "End reseting...");
         }
     }
-    if (executed_reset) Verbose::PrintMess("Reset free the mutex", Verbose::DEBUG);
+    if (executed_reset) Verbose::Log(Verbose::DEBUG, "Reset free the mutex");
 }
 
 void LocalMapping::RequestFinish() {

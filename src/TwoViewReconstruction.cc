@@ -97,7 +97,8 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
   float SH, SF;
   Eigen::Matrix3f H, F;
 
-  std::cout << "Creating Thread in TwoViewReconstruction" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Creating Thread in TwoViewReconstruction");
+  
   std::jthread threadH(&TwoViewReconstruction::FindHomography, this, std::ref(vbMatchesInliersH), std::ref(SH), std::ref(H));
   std::jthread threadF(&TwoViewReconstruction::FindFundamental, this, std::ref(vbMatchesInliersF), std::ref(SF), std::ref(F));
 

@@ -31,6 +31,8 @@
 #include <opencv2/core/core.hpp>
 #include <iostream>
 
+#include "MORB_SLAM/Verbose.h"
+
 
 namespace MORB_SLAM {
 
@@ -40,11 +42,10 @@ public:
   static cv::FileStorage loadFile(const std::string configFile) {
     cv::FileStorage fSettings(configFile, cv::FileStorage::READ);
     if (!fSettings.isOpened()) {
-      std::cerr << "[ERROR]: could not open configuration file at: " << configFile << std::endl;
-      std::cerr << "Aborting..." << std::endl;
-      throw std::invalid_argument("[ERROR]: could not open configuration file at: " + configFile);
+      Verbose::Log(Verbose::FATAL, "Could not open configuration file at: ", configFile);
+      throw std::invalid_argument("Could not open configuration file at: " + configFile);
     } else {
-      std::cout << "Loading settings from " << configFile << std::endl;
+      Verbose::Log(Verbose::INFO, "Loading settings from ", configFile);
       return fSettings;
     }
   }
@@ -54,10 +55,10 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return T();
       }
@@ -72,10 +73,10 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return false;
       }
@@ -95,15 +96,15 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return 0.0f;
       }
     } else if (!node.isReal()) {
-      std::cerr << name << " parameter must be a real number, aborting..." << std::endl;
+      Verbose::Log(Verbose::FATAL, name, " parameter must be a real number, aborting...");
       throw std::invalid_argument(name + " parameter must be a real number, aborting...");
     } else {
       found = true;
@@ -116,15 +117,15 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return 0;
       }
     } else if (!node.isInt()) {
-      std::cerr << name << " parameter must be an integer number, aborting..." << std::endl;
+      Verbose::Log(Verbose::FATAL, name, " parameter must be an integer number, aborting...");
       throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
     } else {
       found = true;
@@ -137,16 +138,16 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return std::string();
       }
     } else if (!node.isString()) {
-      std::cerr << name << " parameter must be a std::string, aborting..." << std::endl;
-      throw std::invalid_argument(name + " parameter must be an integer number, aborting...");
+      Verbose::Log(Verbose::FATAL, name, " parameter must be a std::string, aborting...");
+      throw std::invalid_argument(name + " parameter must be a std::string, aborting...");
     } else {
       found = true;
       return node.string();
@@ -158,10 +159,10 @@ public:
     cv::FileNode node = settings[name];
     if (node.empty()) {
       if (required) {
-        std::cerr << name << " required parameter does not exist, aborting..." << std::endl;
+        Verbose::Log(Verbose::FATAL, name, " required parameter does not exist, aborting...");
         throw std::invalid_argument(name + " required parameter does not exist, aborting...");
       } else {
-        std::cerr << name << " optional parameter does not exist..." << std::endl;
+        Verbose::Log(Verbose::WARNING, name, " optional parameter does not exist...");
         found = false;
         return cv::Mat();
       }

@@ -53,13 +53,15 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
       mpCamSettings(camSettings),
       mpSysSettings(sysSettings) {
+  
+  Verbose::SetTh(Verbose::DEBUG);
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
-  std::cout << "Input sensor was set to: " << mSensor << std::endl;
+  Verbose::Log(Verbose::INFO, "Input sensor was set to: ", mSensor);
   
   // We're legally obligated to keep this line
-  std::cout << std::endl << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl << "This is free software, and you are welcome to redistribute it" << std::endl << "under certain conditions. See LICENSE.txt." << std::endl << std::endl;
+  Verbose::Log(Verbose::INFO, "\n\nORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.\nORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.\nThis program comes with ABSOLUTELY NO WARRANTY;\nThis is free software, and you are welcome to redistribute it\nunder certain conditions. See LICENSE.txt.\n");
   
   mStrLoadAtlasFromFile = mpSysSettings->atlasLoadFile();
   mStrSaveAtlasToFile = mpSysSettings->atlasSaveFile();
@@ -71,29 +73,28 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   bool isRead = false;
 
   // Load ORB Vocabulary
-  Verbose::PrintMess("Loading ORB Vocabulary. This could take a while...", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "Loading ORB Vocabulary. This could take a while...");
 
   mpVocabulary = std::make_shared<ORBVocabulary>();
   bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
   if (!bVocLoad) {
-    std::cerr << "Wrong path to vocabulary. " << std::endl;
-    std::cerr << "Failed to open at: " << strVocFile << std::endl;
+    Verbose::Log(Verbose::FATAL, "Failed to open vocabulary at: ", strVocFile);
     throw std::invalid_argument("Failed to open at: " + strVocFile);
   }
-  Verbose::PrintMess("Vocabulary loaded!", Verbose::SUCCESS);
+  Verbose::Log(Verbose::SUCCESS, "Vocabulary loaded!");
 
   // Create KeyFrame Database
   mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
-    Verbose::PrintMess("Initialization of Atlas from scratch", Verbose::INFO);
+    Verbose::Log(Verbose::INFO, "Initialization of Atlas from scratch");
   } else {
     // Load the file with an earlier session
-    Verbose::PrintMess("Initialization of Atlas from file: " + mStrLoadAtlasFromFile, Verbose::INFO);
+    Verbose::Log(Verbose::INFO, "Initialization of Atlas from file: ", mStrLoadAtlasFromFile);
     isRead = LoadAtlas(FileType::BINARY_FILE);
 
     if (!isRead) {
-      Verbose::PrintMess("Error to load the file, please try with other session file or vocabulary file", Verbose::FATAL);
+      Verbose::Log(Verbose::FATAL, "Error to load the file, please try with other session file or vocabulary file");
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     mpAtlas->CreateNewMap();
@@ -111,7 +112,7 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
 
   mpLocalMapper->mThFarPoints = mpSysSettings->thFarPoints();
   if (mpLocalMapper->mThFarPoints != 0) {
-    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
+    Verbose::Log(Verbose::INFO, "Discard points further than ", mpLocalMapper->mThFarPoints, " m from current camera");
     mpLocalMapper->mbFarPoints = true;
   } else {
     mpLocalMapper->mbFarPoints = false;
@@ -137,18 +138,16 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
     odomSource->SetAtlas(mpAtlas);
   }
 
-  Verbose::PrintMess("Creating LocalMapping thread", Verbose::DEBUG);
+  Verbose::Log(Verbose::DEBUG, "Creating LocalMapping thread");
   mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
 
-  Verbose::PrintMess("Creating LoopClosing thread", Verbose::DEBUG);
+  Verbose::Log(Verbose::DEBUG, "Creating LoopClosing thread");
   mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
-
-  Verbose::SetTh(Verbose::DEBUG);
 }
 
 StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
-    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
   }
 
@@ -182,7 +181,7 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
 
 RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
-    std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackRGBD but input sensor was not set to RGBD.");
     throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
   }
 
@@ -209,7 +208,7 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
 MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp) {
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
-    std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial.");
     throw std::invalid_argument("ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial.");
   }
 
@@ -247,7 +246,7 @@ bool System::isMapMature() const {
 }
 
 System::~System() {
-  Verbose::PrintMess("Shutdown", Verbose::DEBUG);
+  Verbose::Log(Verbose::DEBUG, "Shutdown");
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -263,12 +262,12 @@ System::~System() {
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
 void System::SaveAtlas(int type) const {
-  std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Thread ID is: ",  std::this_thread::get_id(),  ". Trying to save");
   if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::DEBUG);
+    Verbose::Log(Verbose::INFO, "Atlas saving to file ", mStrSaveAtlasToFile);
     // Save the current session
     mpAtlas->PreSave();
-    std::cout << "presaved" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "presaved");
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
     // Create the folder if it does not exist
@@ -283,20 +282,21 @@ void System::SaveAtlas(int type) const {
     std::string str_time = std::ctime(&time_time);
     pathSaveFileName = pathSaveFileName.append(".osa");
 
-    std::cout << "About to Calculate " << std::endl;
+    
+    Verbose::Log(Verbose::DEBUG, "About to Calculate");
 
     std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
 
-    std::cout << "Vocab checksum`" << strVocabularyChecksum << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Vocab checksum`", strVocabularyChecksum);
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     std::string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
-    std::cout << "Type is of: " << type << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Type is of: ", type);
 
     if (type == TEXT_FILE) {
-      std::cout << "Starting to write the save text file " << std::endl;
+      Verbose::Log(Verbose::DEBUG, "Starting to write the save text file");
 
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
-      std::cout << "remove's output is: " << rval << std::endl;
+      Verbose::Log(Verbose::DEBUG, "remove's output is: ", rval);
 
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
       boost::archive::text_oarchive oa(ofs);
@@ -305,28 +305,28 @@ void System::SaveAtlas(int type) const {
       oa << strVocabularyChecksum;
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
-      std::cout << "End to write the save text file" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "End to write the save text file");
     } else if (type == BINARY_FILE) {
-      std::cout << "Starting to write the save binary file" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "Starting to write the save binary file");
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
-      std::cerr << errno << std::endl;
-      std::cout << "remove's output is: " << rval << std::endl;
+      Verbose::Log(Verbose::DEBUG, "remove's output is: ", rval);
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
-      std::cout << "big boostin' time" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "big boostin' time");
       boost::archive::binary_oarchive oa(ofs);
-      std::cout << "streaming" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streaming");
       oa << strVocabularyName;
-      std::cout << "streamed name" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed name");
       oa << strVocabularyChecksum;
-      std::cout << "streamed checksum" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed checksum");
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
-      std::cout << "streamed atlas format version" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed atlas format version");
       oa << *mpAtlas;
-      std::cout << "End to write save binary file" << std::endl;
+      Verbose::Log(Verbose::SUCCESS, "Atlas saved to file ", mStrSaveAtlasToFile);
     } else {
-      std::cout << "no file to be saved I guess lul" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Invalid Atlas Save File Type");
     }
-  }
+  } else 
+    Verbose::Log(Verbose::CRITICAL, "No Atlas Save File is Set");
 }
 
 bool System::LoadAtlas(int type) {
@@ -337,10 +337,10 @@ bool System::LoadAtlas(int type) {
   pathLoadFileName = pathLoadFileName.append(".osa");
 
   if (type == TEXT_FILE) {
-    Verbose::PrintMess("Starting to read the save text file ", Verbose::INFO);
+    Verbose::Log(Verbose::INFO, "Reading the saved Atlas text file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
-      Verbose::PrintMess("Load file not found", Verbose::WARNING);
+      Verbose::Log(Verbose::CRITICAL, "Load file not found");
       return false;
     }
     boost::archive::text_iarchive ia(ifs);
@@ -348,17 +348,17 @@ bool System::LoadAtlas(int type) {
     ia >> strVocChecksum;
     ia >> strSerializedAtlasFormatVersion;
     if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
-      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      Verbose::Log(Verbose::FATAL, "The format of the loaded Atlas is ", strSerializedAtlasFormatVersion, ", while the format required by this version of MORB-SLAM is ", SERIALIZED_ATLAS_FORMAT_VERSION);
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
-    std::cout << "End to load the save text file " << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Atlas text file loaded" );
     isRead = true;
   } else if (type == BINARY_FILE) {
-    std::cout << "Starting to read the save binary file" << std::endl;
+    Verbose::Log(Verbose::INFO, "Reading the saved Atlas binary file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
-      std::cout << "Load file not found" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Load file not found");
       return false;
     }
     boost::archive::binary_iarchive ia(ifs);
@@ -366,11 +366,11 @@ bool System::LoadAtlas(int type) {
     ia >> strVocChecksum;
     ia >> strSerializedAtlasFormatVersion;
     if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
-      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      Verbose::Log(Verbose::FATAL, "The format of the loaded Atlas is ", strSerializedAtlasFormatVersion, ", while the format required by this version of MORB-SLAM is ", SERIALIZED_ATLAS_FORMAT_VERSION);
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
-    std::cout << "End to load the save binary file" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Atlas binary file loaded");
     isRead = true;
   }
 
@@ -378,8 +378,8 @@ bool System::LoadAtlas(int type) {
     // Check if the vocabulary is the same
     std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
     if (strInputVocabularyChecksum.compare(strVocChecksum) != 0) {
-      std::cout << "The vocabulary load isn't the same which the load session was created " << std::endl;
-      std::cout << "-Vocabulary name: " << strFileVoc << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "The vocabulary load isn't the same as when it was created");
+      Verbose::Log(Verbose::DEBUG, "-Vocabulary name: ", strFileVoc);
       return false;
     }
 
@@ -402,11 +402,11 @@ std::string System::CalculateCheckSum(std::string filename, int type) const {
   if (type == BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
-  std::cout << "inside" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "start checksum");
 
   std::ifstream f(filename.c_str(), flags);
   if (!f.is_open()) {
-    std::cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "Unable to open the in file ", filename, " for Md5 hash.");
     return checksum;
   }
 
@@ -417,11 +417,11 @@ std::string System::CalculateCheckSum(std::string filename, int type) const {
   mdctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
 
-  std::cout << "just initialized MD5" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "just initialized MD5");
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     EVP_DigestUpdate(mdctx, buffer, count);
   }
-  std::cout << "about to close" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "about to close");
 
   f.close();
 

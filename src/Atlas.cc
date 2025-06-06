@@ -40,14 +40,14 @@ Atlas::~Atlas() {}
 
 void Atlas::CreateNewMap() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Creation of new Map with id: " << Map::nNextId << std::endl;
+  Verbose::Log(Verbose::INFO, "Creation of new Map with id: ", Map::nNextId);
   if (mpCurrentMap) {
     //If it's not a new Atlas and there aren't 0 KFs in the current map, set the he map's init KF ID to the current map's maximum KF ID + 1
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
       mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;
-    std::cout << "Stored Map with ID: " << mpCurrentMap->GetId() << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Stored Map with ID: ", mpCurrentMap->GetId());
   }
-  std::cout << "Creation of new Map with last KF id: " << mnLastInitKFidMap << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Creation of new Map with last KF id: ", mnLastInitKFidMap);
 
   mpCurrentMap = std::make_shared<Map>(mnLastInitKFidMap);
   mspMaps.insert(mpCurrentMap);
@@ -55,7 +55,7 @@ void Atlas::CreateNewMap() {
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Change to Map with id: " << pMap->GetId() << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Change to Map with id: ", pMap->GetId());
   mpCurrentMap = pMap;
 }
 
@@ -75,8 +75,8 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
   int index_cam = -1;
   for (size_t i = 0; i < mvpCameras.size(); ++i) {
     std::shared_ptr<const GeometricCamera> pCam_i = mvpCameras[i];
-    if (!pCam) Verbose::PrintMess("Not pCam", Verbose::WARNING);
-    if (!pCam_i) Verbose::PrintMess("Not pCam_i", Verbose::WARNING);
+    if (!pCam) Verbose::Log(Verbose::WARNING, "Not pCam");
+    if (!pCam_i) Verbose::Log(Verbose::WARNING, "Not pCam_i");
     
     if (pCam->GetType() != pCam_i->GetType())
       continue;

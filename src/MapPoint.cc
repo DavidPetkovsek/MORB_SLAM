@@ -596,7 +596,7 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
   mpRefKF = mpKFid[mBackupRefKFId];
 
   if (mpRefKF.expired()) {
-    std::cout << "ERROR: MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << std::endl;
+    Verbose::Log(Verbose::ERROR, "MP without KF reference ", mBackupRefKFId, "; Num obs: ", nObs);
   }
 
   mpReplaced = nullptr;

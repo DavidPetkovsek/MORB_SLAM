@@ -64,7 +64,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
   int N = vpOptimizableKFs.size();
 
   if(N <= 2) {
-    std::cout << "LocalInertialBA: Not enough recent KFs. Did not optimize" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "LocalInertialBA: Not enough recent KFs. Did not optimize");
     return;
   }
 
@@ -209,17 +209,17 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
     
     // Delete KFi by merging its previous and next KFs (code taken from LocalMapping's KeyFrameCulling function)
     if(pKFi->SetBadFlag()) {
-      std::cout << "LocalInertialBA: Deleting KeyFrame " << pKFi->mnId << std::endl;
+      Verbose::Log(Verbose::DEBUG, "LocalInertialBA: Deleting KeyFrame ", pKFi->mnId);
     }
   }
 
   if(N <= 2) {
-    std::cout << "LocalInertialBA: No visual matches for the recent KFs. Did not optimize" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "LocalInertialBA: No visual matches for the recent KFs. Did not optimize");
     return;
   }
 
   if(badCurrentFrame) {
-    std::cout << "LocalInertialBA: No visual matches for the current KF. Did not optimize" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "LocalInertialBA: No visual matches for the current KF. Did not optimize");
     return;
   }
 
@@ -240,7 +240,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
       lLocalMapPoints.remove(pMP2);
     }
 
-    // std::cout << "LocalInertialBA: Do not optimize using KeyFrame " << pKFi->mnId << std::endl;
+    // Verbose::Log(Verbose::DEBUG, "LocalInertialBA: Do not optimize using KeyFrame ", pKFi->mnId);
   }
 
 /*
@@ -339,7 +339,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
       g2o::HyperGraph::Vertex* VA2 = optimizer.vertex(maxKFid + 3*(pKFi->mnId) + 3);
 
       if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2 || !VG2 || !VA2) {
-        std::cerr << "Error " << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << ", " << VG2 << ", " << VA2 << std::endl;
+        Verbose::Log(Verbose::ERROR, "Error ", VP1, ", ", VV1, ", ", VG1, ", ", VA1, ", ", VP2, ", ", VV2, ", ", VG2, ", ", VA2);
         continue;
       }
 
@@ -380,7 +380,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
 
       optimizer.addEdge(vear[i]);
     } else
-      std::cout << "ERROR building inertial edge" << std::endl;
+      Verbose::Log(Verbose::ERROR, "error building inertial edge");
   }
 
   // Set MapPoint vertices
@@ -566,7 +566,7 @@ void InertialOptimizer::LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool* pbS
   // TODO: Some convergence problems have been detected here
   // that is not a todo
   if ((2 * err < err_end || isnan(err) || isnan(err_end)) && !bLarge) {
-    std::cout << "FAIL LOCAL-INERTIAL BA!!!!" << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "FAIL LOCAL-INERTIAL BA!!!!");
     return;
   }
 

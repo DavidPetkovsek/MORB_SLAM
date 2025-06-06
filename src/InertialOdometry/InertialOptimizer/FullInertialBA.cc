@@ -115,7 +115,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
     if (!pKFi->mPrevKF) {
       if(pMap->GetOriginKF() != pKFi)
-        Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!", Verbose::INFO);
+        Verbose::Log(Verbose::ERROR, "NOT INERTIAL LINK TO PREVIOUS FRAME!");
       continue;
     }
 
@@ -145,12 +145,12 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
 
         if (!bInit) {
           if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2 || !VG2 || !VA2) {
-            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << ", " << VG2 << ", " << VA2 << std::endl;
+            Verbose::Log(Verbose::ERROR, VP1, ", ", VV1, ", ", VG1, ", ", VA1, ", ", VP2, ", ", VV2, ", ", VG2, ", ", VA2);
             continue;
           }
         } else {
           if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2) {
-            std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << std::endl;
+            Verbose::Log(Verbose::ERROR, VP1, ", ", VV1, ", ", VG1, ", ", VA1, ", ", VP2, ", ", VV2);
             continue;
           }
         }
@@ -187,7 +187,7 @@ void InertialOptimizer::FullInertialBA(std::shared_ptr<Map> pMap, int its, const
           optimizer.addEdge(ear);
         }
       } else
-        std::cout << pKFi->mnId << " or " << pKFi->mPrevKF->mnId << " no imu" << std::endl;
+        Verbose::Log(Verbose::ERROR, pKFi->mnId, " or ", pKFi->mPrevKF->mnId, " no imu");
     }
   }
   if (bInit) {

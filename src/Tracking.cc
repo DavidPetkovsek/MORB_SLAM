@@ -76,16 +76,15 @@ Tracking::Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas,
   lastID = 0;
 
   std::vector<std::shared_ptr<const GeometricCamera>> vpCams = mpAtlas->GetAllCameras();
-  std::cout << "There are " << vpCams.size() << " camera(s) in the atlas" << std::endl;
+  Verbose::Log(Verbose::INFO, "There are ", vpCams.size(), " camera(s) in the atlas");
   for (std::shared_ptr<const GeometricCamera> pCam : vpCams) {
-    std::cout << "Camera " << pCam->GetId();
+    std::string cameraName = "unknown";
     if (pCam->GetType() == GeometricCamera::CAM_PINHOLE) {
-      std::cout << " is pinhole" << std::endl;
+      cameraName = "pinhole";
     } else if (pCam->GetType() == GeometricCamera::CAM_FISHEYE) {
-      std::cout << " is fisheye" << std::endl;
-    } else {
-      std::cout << " is unknown" << std::endl;
+      cameraName = "fisheye";
     }
+    Verbose::Log(Verbose::DEBUG, "Camera ", pCam->GetId(), " is ", cameraName);
   }
 
   if(mpAtlas->CountMaps() > 1)
@@ -188,7 +187,7 @@ StereoPacket Tracking::GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat&
   Track();
 
   if(mState != TrackingState::OK && mState != TrackingState::NOT_INITIALIZED)
-    std::cout << "Current state on Frame " << mCurrentFrame.mnId << ": " << mState << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Current state on Frame ", mCurrentFrame.mnId, ": ", mState);
   
   // Construct output StereoPacket
   StereoPacket outputPacket(mState, mbMapUpdated, imGrayLeft, imGrayRight);
@@ -286,14 +285,14 @@ MonoPacket Tracking::GrabImageMonocular(const cv::Mat& im, const double& timesta
 void Tracking::Track() {
   if (mpLocalMapper->mbBadOdom) {
     mForcedLost = false;
-    std::cout << "TRACK: Reset map because local mapper set the bad odom flag " << std::endl;
+    Verbose::Log(Verbose::ERROR, "Reset map because local mapper set the bad odom flag");
     RequestResetActiveMap();
     return;
   }
 
   std::shared_ptr<Map> pCurrentMap = mpAtlas->GetCurrentMap(false);
   if (!pCurrentMap) {
-    std::cout << "ERROR: There is not an active map in the atlas" << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "There is not an active map in the atlas");
     mForcedLost = false;
     return;
   }
@@ -301,7 +300,7 @@ void Tracking::Track() {
   if (mState != TrackingState::NO_IMAGES_YET) {
     if (mLastFrame.mTimeStamp > mCurrentFrame.mTimeStamp) {
       mForcedLost = false;
-      std::cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Frame with a timestamp older than previous frame detected!");
       CreateMapInAtlas();
       return;
     }
@@ -363,7 +362,7 @@ void Tracking::Track() {
 
         // If both Track helper functions failed, we are lost
         if (!bOK) {
-          std::cout << "TrackReferenceKeyFrame failed, is LOST" << std::endl;
+          Verbose::Log(Verbose::WARNING, "TrackReferenceKeyFrame failed, is LOST");
           
           // if there's enough KeyFrames in the map we're recently lost, if not we're lost
           if (pCurrentMap->KeyFramesInMap() > 10 && (mCurrentFrame.mnId > (mnLastRelocFrameId + mFPS) || mpOdomSource==nullptr)) {
@@ -383,10 +382,10 @@ void Tracking::Track() {
             bOK = false;
           if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost || mForcedLost) {
             if(mForcedLost) {
-              std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
+              Verbose::Log(Verbose::INFO, "BONK! TrackingState forcefully set to LOST");
               mForcedLost = false;
             } else {
-              Verbose::PrintMess("Track Lost...", Verbose::INFO);
+              Verbose::Log(Verbose::DEBUG, "Track Lost...");
             }
             mState = TrackingState::LOST;
             bOK = false;
@@ -396,28 +395,28 @@ void Tracking::Track() {
           bOK = Relocalization();
           if (mCurrentFrame.mTimeStamp - mTimeStampLost > time_recently_lost && !bOK) {
             mState = TrackingState::LOST;
-            Verbose::PrintMess("Track Lost...", Verbose::INFO);
+            Verbose::Log(Verbose::DEBUG, "Track Lost...");
             bOK = false;
           }
         }
       // I don't think a Track() loop can actually start with the state set to LOST, unless thru non-stereoinertial runs? This probably never runs
       } else if (mState == TrackingState::LOST) {
         if(mForcedLost) {
-          std::cout << "BONK! TrackingState forcefully set to LOST" << std::endl;
+          Verbose::Log(Verbose::INFO, "BONK! TrackingState forcefully set to LOST");
           mForcedLost = false;
         }
-        Verbose::PrintMess("A new map is started...", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "A new map is started...");
         // Dont store the current Map in the Atlas if there's less than 10 KFs
         if (pCurrentMap->KeyFramesInMap() < 10) {
           RequestResetActiveMap();
-          Verbose::PrintMess("Reseting current map...", Verbose::INFO);
+          Verbose::Log(Verbose::DEBUG, "Reseting current map...");
         } else {
           setStereoInitDefaultPose(mpLastKeyFrame->GetPose());
           CreateMapInAtlas();
         }
 
         if (mpLastKeyFrame) mpLastKeyFrame = nullptr;
-        Verbose::PrintMess("done", Verbose::INFO);
+        Verbose::Log(Verbose::DEBUG, "done");
         return;
       }
 
@@ -425,7 +424,7 @@ void Tracking::Track() {
       // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
       if (mState == TrackingState::LOST) {
         if (mpOdomSource)
-          Verbose::PrintMess("ODOM. State LOST", Verbose::INFO);
+          Verbose::Log(Verbose::DEBUG, "ODOM. State LOST");
         bOK = Relocalization();
       } else {
         if (!notEnoughMatchPoints_trackOnlyMode) {
@@ -484,7 +483,7 @@ void Tracking::Track() {
       if (bOK) {
         bOK = TrackLocalMap();
       } else {
-        std::cout << "Fail to track local map!" << std::endl;
+        Verbose::Log(Verbose::WARNING, "Fail to track local map!");
       }
     } else {
       // notEnoughMatchPoints_trackOnlyMode true means that there are few matches to MapPoints in the map.
@@ -498,7 +497,7 @@ void Tracking::Track() {
     // Occurs if this the Frame we're becoming lost
     } else if (mState == TrackingState::OK) {
       if (mpOdomSource && (!pCurrentMap->isOdomInitialized() || !pCurrentMap->isMature())) {
-          std::cout << "Odometry source is not or recently initialized. Reseting active map..." << std::endl;
+          Verbose::Log(Verbose::ERROR, "Odometry source is not or recently initialized. Reseting active map...");
           mForcedLost = false;
           RequestResetActiveMap();
       }
@@ -549,7 +548,7 @@ void Tracking::Track() {
 
       if (mpOdomSource) {
         if (!pCurrentMap->isOdomInitialized()) {
-          Verbose::PrintMess("Track lost before odometry initialisation, reseting...", Verbose::SUCCESS);
+          Verbose::Log(Verbose::ERROR, "Track lost before odometry initialisation, reseting...");
           RequestResetActiveMap();
           return;
         }
@@ -575,7 +574,7 @@ void Tracking::Track() {
 void Tracking::StereoInitialization() {
   // If there aren't enough keypoints, can't initialize and return
   if (mCurrentFrame.N <= 500) {
-    std::cout << "There aren't enough KeyPoints in the Frame to initialize the Map" << std::endl;
+    Verbose::Log(Verbose::ERROR, "There aren't enough KeyPoints in the Frame to initialize the Map");
     return;
   }
 
@@ -664,7 +663,7 @@ void Tracking::StereoInitialization() {
       }
     }
   }
-  Verbose::PrintMess("New Map created with " + std::to_string(mpAtlas->MapPointsInMap()) + " MapPoints", Verbose::SUCCESS);
+  Verbose::Log(Verbose::SUCCESS, "New Map created with ", mpAtlas->MapPointsInMap(), " MapPoints");
 
   mpLocalMapper->InsertKeyFrame(pKFini);
 
@@ -796,7 +795,7 @@ void Tracking::CreateInitialMapMonocular() {
   sMPs = pKFini->GetMapPoints();
 
   // Bundle Adjustment
-  Verbose::PrintMess("New Map created with " + std::to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::SUCCESS);
+  Verbose::Log(Verbose::SUCCESS, "New Map created with ", mpAtlas->MapPointsInMap(), " points");
   Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(), 20);
 
   float medianDepth = pKFini->ComputeSceneMedianDepth(2);
@@ -808,7 +807,7 @@ void Tracking::CreateInitialMapMonocular() {
 
   // TODO Check, originally 100 tracks
   if (medianDepth < 0 || pKFcur->TrackedMapPoints(1) < 50) {
-    Verbose::PrintMess("Wrong initialization, reseting...", Verbose::SUCCESS);
+    Verbose::Log(Verbose::SUCCESS, "Wrong initialization, reseting...");
     RequestResetActiveMap();
     return;
   }
@@ -891,7 +890,7 @@ void Tracking::CreateMapInAtlas() {
   // prevents Odometry::PreintegrateOdom() from being called in the next frame
   mbCreatedMap = true;
 
-  Verbose::PrintMess("First frame id in map: " + std::to_string(mCurrentFrame.mnId + 1), Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "First frame id in map: ", mCurrentFrame.mnId + 1);
 
   // only used by monocular tracking
   mbReadyToInitialize = false;
@@ -925,7 +924,7 @@ bool Tracking::TrackReferenceKeyFrame() {
   int nmatches = matcher.SearchByBoW(mpReferenceKF, mCurrentFrame, vpMapPointMatches);
 
   if (nmatches < 15) {
-    std::cout << "TRACK_REF_KF: Less than 15 matches!!" << std::endl;
+    Verbose::Log(Verbose::ERROR, "TRACK_REF_KF: Only ", nmatches, " matches!!");
     return false;
   }
 
@@ -1032,15 +1031,15 @@ bool Tracking::TrackWithMotionModel() {
 
   // If few matches, uses a higher-tolerance search
   if (nmatches < 20) {
-    Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "Not enough matches, wider window search!!");
     std::fill(mCurrentFrame.mvpMapPoints.begin(), mCurrentFrame.mvpMapPoints.end(), nullptr);
 
     nmatches = matcher.SearchByProjection(mCurrentFrame, mLastFrame, 2 * th, !mSensor.hasMulticam());
-    Verbose::PrintMess("Matches with wider search: " + std::to_string(nmatches), Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "Matches with wider search: ", nmatches);
   }
 
   if (nmatches < 20) {
-    Verbose::PrintMess("Not enough matches!!", Verbose::INFO);
+    Verbose::Log(Verbose::ERROR, "Not enough matches!!");
     return mpOdomSource!=nullptr;
   }
 
@@ -1106,7 +1105,7 @@ bool Tracking::TrackLocalMap() {
   }
 
   if(mForcedLost) {
-    std::cout << "BONK queued for the next frame" << std::endl;
+    Verbose::Log(Verbose::INFO, "BONK queued for the next frame");
     return false;
   }
 
@@ -1226,7 +1225,7 @@ void Tracking::CreateNewKeyFrame() {
     mpReferenceKF->mPrevKF = mpLastKeyFrame;
     mpLastKeyFrame->mNextKF = mpReferenceKF;
   } else
-    Verbose::PrintMess("No last KF in KF creation!!", Verbose::INFO);
+    Verbose::Log(Verbose::WARNING, "No last KF in KF creation!!");
 
   if(mpOdomSource)
     mpOdomSource->NewKeyFrameEvent(mpReferenceKF);
@@ -1492,7 +1491,7 @@ void Tracking::UpdateLocalKeyFrames() {
 }
 
 bool Tracking::Relocalization(bool isNewMap) {
-  Verbose::PrintMess("Starting relocalization", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "Starting relocalization");
   // Compute Bag of Words Vector
   mCurrentFrame.ComputeBoW();
 
@@ -1507,7 +1506,7 @@ bool Tracking::Relocalization(bool isNewMap) {
     vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
 
   if (vpCandidateKFs.empty()) {
-    Verbose::PrintMess("There are not candidates", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "There are not candidates");
     return false;
   }
 
@@ -1570,7 +1569,7 @@ bool Tracking::Relocalization(bool isNewMap) {
         nCandidates--;
       }
 
-      if (!bTcw) std::cout << "camera pose not calculated" << std::endl;
+      if (!bTcw) Verbose::Log(Verbose::ERROR, "camera pose not calculated");
 
       // If a Camera Pose is computed, optimize
       if (bTcw) {
@@ -1638,7 +1637,7 @@ bool Tracking::Relocalization(bool isNewMap) {
   } else {
     mnLastRelocFrameId = mCurrentFrame.mnId;
     mpRelocalizationTargetMap = relocMap;
-    std::cout << "Relocalized!!" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Relocalized!!");
     return true;
   }
 }
@@ -1646,24 +1645,24 @@ bool Tracking::Relocalization(bool isNewMap) {
 void Tracking::Reset(bool bLocMap) {
   std::unique_lock<std::mutex> lock(mMutexReset);
 
-  Verbose::PrintMess("System Reseting", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "System Reseting");
 
   // Reset Local Mapping
   if (!bLocMap) {
-    Verbose::PrintMess("Reseting Local Mapper...", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "Reseting Local Mapper...");
     mpLocalMapper->RequestReset();
-    Verbose::PrintMess("done", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "done");
   }
 
   // Reset Loop Closing
-  Verbose::PrintMess("Reseting Loop Closing...", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "Reseting Loop Closing...");
   mpLoopClosing->RequestReset();
-  Verbose::PrintMess("done", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "done");
 
   // Clear BoW Database
-  Verbose::PrintMess("Reseting Database...", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "Reseting Database...");
   mpKeyFrameDB->clear();
-  Verbose::PrintMess("done", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "done");
 
   // Clear Map (this erase MapPoints and KeyFrames)
   mpAtlas->clearAtlas();
@@ -1688,31 +1687,31 @@ void Tracking::Reset(bool bLocMap) {
   mbReset = false;
   mbResetActiveMap = false;
 
-  Verbose::PrintMess("   End reseting! ", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "Done reseting!");
 }
 
 void Tracking::ResetActiveMap(bool bLocMap) {
   std::unique_lock<std::mutex> lock(mMutexReset);
   
-  Verbose::PrintMess("Active map Reseting", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "Start reseting active Map");
 
   std::shared_ptr<Map> pMap = mpAtlas->GetCurrentMap();
 
   if (!bLocMap) {
-    Verbose::PrintMess("Reseting Local Mapper...", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "Reseting Local Mapper...");
     mpLocalMapper->RequestResetActiveMap(pMap);
-    Verbose::PrintMess("done", Verbose::INFO);
+    Verbose::Log(Verbose::DEBUG, "done");
   }
 
   // Reset Loop Closing
-  Verbose::PrintMess("Reseting Loop Closing...", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "Reseting Loop Closing...");
   mpLoopClosing->RequestResetActiveMap(pMap);
-  Verbose::PrintMess("done", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "done");
 
   // Clear BoW Database
-  Verbose::PrintMess("Reseting Database", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "Reseting Database");
   mpKeyFrameDB->clearMap(pMap);  // Only clear the active map references
-  Verbose::PrintMess("done", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "done");
 
   // Clear Map (this erase MapPoints and KeyFrames)
   mpAtlas->clearMap();
@@ -1732,7 +1731,7 @@ void Tracking::ResetActiveMap(bool bLocMap) {
   mbHasPrevDeltaFramePose = false;
   mbResetActiveMap = false;
 
-  Verbose::PrintMess("   End reseting! ", Verbose::INFO);
+  Verbose::Log(Verbose::INFO, "Finished reseting active Map");
 }
 
 void Tracking::InformOnlyTracking(const bool& flag) { mbOnlyTracking = flag; }

@@ -6,14 +6,13 @@ namespace MORB_SLAM {
 SystemSettings::SystemSettings(const std::string& configFile) {
     cv::FileStorage fSettings = loadFile(configFile);
     readORB(fSettings);
-    std::cout << "\t-Loaded ORB settings" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded ORB settings");
     readViewer(fSettings);
-    std::cout << "\t-Loaded viewer settings" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded viewer settings");
     readLoadAndSave(fSettings);
-    std::cout << "\t-Loaded Atlas settings" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded Atlas settings");
     readOtherParameters(fSettings);
-    std::cout << "\t-Loaded misc parameters" << std::endl;
-    std::cout << "----------------------------------" << std::endl;
+    Verbose::Log(Verbose::SUCCESS, "Loaded misc parameters\n---");
 }
 
 void SystemSettings::readORB(cv::FileStorage& fSettings) {

@@ -74,7 +74,7 @@ void LoopClosing::Run() {
       if (bFindedRegion) {
         if (mbMergeDetected) {
           if (mpOdomSource && (!mpCurrentKF->GetMap()->isOdomInitialized())) {
-            Verbose::PrintMess("Odometry source is not initilized, merge is aborted", Verbose::ERROR);
+            Verbose::Log(Verbose::ERROR, "Odometry source is not initilized, merge is aborted");
           } else {
             Sophus::SE3d mTmw = mpMergeMatchedKF->GetPose().cast<double>();
             g2o::Sim3 gSmw2(mTmw.unit_quaternion(), mTmw.translation(), 1.0);
@@ -85,7 +85,7 @@ void LoopClosing::Run() {
             mSold_new = (gSw2c * gScw1);
 
             if (mpOdomSource) {
-              Verbose::PrintMess("Merge check transformation with odom source", Verbose::DEBUG);
+              Verbose::Log(Verbose::DEBUG, "Merge check transformation with odom source");
               if (mSold_new.scale() < 0.90 || mSold_new.scale() > 1.1) {
                 mpMergeLastCurrentKF->SetErase();
                 mpMergeMatchedKF->SetErase();
@@ -94,7 +94,7 @@ void LoopClosing::Run() {
                 mvpMergeMPs.clear();
                 mnMergeNumNotFound = 0;
                 mbMergeDetected = false;
-                Verbose::PrintMess("scale bad estimated. Abort merging", Verbose::ERROR);
+                Verbose::Log(Verbose::ERROR, "scale bad estimated. Abort merging");
                 continue;
               }
               // force only yaw since there is odometry
@@ -108,7 +108,7 @@ void LoopClosing::Run() {
 
             mg2oMergeScw = mg2oMergeSlw;
 
-            Verbose::PrintMess("*Merge detected", Verbose::INFO);
+            Verbose::Log(Verbose::INFO, "*Merge detected");
 
             mpLocalMapper->setIsDoneBA(false);
             // TODO UNCOMMENT
@@ -117,7 +117,7 @@ void LoopClosing::Run() {
             else
               MergeLocal();
 
-            Verbose::PrintMess("Merge finished!", Verbose::SUCCESS);
+            Verbose::Log(Verbose::SUCCESS, "Merge finished!");
           }
 
           // Reset all variables
@@ -143,7 +143,7 @@ void LoopClosing::Run() {
 
         if (mbLoopDetected) {
           bool bGoodLoop = true;
-          Verbose::PrintMess("*Loop detected", Verbose::INFO);
+          Verbose::Log(Verbose::INFO, "*Loop detected");
 
           mg2oLoopScw = mg2oLoopSlw;
           if (mpOdomSource) {
@@ -152,7 +152,7 @@ void LoopClosing::Run() {
             g2o::Sim3 g2oSww_new = g2oTwc * mg2oLoopScw;
 
             Eigen::Vector3d phi = LogSO3(g2oSww_new.rotation().toRotationMatrix());
-            std::cout << "phi = " << phi.transpose() << std::endl;
+            Verbose::Log(Verbose::DEBUG, "phi = ", phi.transpose());
               // OG SLAM conditions
             // if (fabs(phi(0)) < 0.008f && fabs(phi(1)) < 0.008f && fabs(phi(2)) < 0.349f) {
               // Less Strict conditions
@@ -166,7 +166,7 @@ void LoopClosing::Run() {
               }
 
             } else {
-              Verbose::PrintMess("BAD LOOP!!!", Verbose::DEBUG);
+              Verbose::Log(Verbose::DEBUG, "BAD LOOP!!!");
               bGoodLoop = false;
             }
           }
@@ -175,7 +175,7 @@ void LoopClosing::Run() {
             mvpLoopMapPoints = mvpLoopMPs;
             mpLocalMapper->setIsDoneBA(false);
             CorrectLoop();
-            Verbose::PrintMess("Loop closed", Verbose::SUCCESS);
+            Verbose::Log(Verbose::SUCCESS, "Loop closed");
           }
 
           // Reset all variables
@@ -268,7 +268,7 @@ bool LoopClosing::NewDetectCommonRegions() {
       mnLoopNumNotFound = 0;
 
       if (!mbLoopDetected) {
-        Verbose::PrintMess("Loop detected with Reffine Sim3", Verbose::DEBUG);
+        Verbose::Log(Verbose::DEBUG, "Loop detected with Reffine Sim3");
       }
     } else {
       bLoopDetectedInKF = false;
@@ -672,12 +672,12 @@ void LoopClosing::CorrectLoop() {
 
   // If a Global Bundle Adjustment is running, abort it
   if (isRunningGBA()) {
-    Verbose::PrintMess("Stoping Global Bundle Adjustment...", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Stoping Global Bundle Adjustment...");
     std::unique_lock<std::mutex> lock(mMutexGBA);
     mbStopGBA = true;
 
     mnFullBAIdx++;
-    Verbose::PrintMess("GBA Stopped", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "GBA Stopped");
   }
 
   // Wait until Local Mapping has effectively stopped
@@ -829,7 +829,7 @@ void LoopClosing::CorrectLoop() {
   if (!pLoopMap->isOdomInitialized() || (pLoopMap->KeyFramesInMap() < 200 && mpAtlas->CountMaps() == 1)) {
     mbRunningGBA = true;
     mbStopGBA = false;
-    Verbose::PrintMess("Creating CorrectLoop thread", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Creating CorrectLoop thread");
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this, pLoopMap, mpCurrentKF->mnId);
   }
 
@@ -839,7 +839,7 @@ void LoopClosing::CorrectLoop() {
 }
 
 void LoopClosing::MergeLocal() {
-  Verbose::PrintMess("MERGE LOCAL MAP", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "MERGE LOCAL MAP");
   const int numTemporalKFs = 25;  // Temporal KFs in the local window if the map is inertial.
 
   // Relationship to rebuild the essential graph, it is used two times, first in the local window and later in the rest of the map
@@ -987,12 +987,12 @@ void LoopClosing::MergeLocal() {
 
   for (std::shared_ptr<KeyFrame> pKFi : spLocalWindowKFs) {
     if (!pKFi || pKFi->isBad()) {
-      Verbose::PrintMess("Bad KF in correction", Verbose::DEBUG);
+      Verbose::Log(Verbose::DEBUG, "Bad KF in correction");
       continue;
     }
 
     if (pKFi->GetMap() != pCurrentMap)
-      Verbose::PrintMess("Other map KF, this should't happen", Verbose::DEBUG);
+      Verbose::Log(Verbose::DEBUG, "Other map KF, this should't happen");
 
     g2o::Sim3 g2oCorrectedSiw;
 
@@ -1252,7 +1252,7 @@ void LoopClosing::MergeLocal() {
     // Launch a new thread to perform Global Bundle Adjustment
     mbRunningGBA = true;
     mbStopGBA = false;
-    Verbose::PrintMess("Creating MergeLocal thread", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Creating MergeLocal thread");
     mpThreadGBA = std::jthread(&LoopClosing::RunGlobalBundleAdjustment, this, pMergeMap, mpCurrentKF->mnId);
   }
 
@@ -1266,7 +1266,7 @@ void LoopClosing::MergeLocal() {
 }
 
 void LoopClosing::MergeLocal2() {
-  Verbose::PrintMess("MERGE LOCAL MAP 2", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "MERGE LOCAL MAP 2");
   loopClosed = true;
 
   // int numTemporalKFs = 11; // TODO (set by parameter): Temporal KFs in the local window if the map is inertial.
@@ -1413,7 +1413,7 @@ void LoopClosing::MergeLocal2() {
   // Perform BA
   std::shared_ptr<KeyFrame> pCurrKF = mpTracker->GetLastKeyFrame();
   if (pCurrKF == nullptr) {
-    std::cerr << "\033[22;34mcurrent KF is nullptr" << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "\033[22;34mcurrent KF is nullptr");
     mpLocalMapper->Release();
     return;
   }
@@ -1518,7 +1518,7 @@ void LoopClosing::RequestResetActiveMap(std::shared_ptr<Map> pMap) {
 void LoopClosing::ResetIfRequested() {
   std::unique_lock<std::mutex> lock(mMutexReset);
   if (mbResetRequested) {
-    Verbose::PrintMess("Loop closer reset requested...", Verbose::DEBUG);
+    Verbose::Log(Verbose::DEBUG, "Loop closer reset requested...");
     mlpLoopKeyFrameQueue.clear();
     mbResetRequested = false;
     mbResetActiveMapRequested = false;
@@ -1540,7 +1540,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
       fe::Logger::setThreadName("GBA");
   #endif
 
-  Verbose::PrintMess("Starting Global Bundle Adjustment", Verbose::INFO);
+  Verbose::Log(Verbose::DEBUG, "Starting Global Bundle Adjustment");
 
   const bool bOdomInit = pActiveMap->isOdomInitialized();
 
@@ -1561,8 +1561,8 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
     if (!bOdomInit && pActiveMap->isOdomInitialized()) return;
 
     if (!mbStopGBA) {
-      Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::INFO);
-      Verbose::PrintMess("Updating map ...", Verbose::INFO);
+      Verbose::Log(Verbose::DEBUG, "Global Bundle Adjustment finished");
+      Verbose::Log(Verbose::DEBUG, "Updating map ...");
 
       mpLocalMapper->RequestStop();
       // Wait until Local Mapping has effectively stopped
@@ -1594,7 +1594,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
             if (pChild->isVelocitySet())
               pChild->mVwbGBA = Rcor * pChild->GetVelocity();
             else
-              Verbose::PrintMess("Child velocity empty!! ", Verbose::INFO);
+              Verbose::Log(Verbose::WARNING, "Child velocity empty!! ");
 
             if (pChild->mpExternalKeyFrameData)
               pChild->mpExternalKeyFrameData->UpdateChildSpanningTree();
@@ -1647,7 +1647,7 @@ void LoopClosing::RunGlobalBundleAdjustment(std::shared_ptr<Map> pActiveMap, uns
       pActiveMap->IncreaseChangeIndex();
 
       mpLocalMapper->Release();
-      Verbose::PrintMess("Map updated!", Verbose::INFO);
+      Verbose::Log(Verbose::DEBUG, "Map updated!");
     }
 
     mbRunningGBA = false;
