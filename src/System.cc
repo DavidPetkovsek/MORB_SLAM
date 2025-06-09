@@ -263,7 +263,7 @@ System::~System() {
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
-void System::SaveAtlas(int type) const {
+void System::SaveAtlas(FileType type) const {
   std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
   if (!mStrSaveAtlasToFile.empty()) {
     Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
@@ -286,14 +286,13 @@ void System::SaveAtlas(int type) const {
 
     std::cout << "About to Calculate " << std::endl;
 
-    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
 
     std::cout << "Vocab checksum`" << strVocabularyChecksum << std::endl;
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     std::string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
-    std::cout << "Type is of: " << type << std::endl;
 
-    if (type == TEXT_FILE) {
+    if (type == FileType::TEXT_FILE) {
       std::cout << "Starting to write the save text file " << std::endl;
 
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
@@ -307,7 +306,7 @@ void System::SaveAtlas(int type) const {
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
       std::cout << "End to write the save text file" << std::endl;
-    } else if (type == BINARY_FILE) {
+    } else if (type == FileType::BINARY_FILE) {
       std::cout << "Starting to write the save binary file" << std::endl;
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
       std::cerr << errno << std::endl;
@@ -330,14 +329,14 @@ void System::SaveAtlas(int type) const {
   }
 }
 
-bool System::LoadAtlas(int type) {
+bool System::LoadAtlas(FileType type) {
   std::string strFileVoc, strVocChecksum, strSerializedAtlasFormatVersion;
   bool isRead = false;
 
   std::string pathLoadFileName = mStrLoadAtlasFromFile;
   pathLoadFileName = pathLoadFileName.append(".osa");
 
-  if (type == TEXT_FILE) {
+  if (type == FileType::TEXT_FILE) {
     std::cout << "Starting to read the save text file " << std::endl;
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -355,7 +354,7 @@ bool System::LoadAtlas(int type) {
     ia >> *mpAtlas;
     std::cout << "End to load the save text file " << std::endl;
     isRead = true;
-  } else if (type == BINARY_FILE) {
+  } else if (type == FileType::BINARY_FILE) {
     std::cout << "Starting to read the save binary file" << std::endl;
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -377,7 +376,7 @@ bool System::LoadAtlas(int type) {
 
   if (isRead) {
     // Check if the vocabulary is the same
-    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
     if (strInputVocabularyChecksum.compare(strVocChecksum) != 0) {
       std::cout << "The vocabulary load isn't the same which the load session was created " << std::endl;
       std::cout << "-Vocabulary name: " << strFileVoc << std::endl;
@@ -393,14 +392,14 @@ bool System::LoadAtlas(int type) {
   return false;
 }
 
-std::string System::CalculateCheckSum(std::string filename, int type) const {
+std::string System::CalculateCheckSum(std::string filename, FileType type) const {
   std::string checksum = "";
 
   unsigned int md5_digest_len = EVP_MD_size(EVP_md5());
   unsigned char *md5_digest;
 
   std::ios_base::openmode flags = std::ios::in;
-  if (type == BINARY_FILE)  // Binary file
+  if (type == FileType::BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
   std::cout << "inside" << std::endl;
