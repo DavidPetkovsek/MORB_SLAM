@@ -26,7 +26,10 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/nvp.hpp>
-#include <boost/archive/text_oarchive.hpp>
+// #include <boost/archive/text_oarchive.hpp>
+// #include <boost/archive/binary_oarchive.hpp>
+// #include <boost/archive/text_iarchive.hpp>
+// #include <boost/archive/binary_iarchive.hpp>
 #include <mutex>
 #include <map>
 #include <set>
@@ -48,6 +51,7 @@
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
 #include "MORB_SLAM/SerializationUtils.h"
+#include "MORB_SLAM/Odometry.hpp"
 
 namespace MORB_SLAM {
 
@@ -59,11 +63,6 @@ class KeyFrameDatabase;
 class GeometricCamera;
 
 struct ExternalKeyFrameData {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {}
-
     ExternalKeyFrameData() {}
     virtual ~ExternalKeyFrameData() {}
     virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) = 0;
@@ -164,8 +163,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     ar& bOdom;
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
     ar& mbHasVelocity;
-
-    ar& mpExternalKeyFrameData;
   }
 
  public:
@@ -253,8 +250,8 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
-  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam);
-  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
+  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam, const std::shared_ptr<Odometry> &odomSource);
+  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId, const std::shared_ptr<Odometry> &odomSource);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);

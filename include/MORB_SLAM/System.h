@@ -146,6 +146,8 @@ private:
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     std::shared_ptr<LoopClosing> mpLoopCloser;
 
+    std::shared_ptr<Odometry> mpOdomSource;
+
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::jthread mptLocalMapping;

@@ -21,6 +21,7 @@
 
 #include "MORB_SLAM/MapPoint.h"
 #include "MORB_SLAM/KeyFrame.h"
+#include "MORB_SLAM/Odometry.hpp"
 
 #include <set>
 #include <mutex>
@@ -117,8 +118,8 @@ public:
     bool CheckEssentialGraph();
     void ChangeId(long unsigned int nId);
 
-    void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
+    void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource);
+    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource);
 
     std::vector<std::shared_ptr<KeyFrame>> mvpKeyFrameOrigins;
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;

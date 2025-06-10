@@ -35,6 +35,7 @@
 #include "MORB_SLAM/Map.h"
 #include "MORB_SLAM/MapPoint.h"
 #include "MORB_SLAM/CameraModels/Pinhole.h"
+#include "MORB_SLAM/Odometry.hpp"
 
 namespace MORB_SLAM {
 
@@ -117,8 +118,8 @@ class Atlas {
 
 
   // Function for guarantee the correction of serialization of this object
-  void PreSave();
-  void PostLoad();
+  void PreSave(const std::shared_ptr<Odometry> &odomSource);
+  void PostLoad(const std::shared_ptr<Odometry> &odomSource);
 
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
 

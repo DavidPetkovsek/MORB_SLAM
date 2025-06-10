@@ -257,7 +257,7 @@ void Map::SetLastMapChange(int currentChangeId) {
   mnMapChangeNotified = currentChangeId;
 }
 
-void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std::shared_ptr<Map> sharedMap) {
+void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource) {
 
   if(this != sharedMap.get()){
     throw std::runtime_error("The shared map is not equivalent to this");
@@ -318,7 +318,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
     if (!pKFi || pKFi->isBad()) continue;
 
     mvpBackupKeyFrames.push_back(pKFi);
-    pKFi->PreSave(tmp_mspKFs, tmp_mspMapPoints, spCams);
+    pKFi->PreSave(tmp_mspKFs, tmp_mspMapPoints, spCams, odomSource);
   }
 
   mnBackupKFinitialID = -1;
@@ -333,7 +333,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
 }
 
 void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc,
-    std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
+    std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource) {
 
   if(this != sharedMap.get()){
     throw std::runtime_error("The shared map is not equivalent to this");
@@ -373,7 +373,7 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
   }
 
   for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
-    pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams);
+    pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams, odomSource);
     pKFDB->add(pKFi);
   }
 

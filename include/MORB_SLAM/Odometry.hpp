@@ -15,6 +15,12 @@
 #include <set>
 
 #include "MORB_SLAM/ImprovedTypes.hpp"
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
 
 namespace MORB_SLAM {
 
@@ -110,7 +116,12 @@ public:
     // Called in LoopClosing::RunGlobalBundleAdjustment(), which is callled during loop correction.
     virtual void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) = 0;
 
+    virtual void SaveOdom(boost::archive::text_oarchive &oa) = 0;
+    virtual void SaveOdom(boost::archive::binary_oarchive &oa) = 0;
+    virtual void LoadOdom(boost::archive::text_iarchive &ia) = 0;
+    virtual void LoadOdom(boost::archive::binary_iarchive &ia) = 0;
 
+    std::map<long unsigned int, std::shared_ptr<ExternalKeyFrameData>> mBackupEKFD;
 protected:
     std::shared_ptr<Atlas> mpAtlas;
     std::weak_ptr<Tracking> mwpTracker;
