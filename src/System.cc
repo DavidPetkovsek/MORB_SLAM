@@ -50,6 +50,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
     : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
+      mpOdomSource(odomSource),
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
       mpCamSettings(camSettings),
       mpSysSettings(sysSettings) {
@@ -131,10 +132,10 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
   // Set up Odometry
-  if(odomSource) {
-    odomSource->SetLocalMapper(mpLocalMapper);
-    odomSource->SetTracker(mpTracker);
-    odomSource->SetAtlas(mpAtlas);
+  if(mpOdomSource) {
+    mpOdomSource->SetLocalMapper(mpLocalMapper);
+    mpOdomSource->SetTracker(mpTracker);
+    mpOdomSource->SetAtlas(mpAtlas);
   }
 
   std::cout << "Creating LocalMapping thread" << std::endl;
@@ -268,7 +269,9 @@ void System::SaveAtlas(FileType type) const {
   if (!mStrSaveAtlasToFile.empty()) {
     Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
     // Save the current session
-    mpAtlas->PreSave();
+    if(mpOdomSource) mpOdomSource->mBackupEKFD.clear();
+
+    mpAtlas->PreSave(mpOdomSource);
     std::cout << "presaved" << std::endl;
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
@@ -305,6 +308,8 @@ void System::SaveAtlas(FileType type) const {
       oa << strVocabularyChecksum;
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
+
       std::cout << "End to write the save text file" << std::endl;
     } else if (type == FileType::BINARY_FILE) {
       std::cout << "Starting to write the save binary file" << std::endl;
@@ -322,6 +327,7 @@ void System::SaveAtlas(FileType type) const {
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       std::cout << "streamed atlas format version" << std::endl;
       oa << *mpAtlas;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
       std::cout << "End to write save binary file" << std::endl;
     } else {
       std::cout << "no file to be saved I guess lul" << std::endl;
@@ -352,6 +358,7 @@ bool System::LoadAtlas(FileType type) {
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
     std::cout << "End to load the save text file " << std::endl;
     isRead = true;
   } else if (type == FileType::BINARY_FILE) {
@@ -370,6 +377,7 @@ bool System::LoadAtlas(FileType type) {
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
     std::cout << "End to load the save binary file" << std::endl;
     isRead = true;
   }
@@ -385,7 +393,7 @@ bool System::LoadAtlas(FileType type) {
 
     mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
-    mpAtlas->PostLoad();
+    mpAtlas->PostLoad(mpOdomSource);
 
     return true;
   }

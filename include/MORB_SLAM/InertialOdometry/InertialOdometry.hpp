@@ -38,6 +38,11 @@ public:
     void LoopClosingOptimizeEssentialGraph(std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame> pLoopKF, std::shared_ptr<KeyFrame> pCurKF, const KeyFrameAndPose& NonCorrectedSim3, const KeyFrameAndPose& CorrectedSim3, const std::map<std::shared_ptr<KeyFrame>, std::set<std::shared_ptr<KeyFrame>>>& LoopConnections) override;
     void GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const long unsigned int nLoopId, bool &mbStopGBA) override;
 
+    void SaveOdom(boost::archive::text_oarchive &oa) override;
+    void SaveOdom(boost::archive::binary_oarchive &oa) override;
+    void LoadOdom(boost::archive::text_iarchive &ia) override;
+    void LoadOdom(boost::archive::binary_iarchive &ia) override;
+
 public:
     InertialOdometry(std::shared_ptr<InertialOdometrySettings> settings, const CameraType &cam);
 

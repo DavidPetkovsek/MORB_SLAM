@@ -777,4 +777,52 @@ void InertialOdometry::GlobalBundleAdjustment(std::shared_ptr<Map> pMap, const l
     InertialOptimizer::FullInertialBA(pMap, 7, false, nLoopId, &mbStopGBA);
 }
 
+void InertialOdometry::SaveOdom(boost::archive::text_oarchive &oa) {
+    std::vector<long unsigned int> vpKeys;
+    std::vector<std::shared_ptr<InertialKeyFrameData>> vpLocalBackupEKFD;
+
+    for (auto BackupEKFD : mBackupEKFD) {
+        vpKeys.push_back(BackupEKFD.first);
+        vpLocalBackupEKFD.push_back(std::dynamic_pointer_cast<InertialKeyFrameData>(BackupEKFD.second));
+    }
+    oa << vpKeys;
+    oa << vpLocalBackupEKFD;
+}
+
+void InertialOdometry::SaveOdom(boost::archive::binary_oarchive &oa) {
+    std::vector<long unsigned int> vpKeys;
+    std::vector<std::shared_ptr<InertialKeyFrameData>> vpLocalBackupEKFD;
+
+    for (auto BackupEKFD : mBackupEKFD) {
+        vpKeys.push_back(BackupEKFD.first);
+        vpLocalBackupEKFD.push_back(std::dynamic_pointer_cast<InertialKeyFrameData>(BackupEKFD.second));
+    }
+    oa << vpKeys;
+    oa << vpLocalBackupEKFD;
+}
+
+void InertialOdometry::LoadOdom(boost::archive::text_iarchive &ia) {
+    std::vector<long unsigned int> vpKeys;
+    std::vector<std::shared_ptr<InertialKeyFrameData>> vpLocalBackupEKFD;
+
+    ia >> vpKeys;
+    ia >> vpLocalBackupEKFD;
+    
+    for (int i = 0; i < vpKeys.size(); i++) {
+        mBackupEKFD[vpKeys[i]] = vpLocalBackupEKFD[i];
+    }
+}
+
+void InertialOdometry::LoadOdom(boost::archive::binary_iarchive &ia) {
+    std::vector<long unsigned int> vpKeys;
+    std::vector<std::shared_ptr<InertialKeyFrameData>> vpLocalBackupEKFD;
+
+    ia >> vpKeys;
+    ia >> vpLocalBackupEKFD;
+    
+    for (int i = 0; i < vpKeys.size(); i++) {
+        mBackupEKFD[vpKeys[i]] = vpLocalBackupEKFD[i];
+    }
+}
+
 } //namespace MORB_SLAM

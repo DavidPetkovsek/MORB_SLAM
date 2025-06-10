@@ -54,11 +54,9 @@ struct InertialFrameData : public ExternalFrameData {
 
 struct InertialKeyFrameData : public ExternalKeyFrameData {
     friend class boost::serialization::access;
+
     template<class Archive>
     void serialize(Archive & ar, unsigned int version) {
-        ar.template register_type<ExternalKeyFrameData>();
-        ar & boost::serialization::base_object<ExternalKeyFrameData>(*this);
-        
         ar& mImuBias;
         ar& mBackupImuPreintegrated;
         ar& mImuCalib;

@@ -200,7 +200,7 @@ bool Atlas::isOdomInitialized() {
   return mpCurrentMap->isOdomInitialized();
 }
 
-void Atlas::PreSave() {
+void Atlas::PreSave(const std::shared_ptr<Odometry> &odomSource) {
   if (mpCurrentMap && !mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
       mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  // The init KF ID is 1 greater than the current maximum
 
@@ -227,12 +227,12 @@ void Atlas::PreSave() {
   std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
 
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
-    pMi->PreSave(spCams, pMi);
+    pMi->PreSave(spCams, pMi, odomSource);
   }
   RemoveBadMaps();
 }
 
-void Atlas::PostLoad() {
+void Atlas::PostLoad(const std::shared_ptr<Odometry> &odomSource) {
   std::map<unsigned int, std::shared_ptr<const GeometricCamera>> mpCams;
   for (std::shared_ptr<const GeometricCamera> pCam : mvpCameras) {
     mpCams[pCam->GetId()] = pCam;
@@ -242,7 +242,7 @@ void Atlas::PostLoad() {
   unsigned long int numKF = 0, numMP = 0;
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
     mspMaps.insert(pMi);
-    pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams, pMi);
+    pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams, pMi, odomSource);
     numKF += pMi->GetAllKeyFrames().size();
     numMP += pMi->GetAllMapPoints().size();
   }
