@@ -330,6 +330,8 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   if (mpKFlowerID) {
     mnBackupKFlowerID = mpKFlowerID->mnId;
   }
+
+  if(mvpBackupKeyFrames.size() == 0 || mvpBackupMapPoints.size() == 0) SetBad();
 }
 
 void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc,
@@ -352,6 +354,11 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
     if (pKF && !pKF->isBad())
       mspKeyFrames.insert(pKF);
   mvpBackupKeyFrames.clear();
+
+  if(mspMapPoints.size() == 0 || mspKeyFrames.size() == 0) {
+    SetBad();
+    return;
+  }
 
   std::map<long unsigned int, std::shared_ptr<MapPoint>> mpMapPointId;
   for (std::shared_ptr<MapPoint> pMPi : mspMapPoints) {

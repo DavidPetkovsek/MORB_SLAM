@@ -25,11 +25,6 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/serialization.hpp>
-#include <boost/serialization/nvp.hpp>
-// #include <boost/archive/text_oarchive.hpp>
-// #include <boost/archive/binary_oarchive.hpp>
-// #include <boost/archive/text_iarchive.hpp>
-// #include <boost/archive/binary_iarchive.hpp>
 #include <mutex>
 #include <map>
 #include <set>
@@ -75,14 +70,12 @@ struct ExternalKeyFrameData {
     virtual void PreSave() {};
     virtual void PostLoad() {};
 };
-BOOST_SERIALIZATION_ASSUME_ABSTRACT(ExternalKeyFrameData);
 
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   friend class boost::serialization::access;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version) {
-    // ar.template register_type<ExternalKeyFrameData>();
 
     ar& mnId;
     ar& const_cast<long unsigned int&>(mnFrameId);

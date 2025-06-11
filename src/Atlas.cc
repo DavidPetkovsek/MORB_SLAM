@@ -210,18 +210,24 @@ void Atlas::PreSave(const std::shared_ptr<Odometry> &odomSource) {
     }
   };
 
+  std::vector<std::shared_ptr<Map>> vBadMaps;
+
   mvpBackupMaps.clear();
   for (std::shared_ptr<Map> pMi : mspMaps) {
     if (!pMi || pMi->IsBad())
       continue;
 
     if (pMi->GetAllKeyFrames().size() == 0) {
-      // Empty map, erase before of save it.
-      SetMapBad(pMi);
+      vBadMaps.push_back(pMi);
       continue;
     }
     mvpBackupMaps.push_back(pMi);
   }
+
+  for (std::shared_ptr<Map> pBadMap : vBadMaps) {
+    SetMapBad(pBadMap);
+  }
+  vBadMaps.clear();
 
   sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
   std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
@@ -241,8 +247,11 @@ void Atlas::PostLoad(const std::shared_ptr<Odometry> &odomSource) {
   mspMaps.clear();
   unsigned long int numKF = 0, numMP = 0;
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
-    mspMaps.insert(pMi);
+
     pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams, pMi, odomSource);
+    if(pMi->IsBad()) continue;
+    mspMaps.insert(pMi);
+    
     numKF += pMi->GetAllKeyFrames().size();
     numMP += pMi->GetAllMapPoints().size();
   }
