@@ -258,7 +258,7 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
-  std::cout << "Finshed System Destructor" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Finshed System Destructor");
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
