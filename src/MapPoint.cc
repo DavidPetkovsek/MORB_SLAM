@@ -450,7 +450,6 @@ void MapPoint::UpdateNormalAndDepth() {
 
     if (!mObservations.empty()) {
       if(!(pRefKF = mpRefKF.lock())) {
-        // std::cout << "No Ref KF" << std::endl;
         mObservations.erase(mpRefKF);
 
         while(!mObservations.empty() && !(pRefKF = mObservations.begin()->first.lock()))
@@ -463,7 +462,6 @@ void MapPoint::UpdateNormalAndDepth() {
     }
 
     if(mObservations.empty()) {
-      // std::cout << "Is Empty" << std::endl;
       mbBad = true;
       mpReplaced = nullptr;
       return;
@@ -627,13 +625,6 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
 
   std::shared_ptr<KeyFrame> pRefKF;
   mpRefKF = mpKFid[mBackupRefKFId];
-
-  // auto itr = mObservations.begin();
-
-  // while(!(pRefKF = mpRefKF.lock()) && itr != mObservations.end()) {
-  //   mpRefKF = itr->first;
-  //   itr++;
-  // }
 
   if(mpRefKF.expired()) {
     while(!mObservations.empty() && !(pRefKF = mObservations.begin()->first.lock()))
