@@ -276,7 +276,7 @@ bool InertialOdometry::ReadyForStereoInitialization(Frame &curr_frame, Frame &la
     if (!curr_ed->mpImuPreintegrated || !last_ed->mpImuPreintegrated)
       return false;
 
-    if (!mbStationaryInitEnabled && (mpAtlas->CountMaps() <= 1) && (curr_ed->mpImuPreintegratedFrame->avgA - last_ed->mpImuPreintegratedFrame->avgA).norm() < 0.5) {
+    if (!mbStationaryInitEnabled && (curr_ed->mpImuPreintegratedFrame->avgA - last_ed->mpImuPreintegratedFrame->avgA).norm() < 0.5) {
       std::cout << "More acceleration is required to initialize the Map" << std::endl;
       return false;
     }
