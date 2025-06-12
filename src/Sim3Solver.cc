@@ -48,7 +48,7 @@ Sim3Solver::Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame>
   if (vpKeyFrameMatchedMP.empty()) {
     bDifferentKFs = true;
     vpKeyFrameMatchedMP = std::vector<std::shared_ptr<KeyFrame>>(mN1, pKF2);
-    std::cout << "\033[22;34mEmpty Keyframe\n" << std::endl;
+    Verbose::Log(Verbose::WARNING, "Empty KeyFrame");
   }
 
   std::vector<std::shared_ptr<MapPoint>> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
@@ -262,7 +262,7 @@ bool Sim3Solver::ComputeSim3(Eigen::Matrix3f &P1, Eigen::Matrix3f &P2) {
     double cvnom = Converter::toCvMat(Pr1).dot(Converter::toCvMat(P3));
     double nom = (Pr1.array() * P3.array()).sum();
     if (abs(nom - cvnom) > 1e-3)
-      std::cout << "sim3 solver: " << abs(nom - cvnom) << std::endl << nom << std::endl;
+      Verbose::Log(Verbose::DEBUG, "sim3 solver: ", abs(nom - cvnom), "\n", nom);
     Eigen::Array<float, 3, 3> aux_P3;
     aux_P3 = P3.array() * P3.array();
     double den = aux_P3.sum();

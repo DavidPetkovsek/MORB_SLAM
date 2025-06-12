@@ -12,6 +12,7 @@
 #include <ixwebsocket/IXWebSocketServer.h>
 
 #include "MORB_SLAM/Packet.hpp"
+#include "MORB_SLAM/Verbose.h"
 
 namespace MORB_SLAM {
 

@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "MORB_SLAM/SerializationUtils.h"
+#include "MORB_SLAM/Verbose.h"
 
 namespace MORB_SLAM {
 
@@ -222,11 +223,12 @@ class Preintegrated : public std::enable_shared_from_this<Preintegrated> {
   Bias GetUpdatedBias();
 
   void printMeasurements() const {
-    std::cout << "pint meas:" << std::endl;
+
+    Verbose::Log(Verbose::INFO, "pint meas:");
     for (size_t i = 0; i < mvMeasurements.size(); i++) {
-      std::cout << "meas " << mvMeasurements[i].t << std::endl;
+      Verbose::Log(Verbose::INFO, "meas ", mvMeasurements[i].t);
     }
-    std::cout << "end pint meas:" << std::endl;
+    Verbose::Log(Verbose::INFO, "end pint meas:");
   }
 
  public:

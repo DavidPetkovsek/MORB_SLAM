@@ -244,7 +244,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
     std::shared_ptr<KeyFrame> pKFi = vpOptimizableKFs[i];
 
     if (!pKFi->mPrevKF) {
-      Verbose::PrintMess("NOT INERTIAL LINK TO PREVIOUS FRAME!!!!", Verbose::VERBOSITY_NORMAL);
+      Verbose::Log(Verbose::ERROR, "NOT INERTIAL LINK TO PREVIOUS FRAME!!!!");
       continue;
     }
 
@@ -262,7 +262,7 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       g2o::HyperGraph::Vertex* VA2 = optimizer.vertex(maxKFid + 3 * (pKFi->mnId) + 3);
 
       if (!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2 || !VG2 || !VA2) {
-        std::cerr << "Error " << VP1 << ", " << VV1 << ", " << VG1 << ", " << VA1 << ", " << VP2 << ", " << VV2 << ", " << VG2 << ", " << VA2 << std::endl;
+        Verbose::Log(Verbose::ERROR, "Error ", VP1, ", ", VV1, ", ", VG1, ", ", VA1, ", ", VP2, ", ", VV2, ", ", VG2, ", ", VA2);
         continue;
       }
 
@@ -295,10 +295,10 @@ void InertialOptimizer::MergeInertialBA(std::shared_ptr<KeyFrame> pCurrKF, std::
       vear->setInformation(InfoA);
       optimizer.addEdge(vear);
     } else
-      Verbose::PrintMess("ERROR building inertial edge", Verbose::VERBOSITY_NORMAL);
+      Verbose::Log(Verbose::ERROR, "ERROR building inertial edge");
   }
 
-  Verbose::PrintMess("end inserting inertial edges", Verbose::VERBOSITY_NORMAL);
+  Verbose::Log(Verbose::DEBUG, "end inserting inertial edges");
 
   // Set MapPoint vertices
   const int nExpectedSize = (N + Ncov + lFixedKeyFrames.size()) * lLocalMapPoints.size();

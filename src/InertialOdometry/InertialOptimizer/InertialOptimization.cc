@@ -36,7 +36,7 @@ namespace MORB_SLAM {
 
 // used in LocalMapping::InitializeIMU()
 void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d& Rwg, double& scale, Eigen::Vector3d& bg, Eigen::Vector3d& ba, bool bMono, bool bFixedVel, bool bGauss, ImuInitializater::ImuInitType priorG, ImuInitializater::ImuInitType priorA) {
-  Verbose::PrintMess("start inertial optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::Log(Verbose::DEBUG, "start inertial optimization");
   const int its = 200;
   long unsigned int maxKFid = pMap->GetMaxKFid();
   const std::vector<std::shared_ptr<KeyFrame>> vpKFs = pMap->GetAllKeyFrames();
@@ -113,7 +113,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     if (pKFi->mPrevKF && pKFi->mnId <= maxKFid) {
       if (pKFi->isBad() || pKFi->mPrevKF->mnId > maxKFid) continue;
       if (!eKFd->mpImuPreintegrated) {
-        std::cout << "Not preintegrated measurement" << std::endl;
+        Verbose::Log(Verbose::ERROR, "Not preintegrated measurement");
         continue;
       }
 
@@ -127,7 +127,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
       g2o::HyperGraph::Vertex* VGDir = optimizer.vertex(maxKFid * 2 + 4);
       g2o::HyperGraph::Vertex* VS = optimizer.vertex(maxKFid * 2 + 5);
       if (!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS) {
-        std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
+        Verbose::Log(Verbose::ERROR, VP1, ", ", VV1, ", ", VG, ", ", VA, ", ", VP2, ", ", VV2, ", ", VGDir, ", ", VS);
         continue;
       }
       EdgeInertialGS* ei = new EdgeInertialGS(eKFd->mpImuPreintegrated);
@@ -181,7 +181,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
     if (((eKFd->GetGyroBias() - bg.cast<float>()).norm() > 0.01) && eKFd->mpImuPreintegrated)
       eKFd->mpImuPreintegrated->Reintegrate();
   }
-  Verbose::PrintMess("end inertial optimization", Verbose::VERBOSITY_NORMAL);
+  Verbose::Log(Verbose::DEBUG, "end inertial optimization");
 }
 
 // used in LoopClosing
@@ -271,7 +271,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::V
       g2o::HyperGraph::Vertex* VGDir = optimizer.vertex(maxKFid * 2 + 4);
       g2o::HyperGraph::Vertex* VS = optimizer.vertex(maxKFid * 2 + 5);
       if (!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS) {
-        std::cout << "Error" << VP1 << ", " << VV1 << ", " << VG << ", " << VA << ", " << VP2 << ", " << VV2 << ", " << VGDir << ", " << VS << std::endl;
+        Verbose::Log(Verbose::ERROR, VP1, ", ", VV1, ", ", VG, ", ", VA, ", ", VP2, ", ", VV2, ", ", VGDir, ", ", VS);
         continue;
       }
       EdgeInertialGS* ei = new EdgeInertialGS(eKFd->mpImuPreintegrated);
@@ -390,7 +390,7 @@ void InertialOptimizer::InertialOptimization(std::shared_ptr<Map> pMap, Eigen::M
       g2o::HyperGraph::Vertex* VGDir = optimizer.vertex(4 * (maxKFid + 1));
       g2o::HyperGraph::Vertex* VS = optimizer.vertex(4 * (maxKFid + 1) + 1);
       if (!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS) {
-        Verbose::PrintMess("Error" + std::to_string(VP1->id()) + ", " + std::to_string(VV1->id()) + ", " + std::to_string(VG->id()) + ", " + std::to_string(VA->id()) + ", " + std::to_string(VP2->id()) + ", " + std::to_string(VV2->id()) + ", " + std::to_string(VGDir->id()) + ", " + std::to_string(VS->id()), Verbose::VERBOSITY_NORMAL);
+        Verbose::Log(Verbose::ERROR, "Error ", VP1->id(), ", ", VV1->id(), ", ", VG->id(), ", ", VA->id(), ", ", VP2->id(), ", ", VV2->id(), ", ", VGDir->id(), ", ", VS->id());
         continue;
       }
       EdgeInertialGS* ei = new EdgeInertialGS(pKFi->External<InertialKeyFrameData>()->mpImuPreintegrated);
@@ -901,7 +901,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   // Set Previous Frame Vertex
   Frame* pFp = pFrame->mpPrevFrame;
   if(!pFp || pFp->isPartiallyConstructed) {
-    std::cout << "no prev frame in PIOLF" << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "no prev frame in PIOLF");
     return 0;
   }
 
@@ -950,7 +950,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
   optimizer.addEdge(ear);
 
   if (pFp->External<InertialFrameData>()->mpcpi == nullptr){
-    std::cout << "NO MPCPI" << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "NO MPCPI");
     return 0;
   }
   EdgePriorPoseImu* ep = new EdgePriorPoseImu(pFp_ed->mpcpi);
@@ -1122,7 +1122,7 @@ int InertialOptimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRe
 
   pFrame_ed->mpcpi = std::make_shared<ConstraintPoseImu>(VP->estimate().Rwb, VP->estimate().twb, VV->estimate(), VG->estimate(), VA->estimate(), H.block<15, 15>(15, 15));
   if (oldMpcpi == pFp_ed->mpcpi) {
-    std::cerr << "\033[22;34mSAME MPCPI\033[0m" << std::endl;
+    Verbose::Log(Verbose::ERROR, "\033[22;34mSAME MPCPI\033[0m");
   } else {
     oldMpcpi = pFp_ed->mpcpi;
     pFp_ed->mpcpi = nullptr;

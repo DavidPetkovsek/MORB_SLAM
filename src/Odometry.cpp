@@ -84,7 +84,7 @@ namespace MORB_SLAM {
                     if (pChild->isVelocitySet()) {
                         pChild->mVwbGBA = Rcor * pChild->GetVelocity();
                     } else {
-                        Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
+                        Verbose::Log(Verbose::INFO, "Child velocity empty!!");
                     }
                     
                     if(pChild->mpExternalKeyFrameData)
@@ -105,7 +105,7 @@ namespace MORB_SLAM {
                 if(pKF->mpExternalKeyFrameData)
                     pKF->mpExternalKeyFrameData->UpdateParentSpanningTree();
             } else {
-                std::cout << "KF " << pKF->mnId << " not set to inertial!! " << std::endl;
+                Verbose::Log(Verbose::WARNING, "KF ", pKF->mnId, " not set to inertial!!");
             }
 
             lpKFtoCheck.pop_front();
@@ -134,7 +134,7 @@ namespace MORB_SLAM {
             }
         }
 
-        Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+        Verbose::Log(Verbose::DEBUG, "Map updated!");
     }
 
 } //namespace MORB_SLAM

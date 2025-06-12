@@ -6,18 +6,18 @@ Camera::Camera(CameraType type, const std::string &name): ljobs{}, rjobs{}, name
     shouldStop{false}, lthread{&Camera::threadExec, this, &ljobs}, rthread{&Camera::threadExec, this, &rjobs} {}
 
 Camera::~Camera(){
-    std::cout << "Entered Camera destructor" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Entered Camera destructor");
     {
         std::scoped_lock<std::mutex> lock(camMutex);
         shouldStop = true;
         camCV.notify_all();
     }
-    std::cout << "Joining Camera threads" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Joining Camera threads");
 
     if(lthread.joinable()) lthread.join();
     if(rthread.joinable()) rthread.join();
 
-    std::cout << "Finished joining Camera threads" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Finished joining Camera threads");
 }
 
 void Camera::threadExec(std::deque<std::pair<ManagedPromise<bool>, std::function<void(void)>>> *jobs){

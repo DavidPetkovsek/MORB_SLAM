@@ -207,7 +207,7 @@ bool Preintegrated::IntegrateMeasurements(const std::vector<IMU::Point> &datapoi
       IntegrateNewGyroMeasurement(datapoint.w, datapoint.t);
       hasGyro = true;
     } else {
-      std::cout << "Warning: IMU Point has no data" << std::endl;
+      Verbose::Log(Verbose::WARNING, "IMU Point has no data");
       continue;
     }
 

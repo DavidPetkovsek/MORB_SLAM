@@ -431,13 +431,13 @@ void KeyFrame::UpdateConnections(bool upParent) {
 
   std::vector<std::pair<int, std::shared_ptr<KeyFrame>>> vPairs;
   vPairs.reserve(KFcounter.size());
-  if (!upParent) std::cout << "UPDATE_CONN: current KF " << mnId << std::endl;
+  if (!upParent) Verbose::Log(Verbose::WARNING, "UPDATE_CONN: current KF ", mnId);
 
   std::shared_ptr<KeyFrame> self = shared_from_this();
 
   for (std::map<std::shared_ptr<KeyFrame>, int>::iterator mit = KFcounter.begin(), mend = KFcounter.end(); mit != mend; mit++) {
     if (!upParent)
-      std::cout << "  UPDATE_CONN: KF " << mit->first->mnId << " ; num matches: " << mit->second << std::endl;
+      Verbose::Log(Verbose::WARNING, "UPDATE_CONN: KF ", mit->first->mnId, " ; num matches: ", mit->second);
     if (mit->second > nmax) {
       nmax = mit->second;
       pKFmax = mit->first;
@@ -490,7 +490,7 @@ void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame> pKF) {
   std::shared_ptr<KeyFrame> self = shared_from_this();
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   if (pKF == self) {
-    std::cout << "ERROR: Change parent KF, the parent and child are the same KF" << std::endl;
+    Verbose::Log(Verbose::FATAL, "Change parent KF, the parent and child are the same KF");
     throw std::invalid_argument("The parent and child can not be the same");
   }
 
@@ -876,7 +876,7 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   if (mnBackupIdCamera >= 0) {
     mpCamera = mpCamId[mnBackupIdCamera];
   } else {
-    std::cout << "ERROR: There is not a main camera in KF " << mnId << std::endl;
+    Verbose::Log(Verbose::ERROR, "There is not a main camera in KF ", mnId);
   }
   if (mnBackupIdCamera2 >= 0) {
     mpCamera2 = mpCamId[mnBackupIdCamera2];
@@ -919,7 +919,7 @@ bool KeyFrame::ProjectPointUnDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &
 
   // Check positive depth
   if (PcZ < 0.0f) {
-    std::cout << "Negative depth: " << PcZ << std::endl;
+    Verbose::Log(Verbose::ERROR, "Negative depth: ", PcZ);
     return false;
   }
 

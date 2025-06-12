@@ -12,26 +12,27 @@ ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const in
         
         mServer.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
             if (msg->type == ix::WebSocketMessageType::Open) {
-                std::cout << "New client connected to EMV WebSocket server..." << std::endl;
-                std::cout << "id: " << connectionState->getId() << std::endl;
-                std::cout << "Uri: " << msg->openInfo.uri << std::endl;
+                Verbose::Log(Verbose::SUCCESS, "New client connected to EMV WebSocket server...");
+                Verbose::Log(Verbose::DEBUG, "id: ", connectionState->getId());
+                Verbose::Log(Verbose::DEBUG, "Uri: ", msg->openInfo.uri);
                 mbFirstClientConnected = true;
             }
         });
 
         auto res = mServer.listen();
         if (!res.first) {
-            std::cerr << res.second << std::endl;
+
+            Verbose::Log(Verbose::ERROR, res.second);
             return;
         }
 
-        std::cout << "Starting ExternalMapViewer WebSocket server..." << std::endl;
+        Verbose::Log(Verbose::INFO, "Starting ExternalMapViewer WebSocket server...");
         mServer.start();
         
-        std::cout << "Creating ExternalMapViewer thread" << std::endl;
+        Verbose::Log(Verbose::DEBUG, "Creating ExternalMapViewer thread");
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
 
-        std::cout << "Waiting for atleast one client to connect to the ExternalMapViewer socket server before continuing..." << std::endl;
+        Verbose::Log(Verbose::INFO, "Waiting for at least one client to connect to the ExternalMapViewer socket server before continuing...");
         while(!mbFirstClientConnected)
             usleep(1000);
     }
@@ -63,6 +64,9 @@ void ExternalMapViewer::updateSLAM(const Packet &packet) {
 }
 
 void ExternalMapViewer::run(std::stop_token token) {
+    #ifdef FactoryEngine
+        fe::Logger::setThreadName("ExternalMapViewer");
+    #endif
     while(!token.stop_requested()) {
         std::unique_lock<std::mutex> lock(mMutexEMV);
         mCondvarEMV.wait(lock, [this, &token]{ return (mbSlamUpdated == true || mbValuesPushed == true || token.stop_requested()); });

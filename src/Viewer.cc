@@ -45,7 +45,7 @@ Viewer::Viewer(const System_ptr &pSystem)
       both(false),
       mbClosed(false) {
     newParameterLoader(*pSystem->getSysSettings(), *pSystem->getCamSettings());
-    std::cout << "Creating Viewer thread" << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Creating Viewer thread");
     mptViewer = std::jthread(&Viewer::Run, this);
 }
 
@@ -169,6 +169,9 @@ static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::O
 
 
 void Viewer::Run() {
+  #ifdef FactoryEngine
+      fe::Logger::setThreadName("Viewer");
+  #endif
 
   pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
 
@@ -215,7 +218,7 @@ void Viewer::Run() {
 
   float trackedImageScale = 1.0;
 
-  std::cout << "Starting the Viewer" << std::endl;
+  Verbose::Log(Verbose::INFO, "Starting the Viewer");
   while (isOpen()) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

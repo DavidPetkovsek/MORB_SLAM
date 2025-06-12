@@ -97,7 +97,8 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
   float SH, SF;
   Eigen::Matrix3f H, F;
 
-  std::cout << "Creating Thread in TwoViewReconstruction" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Creating Thread in TwoViewReconstruction");
+  
   std::jthread threadH(&TwoViewReconstruction::FindHomography, this, std::ref(vbMatchesInliersH), std::ref(SH), std::ref(H));
   std::jthread threadF(&TwoViewReconstruction::FindFundamental, this, std::ref(vbMatchesInliersF), std::ref(SF), std::ref(F));
 
@@ -120,6 +121,10 @@ bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint> &vKeys1,
 }
 
 void TwoViewReconstruction::FindHomography(std::vector<bool> &vbMatchesInliers, float &score, Eigen::Matrix3f &H21) {
+  #ifdef FactoryEngine
+    fe::Logger::setThreadName("2ViewReconstruction_FH");
+  #endif
+
   // Number of putative matches
   const int N = mvMatches12.size();
 
@@ -166,6 +171,9 @@ void TwoViewReconstruction::FindHomography(std::vector<bool> &vbMatchesInliers, 
 }
 
 void TwoViewReconstruction::FindFundamental(std::vector<bool> &vbMatchesInliers, float &score, Eigen::Matrix3f &F21) {
+  #ifdef FactoryEngine
+    fe::Logger::setThreadName("2ViewReconstruction_FF");
+  #endif
   // Number of putative matches
   const int N = vbMatchesInliers.size();
 
