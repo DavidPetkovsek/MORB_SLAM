@@ -53,21 +53,24 @@ struct InertialFrameData : public ExternalFrameData {
 
 
 struct InertialKeyFrameData : public ExternalKeyFrameData {
-    // template<class Archive>
-    // void serialize(Archive & ar, unsigned int version) { 
-    //     ar & boost::serialization::base_object<ExternalKeyFrameData>(*this);
-    //     ar& mImuBias;
-    //     ar& mBackupImuPreintegrated;
-    //     ar& mImuCalib;
-    // }
+    friend class boost::serialization::access;
 
-    // void PreSave() override {
-    //     if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
-    // }
+    template<class Archive>
+    void serialize(Archive & ar, unsigned int version) {
+        ar& mImuBias;
+        ar& mBackupImuPreintegrated;
+        ar& mImuCalib;
+    }
 
-    // void PostLoad() override {
-    //     mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
-    // }
+    virtual void PreSave() override {
+        if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+    }
+
+    virtual void PostLoad() override {
+        mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+    }
+
+    InertialKeyFrameData(){}
 
     InertialKeyFrameData(IMU::Calib imuCalib)
         : mpImuPreintegrated(nullptr),
@@ -79,7 +82,7 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
           mImuBias(frame_data.mImuBias) { }
 
     std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
-    // IMU::Preintegrated mBackupImuPreintegrated;
+    IMU::Preintegrated mBackupImuPreintegrated;
     IMU::Calib mImuCalib;
     IMU::Bias mImuBias;
     IMU::Bias mBiasGBA;
@@ -123,18 +126,18 @@ struct InertialKeyFrameData : public ExternalKeyFrameData {
         }
     }
 
-    void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
+    virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
         std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);
         if(mpImuPreintegrated && inertial_eKFd_prev->mpImuPreintegrated) {
             mpImuPreintegrated->MergePrevious(inertial_eKFd_prev->mpImuPreintegrated);
         }
     }
 
-    void UpdateChildSpanningTree() override {
+    virtual void UpdateChildSpanningTree() override {
         mBiasGBA = GetImuBias();
     }
 
-    void UpdateParentSpanningTree() override {
+    virtual void UpdateParentSpanningTree() override {
         SetNewBias(mBiasGBA);
     }
 };

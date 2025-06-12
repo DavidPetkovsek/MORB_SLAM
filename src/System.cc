@@ -50,6 +50,7 @@ Verbose::eLevel Verbose::th = Verbose::INFO;
 System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
     : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
+      mpOdomSource(odomSource),
       mTrackingState(TrackingState::SYSTEM_NOT_READY),
       mpCamSettings(camSettings),
       mpSysSettings(sysSettings) {
@@ -132,10 +133,10 @@ System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sy
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
   // Set up Odometry
-  if(odomSource) {
-    odomSource->SetLocalMapper(mpLocalMapper);
-    odomSource->SetTracker(mpTracker);
-    odomSource->SetAtlas(mpAtlas);
+  if(mpOdomSource) {
+    mpOdomSource->SetLocalMapper(mpLocalMapper);
+    mpOdomSource->SetTracker(mpTracker);
+    mpOdomSource->SetAtlas(mpAtlas);
   }
 
   Verbose::Log(Verbose::DEBUG, "Creating LocalMapping thread");
@@ -257,16 +258,19 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
+  std::cout << "Finshed System Destructor" << std::endl;
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
-void System::SaveAtlas(int type) const {
+void System::SaveAtlas(FileType type) const {
   Verbose::Log(Verbose::DEBUG, "Thread ID is: ",  std::this_thread::get_id(),  ". Trying to save");
   if (!mStrSaveAtlasToFile.empty()) {
     Verbose::Log(Verbose::INFO, "Atlas saving to file ", mStrSaveAtlasToFile);
     // Save the current session
-    mpAtlas->PreSave();
+    if(mpOdomSource) mpOdomSource->mBackupEKFD.clear();
+
+    mpAtlas->PreSave(mpOdomSource);
     Verbose::Log(Verbose::DEBUG, "presaved");
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
@@ -285,14 +289,13 @@ void System::SaveAtlas(int type) const {
     
     Verbose::Log(Verbose::DEBUG, "About to Calculate");
 
-    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
 
     Verbose::Log(Verbose::DEBUG, "Vocab checksum`", strVocabularyChecksum);
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     std::string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
-    Verbose::Log(Verbose::DEBUG, "Type is of: ", type);
 
-    if (type == TEXT_FILE) {
+    if (type == FileType::TEXT_FILE) {
       Verbose::Log(Verbose::DEBUG, "Starting to write the save text file");
 
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
@@ -305,8 +308,10 @@ void System::SaveAtlas(int type) const {
       oa << strVocabularyChecksum;
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
+
       Verbose::Log(Verbose::DEBUG, "End to write the save text file");
-    } else if (type == BINARY_FILE) {
+    } else if (type == FileType::BINARY_FILE) {
       Verbose::Log(Verbose::DEBUG, "Starting to write the save binary file");
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
       Verbose::Log(Verbose::DEBUG, "remove's output is: ", rval);
@@ -321,6 +326,7 @@ void System::SaveAtlas(int type) const {
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       Verbose::Log(Verbose::DEBUG, "streamed atlas format version");
       oa << *mpAtlas;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
       Verbose::Log(Verbose::SUCCESS, "Atlas saved to file ", mStrSaveAtlasToFile);
     } else {
       Verbose::Log(Verbose::CRITICAL, "Invalid Atlas Save File Type");
@@ -329,14 +335,14 @@ void System::SaveAtlas(int type) const {
     Verbose::Log(Verbose::CRITICAL, "No Atlas Save File is Set");
 }
 
-bool System::LoadAtlas(int type) {
+bool System::LoadAtlas(FileType type) {
   std::string strFileVoc, strVocChecksum, strSerializedAtlasFormatVersion;
   bool isRead = false;
 
   std::string pathLoadFileName = mStrLoadAtlasFromFile;
   pathLoadFileName = pathLoadFileName.append(".osa");
 
-  if (type == TEXT_FILE) {
+  if (type == FileType::TEXT_FILE) {
     Verbose::Log(Verbose::INFO, "Reading the saved Atlas text file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -352,9 +358,10 @@ bool System::LoadAtlas(int type) {
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
     Verbose::Log(Verbose::SUCCESS, "Atlas text file loaded" );
     isRead = true;
-  } else if (type == BINARY_FILE) {
+  } else if (type == FileType::BINARY_FILE) {
     Verbose::Log(Verbose::INFO, "Reading the saved Atlas binary file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
@@ -370,13 +377,14 @@ bool System::LoadAtlas(int type) {
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
     Verbose::Log(Verbose::SUCCESS, "Atlas binary file loaded");
     isRead = true;
   }
 
   if (isRead) {
     // Check if the vocabulary is the same
-    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
     if (strInputVocabularyChecksum.compare(strVocChecksum) != 0) {
       Verbose::Log(Verbose::CRITICAL, "The vocabulary load isn't the same as when it was created");
       Verbose::Log(Verbose::DEBUG, "-Vocabulary name: ", strFileVoc);
@@ -385,21 +393,21 @@ bool System::LoadAtlas(int type) {
 
     mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
-    mpAtlas->PostLoad();
+    mpAtlas->PostLoad(mpOdomSource);
 
     return true;
   }
   return false;
 }
 
-std::string System::CalculateCheckSum(std::string filename, int type) const {
+std::string System::CalculateCheckSum(std::string filename, FileType type) const {
   std::string checksum = "";
 
   unsigned int md5_digest_len = EVP_MD_size(EVP_md5());
   unsigned char *md5_digest;
 
   std::ios_base::openmode flags = std::ios::in;
-  if (type == BINARY_FILE)  // Binary file
+  if (type == FileType::BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
   Verbose::Log(Verbose::DEBUG, "start checksum");

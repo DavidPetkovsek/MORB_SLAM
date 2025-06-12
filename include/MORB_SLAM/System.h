@@ -56,7 +56,7 @@ typedef std::shared_ptr<Tracking> Tracking_ptr;
 class System {
  public:
     // File type
-    enum FileType{
+    enum class FileType{
         TEXT_FILE=0,
         BINARY_FILE=1,
     };
@@ -113,13 +113,13 @@ class System {
     Sophus::SE3f GetInitialFramePose();
     bool HasInitialFramePose();
 
-    void SaveAtlas(int type) const;
+    void SaveAtlas(FileType type) const;
 
 private:
 
-    bool LoadAtlas(int type);
+    bool LoadAtlas(FileType type);
 
-    std::string CalculateCheckSum(std::string filename, int type) const;
+    std::string CalculateCheckSum(std::string filename, FileType type) const;
 
     // Input sensor
     CameraType mSensor;
@@ -145,6 +145,8 @@ private:
     // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     std::shared_ptr<LoopClosing> mpLoopCloser;
+
+    std::shared_ptr<Odometry> mpOdomSource;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.

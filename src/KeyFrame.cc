@@ -84,13 +84,13 @@ KeyFrame::KeyFrame()
       NLeft(0),
       NRight(0),
       isPartiallyConstructed(true),
-      mpExternalKeyFrameData(nullptr) {
+      mpExternalKeyFrameData(nullptr),
+      bOdom(false) {
         nKFsInMemory++;
       }
 
 KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed)
-    : bOdom(pMap->isOdomInitialized()),
-      mnFrameId(F.mnId),
+    : mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
       mnGridCols(FRAME_GRID_COLS),
       mnGridRows(FRAME_GRID_ROWS),
@@ -157,7 +157,8 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
       NRight(F.Nright),
-      mpExternalKeyFrameData(ed) {
+      mpExternalKeyFrameData(ed),
+      bOdom(pMap->isOdomInitialized()) {
   mnId = nNextId++;
   nKFsInMemory++;
 
@@ -764,7 +765,7 @@ void KeyFrame::UpdateMap(std::shared_ptr<Map> pMap) {
   mpMap = pMap;
 }
 
-void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::shared_ptr<MapPoint>> &spMP, std::set<std::shared_ptr<const GeometricCamera>> &spCam) {
+void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::shared_ptr<MapPoint>> &spMP, std::set<std::shared_ptr<const GeometricCamera>> &spCam, const std::shared_ptr<Odometry> &odomSource) {
   // Save the id of each MapPoint in this KF, there can be null pointer in the std::vector
   mvBackupMapPointsId.clear();
   mvBackupMapPointsId.reserve(N);
@@ -820,12 +821,14 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   if (mNextKF && spKF.find(mNextKF) != spKF.end())
     mBackupNextKFId = mNextKF->mnId;
   
-  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
+  odomSource->mBackupEKFD[mnId] = mpExternalKeyFrameData;
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
                         std::map<long unsigned int, std::shared_ptr<MapPoint>> &mpMPid,
-                        std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCamId) {
+                        std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCamId,
+                        const std::shared_ptr<Odometry> &odomSource) {
   // Rebuild the empty variables
 
   // Pose
@@ -887,7 +890,13 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
     mNextKF = mpKFid[mBackupNextKFId];
   }
 
-  // if(mpExternalKeyFrameData) mpExternalKeyFrameData->PostLoad();
+  if(odomSource) {
+    mpExternalKeyFrameData = odomSource->mBackupEKFD[mnId];
+    if(mpExternalKeyFrameData){
+      mpExternalKeyFrameData->PostLoad();
+      mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
+    }
+  }
 
   // Remove all backup container
   mvBackupMapPointsId.clear();

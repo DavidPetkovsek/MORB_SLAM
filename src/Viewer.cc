@@ -315,7 +315,7 @@ void Viewer::Run() {
     }
 
     if (menuStop) {
-      mpSystem->SaveAtlas(1);
+      mpSystem->SaveAtlas(System::FileType::BINARY_FILE);
       menuStop = false;
     }
   }
