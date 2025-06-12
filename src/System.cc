@@ -260,6 +260,7 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
+  std::cout << "Finshed System Destructor" << std::endl;
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
