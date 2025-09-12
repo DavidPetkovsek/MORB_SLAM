@@ -173,6 +173,9 @@ void Viewer::Run() {
       fe::Logger::setThreadName("Viewer");
   #endif
 
+    setenv("DISPLAY", ":1", 1);
+    setenv("XAUTHORITY", ("/run/user/" + std::to_string(getuid()) + "/gdm/Xauthority").c_str(), 1);
+
   const char* disp = std::getenv("DISPLAY");
   const char* xauth = std::getenv("XAUTHORITY");
 
