@@ -173,8 +173,12 @@ void Viewer::Run() {
       fe::Logger::setThreadName("Viewer");
   #endif
 
-  std::string display_env = std::getenv("DISPLAY");
-  std::string xauth_env = std::getenv("XAUTHORITY");
+  const char* disp = std::getenv("DISPLAY");
+  const char* xauth = std::getenv("XAUTHORITY");
+
+  std::string display_env = disp ? disp : "";
+  std::string xauth_env   = xauth ? xauth : "";
+
   Verbose::Log(Verbose::DEBUG, "DISPLAY: ", display_env);
   Verbose::Log(Verbose::DEBUG, "XAUTHORITY: ", xauth_env);
 
