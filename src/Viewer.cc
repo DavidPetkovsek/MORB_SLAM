@@ -173,14 +173,30 @@ void Viewer::Run() {
       fe::Logger::setThreadName("Viewer");
   #endif
 
+  setenv("DISPLAY", ":1", 1);
+  setenv("XAUTHORITY", ("/run/user/" + std::to_string(getuid()) + "/gdm/Xauthority").c_str(), 1);
+
+  // const char* disp = std::getenv("DISPLAY");
+  // const char* xauth = std::getenv("XAUTHORITY");
+
+  // std::string display_env = disp ? disp : "";
+  // std::string xauth_env   = xauth ? xauth : "";
+
+  // Verbose::Log(Verbose::DEBUG, "DISPLAY: ", display_env);
+  // Verbose::Log(Verbose::DEBUG, "XAUTHORITY: ", xauth_env);
+
   pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
+
 
   // 3D Mouse handler requires depth testing to be enabled
   glEnable(GL_DEPTH_TEST);
 
+
   // Issue specific OpenGl we might need
   glEnable(GL_BLEND);
+
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
   pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
