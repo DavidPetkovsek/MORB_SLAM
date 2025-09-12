@@ -173,14 +173,27 @@ void Viewer::Run() {
       fe::Logger::setThreadName("Viewer");
   #endif
 
+  std::string display_env = std::getenv("DISPLAY");
+  std::string xauth_env = std::getenv("XAUTHORITY");
+  Verbose::Log(Verbose::DEBUG, "DISPLAY: ", display_env);
+  Verbose::Log(Verbose::DEBUG, "XAUTHORITY: ", xauth_env);
+
   pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
+  Verbose::Log(Verbose::DEBUG, "CreateWindowAndBind Success");
+
 
   // 3D Mouse handler requires depth testing to be enabled
   glEnable(GL_DEPTH_TEST);
+  Verbose::Log(Verbose::DEBUG, "GL_DEPTH_TEST Success");
+
 
   // Issue specific OpenGl we might need
   glEnable(GL_BLEND);
+  Verbose::Log(Verbose::DEBUG, "GL_BLEND Success");
+
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  Verbose::Log(Verbose::DEBUG, "GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA Success");
+
 
   pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
