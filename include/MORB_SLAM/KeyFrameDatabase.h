@@ -22,6 +22,9 @@
 #pragma once
 
 #include <boost/serialization/base_object.hpp>
+#if BOOST_VERSION >= 107400 // Newer versions of boost (>=1.74) require this header
+#include <boost/serialization/library_version_type.hpp>
+#endif
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/vector.hpp>
 #include <list>
@@ -77,7 +80,7 @@ class KeyFrameDatabase {
   std::shared_ptr<ORBVocabulary> mpVoc;
 
   // Inverted file
-  std::vector<std::list<std::shared_ptr<KeyFrame>> > mvInvertedFile;
+  std::vector<std::list<std::shared_ptr<KeyFrame>>> mvInvertedFile;
 
   // For save relation without pointer, this is necessary for save/load function
   std::vector<std::list<long unsigned int>> mvBackupInvertedFileId;
