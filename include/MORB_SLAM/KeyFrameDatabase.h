@@ -21,10 +21,18 @@
 
 #pragma once
 
-#include <boost/serialization/base_object.hpp>
-#if BOOST_VERSION >= 107400 // Newer versions of boost (>=1.74) require this header
+/* This <boost/serialization/library_version_type.hpp> include guards against an issue
+ * in boost::serialization from boost 1.74.0 that leads to compiler error
+ * "error: ‘library_version_type’ in namespace ‘boost::serialization’ does not name a type;" 
+ * when including <boost/serialization/list.hpp>. More details in ticket:
+ * https://github.com/borglab/gtsam/issues/1412
+ * https://github.com/boostorg/serialization/issues/219
+ */
+#if BOOST_VERSION >= 107400
 #include <boost/serialization/library_version_type.hpp>
 #endif
+
+#include <boost/serialization/base_object.hpp>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/vector.hpp>
 #include <list>
