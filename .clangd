@@ -1,0 +1,34 @@
+CompileFlags:
+  CompilationDatabase: .fe/build/device/build/fe
+
+  # Remove NVCC-only flags that clangd/clang doesn't understand
+  Remove:
+    - "-arch=native"
+    - "-rdc=true"
+    - "-rdc=false"
+    - "-forward-unknown-to-host-compiler"
+    - "-fdevice-syntax-only"
+    - "-ccbin=/usr/bin/clang++-17"
+    - "--extended-lambda"
+    - "--compiler-options"
+    - "--expt-relaxed-constexpr"
+
+---
+
+If:
+  PathMatch: .*\.(h(pp)?|cuh)
+CompileFlags:
+  CompilationDatabase: .fe/build/device/build/fe
+
+  Add: [-xc++, -std=c++20]
+  # Remove NVCC-only flags that clangd/clang doesn't understand
+  Remove:
+    - "-arch=native"
+    - "-rdc=true"
+    - "-rdc=false"
+    - "-forward-unknown-to-host-compiler"
+    - "-fdevice-syntax-only"
+    - "-ccbin=/usr/bin/clang++-17"
+    - "--extended-lambda"
+    - "--compiler-options"
+    - "--expt-relaxed-constexpr"
