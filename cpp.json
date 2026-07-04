@@ -57,6 +57,7 @@
             }
         }
     ],
+    "vcpkg-overlay-ports": ["vcpkg_overlay_ports/pangolin"],
     "dirs":{
         "include": "include",
         "src": "src"

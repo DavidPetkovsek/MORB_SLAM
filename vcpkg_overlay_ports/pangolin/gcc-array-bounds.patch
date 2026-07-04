@@ -1,0 +1,22 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d0cac5c..cd7806e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -97,6 +97,17 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+         add_compile_options(-Werror=maybe-uninitialized)
+     endif()
+     add_compile_options(-Werror=vla)
++    if(CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12)
++        # GCC >= 12 (observed on GCC 16) emits a false-positive -Warray-bounds
++        # diagnostic when std::make_shared<T>() constructs a type containing a
++        # std::mutex member from within a factory-registration function, e.g.
++        # RegisterImagesVideoOutputFactory() in
++        # components/pango_video/src/drivers/images_out.cpp. The inliner loses
++        # track of the true size of the shared_ptr control block and reports
++        # the mutex subobject as partly out of bounds. This is not a real bug;
++        # downgrade to a non-fatal warning so -Werror builds are not broken.
++        add_compile_options(-Wno-error=array-bounds)
++    endif()
+ endif()
+ 
+ #######################################################
