@@ -1,6 +1,6 @@
 compatibility: ^1.0.0-alpha.1
 dependencies: {}
-description: "Enhanced hierarchical bag-of-word library for C++"
+description: Enhanced hierarchical bag-of-word library for C++
 docker-base: alpine
 icon: null
 name: null

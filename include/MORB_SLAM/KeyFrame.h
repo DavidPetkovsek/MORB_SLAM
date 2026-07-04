@@ -24,6 +24,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/serialization.hpp>
 #include <mutex>
 #include <map>
 #include <set>
@@ -40,12 +41,12 @@
 #endif
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
-#include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/MapPoint.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
 #include "MORB_SLAM/SerializationUtils.h"
+#include "MORB_SLAM/Odometry.hpp"
 
 namespace MORB_SLAM {
 
@@ -56,11 +57,26 @@ class KeyFrameDatabase;
 
 class GeometricCamera;
 
+struct ExternalKeyFrameData {
+    ExternalKeyFrameData() {}
+    virtual ~ExternalKeyFrameData() {}
+    virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) = 0;
+
+    std::weak_ptr<std::mutex> mpMutexPose; // shared mutex with the KeyFrame.
+    void SetPoseMutex(const std::shared_ptr<std::mutex> &pMutexPose) { mpMutexPose = pMutexPose; }
+    virtual void UpdateChildSpanningTree() = 0;
+    virtual void UpdateParentSpanningTree() = 0;
+
+    virtual void PreSave() {};
+    virtual void PostLoad() {};
+};
+
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   friend class boost::serialization::access;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version) {
+
     ar& mnId;
     ar& const_cast<long unsigned int&>(mnFrameId);
     ar& const_cast<double&>(mTimeStamp);
@@ -134,22 +150,18 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
     serializeVectorKeyPoints<Archive>(ar, mvKeysRight, version);
     ar& mGridRight;
 
-    // Inertial variables
-    ar& mImuBias;
-    ar& mBackupImuPreintegrated;
-    ar& mImuCalib;
+    // Odom variables
     ar& mBackupPrevKFId;
     ar& mBackupNextKFId;
-    ar& bImu;
+    ar& bOdom;
     ar& boost::serialization::make_array(mVw.data(), mVw.size());
-    ar& boost::serialization::make_array(mOwb.data(), mOwb.size());
     ar& mbHasVelocity;
   }
 
  public:
   
   KeyFrame();
-  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
+  KeyFrame(Frame& F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed=nullptr);
   ~KeyFrame();
 
   // Pose functions
@@ -161,8 +173,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3f GetPoseInverse();
   Eigen::Vector3f GetCameraCenter();
 
-  Eigen::Vector3f GetImuPosition();
-  Eigen::Matrix3f GetImuRotation();
   Eigen::Matrix3f GetRotation();
   Eigen::Vector3f GetTranslation();
   Eigen::Vector3f GetVelocity();
@@ -231,31 +241,27 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<Map> GetMap();
   void UpdateMap(std::shared_ptr<Map> pMap);
 
-  void SetNewBias(const IMU::Bias& b);
-
-  Eigen::Vector3f GetGyroBias();
-  Eigen::Vector3f GetAccBias();
-  IMU::Bias GetImuBias();
-
   bool ProjectPointUnDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f& kp, float& u, float& v);
 
-  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam);
-  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId);
+  void PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::shared_ptr<MapPoint>>& spMP, std::set<std::shared_ptr<const GeometricCamera>>& spCam, const std::shared_ptr<Odometry> &odomSource);
+  void PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid, std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCamId, const std::shared_ptr<Odometry> &odomSource);
 
   void SetORBVocabulary(std::shared_ptr<ORBVocabulary> pORBVoc);
   void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
 
-  bool bImu;
+  bool bOdom;
 
   static long unsigned int nKFsInMemory;
+
+  std::shared_ptr<ExternalKeyFrameData> mpExternalKeyFrameData;
+
+  template <typename T>
+  std::shared_ptr<T> External() { return std::dynamic_pointer_cast<T>(mpExternalKeyFrameData); }
 
   // The following variables are accesed from only 1 thread or never change (no mutex needed).
  public:
 
   bool isPartiallyConstructed{false};
-  
-  // Only used in the new LocalInertialBA
-  bool mbVerifyLocalInertialBA{false};
   
   static long unsigned int nNextId;
   long unsigned int mnId;
@@ -296,7 +302,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3f mTcwBefGBA;
   Eigen::Vector3f mVwbGBA;
   Eigen::Vector3f mVwbBefGBA;
-  IMU::Bias mBiasGBA;
   long unsigned int mnBAGlobalForKF;
 
   // Variables used by merging
@@ -342,9 +347,6 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   std::shared_ptr<KeyFrame> mPrevKF;
   std::shared_ptr<KeyFrame> mNextKF;
 
-  std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
-  IMU::Calib mImuCalib;
-
   unsigned int mnOriginMapId;
 
   // The following variables need to be accessed trough a mutex to be thread safe.
@@ -355,18 +357,13 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
   Sophus::SE3<float> mTwc;
   Eigen::Matrix3f mRwc;
 
-  // IMU position
-  Eigen::Vector3f mOwb;
-  // Velocity (Only used for inertial SLAM)
+  // Velocity
   Eigen::Vector3f mVw;
   bool mbHasVelocity;
 
   // Transformation matrix between cameras in stereo fisheye
   Sophus::SE3<float> mTlr;
   Sophus::SE3<float> mTrl;
-
-  // Imu bias
-  IMU::Bias mImuBias;
 
   // MapPoints associated to keypoints
   std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;
@@ -404,16 +401,15 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 
   std::shared_ptr<Map> mpMap;
 
-  // Backup variables for inertial
+  // Backup variables for odom
   long long int mBackupPrevKFId;
   long long int mBackupNextKFId;
-  IMU::Preintegrated mBackupImuPreintegrated;
 
   // Backup for Cameras
   unsigned int mnBackupIdCamera, mnBackupIdCamera2;
 
   // Mutex
-  std::mutex mMutexPose;  // for pose, velocity and biases
+  std::shared_ptr<std::mutex> mpMutexPose;  // for pose, velocity, and odometry variables linked to pose
   std::mutex mMutexConnections;
   std::mutex mMutexFeatures;
   std::mutex mMutexMap;

@@ -40,14 +40,14 @@ Atlas::~Atlas() {}
 
 void Atlas::CreateNewMap() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Creation of new Map with id: " << Map::nNextId << std::endl;
+  Verbose::Log(Verbose::INFO, "Creation of new Map with id: ", Map::nNextId);
   if (mpCurrentMap) {
     //If it's not a new Atlas and there aren't 0 KFs in the current map, set the he map's init KF ID to the current map's maximum KF ID + 1
     if (!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
       mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;
-    std::cout << "Stored Map with ID: " << mpCurrentMap->GetId() << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Stored Map with ID: ", mpCurrentMap->GetId());
   }
-  std::cout << "Creation of new Map with last KF id: " << mnLastInitKFidMap << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Creation of new Map with last KF id: ", mnLastInitKFidMap);
 
   mpCurrentMap = std::make_shared<Map>(mnLastInitKFidMap);
   mspMaps.insert(mpCurrentMap);
@@ -55,7 +55,7 @@ void Atlas::CreateNewMap() {
 
 void Atlas::ChangeMap(std::shared_ptr<Map> pMap) {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  std::cout << "Change to Map with id: " << pMap->GetId() << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Change to Map with id: ", pMap->GetId());
   mpCurrentMap = pMap;
 }
 
@@ -75,8 +75,8 @@ std::shared_ptr<const GeometricCamera> Atlas::AddCamera(const std::shared_ptr<co
   int index_cam = -1;
   for (size_t i = 0; i < mvpCameras.size(); ++i) {
     std::shared_ptr<const GeometricCamera> pCam_i = mvpCameras[i];
-    if (!pCam) std::cout << "Not pCam" << std::endl;
-    if (!pCam_i) std::cout << "Not pCam_i" << std::endl;
+    if (!pCam) Verbose::Log(Verbose::WARNING, "Not pCam");
+    if (!pCam_i) Verbose::Log(Verbose::WARNING, "Not pCam_i");
     
     if (pCam->GetType() != pCam_i->GetType())
       continue;
@@ -190,17 +190,17 @@ void Atlas::RemoveBadMaps() {
   mspBadMaps.clear();
 }
 
-void Atlas::SetImuInitialized() {
+void Atlas::SetOdomInitialized() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  mpCurrentMap->SetImuInitialized();
+  mpCurrentMap->SetOdomInitialized();
 }
 
-bool Atlas::isImuInitialized() {
+bool Atlas::isOdomInitialized() {
   std::unique_lock<std::recursive_mutex> lock(mMutexAtlas);
-  return mpCurrentMap->isImuInitialized();
+  return mpCurrentMap->isOdomInitialized();
 }
 
-void Atlas::PreSave() {
+void Atlas::PreSave(const std::shared_ptr<Odometry> &odomSource) {
   if (mpCurrentMap && !mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
       mnLastInitKFidMap = mpCurrentMap->GetMaxKFid() + 1;  // The init KF ID is 1 greater than the current maximum
 
@@ -210,29 +210,35 @@ void Atlas::PreSave() {
     }
   };
 
+  std::vector<std::shared_ptr<Map>> vBadMaps;
+
   mvpBackupMaps.clear();
   for (std::shared_ptr<Map> pMi : mspMaps) {
     if (!pMi || pMi->IsBad())
       continue;
 
     if (pMi->GetAllKeyFrames().size() == 0) {
-      // Empty map, erase before of save it.
-      SetMapBad(pMi);
+      vBadMaps.push_back(pMi);
       continue;
     }
     mvpBackupMaps.push_back(pMi);
   }
 
+  for (std::shared_ptr<Map> pBadMap : vBadMaps) {
+    SetMapBad(pBadMap);
+  }
+  vBadMaps.clear();
+
   sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
   std::set<std::shared_ptr<const GeometricCamera>> spCams(mvpCameras.begin(), mvpCameras.end());
 
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
-    pMi->PreSave(spCams, pMi);
+    pMi->PreSave(spCams, pMi, odomSource);
   }
   RemoveBadMaps();
 }
 
-void Atlas::PostLoad() {
+void Atlas::PostLoad(const std::shared_ptr<Odometry> &odomSource) {
   std::map<unsigned int, std::shared_ptr<const GeometricCamera>> mpCams;
   for (std::shared_ptr<const GeometricCamera> pCam : mvpCameras) {
     mpCams[pCam->GetId()] = pCam;
@@ -241,8 +247,11 @@ void Atlas::PostLoad() {
   mspMaps.clear();
   unsigned long int numKF = 0, numMP = 0;
   for (std::shared_ptr<Map> pMi : mvpBackupMaps) {
+
+    pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams, pMi, odomSource);
+    if(pMi->IsBad()) continue;
     mspMaps.insert(pMi);
-    pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams, pMi);
+    
     numKF += pMi->GetAllKeyFrames().size();
     numMP += pMi->GetAllMapPoints().size();
   }

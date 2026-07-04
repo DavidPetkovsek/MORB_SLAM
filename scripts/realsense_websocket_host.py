@@ -43,17 +43,22 @@ async def do_polling(websocket):
         accel_pipeline = init_accel()
         gyro_pipeline = init_gyro()
 
-        send_accel = False
-        send_gyro = False
-
-        real_accel = None
-        real_gyro = None
-
         try:
             # wait until both pipelines can get a reading
-            accel_frame = accel_pipeline.wait_for_frames(20000)
-            gyro_frame = gyro_pipeline.wait_for_frames(20000)
-            cam_frame = cams_pipeline.wait_for_frames(20000)
+            got_accel_frame = False
+            got_gyro_frame = False
+            got_cam_frame = False
+            while not (got_accel_frame and got_gyro_frame and got_cam_frame):
+                accel_frame = accel_pipeline.poll_for_frames()
+                gyro_frame = gyro_pipeline.poll_for_frames()
+                cam_frame = cams_pipeline.poll_for_frames()
+
+                if accel_frame:
+                    got_accel_frame = True
+                if gyro_frame:
+                    got_gyro_frame = True
+                if cam_frame:
+                    got_cam_frame = True
 
             while True:
                 accel_frame = accel_pipeline.poll_for_frames()
@@ -61,20 +66,16 @@ async def do_polling(websocket):
                 cam_frame = cams_pipeline.poll_for_frames()
 
                 if accel_frame:
-                    real_accel = accel_frame
-                    send_accel = True
-
+                    timestamp = struct.pack('<d', accel_frame.timestamp)
+                    a = parse_data(accel_frame[0].as_motion_frame().get_motion_data())
+                    accel_frame = None
+                    await websocket.send(bytes([2])+timestamp+a)
+                
                 if gyro_frame:
-                    real_gyro = gyro_frame
-                    send_gyro = True
-
-                if send_accel and send_gyro:
-                    timestamp = struct.pack('<d', (real_accel.timestamp+real_gyro.timestamp)/2)
-                    a = parse_data(real_accel[0].as_motion_frame().get_motion_data())
-                    w = parse_data(real_gyro[0].as_motion_frame().get_motion_data())
-                    await websocket.send(bytes([2])+timestamp+a+w)
-                    send_accel = False
-                    send_gyro = False
+                    timestamp = struct.pack('<d', gyro_frame.timestamp)
+                    w = parse_data(gyro_frame[0].as_motion_frame().get_motion_data())
+                    gyro_frame = None
+                    await websocket.send(bytes([3])+timestamp+w)
                 
                 if cam_frame:
                     timestamp = struct.pack('<d', cam_frame.timestamp)
@@ -87,7 +88,6 @@ async def do_polling(websocket):
             cams_pipeline.stop()
             accel_pipeline.stop()
             gyro_pipeline.stop()
-
 
 async def main():
    async with serve(do_polling, "0.0.0.0", 8765, ping_interval=None):

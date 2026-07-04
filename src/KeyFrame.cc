@@ -24,7 +24,6 @@
 #include <mutex>
 
 #include "MORB_SLAM/Converter.h"
-#include "MORB_SLAM/ImuTypes.h"
 
 namespace MORB_SLAM {
 
@@ -81,15 +80,17 @@ KeyFrame::KeyFrame()
       mbNotErase(false),
       mbToBeErased(false),
       mbBad(false),
+      mpMutexPose(std::make_shared<std::mutex>()),
       NLeft(0),
       NRight(0),
-      isPartiallyConstructed(true) {
+      isPartiallyConstructed(true),
+      mpExternalKeyFrameData(nullptr),
+      bOdom(false) {
         nKFsInMemory++;
       }
 
-KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB)
-    : bImu(pMap->isImuInitialized()),
-      mnFrameId(F.mnId),
+KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ExternalKeyFrameData> ed)
+    : mnFrameId(F.mnId),
       mTimeStamp(F.mTimeStamp),
       mnGridCols(FRAME_GRID_COLS),
       mnGridRows(FRAME_GRID_ROWS),
@@ -138,8 +139,6 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mnMaxY(F.mnMaxY),
       mPrevKF(nullptr),
       mNextKF(nullptr),
-      mpImuPreintegrated(F.mpImuPreintegrated),
-      mImuCalib(F.mImuCalib),
       mbHasVelocity(false),
       mTlr(F.GetRelativePoseTlr()),
       mTrl(F.GetRelativePoseTrl()),
@@ -152,11 +151,14 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
       mbToBeErased(false),
       mbBad(false),
       mpMap(pMap),
+      mpMutexPose(std::make_shared<std::mutex>()),
       mpCamera(F.mpCamera),
       mpCamera2(F.mpCamera2),
       mvKeysRight(F.mvKeysRight),
       NLeft(F.Nleft),
-      NRight(F.Nright) {
+      NRight(F.Nright),
+      mpExternalKeyFrameData(ed),
+      bOdom(pMap->isOdomInitialized()) {
   mnId = nNextId++;
   nKFsInMemory++;
 
@@ -181,11 +183,13 @@ KeyFrame::KeyFrame(Frame &F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrame
     mbHasVelocity = true;
   }
 
-  mImuBias = F.mImuBias;
   SetPose(F.GetPose());
 
   mnOriginMapId = pMap->GetId();
+
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
 }
+
 KeyFrame::~KeyFrame() {
   nKFsInMemory--;
 }
@@ -199,66 +203,52 @@ void KeyFrame::ComputeBoW() {
 }
 
 void KeyFrame::SetPose(const Sophus::SE3f &Tcw) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   mTcw = Tcw;
   mRcw = mTcw.rotationMatrix();
   mTwc = mTcw.inverse();
   mRwc = mTwc.rotationMatrix();
-
-  if (mImuCalib.isSet()) {
-    mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
-  }
 }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   mVw = Vw;
   mbHasVelocity = true;
 }
 
 Sophus::SE3f KeyFrame::GetPose() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTcw;
 }
 
 Sophus::SE3f KeyFrame::GetPoseInverse() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTwc;
 }
 
 Eigen::Vector3f KeyFrame::GetCameraCenter() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTwc.translation();
 }
 
-Eigen::Vector3f KeyFrame::GetImuPosition() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return mOwb;
-}
-
-Eigen::Matrix3f KeyFrame::GetImuRotation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return (mTwc * mImuCalib.mTcb).rotationMatrix();
-}
-
 Eigen::Matrix3f KeyFrame::GetRotation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mRcw;
 }
 
 Eigen::Vector3f KeyFrame::GetTranslation() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTcw.translation();
 }
 
 Eigen::Vector3f KeyFrame::GetVelocity() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mVw;
 }
 
 bool KeyFrame::isVelocitySet() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mbHasVelocity;
 }
 
@@ -441,13 +431,13 @@ void KeyFrame::UpdateConnections(bool upParent) {
 
   std::vector<std::pair<int, std::shared_ptr<KeyFrame>>> vPairs;
   vPairs.reserve(KFcounter.size());
-  if (!upParent) std::cout << "UPDATE_CONN: current KF " << mnId << std::endl;
+  if (!upParent) Verbose::Log(Verbose::WARNING, "UPDATE_CONN: current KF ", mnId);
 
   std::shared_ptr<KeyFrame> self = shared_from_this();
 
   for (std::map<std::shared_ptr<KeyFrame>, int>::iterator mit = KFcounter.begin(), mend = KFcounter.end(); mit != mend; mit++) {
     if (!upParent)
-      std::cout << "  UPDATE_CONN: KF " << mit->first->mnId << " ; num matches: " << mit->second << std::endl;
+      Verbose::Log(Verbose::WARNING, "UPDATE_CONN: KF ", mit->first->mnId, " ; num matches: ", mit->second);
     if (mit->second > nmax) {
       nmax = mit->second;
       pKFmax = mit->first;
@@ -500,7 +490,7 @@ void KeyFrame::ChangeParent(std::shared_ptr<KeyFrame> pKF) {
   std::shared_ptr<KeyFrame> self = shared_from_this();
   std::unique_lock<std::mutex> lockCon(mMutexConnections);
   if (pKF == self) {
-    std::cout << "ERROR: Change parent KF, the parent and child are the same KF" << std::endl;
+    Verbose::Log(Verbose::FATAL, "Change parent KF, the parent and child are the same KF");
     throw std::invalid_argument("The parent and child can not be the same");
   }
 
@@ -586,8 +576,8 @@ bool KeyFrame::SetBadFlag() {
       mPrevKF->mNextKF = mNextKF;
     }
     if(mNextKF) {
-      if(mpImuPreintegrated && mNextKF->mpImuPreintegrated) {
-        mNextKF->mpImuPreintegrated->MergePrevious(mpImuPreintegrated);
+      if(mpExternalKeyFrameData && mNextKF->mpExternalKeyFrameData) {
+        mNextKF->mpExternalKeyFrameData->MergePrevious(mpExternalKeyFrameData);
       }
       mNextKF->mPrevKF = mPrevKF;
     }
@@ -726,7 +716,7 @@ bool KeyFrame::UnprojectStereo(int i, Eigen::Vector3f &x3D) {
     const float y = (v - cy) * z * invfy;
     Eigen::Vector3f x3Dc(x, y, z);
 
-    std::unique_lock<std::mutex> lock(mMutexPose);
+    std::unique_lock<std::mutex> lock(*mpMutexPose);
     x3D = mRwc * x3Dc + mTwc.translation();
     return true;
   } else
@@ -741,7 +731,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   Eigen::Vector3f tcw;
   {
     std::unique_lock<std::mutex> lock(mMutexFeatures);
-    std::unique_lock<std::mutex> lock2(mMutexPose);
+    std::unique_lock<std::mutex> lock2(*mpMutexPose);
     vpMapPoints = mvpMapPoints;
     tcw = mTcw.translation();
     Rcw = mRcw;
@@ -765,27 +755,6 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   return vDepths[(vDepths.size() - 1) / q];
 }
 
-void KeyFrame::SetNewBias(const IMU::Bias &b) {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  mImuBias = b;
-  if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
-}
-
-Eigen::Vector3f KeyFrame::GetGyroBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
-}
-
-Eigen::Vector3f KeyFrame::GetAccBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
-}
-
-IMU::Bias KeyFrame::GetImuBias() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
-  return mImuBias;
-}
-
 std::shared_ptr<Map> KeyFrame::GetMap() {
   std::unique_lock<std::mutex> lock(mMutexMap);
   return mpMap;
@@ -796,7 +765,7 @@ void KeyFrame::UpdateMap(std::shared_ptr<Map> pMap) {
   mpMap = pMap;
 }
 
-void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::shared_ptr<MapPoint>> &spMP, std::set<std::shared_ptr<const GeometricCamera>> &spCam) {
+void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::shared_ptr<MapPoint>> &spMP, std::set<std::shared_ptr<const GeometricCamera>> &spCam, const std::shared_ptr<Odometry> &odomSource) {
   // Save the id of each MapPoint in this KF, there can be null pointer in the std::vector
   mvBackupMapPointsId.clear();
   mvBackupMapPointsId.reserve(N);
@@ -843,7 +812,7 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   if (mpCamera2 && spCam.find(mpCamera2) != spCam.end())
     mnBackupIdCamera2 = mpCamera2->GetId();
 
-  // Inertial data
+  // Odom data
   mBackupPrevKFId = -1;
   if (mPrevKF && spKF.find(mPrevKF) != spKF.end())
     mBackupPrevKFId = mPrevKF->mnId;
@@ -851,13 +820,15 @@ void KeyFrame::PreSave(std::set<std::shared_ptr<KeyFrame>> &spKF, std::set<std::
   mBackupNextKFId = -1;
   if (mNextKF && spKF.find(mNextKF) != spKF.end())
     mBackupNextKFId = mNextKF->mnId;
-
-  if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+  
+  if(mpExternalKeyFrameData) mpExternalKeyFrameData->PreSave();
+  odomSource->mBackupEKFD[mnId] = mpExternalKeyFrameData;
 }
 
 void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &mpKFid,
                         std::map<long unsigned int, std::shared_ptr<MapPoint>> &mpMPid,
-                        std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCamId) {
+                        std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCamId,
+                        const std::shared_ptr<Odometry> &odomSource) {
   // Rebuild the empty variables
 
   // Pose
@@ -905,20 +876,27 @@ void KeyFrame::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>> &
   if (mnBackupIdCamera >= 0) {
     mpCamera = mpCamId[mnBackupIdCamera];
   } else {
-    std::cout << "ERROR: There is not a main camera in KF " << mnId << std::endl;
+    Verbose::Log(Verbose::ERROR, "There is not a main camera in KF ", mnId);
   }
   if (mnBackupIdCamera2 >= 0) {
     mpCamera2 = mpCamId[mnBackupIdCamera2];
   }
 
-  // Inertial data
+  // Odom data
   if (mBackupPrevKFId != -1) {
     mPrevKF = mpKFid[mBackupPrevKFId];
   }
   if (mBackupNextKFId != -1) {
     mNextKF = mpKFid[mBackupNextKFId];
   }
-  mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+
+  if(odomSource) {
+    mpExternalKeyFrameData = odomSource->mBackupEKFD[mnId];
+    if(mpExternalKeyFrameData){
+      mpExternalKeyFrameData->PostLoad();
+      mpExternalKeyFrameData->SetPoseMutex(mpMutexPose);
+    }
+  }
 
   // Remove all backup container
   mvBackupMapPointsId.clear();
@@ -941,7 +919,7 @@ bool KeyFrame::ProjectPointUnDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &
 
   // Check positive depth
   if (PcZ < 0.0f) {
-    std::cout << "Negative depth: " << PcZ << std::endl;
+    Verbose::Log(Verbose::ERROR, "Negative depth: ", PcZ);
     return false;
   }
 
@@ -959,29 +937,29 @@ bool KeyFrame::ProjectPointUnDistort(std::shared_ptr<MapPoint>pMP, cv::Point2f &
 }
 
 Sophus::SE3f KeyFrame::GetRelativePoseTrl() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTrl;
 }
 
 Sophus::SE3f KeyFrame::GetRelativePoseTlr() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
   return mTlr;
 }
 
 Sophus::SE3<float> KeyFrame::GetRightPose() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return mTrl * mTcw;
 }
 
 Sophus::SE3<float> KeyFrame::GetRightPoseInverse() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return mTwc * mTlr;
 }
 
 Eigen::Vector3f KeyFrame::GetRightCameraCenter() {
-  std::unique_lock<std::mutex> lock(mMutexPose);
+  std::unique_lock<std::mutex> lock(*mpMutexPose);
 
   return (mTwc * mTlr).translation();
 }

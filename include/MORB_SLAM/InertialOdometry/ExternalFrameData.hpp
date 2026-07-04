@@ -1,0 +1,146 @@
+#pragma once
+
+#include "MORB_SLAM/Frame.h"
+#include "MORB_SLAM/KeyFrame.h"
+#include "MORB_SLAM/InertialOdometry/ImuTypes.h"
+
+namespace MORB_SLAM {
+
+class ConstraintPoseImu;
+
+struct InertialFrameData : public ExternalFrameData {
+    InertialFrameData()
+        : mpImuPreintegrated(nullptr),
+          mpImuPreintegratedFrame(nullptr),
+          mbImuPreintegrated(false),
+          mpcpi(nullptr),
+          mpMutexImu(std::make_shared<std::mutex>()) { }
+
+    InertialFrameData(IMU::Calib imuCalib)
+        : mImuCalib(imuCalib),
+          mpImuPreintegrated(nullptr),
+          mpImuPreintegratedFrame(nullptr),
+          mbImuPreintegrated(false),
+          mpcpi(nullptr),
+          mpMutexImu(std::make_shared<std::mutex>()) {}
+
+    IMU::Bias mImuBias;
+    IMU::Calib mImuCalib;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
+    bool mbImuPreintegrated;
+    std::shared_ptr<ConstraintPoseImu> mpcpi;
+    std::shared_ptr<std::mutex> mpMutexImu;
+
+    bool imuIsPreintegrated() {
+        std::unique_lock<std::mutex> lock(*mpMutexImu);
+        return mbImuPreintegrated;
+    }
+    
+    void setIntegrated() {
+        while (!mpMutexImu)
+            mpMutexImu = std::make_shared<std::mutex>();
+
+        std::unique_lock<std::mutex> lock(*mpMutexImu);
+        mbImuPreintegrated = true;
+    }
+
+    void SetNewBias(const IMU::Bias &b) {
+        mImuBias = b;
+        if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+    }
+};
+
+
+struct InertialKeyFrameData : public ExternalKeyFrameData {
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive & ar, unsigned int version) {
+        ar& mImuBias;
+        ar& mBackupImuPreintegrated;
+        ar& mImuCalib;
+    }
+
+    virtual void PreSave() override {
+        if (mpImuPreintegrated) mBackupImuPreintegrated.CopyFrom(mpImuPreintegrated);
+    }
+
+    virtual void PostLoad() override {
+        mpImuPreintegrated = std::make_shared<IMU::Preintegrated>(std::move(&mBackupImuPreintegrated));
+    }
+
+    InertialKeyFrameData(){}
+
+    InertialKeyFrameData(IMU::Calib imuCalib)
+        : mpImuPreintegrated(nullptr),
+          mImuCalib(imuCalib) { }
+
+    InertialKeyFrameData(InertialFrameData frame_data)
+        : mpImuPreintegrated(frame_data.mpImuPreintegrated),
+          mImuCalib(frame_data.mImuCalib),
+          mImuBias(frame_data.mImuBias) { }
+
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    IMU::Preintegrated mBackupImuPreintegrated;
+    IMU::Calib mImuCalib;
+    IMU::Bias mImuBias;
+    IMU::Bias mBiasGBA;
+    bool mbVerifyLocalInertialBA{false};
+
+    void SetNewBias(const IMU::Bias& b) {
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            mImuBias = b;
+            if (mpImuPreintegrated) mpImuPreintegrated->SetNewBias(b);
+        }
+    }
+
+    Eigen::Vector3f GetGyroBias() {
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return Eigen::Vector3f(mImuBias.bwx, mImuBias.bwy, mImuBias.bwz);
+        } else {
+            Verbose::Log(Verbose::ERROR, "Getting gyro bias from a KeyFrame that doesn't exist.");
+            return Eigen::Vector3f();
+        }
+    }
+
+    Eigen::Vector3f GetAccBias() {
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
+        } else {
+            Verbose::Log(Verbose::ERROR, "Getting accel bias from a KeyFrame that doesn't exist.");
+            return Eigen::Vector3f();
+        }
+    }
+
+    IMU::Bias GetImuBias() {
+        if(std::shared_ptr<std::mutex> pMutexPose = mpMutexPose.lock()) {
+            std::unique_lock<std::mutex> lock(*pMutexPose);
+            return mImuBias;
+        } else {
+            Verbose::Log(Verbose::ERROR, "Getting imu bias from a KeyFrame that doesn't exist.");
+            return IMU::Bias();
+        }
+    }
+
+    virtual void MergePrevious(std::shared_ptr<ExternalKeyFrameData> &eKFd_prev) override {
+        std::shared_ptr<InertialKeyFrameData> inertial_eKFd_prev = std::static_pointer_cast<InertialKeyFrameData>(eKFd_prev);
+        if(mpImuPreintegrated && inertial_eKFd_prev->mpImuPreintegrated) {
+            mpImuPreintegrated->MergePrevious(inertial_eKFd_prev->mpImuPreintegrated);
+        }
+    }
+
+    virtual void UpdateChildSpanningTree() override {
+        mBiasGBA = GetImuBias();
+    }
+
+    virtual void UpdateParentSpanningTree() override {
+        SetNewBias(mBiasGBA);
+    }
+};
+
+
+} // namespace MORB_SLAM

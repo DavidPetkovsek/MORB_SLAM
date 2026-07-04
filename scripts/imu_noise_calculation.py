@@ -3,7 +3,7 @@ import numpy as np
 import ctypes
 import struct
 import time
-from statistics import stdev, covariance
+from statistics import stdev
 import math
 import matplotlib.pyplot as plt
 
@@ -40,9 +40,8 @@ w_array = []
 w_timestamps = []
 w_stdevs = []
 
-# The number of gyro sample points
-N = 100000
-s = int(N/100)
+# The length (in seconds) of the run
+T = 20
 
 w_t0 = 0
 a_t0 = 0
@@ -62,7 +61,7 @@ while len(a_array) == 0 and len(w_array) == 0:
         a_timestamps.append(0)
         a_t0 = accel_frame.timestamp/1000
 
-while len(w_array) < N:
+while a_timestamps[-1]-a_timestamps[0] < T:
     accel_frame = accel_pipeline.poll_for_frames()
     gyro_frame = gyro_pipeline.poll_for_frames()
 
@@ -84,24 +83,23 @@ w_array = w_array[100:]
 w_timestamps = w_timestamps[100:]
 
 print(len(a_array), len(w_array))
+print("Time Elapsed:", str(a_timestamps[-1]-a_timestamps[0]), "seconds")
 
 a_stdev = stdev(a_array)
-a_covar = covariance(a_timestamps, a_array)
 w_stdev = stdev(w_array)
-w_covar = covariance(w_timestamps, w_array)
 
-print("IMU.NoiseAcc: " + str(a_stdev))
-print("IMU.NoiseGyro: " + str(w_stdev))
-print("IMU.AccWalk: " + str(a_covar/(a_timestamps[-1]-a_timestamps[0])))
-print("IMU.GyroWalk: " + str(w_covar/(w_timestamps[-1]-w_timestamps[0])))
+print("IMU.NoiseAcc: " + str(a_stdev/math.sqrt(250)))
+print("IMU.NoiseGyro: " + str(w_stdev/math.sqrt(200)))
+print("IMU.AccWalk: " + str(a_stdev/math.sqrt(a_timestamps[-1]-a_timestamps[0])))
+print("IMU.GyroWalk: " + str(w_stdev/math.sqrt(w_timestamps[-1]-w_timestamps[0])))
 
 print("Calculating the Cummulative Accel STDEVs...")
 
+segment = int((len(a_array)+1)/200)
 a_use_timestamps = []
-a_size = int((len(a_array)+1)/s)
-for i in range(1, a_size):
-    a_stdevs.append(stdev(a_array[:i*s]))
-    a_use_timestamps.append(a_timestamps[i*s]-a_timestamps[0])
+for i in range(segment, len(a_array)+1, segment):
+    a_stdevs.append(stdev(a_array[:i]))
+    a_use_timestamps.append(a_timestamps[i]-a_timestamps[0])
 
 figure, axis = plt.subplots(2, 1)
 axis[0].plot(a_use_timestamps, a_stdevs)

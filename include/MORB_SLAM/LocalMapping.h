@@ -36,12 +36,14 @@ class System;
 class Tracking;
 class LoopClosing;
 class Atlas;
+class Odometry;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class LocalMapping {
  public:
+  friend class Odometry;
   
-  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, bool bInertial);
+  LocalMapping(const Atlas_ptr &pAtlas, bool bMonocular, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
   void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
 
@@ -72,21 +74,16 @@ class LocalMapping {
 
   int KeyframesInQueue();
 
-  inline bool getIsDoneVIBA() { return isDoneVIBA; }
-  inline void setIsDoneVIBA(bool viba) { isDoneVIBA = viba; }
+  inline bool getIsDoneBA() { return isDoneBA; }
+  inline void setIsDoneBA(bool ba) { isDoneBA = ba; }
 
   bool IsInitializing();
 
   Sophus::SE3f GetPoseReverseAxisFlip();
 
-  Eigen::Matrix3d mRwg;
-  Eigen::Vector3d mbg;
-  Eigen::Vector3d mba;
-  double mScale;
-
   double mFirstTs;
 
-  bool mbBadImu;
+  bool mbBadOdom;
 
   // not consider far points (clouds)
   bool mbFarPoints;
@@ -102,7 +99,6 @@ class LocalMapping {
   void KeyFrameCulling();
 
   bool mbMonocular;
-  bool mbInertial;
 
   void ResetIfRequested();
   bool mbResetRequested;
@@ -138,17 +134,14 @@ class LocalMapping {
   bool mbAcceptKeyFrames;
   std::mutex mMutexAccept;
 
-  void InitializeIMU(ImuInitializater::ImuInitType priorG = ImuInitializater::ImuInitType::DEFAULT_G, ImuInitializater::ImuInitType priorA = ImuInitializater::ImuInitType::DEFAULT_A, bool bFirst = false);
-  void ScaleRefinement();
-
   bool bInitializing;
 
-  float mTinit;
-
-  bool isDoneVIBA;
+  bool isDoneBA;
 
   // used when returning from TrackStereo to undo the Axis Flip bug
   Sophus::SE3f mPoseReverseAxisFlip;
+
+  std::shared_ptr<Odometry> mpOdomSource;
 };
 
 }  // namespace MORB_SLAM

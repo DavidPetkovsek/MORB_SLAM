@@ -11,19 +11,58 @@ import csv
 import numpy as np
 import cv2
 import shutil
+import argparse
+from threading import Thread, Event, Lock
+import time
 
+accel_lock = Lock()
+gyro_lock = Lock()
+cam_lock = Lock()
+accel_buffer = []
+gyro_buffer = []
+cam_buffer = []
+
+def run_accel(accel_pipeline, event):
+    while not event.is_set():
+        accel_frames = accel_pipeline.wait_for_frames()
+        accel_timestamp = accel_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) / 1000000 # convert from microseconds to seconds
+        accel_data = accel_frames[0].as_motion_frame().get_motion_data()
+        with accel_lock:
+            accel_buffer.append([
+                accel_timestamp,
+                accel_data.x,
+                accel_data.y,
+                accel_data.z,
+            ])
+
+def run_gyro(gyro_pipeline, event):
+    while not event.is_set():
+        gyro_frames = gyro_pipeline.wait_for_frames()
+        gyro_timestamp = gyro_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) / 1000000 # convert from microseconds to seconds
+        gyro_data = gyro_frames[0].as_motion_frame().get_motion_data()
+        with gyro_lock:
+            gyro_buffer.append([
+                gyro_timestamp,
+                gyro_data.x,
+                gyro_data.y,
+                gyro_data.z,
+            ])
 
 def main():
-
-    if len(sys.argv) != 3:
-        sys.exit("Usage: python realsense_record_stereo_inertial <path_to_directory> <name_of_dataset>")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output_path", help="Specify the directory where the recorded camera and IMU data will be written to")
+    parser.add_argument("--fps", type=int, default=15)
     
-    output_path = os.path.join(sys.argv[1], sys.argv[2])
-    cam_data_dirs = (os.path.join(output_path, "cam0"), os.path.join(output_path, "cam1"))
+    args = parser.parse_args()
+    data_dirs = [
+        os.path.join(args.output_path, "cam0"),
+        os.path.join(args.output_path, "cam1"),
+        os.path.join(args.output_path, "IMU"),
+    ]
 
-    if os.path.exists(output_path): 
+    if os.path.exists(args.output_path): 
         while True:
-            user_input = input(f"The folder {output_path} already exists, would you like to overwrite it with your recorded data? (y/N)")
+            user_input = input(f"The folder {args.output_path} already exists, would you like to overwrite it with your recorded data? (y/N)")
             if user_input == 'y':
                 print("The newly recorded data will overwrite the existing folder.")
                 break
@@ -33,108 +72,113 @@ def main():
             else:
                 print("Invalid input, try again.")
 
-        for dir in cam_data_dirs:
-            if not os.path.exists(dir):
-                print(f"Directory {dir} does not exist, creating one...")
-                os.makedirs(dir)
-            else:
-                print(f"Directory {dir} exists, removing it's contents...")
-                for item in os.listdir(dir):
-                    item_path = os.path.join(dir, item)
-                    if os.path.isfile(item_path):
-                        os.remove(item_path) 
-                    elif os.path.isdir(item_path):
-                        shutil.rmtree(item_path)
-    else:
-        print(f"Creating {cam_data_dirs[0]}...")
-        os.makedirs(cam_data_dirs[0])
-        print(f"Creating {cam_data_dirs[1]}...")
-        os.makedirs(cam_data_dirs[1])
+        for dir in data_dirs:
+            if os.path.exists(dir):
+                print(f"Removing {dir}...")
+                shutil.rmtree(dir)
 
-    # A single pipeline will return synchronized streams. The camera will have a seperate pipeline since we want the IMU stream to come in more frequently
+            print(f"Creating {dir}...")
+            os.makedirs(dir)
+    else:
+        for dir in data_dirs:
+            print(f"Creating {dir}...")
+            os.makedirs(dir)
+
     cam_pipeline = rs.pipeline()
     cam_config = rs.config()
-    cam_config.enable_stream(rs.stream.infrared, stream_index=1, width=640, height=480, format=rs.format.y8, framerate=15) #left cam
-    cam_config.enable_stream(rs.stream.infrared, stream_index=2, width=640, height=480, format=rs.format.y8, framerate=15) #right cam
+    cam_config.enable_stream(rs.stream.infrared, stream_index=1, width=640, height=480, format=rs.format.y8, framerate=args.fps) #left cam
+    cam_config.enable_stream(rs.stream.infrared, stream_index=2, width=640, height=480, format=rs.format.y8, framerate=args.fps) #right cam
 
-    imu_pipeline = rs.pipeline()
-    imu_config = rs.config()
-    imu_config.enable_stream(rs.stream.accel, format=rs.format.motion_xyz32f, framerate=250)
-    imu_config.enable_stream(rs.stream.gyro, format=rs.format.motion_xyz32f, framerate=200)
+    accel_pipeline = rs.pipeline()
+    accel_config = rs.config()
+    accel_config.enable_stream(rs.stream.accel, format=rs.format.motion_xyz32f, framerate=250)
 
-    cam_pipeline.start(cam_config)
-    imu_pipeline.start(imu_config)
+    gyro_pipeline = rs.pipeline()
+    gyro_config = rs.config()
+    gyro_config.enable_stream(rs.stream.gyro, format=rs.format.motion_xyz32f, framerate=200)
 
-    cam_pipeline_profile = cam_pipeline.get_active_profile()
+    cam_pipeline_profile = cam_pipeline.start(cam_config)
+    accel_pipeline.start(accel_config)
+    gyro_pipeline.start(gyro_config)
+
     depth_sensor = cam_pipeline_profile.get_device().query_sensors()[0]
     laser_range = depth_sensor.get_option_range(rs.option.laser_power)
     depth_sensor.set_option(rs.option.laser_power, laser_range.min)
 
-    cam_frame_count = 0 # keep track of how many frames we've read
-    prev_imu_timestamp = None
+    cam_frame_count = 0
 
-    try:
-        with open(os.path.join(output_path, "imu_data.csv"), 'w', newline='') as imu_csvfile, open(os.path.join(output_path, "cam_data.csv"), 'w', newline='') as cam_csvfile:
-            imu_csv_writer = csv.writer(imu_csvfile, delimiter=',')
-            imu_csv_writer.writerow(["#timestamp [ms]", "w_x [rad s^-1]", "w_y [rad s^-1]", "w_z [rad s^-1]", "a_x [m s^-2]", "a_y [m s^-2]", "a_z [m s^-2]"])
+    def write_to_files(event):
+        with open(os.path.join(args.output_path, "IMU", "acc.csv"), 'w', newline='') as accel_csvfile, open(os.path.join(args.output_path, "IMU", "gyro.csv"), 'w', newline='') as gyro_csvfile, open(os.path.join(args.output_path, "cam0", "times.csv"), 'w', newline='') as cam_csvfile:
+            # To maintain compatibility with the process_imu.py script, accel and gyro timestamps are in [s], and camera timestamps are in [ns]
+            accel_csv_writer = csv.writer(accel_csvfile, delimiter=',')
+            accel_csv_writer.writerow(["#timestamp [s]", "a_x [m s^-2]", "a_y [m s^-2]", "a_z [m s^-2]"])
+
+            gyro_csv_writer = csv.writer(gyro_csvfile, delimiter=',')
+            gyro_csv_writer.writerow(["#timestamp [s]", "w_x [rad s^-1]", "w_y [rad s^-1]", "w_z [rad s^-1]"])
 
             cam_csv_writer = csv.writer(cam_csvfile, delimiter=',')
-            cam_csv_writer.writerow(["#timestamp [ms]"])
-
-            print("Recording started...")
-
-            imu_pipeline.wait_for_frames(10000)
-            cam_pipeline.wait_for_frames(10000)
+            cam_csv_writer.writerow(["#timestamp [ns]"])
             
-            while cam_frame_count < 900: # max 60 seconds
-                imu_frames = imu_pipeline.poll_for_frames()
-                cam_frames = cam_pipeline.poll_for_frames()
+            while not event.is_set():
+                with cam_lock:
+                    if len(cam_buffer):
+                        cam_csv_writer.writerows(cam_buffer)
+                        cam_buffer.clear()
+                    
+                with accel_lock:
+                    if len(accel_buffer):
+                        accel_csv_writer.writerows(accel_buffer)
+                        accel_buffer.clear()
+                            
+                with gyro_lock:
+                    if len(gyro_buffer):
+                        gyro_csv_writer.writerows(gyro_buffer)
+                        gyro_buffer.clear()
 
-                if imu_frames:
-                    accel_frame = imu_frames[0]
-                    gyro_frame = imu_frames[1]
+                time.sleep(5)
 
-                    imu_timestamp = imu_frames.get_frame_metadata(rs.frame_metadata_value.backend_timestamp) # backend timestamp is used because the frame timestamp is not from epoch
+    try:
+        print("Recording started...")
+        
+        event = Event()      
+        accel_thread = Thread(target=run_accel, args=[accel_pipeline, event])        
+        gyro_thread = Thread(target=run_gyro, args=[gyro_pipeline, event])
+        file_thread = Thread(target=write_to_files, args=[event])
 
-                    # This if statement is used because calling poll_for_frames on the imu_stream results in consecutive frames with the same timestamp
-                    if imu_timestamp != prev_imu_timestamp:
-                        accel_data = accel_frame.as_motion_frame().get_motion_data()
-                        gyro_data = gyro_frame.as_motion_frame().get_motion_data()
+        cam_pipeline.wait_for_frames(10000)
+        accel_thread.start()
+        gyro_thread.start()
+        file_thread.start()
 
-                        imu_csv_writer.writerow([
-                            imu_timestamp,
-                            gyro_data.x,
-                            gyro_data.y,
-                            gyro_data.z,
-                            accel_data.x,
-                            accel_data.y,
-                            accel_data.z,
-                        ])
+        while True:
+            cam_frames = cam_pipeline.wait_for_frames()
+            left_cam_frame = np.asarray(cam_frames[0].get_data())
+            right_cam_frame = np.asarray(cam_frames[1].get_data())
+            cam_timestamp = cam_frames.get_frame_metadata(rs.frame_metadata_value.frame_timestamp) * 1000 # convert microseconds to nanoseconds
 
-                        prev_imu_timestamp = imu_timestamp 
-                
-                if cam_frames:
-                    left_cam_frame = np.asarray(cam_frames[0].get_data())
-                    right_cam_frame = np.asarray(cam_frames[1].get_data())
+            cv2.imshow("Left Camera", left_cam_frame)
+            cv2.imwrite(os.path.join(args.output_path, 'cam0', f"{cam_timestamp:.0f}" + '.png'), left_cam_frame)
+            cv2.imwrite(os.path.join(args.output_path, 'cam1', f"{cam_timestamp:.0f}" + '.png'), right_cam_frame)
+            
+            with cam_lock:
+                cam_buffer.append([f"{cam_timestamp:.0f}"])
 
-                    cam_timestamp = cam_frames.get_timestamp()
-
-                    cv2.imwrite(os.path.join(output_path, 'cam0', str(cam_timestamp) + '.png'), left_cam_frame)
-                    cv2.imwrite(os.path.join(output_path, 'cam1', str(cam_timestamp) + '.png'), right_cam_frame)
-                    cam_csv_writer.writerow([cam_timestamp])
-
-                    cam_frame_count += 1
+            cam_frame_count += 1
+            cv2.waitKey(1) # 1 millisecond, just to display the image
 
     except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt!")
+        event.set()
+        accel_thread.join()
+        gyro_thread.join()  
+        file_thread.join()  
 
     finally:
         print("Exiting...")
         cam_pipeline.stop()
-        imu_pipeline.stop()
-        imu_csvfile.close()
-        cam_csvfile.close()
-        print("Done :)")
+        accel_pipeline.stop()
+        gyro_pipeline.stop()
+
+        print(f"Finished recording {cam_frame_count} frames!")
         
 
 

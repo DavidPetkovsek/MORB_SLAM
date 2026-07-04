@@ -34,10 +34,11 @@
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/ORBVocabulary.h"
-#include "MORB_SLAM/ImuTypes.h"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/CameraSettings.hpp"
+#include "MORB_SLAM/Settings/SystemSettings.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
+#include "MORB_SLAM/Odometry.hpp"
 
 
 namespace MORB_SLAM
@@ -49,13 +50,13 @@ class Atlas;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
-class Settings;
+class CameraSettings;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 
 class System {
  public:
     // File type
-    enum FileType{
+    enum class FileType{
         TEXT_FILE=0,
         BINARY_FILE=1,
     };
@@ -63,26 +64,28 @@ class System {
  public:
     
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const std::string &strVocFile, const std::string &strSettingsFile, const CameraType sensor);
+    System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
-    // Proccess the given stereo frame. Images must be synchronized and rectified.
+    // Proccess the given stereo frame. Images must be synchronized.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    StereoPacket TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, double timestamp);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    RGBDPacket TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, double timestamp); // *** RGBD SLAM is currently not maintained
 
-    // Proccess the given monocular frame and optionally imu data
+    // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>());
+    MonoPacket TrackMonocular(const cv::Mat &im, double timestamp); // *** Monocular SLAM is currently not maintained
 
     // Returns true if there have been a big map change (loop closure, global BA) since last call to this function
     bool MapChanged();
+
+    bool isMapMature() const;
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
@@ -97,9 +100,10 @@ class System {
     friend ExternalMapViewer;
 
     bool getHasMergedLocalMap();
-    bool getIsDoneVIBA();
+    bool getIsDoneBA();
 
-    std::shared_ptr<Settings> getSettings() const;
+    std::shared_ptr<SystemSettings> getSysSettings() const;
+    std::shared_ptr<CameraSettings> getCamSettings() const;
 
     bool getIsLoopClosed();
     void setIsLoopClosed(bool isLoopClosed);
@@ -109,13 +113,13 @@ class System {
     Sophus::SE3f GetInitialFramePose();
     bool HasInitialFramePose();
 
-    void SaveAtlas(int type) const;
+    void SaveAtlas(FileType type) const;
 
 private:
 
-    bool LoadAtlas(int type);
+    bool LoadAtlas(FileType type);
 
-    std::string CalculateCheckSum(std::string filename, int type) const;
+    std::string CalculateCheckSum(std::string filename, FileType type) const;
 
     // Input sensor
     CameraType mSensor;
@@ -142,6 +146,8 @@ private:
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     std::shared_ptr<LoopClosing> mpLoopCloser;
 
+    std::shared_ptr<Odometry> mpOdomSource;
+
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::jthread mptLocalMapping;
@@ -154,7 +160,8 @@ private:
 
     std::string mStrVocabularyFilePath;
 
-    std::shared_ptr<Settings> settings;
+    std::shared_ptr<CameraSettings> mpCamSettings;
+    std::shared_ptr<SystemSettings> mpSysSettings;
 
 };
 typedef std::shared_ptr<System> System_ptr;

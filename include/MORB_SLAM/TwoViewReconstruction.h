@@ -28,6 +28,8 @@
 #include <sophus/se3.hpp>
 #endif
 
+#include "MORB_SLAM/Verbose.h"
+
 namespace MORB_SLAM
 {
 

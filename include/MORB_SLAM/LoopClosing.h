@@ -49,6 +49,7 @@ class LocalMapping;
 class KeyFrameDatabase;
 class Map;
 typedef std::shared_ptr<Tracking> Tracking_ptr;
+class Odometry;
 
 
 class LoopClosing {
@@ -61,7 +62,7 @@ class LoopClosing {
 
     bool loopClosed = false;
 
-    LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc,const bool bFixScale, const bool bActiveLC, bool bInertial);
+    LoopClosing(const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pDB, std::shared_ptr<ORBVocabulary> pVoc,const bool bFixScale, const bool bActiveLC, const std::shared_ptr<Odometry> &odomSource);
 
     void SetTracker(Tracking_ptr pTracker);
 
@@ -176,7 +177,7 @@ protected:
     // To (de)activate LC
     bool mbActiveLC;
 
-    bool mbInertial;
+    std::shared_ptr<Odometry> mpOdomSource;
 };
 
 } //namespace ORB_SLAM

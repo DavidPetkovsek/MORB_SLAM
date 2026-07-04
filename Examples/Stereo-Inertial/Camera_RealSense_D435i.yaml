@@ -1,0 +1,27 @@
+%YAML:1.0
+File.version: "1.0"
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters (calibration and biases vary from camera to camera)
+#--------------------------------------------------------------------------------------------
+
+Camera.type: "Rectified"
+
+# Rectified Camera calibration (OpenCV)
+Camera1.fx: 421.524
+Camera1.fy: 421.524
+Camera1.cx: 424.973
+Camera1.cy: 239.928
+
+Stereo.b: 0.0499585
+
+# Camera resolution
+Camera.width: 848
+Camera.height: 480
+
+# Camera frames per second
+Camera.fps: 15
+
+# Close/Far threshold. Baseline times.
+Stereo.ThDepth: 40.0
+

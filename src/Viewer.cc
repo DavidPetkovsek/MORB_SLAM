@@ -40,12 +40,12 @@ Viewer::Viewer(const System_ptr &pSystem)
     : mpSystem(pSystem),
       mpAtlas(pSystem->mpAtlas),
       mpFrameDrawer(pSystem->mpAtlas),
-      mpMapDrawer(pSystem->mpAtlas, *pSystem->getSettings()),
+      mpMapDrawer(pSystem->mpAtlas, *pSystem->getSysSettings()),
       mpTracker(pSystem->mpTracker),
       both(false),
       mbClosed(false) {
-    newParameterLoader(*pSystem->getSettings());
-    std::cout << "Creating Viewer thread" << std::endl;
+    newParameterLoader(*pSystem->getSysSettings(), *pSystem->getCamSettings());
+    Verbose::Log(Verbose::DEBUG, "Creating Viewer thread");
     mptViewer = std::jthread(&Viewer::Run, this);
 }
 
@@ -54,24 +54,24 @@ Viewer::~Viewer(){
   if(mptViewer.joinable()) mptViewer.join();
 }
 
-void Viewer::newParameterLoader(const Settings &settings) {
+void Viewer::newParameterLoader(const SystemSettings& sysSettings, const CameraSettings& camSettings) {
   mImageViewerScale = 1.f;
 
-  float fps = settings.fps();
+  float fps = camSettings.fps();
   if (fps < 1) fps = 30;
   mT = 1e3 / fps;
 
-  cv::Size imSize = settings.newImSize();
+  cv::Size imSize = camSettings.newImSize();
   mImageHeight = imSize.height;
   mImageWidth = imSize.width;
 
-  mImageViewerScale = settings.imageViewerScale();
-  mViewpointX = settings.viewPointX();
-  mViewpointY = settings.viewPointY();
-  mViewpointZ = settings.viewPointZ();
-  mViewpointF = settings.viewPointF();
+  mImageViewerScale = sysSettings.imageViewerScale();
+  mViewpointX = sysSettings.viewPointX();
+  mViewpointY = sysSettings.viewPointY();
+  mViewpointZ = sysSettings.viewPointZ();
+  mViewpointF = sysSettings.viewPointF();
 
-  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && settings.cameraModelType() == Settings::KannalaBrandt) {
+  if ((mpTracker->mSensor == CameraType::STEREO || mpTracker->mSensor == CameraType::IMU_STEREO || mpTracker->mSensor == CameraType::IMU_RGBD || mpTracker->mSensor == CameraType::RGBD) && camSettings.cameraModelType() == CameraSettings::KannalaBrandt) {
     both = true;
     mpFrameDrawer.both = true;
   }
@@ -125,6 +125,34 @@ static void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc, float mCameraSize, fl
   glPopMatrix();
 }
 
+static void DrawAxis() {
+  glPushMatrix();
+  
+  glLineWidth(3);
+  // x-axis
+  glColor3f(1.0f, 0.0f, 0.0f); // Red
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f);
+  glVertex3f(0.5f, 0.0f, 0.0f);
+  glEnd();
+
+  // y-axis
+  glColor3f(0.0f, 1.0f, 0.0f); // Green
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f); 
+  glVertex3f(0.0f, 0.5f, 0.0f);
+  glEnd();
+
+  // z-axis
+  glColor3f(0.0f, 0.0f, 1.0f); // Blue
+  glBegin(GL_LINES);
+  glVertex3f(0.0f, 0.0f, 0.0f);
+  glVertex3f(0.0f, 0.0f, 0.5f);
+  glEnd();
+  
+  glPopMatrix();
+}
+
 static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw) {
   for (int i = 0; i < 4; i++) {
     M.m[4 * i] = Twc(0, i);
@@ -141,15 +169,34 @@ static void GetCurrentOpenGLCameraMatrix(const Eigen::Matrix4f &Twc, pangolin::O
 
 
 void Viewer::Run() {
+  #ifdef FactoryEngine
+      fe::Logger::setThreadName("Viewer");
+  #endif
+
+  setenv("DISPLAY", ":1", 1);
+  setenv("XAUTHORITY", ("/run/user/" + std::to_string(getuid()) + "/gdm/Xauthority").c_str(), 1);
+
+  // const char* disp = std::getenv("DISPLAY");
+  // const char* xauth = std::getenv("XAUTHORITY");
+
+  // std::string display_env = disp ? disp : "";
+  // std::string xauth_env   = xauth ? xauth : "";
+
+  // Verbose::Log(Verbose::DEBUG, "DISPLAY: ", display_env);
+  // Verbose::Log(Verbose::DEBUG, "XAUTHORITY: ", xauth_env);
 
   pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer", 1024, 768);
+
 
   // 3D Mouse handler requires depth testing to be enabled
   glEnable(GL_DEPTH_TEST);
 
+
   // Issue specific OpenGl we might need
   glEnable(GL_BLEND);
+
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
   pangolin::CreatePanel("menu").SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(175));
   pangolin::Var<bool> menuFollowCamera("menu.Follow Camera", true, true);
@@ -187,7 +234,7 @@ void Viewer::Run() {
 
   float trackedImageScale = 1.0;
 
-  std::cout << "Starting the Viewer" << std::endl;
+  Verbose::Log(Verbose::INFO, "Starting the Viewer");
   while (isOpen()) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -221,11 +268,11 @@ void Viewer::Run() {
       s_cam.Follow(Twc);
     }
 
-    if (menuTopView && mpAtlas->isImuInitialized()) {
+    if (menuTopView && mpAtlas->isOdomInitialized()) {
       menuTopView = false;
       bCameraView = false;
       s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024, 768, 3000, 3000, 512, 389, 0.1, 10000));
-      s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 0.0, 1.0));
+      s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0, 0.01, 50, 0, 0, 0, 0.0, 1.0, 0.0));
       s_cam.Follow(Ow);
     }
 
@@ -240,6 +287,9 @@ void Viewer::Run() {
     d_cam.Activate(s_cam);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     DrawCurrentCamera(Twc, mpMapDrawer.getCameraSize(), mpMapDrawer.getCameraLineWidth());
+    
+    DrawAxis();
+    
     if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph || menuShowOptLba)
       mpMapDrawer.DrawKeyFrames(menuShowKeyFrames, menuShowGraph, menuShowInertialGraph, menuShowOptLba);
     
@@ -281,7 +331,7 @@ void Viewer::Run() {
     }
 
     if (menuStop) {
-      mpSystem->SaveAtlas(1);
+      mpSystem->SaveAtlas(System::FileType::BINARY_FILE);
       menuStop = false;
     }
   }

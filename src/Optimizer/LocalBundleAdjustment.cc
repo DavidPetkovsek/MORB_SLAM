@@ -33,7 +33,7 @@
 
 namespace MORB_SLAM {
 
-void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bInertial) {
+void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbStopFlag, std::shared_ptr<Map> pMap, bool bOdom) {
   // Local KeyFrames: First Breath Search from Current Keyframe
   std::list<std::shared_ptr<KeyFrame>> lLocalKeyFrames;
 
@@ -86,7 +86,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   num_fixedKF += lFixedCameras.size();
 
   if (num_fixedKF == 0) {
-    Verbose::PrintMess("LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
+    Verbose::Log(Verbose::ERROR, "LM-LBA: There are 0 fixed KF in the optimizations, LBA aborted");
     return;
   }
 
@@ -99,7 +99,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool* pbSto
   g2o::BlockSolver_6_3* solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
 
   g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-  if (bInertial) solver->setUserLambdaInit(100.0);
+  if (bOdom) solver->setUserLambdaInit(100.0);
 
   optimizer.setAlgorithm(solver);
   optimizer.setVerbose(false);
@@ -380,7 +380,7 @@ void Optimizer::LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF, std::ve
   int numInsertedPoints = 0;
   for (std::shared_ptr<KeyFrame> pKFi : vpFixedKF) {
     if (pKFi->isBad() || pKFi->GetMap() != pCurrentMap) {
-      Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current map", Verbose::VERBOSITY_NORMAL);
+      Verbose::Log(Verbose::ERROR, "ERROR LBA: KF is bad or is not in the current map");
       continue;
     }
 

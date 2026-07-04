@@ -29,20 +29,21 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/KeyFrame.h"
 #include "MORB_SLAM/MapPoint.h"
+#include "MORB_SLAM/Settings/SystemSettings.hpp"
 
 namespace MORB_SLAM {
 
-MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const Settings& settings): mpAtlas(pAtlas){
-  newParameterLoader(settings);
+MapDrawer::MapDrawer(const Atlas_ptr &pAtlas, const SystemSettings& sysSettings): mpAtlas(pAtlas){
+  newParameterLoader(sysSettings);
 }
 
-void MapDrawer::newParameterLoader(const Settings &settings) {
-  mKeyFrameSize = settings.keyFrameSize();
-  mKeyFrameLineWidth = settings.keyFrameLineWidth();
-  mGraphLineWidth = settings.graphLineWidth();
-  mPointSize = settings.pointSize();
-  mCameraSize = settings.cameraSize();
-  mCameraLineWidth = settings.cameraLineWidth();
+void MapDrawer::newParameterLoader(const SystemSettings& sysSettings) {
+  mKeyFrameSize = sysSettings.keyFrameSize();
+  mKeyFrameLineWidth = sysSettings.keyFrameLineWidth();
+  mGraphLineWidth = sysSettings.graphLineWidth();
+  mPointSize = sysSettings.pointSize();
+  mCameraSize = sysSettings.cameraSize();
+  mCameraLineWidth = sysSettings.cameraLineWidth();
 }
 
 void MapDrawer::DrawMapPoints() {
@@ -192,7 +193,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     glEnd();
   }
 
-  if (bDrawInertialGraph && pActiveMap->isImuInitialized()) {
+  if (bDrawInertialGraph && pActiveMap->isOdomInitialized()) {
     glLineWidth(mGraphLineWidth);
     glColor4f(1.0f, 0.0f, 0.0f, 0.6f);
     glBegin(GL_LINES);

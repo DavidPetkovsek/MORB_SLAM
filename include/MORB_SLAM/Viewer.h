@@ -29,16 +29,17 @@
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/FrameDrawer.h"
 #include "MORB_SLAM/MapDrawer.h"
-#include "MORB_SLAM/Settings.h"
 #include "MORB_SLAM/Packet.hpp"
 
 namespace MORB_SLAM {
 
+class CameraSettings;
+class SystemSettings;
 class Viewer {
 
 typedef std::shared_ptr<System> System_ptr;
 
-void newParameterLoader(const Settings& settings);
+void newParameterLoader(const SystemSettings& sysSettings, const CameraSettings& camSettings);
 // Main thread function. Draw points, keyframes, the current camera pose and the last processed frame. Drawing is refreshed according to the camera fps. We use Pangolin.
 void Run();
  public:

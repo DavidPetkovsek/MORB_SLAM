@@ -30,37 +30,36 @@
 #include "MORB_SLAM/Atlas.h"
 #include "MORB_SLAM/Frame.h"
 #include "MORB_SLAM/CameraModels/GeometricCamera.h"
-#include "MORB_SLAM/ImuTypes.h"
 #include "MORB_SLAM/KeyFrameDatabase.h"
 #include "MORB_SLAM/LocalMapping.h"
 #include "MORB_SLAM/LoopClosing.h"
 #include "MORB_SLAM/ORBVocabulary.h"
 #include "MORB_SLAM/ORBextractor.h"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/CameraSettings.hpp"
 #include "MORB_SLAM/Verbose.h"
 #include "MORB_SLAM/ImprovedTypes.hpp"
 #include "MORB_SLAM/Camera.hpp"
 #include "MORB_SLAM/Packet.hpp"
+#include "MORB_SLAM/Odometry.hpp"
 
 namespace MORB_SLAM {
 
 class LocalMapping;
 class LoopClosing;
+class SystemSettings;
 
 class Tracking {
  public:
   
-  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<Settings> settings);
+  Tracking(std::shared_ptr<ORBVocabulary> pVoc, const Atlas_ptr &pAtlas, std::shared_ptr<KeyFrameDatabase> pKFDB, const CameraType sensor, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource=nullptr);
 
   ~Tracking();
 
-  // Preprocess the input and call Track(). Extract features and performs stereo
-  // matching.
+  // Preprocess the input and call Track(). Extract features and performs stereo matching.
   StereoPacket GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight, const double& timestamp, const Camera_ptr &cam);
-  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam);
-  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam);
-
-  void GrabImuData(const std::vector<IMU::Point>& imuMeasurements);
+  
+  RGBDPacket GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD, const double& timestamp, const Camera_ptr &cam); // *** RGBD SLAM is currently not maintained
+  MonoPacket GrabImageMonocular(const cv::Mat& im, const double& timestamp, const Camera_ptr &cam); // *** Monocular SLAM is currently not maintained
 
   void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
   void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
@@ -71,8 +70,9 @@ class Tracking {
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool& flag);
 
-  void UpdateFrameIMU(const float s, const IMU::Bias& b, std::shared_ptr<KeyFrame> pCurrentKeyFrame);
   std::shared_ptr<KeyFrame> GetLastKeyFrame() { return mpLastKeyFrame; }
+  void UpdateLastKeyFrame(std::shared_ptr<KeyFrame> pCurrentKeyFrame);
+  void UpdateScale(const float s);
 
   void CreateMapInAtlas();
 
@@ -100,17 +100,6 @@ class Tracking {
   std::vector<cv::Point3f> mvIniP3D;
   Frame mInitialFrame;
 
-  // The sum of all the changes in translation (teleportations) caused by InitializeIMU(), Loop Closing, and Map Merging
-  Eigen::Vector3f mBaseTranslation;
-  // Stores the current KeyFrame's translation before each teleportation 
-  Eigen::Vector3f mPreTeleportTranslation;
-  // Set to true after teleportation occurs
-  bool mTeleported;
-  // Set to true right before a teleportation occurs, prevents mPreTeleportTranslation from being changed
-  bool mLockPreTeleportTranslation;
-
-  Sophus::SE3f mReturnPose;
-
   bool mHasGlobalOriginPose = false;
   Sophus::SE3f mGlobalOriginPose;
   Sophus::SE3f mInitialFramePose;
@@ -120,8 +109,6 @@ class Tracking {
 
   Sophus::SE3f mRelativeFramePose;
 
-  bool mFastInit;
-  bool mStationaryInit;
   bool mNewMapRelocalization;
 
   Sophus::SE3f mStereoInitDefaultPose;
@@ -148,8 +135,6 @@ public:
   void RequestSystemReset();
   void RequestResetActiveMap();
 
-  bool fastIMUInitEnabled() const { return mFastInit; }
-  bool stationaryIMUInitEnabled() const { return mStationaryInit; }
   bool newMapRelocalizationEnabled() const { return mNewMapRelocalization; }
 
   void setForcedLost(bool forceLost);
@@ -162,14 +147,13 @@ public:
   void StereoInitialization();
 
   // Map initialization for monocular
-  void MonocularInitialization();
-  void CreateInitialMapMonocular();
+  void MonocularInitialization(); // *** Monocular SLAM is currently not maintained
+  void CreateInitialMapMonocular(); // *** Monocular SLAM is currently not maintained
 
   void CheckReplacedInLastFrame();
   bool TrackReferenceKeyFrame();
   void UpdateLastFrame();
   bool TrackWithMotionModel();
-  bool PredictStateIMU();
 
   bool Relocalization(bool isNewMap=false);
 
@@ -183,27 +167,10 @@ public:
   bool NeedNewKeyFrame();
   void CreateNewKeyFrame();
 
-  // Perform preintegration from last frame
-  void PreintegrateIMU();
-
-  // Reset IMU biases and compute frame velocity
-  void ResetFrameIMU();
-
-  Sophus::SE3f GetPoseRelativeToBase(Sophus::SE3f initialPose);
-
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);
 
   bool mbMapUpdated;
-
-  // Imu preintegration from last frame
-  std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
-
-  // Queue of IMU measurements between frames
-  std::vector<IMU::Point> mvImuData;
-
-  // Imu calibration parameters
-  std::shared_ptr<IMU::Calib> mpImuCalib;
 
   // In case of performing only localization, this flag is true when there are no matches to points in the map. Still tracking will continue if there are
   // enough matches with temporal points. In that case we are doing visual odometry. The system will try to do relocalization to recover "zero-drift" localization to the map.
@@ -270,7 +237,7 @@ public:
 
   Sophus::SE3f mTlr;
 
-  void newParameterLoader(Settings& settings);
+  void newParameterLoader(SystemSettings& sysSettings, CameraSettings& camSettings);
 
   bool mForcedLost;
 
@@ -280,6 +247,8 @@ public:
   std::mutex mMutexReset;
   bool mbReset;
   bool mbResetActiveMap;
+
+  std::shared_ptr<Odometry> mpOdomSource;
 };
 typedef std::shared_ptr<Tracking> Tracking_ptr;
 typedef std::weak_ptr<Tracking> Tracking_wptr;

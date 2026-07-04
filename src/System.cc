@@ -25,7 +25,6 @@
 #include <opencv2/opencv.hpp>
 #include <pangolin/pangolin.h>
 
-#include "MORB_SLAM/ImprovedTypes.hpp"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -46,79 +45,82 @@
 
 namespace MORB_SLAM {
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+Verbose::eLevel Verbose::th = Verbose::INFO;
 
-System::System(const std::string& strVocFile, const std::string& strSettingsFile, const CameraType sensor)
-    : mSensor(sensor),
+System::System(const std::string &strVocFile, std::shared_ptr<SystemSettings> sysSettings, std::shared_ptr<CameraSettings> camSettings, const std::shared_ptr<Odometry> &odomSource)
+    : mSensor(camSettings->cameraType()),
       mpAtlas(std::make_shared<Atlas>(0)),
-      mTrackingState(TrackingState::SYSTEM_NOT_READY) {
+      mpOdomSource(odomSource),
+      mTrackingState(TrackingState::SYSTEM_NOT_READY),
+      mpCamSettings(camSettings),
+      mpSysSettings(sysSettings) {
+  
+  Verbose::SetTh(Verbose::DEBUG);
 
   cameras.push_back(std::make_shared<Camera>(mSensor)); // for now just hard code the sensor we are using, TODO make multicam
   // Output welcome message
-  std::cout << "Input sensor was set to: " << mSensor << std::endl;
+  Verbose::Log(Verbose::INFO, "Input sensor was set to: ", mSensor);
   
   // We're legally obligated to keep this line
-  std::cout << std::endl << "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << std::endl << "This program comes with ABSOLUTELY NO WARRANTY;" << std::endl << "This is free software, and you are welcome to redistribute it" << std::endl << "under certain conditions. See LICENSE.txt." << std::endl << std::endl;
+  Verbose::Log(Verbose::INFO, "\n\nORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.\nORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.\nThis program comes with ABSOLUTELY NO WARRANTY;\nThis is free software, and you are welcome to redistribute it\nunder certain conditions. See LICENSE.txt.\n");
   
-  settings = std::make_shared<Settings>(strSettingsFile, mSensor);
-  mStrLoadAtlasFromFile = settings->atlasLoadFile();
-  mStrSaveAtlasToFile = settings->atlasSaveFile();
+  mStrLoadAtlasFromFile = mpSysSettings->atlasLoadFile();
+  mStrSaveAtlasToFile = mpSysSettings->atlasSaveFile();
 
-  bool activeLC = settings->activeLoopClosing();
+  bool activeLC = mpSysSettings->activeLoopClosing();
 
   mStrVocabularyFilePath = strVocFile;
 
   bool isRead = false;
 
   // Load ORB Vocabulary
-  std::cout << std::endl << "Loading ORB Vocabulary. This could take a while..." << std::endl;
+  Verbose::Log(Verbose::INFO, "Loading ORB Vocabulary. This could take a while...");
 
   mpVocabulary = std::make_shared<ORBVocabulary>();
   bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
   if (!bVocLoad) {
-    std::cerr << "Wrong path to vocabulary. " << std::endl;
-    std::cerr << "Failed to open at: " << strVocFile << std::endl;
+    Verbose::Log(Verbose::FATAL, "Failed to open vocabulary at: ", strVocFile);
     throw std::invalid_argument("Failed to open at: " + strVocFile);
   }
-  std::cout << "Vocabulary loaded!" << std::endl << std::endl;
+  Verbose::Log(Verbose::SUCCESS, "Vocabulary loaded!");
 
   // Create KeyFrame Database
   mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   if (mStrLoadAtlasFromFile.empty()) {
-    std::cout << "Initialization of Atlas from scratch " << std::endl;
+    Verbose::Log(Verbose::INFO, "Initialization of Atlas from scratch");
   } else {
     // Load the file with an earlier session
-    std::cout << "Initialization of Atlas from file: " << mStrLoadAtlasFromFile << std::endl;
+    Verbose::Log(Verbose::INFO, "Initialization of Atlas from file: ", mStrLoadAtlasFromFile);
     isRead = LoadAtlas(FileType::BINARY_FILE);
 
     if (!isRead) {
-      std::cout << "Error to load the file, please try with other session file or vocabulary file" << std::endl;
+      Verbose::Log(Verbose::FATAL, "Error to load the file, please try with other session file or vocabulary file");
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     mpAtlas->CreateNewMap();
   }
 
-  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, settings);
-
   // Initialize the Tracking thread (it will live in the main thread of execution, the one that called this constructor)
-  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, mSensor.isInertial());
+  mpTracker = std::make_shared<Tracking>(mpVocabulary, mpAtlas, mpKeyFrameDatabase, mSensor, mpSysSettings, mpCamSettings, odomSource);
+
+  mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor == CameraType::MONOCULAR || mSensor == CameraType::IMU_MONOCULAR, odomSource);
   
   // Do not axis flip when loading from existing atlas
   if (isRead) {
-    mpLocalMapper->setIsDoneVIBA(true);
+    mpLocalMapper->setIsDoneBA(true);
   }
 
-  mpLocalMapper->mThFarPoints = settings->thFarPoints();
+  mpLocalMapper->mThFarPoints = mpSysSettings->thFarPoints();
   if (mpLocalMapper->mThFarPoints != 0) {
-    std::cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << std::endl;
+    Verbose::Log(Verbose::INFO, "Discard points further than ", mpLocalMapper->mThFarPoints, " m from current camera");
     mpLocalMapper->mbFarPoints = true;
   } else {
     mpLocalMapper->mbFarPoints = false;
   }
 
   // Initialize the Loop Closing thread and launch
-  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, mSensor.isInertial());
+  mpLoopCloser = std::make_shared<LoopClosing>(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor != CameraType::MONOCULAR, activeLC, odomSource);
 
   // Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
@@ -130,34 +132,38 @@ System::System(const std::string& strVocFile, const std::string& strSettingsFile
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-  std::cout << "Creating LocalMapping thread" << std::endl;
+  // Set up Odometry
+  if(mpOdomSource) {
+    mpOdomSource->SetLocalMapper(mpLocalMapper);
+    mpOdomSource->SetTracker(mpTracker);
+    mpOdomSource->SetAtlas(mpAtlas);
+  }
+
+  Verbose::Log(Verbose::DEBUG, "Creating LocalMapping thread");
   mptLocalMapping = std::jthread(&MORB_SLAM::LocalMapping::Run, mpLocalMapper);
 
-  std::cout << "Creating LoopClosing thread" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Creating LoopClosing thread");
   mptLoopClosing = std::jthread(&MORB_SLAM::LoopClosing::Run, mpLoopCloser);
-
-  // Fix verbosity
-  Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
-StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
+StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, double timestamp) {
   if (mSensor != CameraType::STEREO && mSensor != CameraType::IMU_STEREO) {
-    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
     throw std::invalid_argument("ERROR: you called TrackStereo but input sensor was not set to Stereo nor Stereo-Inertial.");
   }
 
   cv::Mat imLeftToFeed, imRightToFeed;
-  if (settings && settings->needToRectify()) {
-    const cv::Mat &M1l = settings->M1l();
-    const cv::Mat &M2l = settings->M2l();
-    const cv::Mat &M1r = settings->M1r();
-    const cv::Mat &M2r = settings->M2r();
+  if (mpCamSettings && mpCamSettings->needToRectify()) {
+    const cv::Mat &M1l = mpCamSettings->M1l();
+    const cv::Mat &M2l = mpCamSettings->M2l();
+    const cv::Mat &M1r = mpCamSettings->M1r();
+    const cv::Mat &M2r = mpCamSettings->M2r();
 
     cv::remap(imLeft, imLeftToFeed, M1l, M2l, cv::INTER_LINEAR);
     cv::remap(imRight, imRightToFeed, M1r, M2r, cv::INTER_LINEAR);
-  } else if (settings && settings->needToResize()) {
-    cv::resize(imLeft, imLeftToFeed, settings->newImSize());
-    cv::resize(imRight, imRightToFeed, settings->newImSize());
+  } else if (mpCamSettings && mpCamSettings->needToResize()) {
+    cv::resize(imLeft, imLeftToFeed, mpCamSettings->newImSize());
+    cv::resize(imRight, imRightToFeed, mpCamSettings->newImSize());
   } else {
     imLeftToFeed = imLeft;
     imRightToFeed = imRight;
@@ -168,37 +174,31 @@ StereoPacket System::TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, 
   // Check reset
   mpTracker->CheckTrackingReset();
 
-  if (mSensor == CameraType::IMU_STEREO)
-    mpTracker->GrabImuData(vImuMeas);
-
   StereoPacket Tcw = mpTracker->GrabImageStereo(imLeftToFeed, imRightToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
   mTrackingState = mpTracker->mState;
   return Tcw;
 }
 
-RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
+RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double timestamp) {
   if (mSensor != CameraType::RGBD && mSensor != CameraType::IMU_RGBD) {
-    std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackRGBD but input sensor was not set to RGBD.");
     throw std::invalid_argument("ERROR: you called TrackRGBD but input sensor was not set to RGBD.");
   }
 
   cv::Mat imToFeed = im.clone();
   cv::Mat imDepthToFeed = depthmap.clone();
-  if (settings && settings->needToResize()) {
+  if (mpCamSettings && mpCamSettings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings->newImSize());
+    cv::resize(im, resizedIm, mpCamSettings->newImSize());
     imToFeed = resizedIm;
-    cv::resize(depthmap, imDepthToFeed, settings->newImSize());
+    cv::resize(depthmap, imDepthToFeed, mpCamSettings->newImSize());
   }
 
   // Check mode change
   mpTracker->CheckTrackingModeChanged();
   // Check reset
   mpTracker->CheckTrackingReset();
-
-  if (mSensor == CameraType::IMU_RGBD)
-    mpTracker->GrabImuData(vImuMeas);
 
   RGBDPacket Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
@@ -206,17 +206,17 @@ RGBDPacket System::TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, double 
   return Tcw;
 }
 
-MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std::vector<IMU::Point>& vImuMeas) {
+MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp) {
 
   if (mSensor != CameraType::MONOCULAR && mSensor != CameraType::IMU_MONOCULAR) {
-    std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << std::endl;
+    Verbose::Log(Verbose::FATAL, "You called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial.");
     throw std::invalid_argument("ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial.");
   }
 
   cv::Mat imToFeed = im.clone();
-  if (settings && settings->needToResize()) {
+  if (mpCamSettings && mpCamSettings->needToResize()) {
     cv::Mat resizedIm;
-    cv::resize(im, resizedIm, settings->newImSize());
+    cv::resize(im, resizedIm, mpCamSettings->newImSize());
     imToFeed = resizedIm;
   }
 
@@ -224,9 +224,6 @@ MonoPacket System::TrackMonocular(const cv::Mat& im, double timestamp, const std
   mpTracker->CheckTrackingModeChanged();
   // Check reset
   mpTracker->CheckTrackingReset();
-
-  if (mSensor == CameraType::IMU_MONOCULAR)
-    mpTracker->GrabImuData(vImuMeas);
 
   MonoPacket Tcw = mpTracker->GrabImageMonocular(imToFeed, timestamp, cameras[0]); // for now we know cameras[0] is providing the image
 
@@ -245,8 +242,12 @@ bool System::MapChanged() {
   }
 }
 
+bool System::isMapMature() const {
+  return mpAtlas->GetCurrentMap()->isMature();
+}
+
 System::~System() {
-  std::cout << "Shutdown" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "Shutdown");
 
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -257,23 +258,26 @@ System::~System() {
   if (mptLoopClosing.joinable()) {
     mptLoopClosing.join();
   }
+  Verbose::Log(Verbose::DEBUG, "Finshed System Destructor");
 }
 
 TrackingState System::GetTrackingState() { return mTrackingState; }
 
-void System::SaveAtlas(int type) const {
-  std::cout << "Thread ID is: " << std::this_thread::get_id() << std::endl << "trying to save " << std::endl;
+void System::SaveAtlas(FileType type) const {
+  Verbose::Log(Verbose::DEBUG, "Thread ID is: ",  std::this_thread::get_id(),  ". Trying to save");
   if (!mStrSaveAtlasToFile.empty()) {
-    Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_DEBUG);
+    Verbose::Log(Verbose::INFO, "Atlas saving to file ", mStrSaveAtlasToFile);
     // Save the current session
-    mpAtlas->PreSave();
-    std::cout << "presaved" << std::endl;
+    if(mpOdomSource) mpOdomSource->mBackupEKFD.clear();
+
+    mpAtlas->PreSave(mpOdomSource);
+    Verbose::Log(Verbose::DEBUG, "presaved");
     std::string pathSaveFileName = mStrSaveAtlasToFile;  
 
     // Create the folder if it does not exist
     std::filesystem::path fsPath = pathSaveFileName;
     fsPath = fsPath.parent_path();
-    if(!std::filesystem::exists(fsPath)){
+    if(!fsPath.empty() && !std::filesystem::exists(fsPath)){
       std::filesystem::create_directory(fsPath);
     }
 
@@ -282,20 +286,20 @@ void System::SaveAtlas(int type) const {
     std::string str_time = std::ctime(&time_time);
     pathSaveFileName = pathSaveFileName.append(".osa");
 
-    std::cout << "About to Calculate " << std::endl;
+    
+    Verbose::Log(Verbose::DEBUG, "About to Calculate");
 
-    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
 
-    std::cout << "Vocab checksum`" << strVocabularyChecksum << std::endl;
+    Verbose::Log(Verbose::DEBUG, "Vocab checksum`", strVocabularyChecksum);
     std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
     std::string strVocabularyName = mStrVocabularyFilePath.substr(found + 1);
-    std::cout << "Type is of: " << type << std::endl;
 
-    if (type == TEXT_FILE) {
-      std::cout << "Starting to write the save text file " << std::endl;
+    if (type == FileType::TEXT_FILE) {
+      Verbose::Log(Verbose::DEBUG, "Starting to write the save text file");
 
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
-      std::cout << "remove's output is: " << rval << std::endl;
+      Verbose::Log(Verbose::DEBUG, "remove's output is: ", rval);
 
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
       boost::archive::text_oarchive oa(ofs);
@@ -304,43 +308,45 @@ void System::SaveAtlas(int type) const {
       oa << strVocabularyChecksum;
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
       oa << *mpAtlas;
-      std::cout << "End to write the save text file" << std::endl;
-    } else if (type == BINARY_FILE) {
-      std::cout << "Starting to write the save binary file" << std::endl;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
+
+      Verbose::Log(Verbose::DEBUG, "End to write the save text file");
+    } else if (type == FileType::BINARY_FILE) {
+      Verbose::Log(Verbose::DEBUG, "Starting to write the save binary file");
       int rval = std::remove(pathSaveFileName.c_str());  // Deletes the file
-      std::cerr << errno << std::endl;
-      std::cout << "remove's output is: " << rval << std::endl;
+      Verbose::Log(Verbose::DEBUG, "remove's output is: ", rval);
       std::ofstream ofs(pathSaveFileName, std::ios::binary);
-      std::cout << "big boostin' time" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "big boostin' time");
       boost::archive::binary_oarchive oa(ofs);
-      std::cout << "streaming" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streaming");
       oa << strVocabularyName;
-      std::cout << "streamed name" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed name");
       oa << strVocabularyChecksum;
-      std::cout << "streamed checksum" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed checksum");
       oa << SERIALIZED_ATLAS_FORMAT_VERSION;
-      std::cout << "streamed atlas format version" << std::endl;
+      Verbose::Log(Verbose::DEBUG, "streamed atlas format version");
       oa << *mpAtlas;
-      std::cout << "End to write save binary file" << std::endl;
+      if(mpOdomSource) mpOdomSource->SaveOdom(oa);
+      Verbose::Log(Verbose::SUCCESS, "Atlas saved to file ", mStrSaveAtlasToFile);
     } else {
-      std::cout << "no file to be saved I guess lul" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Invalid Atlas Save File Type");
     }
-  }
+  } else 
+    Verbose::Log(Verbose::CRITICAL, "No Atlas Save File is Set");
 }
 
-bool System::LoadAtlas(int type) {
+bool System::LoadAtlas(FileType type) {
   std::string strFileVoc, strVocChecksum, strSerializedAtlasFormatVersion;
   bool isRead = false;
 
-  std::string pathLoadFileName = "/";
-  pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
+  std::string pathLoadFileName = mStrLoadAtlasFromFile;
   pathLoadFileName = pathLoadFileName.append(".osa");
 
-  if (type == TEXT_FILE) {
-    std::cout << "Starting to read the save text file " << std::endl;
+  if (type == FileType::TEXT_FILE) {
+    Verbose::Log(Verbose::INFO, "Reading the saved Atlas text file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
-      std::cout << "Load file not found" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Load file not found");
       return false;
     }
     boost::archive::text_iarchive ia(ifs);
@@ -348,17 +354,18 @@ bool System::LoadAtlas(int type) {
     ia >> strVocChecksum;
     ia >> strSerializedAtlasFormatVersion;
     if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
-      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      Verbose::Log(Verbose::FATAL, "The format of the loaded Atlas is ", strSerializedAtlasFormatVersion, ", while the format required by this version of MORB-SLAM is ", SERIALIZED_ATLAS_FORMAT_VERSION);
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
-    std::cout << "End to load the save text file " << std::endl;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
+    Verbose::Log(Verbose::SUCCESS, "Atlas text file loaded" );
     isRead = true;
-  } else if (type == BINARY_FILE) {
-    std::cout << "Starting to read the save binary file" << std::endl;
+  } else if (type == FileType::BINARY_FILE) {
+    Verbose::Log(Verbose::INFO, "Reading the saved Atlas binary file");
     std::ifstream ifs(pathLoadFileName, std::ios::binary);
     if (!ifs.good()) {
-      std::cout << "Load file not found" << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "Load file not found");
       return false;
     }
     boost::archive::binary_iarchive ia(ifs);
@@ -366,47 +373,48 @@ bool System::LoadAtlas(int type) {
     ia >> strVocChecksum;
     ia >> strSerializedAtlasFormatVersion;
     if(strSerializedAtlasFormatVersion != SERIALIZED_ATLAS_FORMAT_VERSION) {
-      std::cout << "ERROR: The format of the loaded Atlas is " << strSerializedAtlasFormatVersion << ", while the format required by this version of MORB-SLAM is " << SERIALIZED_ATLAS_FORMAT_VERSION << std::endl;
+      Verbose::Log(Verbose::FATAL, "The format of the loaded Atlas is ", strSerializedAtlasFormatVersion, ", while the format required by this version of MORB-SLAM is ", SERIALIZED_ATLAS_FORMAT_VERSION);
       throw std::invalid_argument("Error to load the file, please try with other session file or vocabulary file");
     }
     ia >> *mpAtlas;
-    std::cout << "End to load the save binary file" << std::endl;
+    if(mpOdomSource) mpOdomSource->LoadOdom(ia);
+    Verbose::Log(Verbose::SUCCESS, "Atlas binary file loaded");
     isRead = true;
   }
 
   if (isRead) {
     // Check if the vocabulary is the same
-    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, TEXT_FILE);
+    std::string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath, FileType::TEXT_FILE);
     if (strInputVocabularyChecksum.compare(strVocChecksum) != 0) {
-      std::cout << "The vocabulary load isn't the same which the load session was created " << std::endl;
-      std::cout << "-Vocabulary name: " << strFileVoc << std::endl;
+      Verbose::Log(Verbose::CRITICAL, "The vocabulary load isn't the same as when it was created");
+      Verbose::Log(Verbose::DEBUG, "-Vocabulary name: ", strFileVoc);
       return false;
     }
 
     mpAtlas->SetKeyFrameDatabase(mpKeyFrameDatabase);
     mpAtlas->SetORBVocabulary(mpVocabulary);
-    mpAtlas->PostLoad();
+    mpAtlas->PostLoad(mpOdomSource);
 
     return true;
   }
   return false;
 }
 
-std::string System::CalculateCheckSum(std::string filename, int type) const {
+std::string System::CalculateCheckSum(std::string filename, FileType type) const {
   std::string checksum = "";
 
   unsigned int md5_digest_len = EVP_MD_size(EVP_md5());
   unsigned char *md5_digest;
 
   std::ios_base::openmode flags = std::ios::in;
-  if (type == BINARY_FILE)  // Binary file
+  if (type == FileType::BINARY_FILE)  // Binary file
     flags = std::ios::in | std::ios::binary;
 
-  std::cout << "inside" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "start checksum");
 
   std::ifstream f(filename.c_str(), flags);
   if (!f.is_open()) {
-    std::cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << std::endl;
+    Verbose::Log(Verbose::CRITICAL, "Unable to open the in file ", filename, " for Md5 hash.");
     return checksum;
   }
 
@@ -417,11 +425,11 @@ std::string System::CalculateCheckSum(std::string filename, int type) const {
   mdctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
 
-  std::cout << "just initialized MD5" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "just initialized MD5");
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     EVP_DigestUpdate(mdctx, buffer, count);
   }
-  std::cout << "about to close" << std::endl;
+  Verbose::Log(Verbose::DEBUG, "about to close");
 
   f.close();
 
@@ -442,11 +450,12 @@ bool System::getHasMergedLocalMap() {
   return mpLoopCloser->hasMergedLocalMap; 
 }
 
-bool System::getIsDoneVIBA() {
-  return mpLocalMapper->getIsDoneVIBA();
+bool System::getIsDoneBA() {
+  return mpLocalMapper->getIsDoneBA();
 }
 
-std::shared_ptr<Settings> System::getSettings() const { return settings; }
+std::shared_ptr<SystemSettings> System::getSysSettings() const { return mpSysSettings; }
+std::shared_ptr<CameraSettings> System::getCamSettings() const { return mpCamSettings; }
 
 // Bonk
 void System::ForceLost() { mpTracker->setForcedLost(true); }

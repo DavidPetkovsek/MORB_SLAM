@@ -1,102 +1,125 @@
 #include <MORB_SLAM/ExternalMapViewer.h>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
-#include <iostream>
-#include <string>
-
-#include <ixwebsocket/IXNetSystem.h>
-#include <ixwebsocket/IXWebSocket.h>
-#include <ixwebsocket/IXUserAgent.h>
-#include <ixwebsocket/IXWebSocketServer.h>
-
-#include <condition_variable>
-#include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/System.h"
-#include "MORB_SLAM/Tracking.h"
 
 namespace MORB_SLAM {
 
-ExternalMapViewer::ExternalMapViewer(const System_ptr& pSystem, const std::string& _serverAddress, const int _serverPort):
-    mpTracker(pSystem->mpTracker),
-    serverAddress(_serverAddress),
-    serverPort(_serverPort),
-    valuesPushed(false) {
-        std::cout << "Creating ExternalMapViewer thread" << std::endl;
+ExternalMapViewer::ExternalMapViewer(const std::string& _serverAddress, const int _serverPort):
+    mServerAddress(_serverAddress),
+    mServerPort(_serverPort),
+    mServer(_serverPort, _serverAddress),
+    mbValuesPushed(false),
+    mbSlamUpdated(false),
+    mbFirstClientConnected(false) {
+        
+        mServer.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
+            if (msg->type == ix::WebSocketMessageType::Open) {
+                Verbose::Log(Verbose::SUCCESS, "New client connected to EMV WebSocket server...");
+                Verbose::Log(Verbose::DEBUG, "id: ", connectionState->getId());
+                Verbose::Log(Verbose::DEBUG, "Uri: ", msg->openInfo.uri);
+                mbFirstClientConnected = true;
+            }
+        });
+
+        auto res = mServer.listen();
+        if (!res.first) {
+
+            Verbose::Log(Verbose::ERROR, res.second);
+            return;
+        }
+
+        Verbose::Log(Verbose::INFO, "Starting ExternalMapViewer WebSocket server...");
+        mServer.start();
+        
+        Verbose::Log(Verbose::DEBUG, "Creating ExternalMapViewer thread");
         threadEMV = std::jthread(&ExternalMapViewer::run, this);
+
+        Verbose::Log(Verbose::INFO, "Waiting for at least one client to connect to the ExternalMapViewer socket server before continuing...");
+        while(!mbFirstClientConnected)
+            usleep(1000);
     }
 
 ExternalMapViewer::~ExternalMapViewer() {
+    threadEMV.request_stop();
+    mCondvarEMV.notify_all();
+
     if(threadEMV.joinable()) threadEMV.join();
+    
+    mServer.stop();
 }
 
 void ExternalMapViewer::pushValues(float x, float y, float z) {
-    pushedValues = {x,y,z};
-    valuesPushed = true;
+    std::lock_guard<std::mutex> lock(mMutexEMV);
+    mPushedValues = {x,y,z};
+    mbValuesPushed = true;
+    mCondvarEMV.notify_all();
 }
 
-void ExternalMapViewer::run() {
-    ix::WebSocketServer server(serverPort, serverAddress);
+void ExternalMapViewer::updateSLAM(const Packet &packet) {
+    std::lock_guard<std::mutex> lock(mMutexEMV);
+    mSlamPacket = packet;
 
-    std::cout << "ExternalMapViewer Started" << std::endl;
+    if(mSlamPacket.mapPose.has_value() && mSlamPacket.deltaPose.has_value()) {
+        mbSlamUpdated = true;
+        mCondvarEMV.notify_all();
+    }
+}
 
-    server.setOnClientMessageCallback([this](std::shared_ptr<ix::ConnectionState> connectionState, ix::WebSocket & webSocket, const ix::WebSocketMessagePtr & msg) {
-        if (msg->type == ix::WebSocketMessageType::Open) {
-            Frame currentFrame;
-            long unsigned int prevFrameID = 0;
-            int message = 0; // TODO
-            bool isKF;
-            int state;
-            Sophus::SE3f currentPose;
+void ExternalMapViewer::run(std::stop_token token) {
+    #ifdef FactoryEngine
+        fe::Logger::setThreadName("ExternalMapViewer");
+    #endif
+    while(!token.stop_requested()) {
+        std::unique_lock<std::mutex> lock(mMutexEMV);
+        mCondvarEMV.wait(lock, [this, &token]{ return (mbSlamUpdated == true || mbValuesPushed == true || token.stop_requested()); });
+        
+        for(auto client : mServer.getClients()) {
+            if (mbSlamUpdated) {
+                client->sendBinary(ExternalMapViewer::slamDataToBinary(mSlamPacket));
+                mbSlamUpdated = false;
+            }
 
-            while(true) {
-                if(prevFrameID != this->mpTracker->mLastFrame.mnId) {
-                    currentFrame = Frame(this->mpTracker->mLastFrame, true);
-                    prevFrameID = currentFrame.mnId;
-                    state = this->mpTracker->mState.getID();
-
-                    if(currentFrame.mpReferenceKF && currentFrame.mpReferenceKF->mnId == prevFrameID) {
-                        isKF = true;
-                    } else {
-                        isKF = false;
-                    }
-                    
-                    currentPose = currentFrame.GetPose();
-                    webSocket.sendBinary(ExternalMapViewer::poseToBinary(currentPose.rotationMatrix(), currentPose.rotationMatrix().inverse()*currentPose.translation(), state, message, isKF));
-                } 
-
-                if (valuesPushed) {
-                    webSocket.sendBinary(ExternalMapViewer::coordsToBinary(pushedValues));
-                    valuesPushed = false;
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            if (mbValuesPushed) {
+                client->sendBinary(ExternalMapViewer::coordsToBinary(mPushedValues));
+                mbValuesPushed = false;
             }
         }
-    });
-
-    auto res = server.listen();
-    if (!res.first) {
-        std::cerr << res.second << std::endl;
-        return;
     }
-
-    server.start();
-    server.wait();
 }
 
-std::vector<uint8_t> ExternalMapViewer::poseToBinary(const Sophus::Matrix3f& rotationMatrix, const Sophus::Vector3f& translation, const int state, const int message, const bool KF) {
+std::vector<uint8_t> ExternalMapViewer::slamDataToBinary(const Packet &packet) {
+    static Sophus::SE3f prevOdomPose = Sophus::SE3f(); // Twc
+    static bool isFirstPose = true;
+
+    bool isFromSLAM = true;
+    int state = 1; // TODO
+    int message = 0; // TODO
     
-    size_t outputSize = sizeof(float)*12 + sizeof(int)*2 + sizeof(bool)*2;
+    bool mapUpdated = packet.mapUpdated;
+    Sophus::SE3f currentMapPose = packet.mapPose.value().inverse(); // Twc
+    Sophus::SE3f currentOdomPose;
+
+    if(isFirstPose) { // the first pose has not been added yet
+        currentOdomPose = packet.mapPose.value().inverse(); // Twc
+        isFirstPose = false;
+    } else {
+        currentOdomPose = prevOdomPose * packet.deltaPose.value().inverse(); // Twc = Twc * Tcc
+    }
+
+    prevOdomPose = currentOdomPose;
+    
+    Sophus::Matrix3f currentMapPoseRotation = currentMapPose.rotationMatrix();
+    Sophus::Vector3f currentMapPoseTranslation = currentMapPose.translation();
+    Sophus::Vector3f currentOdomPoseTranslation = currentOdomPose.translation();
+
+    size_t outputSize = sizeof(float)*15 + sizeof(int)*2 + sizeof(bool)*2;
     std::vector<uint8_t> binaryOutput(outputSize);
-    bool isPose = true;
     
-    memcpy(binaryOutput.data(), &isPose, sizeof(bool));
-    memcpy(binaryOutput.data() + sizeof(bool), rotationMatrix.data(), 9*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), translation.data(), 3*sizeof(float));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), &state, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float) + sizeof(int), &message, sizeof(int));
-    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float) + 2*sizeof(int), &KF, sizeof(bool));
+    memcpy(binaryOutput.data(), &isFromSLAM, sizeof(bool));
+    memcpy(binaryOutput.data() + sizeof(bool), currentMapPoseRotation.data(), 9*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 9*sizeof(float), currentMapPoseTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 12*sizeof(float), currentOdomPoseTranslation.data(), 3*sizeof(float));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float), &state, sizeof(int));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + sizeof(int), &message, sizeof(int));
+    memcpy(binaryOutput.data() + sizeof(bool) + 15*sizeof(float) + 2*sizeof(int), &mapUpdated, sizeof(bool));
 
     return binaryOutput;
 }
@@ -104,12 +127,13 @@ std::vector<uint8_t> ExternalMapViewer::poseToBinary(const Sophus::Matrix3f& rot
 std::vector<uint8_t> ExternalMapViewer::coordsToBinary(const std::vector<float>& coords) {
     size_t outputSize = sizeof(float)*3 + sizeof(bool);
         std::vector<uint8_t> binaryOutput(outputSize);
-        bool isPose = false;
+        bool isFromSLAM = false;
         
-        memcpy(binaryOutput.data(), &isPose, sizeof(bool));
+        memcpy(binaryOutput.data(), &isFromSLAM, sizeof(bool));
         memcpy(binaryOutput.data() + sizeof(bool), coords.data(), 3*sizeof(float));
 
         return binaryOutput;
 }
 
-}
+
+} // namespace MORB_SLAM

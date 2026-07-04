@@ -28,27 +28,27 @@ namespace MORB_SLAM {
 long unsigned int Map::nNextId = 0;
 
 Map::Map()
-    : mbImuInitialized(false),
+    : mbOdomInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnMaxKFid(0),
       mnBigChangeIdx(0),
       mbBad(false),
-      mbIMU_BA1(false),
-      mbIMU_BA2(false) {
+      mbBA1(false),
+      mbBA2(false) {
   mnId = nNextId++;
 }
 
 Map::Map(int initKFid)
-    : mbImuInitialized(false),
+    : mbOdomInitialized(false),
       mnMapChange(0),
       mnMapChangeNotified(0),
       mnInitKFid(initKFid),
       mnMaxKFid(initKFid),
       mnBigChangeIdx(0),
       mbBad(false),
-      mbIMU_BA1(false),
-      mbIMU_BA2(false) {
+      mbBA1(false),
+      mbBA2(false) {
   mnId = nNextId++;
 }
 
@@ -63,7 +63,7 @@ Map::~Map() {
 void Map::AddKeyFrame(std::shared_ptr<KeyFrame> pKF) {
   std::unique_lock<std::mutex> lock(mMutexMap);
   if (mspKeyFrames.empty()) {
-    std::cout << "First KF:" << pKF->mnId << "; Map init KF:" << mnInitKFid << std::endl;
+    Verbose::Log(Verbose::DEBUG, "First KF:", pKF->mnId, "; Map init KF:", mnInitKFid);
     mnInitKFid = pKF->mnId;
     mpKFinitial = pKF;
     mpKFlowerID = pKF;
@@ -82,14 +82,14 @@ void Map::AddMapPoint(std::shared_ptr<MapPoint> pMP) {
   mspMapPoints.insert(pMP);
 }
 
-void Map::SetImuInitialized() {
+void Map::SetOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbImuInitialized = true;
+  mbOdomInitialized = true;
 }
 
-bool Map::isImuInitialized() {
+bool Map::isOdomInitialized() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbImuInitialized;
+  return mbOdomInitialized;
 }
 
 void Map::EraseMapPoint(std::shared_ptr<MapPoint> pMP) {
@@ -176,11 +176,11 @@ void Map::clear() {
   mspMapPoints.clear();
   mspKeyFrames.clear();
   mnMaxKFid = mnInitKFid;
-  mbImuInitialized = false;
+  mbOdomInitialized = false;
   mvpReferenceMapPoints.clear();
   mvpKeyFrameOrigins.clear();
-  mbIMU_BA1 = false;
-  mbIMU_BA2 = false;
+  mbBA1 = false;
+  mbBA2 = false;
 }
 
 void Map::SetBad() { mbBad = true; }
@@ -190,7 +190,7 @@ bool Map::IsBad() { return mbBad; }
 void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool bScaledVel) {
   std::unique_lock<std::mutex> lock(mMutexMap);
 
-  // Body position (IMU) of first keyframe is fixed to (0,0,0)
+  // Body position of first keyframe is fixed to (0,0,0)
   Sophus::SE3f Tyw = T;
   Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
   Eigen::Vector3f tyw = Tyw.translation();
@@ -215,24 +215,24 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
   mnMapChange++;
 }
 
-void Map::SetInertialBA1() {
+void Map::SetPartialMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbIMU_BA1 = true;
+  mbBA1 = true;
 }
 
-void Map::SetInertialBA2() {
+void Map::SetMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  mbIMU_BA2 = true;
+  mbBA2 = true;
 }
 
-bool Map::GetInertialBA1() {
+bool Map::isPartialMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbIMU_BA1;
+  return mbBA1;
 }
 
-bool Map::GetInertialBA2() {
+bool Map::isMature() {
   std::unique_lock<std::mutex> lock(mMutexMap);
-  return mbIMU_BA2;
+  return mbBA2;
 }
 
 void Map::ChangeId(long unsigned int nId) { mnId = nId; }
@@ -257,7 +257,7 @@ void Map::SetLastMapChange(int currentChangeId) {
   mnMapChangeNotified = currentChangeId;
 }
 
-void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std::shared_ptr<Map> sharedMap) {
+void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource) {
 
   if(this != sharedMap.get()){
     throw std::runtime_error("The shared map is not equivalent to this");
@@ -318,7 +318,7 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
     if (!pKFi || pKFi->isBad()) continue;
 
     mvpBackupKeyFrames.push_back(pKFi);
-    pKFi->PreSave(tmp_mspKFs, tmp_mspMapPoints, spCams);
+    pKFi->PreSave(tmp_mspKFs, tmp_mspMapPoints, spCams, odomSource);
   }
 
   mnBackupKFinitialID = -1;
@@ -330,10 +330,12 @@ void Map::PreSave(std::set<std::shared_ptr<const GeometricCamera>>& spCams, std:
   if (mpKFlowerID) {
     mnBackupKFlowerID = mpKFlowerID->mnId;
   }
+
+  if(mvpBackupKeyFrames.size() == 0 || mvpBackupMapPoints.size() == 0) SetBad();
 }
 
 void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc,
-    std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap) {
+    std::map<unsigned int, std::shared_ptr<const GeometricCamera>>& mpCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource) {
 
   if(this != sharedMap.get()){
     throw std::runtime_error("The shared map is not equivalent to this");
@@ -352,6 +354,11 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
     if (pKF && !pKF->isBad())
       mspKeyFrames.insert(pKF);
   mvpBackupKeyFrames.clear();
+
+  if(mspMapPoints.size() == 0 || mspKeyFrames.size() == 0) {
+    SetBad();
+    return;
+  }
 
   std::map<long unsigned int, std::shared_ptr<MapPoint>> mpMapPointId;
   for (std::shared_ptr<MapPoint> pMPi : mspMapPoints) {
@@ -373,7 +380,7 @@ void Map::PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBV
   }
 
   for (std::shared_ptr<KeyFrame> pKFi : mspKeyFrames) {
-    pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams);
+    pKFi->PostLoad(mpKeyFrameId, mpMapPointId, mpCams, odomSource);
     pKFDB->add(pKFi);
   }
 

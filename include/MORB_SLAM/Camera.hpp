@@ -12,6 +12,8 @@
 #include <deque>
 #include <utility>
 
+#include "MORB_SLAM/Verbose.h"
+
 namespace MORB_SLAM{
 
 

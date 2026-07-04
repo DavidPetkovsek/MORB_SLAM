@@ -447,15 +447,26 @@ void MapPoint::UpdateNormalAndDepth() {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
     std::unique_lock<std::mutex> lock2(mMutexPos);
     if (mbBad) return;
-    observations = mObservations;
-    if(!(pRefKF = mpRefKF.lock())) {
-      mpRefKF = observations.begin()->first;
+
+    if (!mObservations.empty()) {
+      if(!(pRefKF = mpRefKF.lock())) {
+        mObservations.erase(mpRefKF);
+
+        while(!mObservations.empty() && !(pRefKF = mObservations.begin()->first.lock()))
+          mObservations.erase(mObservations.begin());
+        
+        if(!mObservations.empty()) mpRefKF = mObservations.begin()->first;
+      }
+      observations = mObservations;
+      Pos = mWorldPos;
+    }
+
+    if(mObservations.empty()) {
+      mbBad = true;
+      mpReplaced = nullptr;
       return;
     }
-    Pos = mWorldPos;
   }
-
-  if (observations.empty()) return;
 
   Eigen::Vector3f normal;
   normal.setZero();
@@ -593,11 +604,6 @@ void MapPoint::PreSave(std::set<std::shared_ptr<KeyFrame>>& spKF, std::set<std::
 }
 
 void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& mpKFid, std::map<long unsigned int, std::shared_ptr<MapPoint>>& mpMPid) {
-  mpRefKF = mpKFid[mBackupRefKFId];
-
-  if (mpRefKF.expired()) {
-    std::cout << "ERROR: MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << std::endl;
-  }
 
   mpReplaced = nullptr;
   if (mBackupReplacedId >= 0) {
@@ -614,9 +620,25 @@ void MapPoint::PostLoad(std::map<long unsigned int, std::shared_ptr<KeyFrame>>& 
       mObservations[pKFi] = indexes;
     }
   }
-
   mBackupObservationsId1.clear();
   mBackupObservationsId2.clear();
+
+  std::shared_ptr<KeyFrame> pRefKF;
+  mpRefKF = mpKFid[mBackupRefKFId];
+
+  if(mpRefKF.expired()) {
+    while(!mObservations.empty() && !(pRefKF = mObservations.begin()->first.lock()))
+      mObservations.erase(mObservations.begin());
+    
+    if(!mObservations.empty()) mpRefKF = mObservations.begin()->first;
+  }
+
+  if (mpRefKF.expired()) {
+    Verbose::Log(Verbose::ERROR, "MP without KF reference ", mBackupRefKFId, "; Num obs: ", nObs);
+    mbBad = true;
+    mpReplaced = nullptr;
+    return;
+  }
 }
 
 }  // namespace MORB_SLAM

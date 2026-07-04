@@ -20,19 +20,19 @@
 #pragma once
 
 #include "MORB_SLAM/ImprovedTypes.hpp"
-#include "MORB_SLAM/Settings.h"
+#include "MORB_SLAM/Settings/Settings.h"
 #include "MORB_SLAM/Atlas.h"
 #include <mutex>
 
 namespace MORB_SLAM
 {
 
-class Settings;
+class SystemSettings;
 class KeyFrame;
 
 class MapDrawer
 {
-    void newParameterLoader(const Settings& settings);
+    void newParameterLoader(const SystemSettings& sysSettings);
     Atlas_ptr mpAtlas;
     
     float mKeyFrameSize;
@@ -54,7 +54,7 @@ class MapDrawer
                                 {0.0f, 1.0f, 1.0f}};
 
 public:
-    MapDrawer(const Atlas_ptr &pAtlas, const Settings& settings);
+    MapDrawer(const Atlas_ptr &pAtlas, const SystemSettings& sysSettings);
 
     void DrawMapPoints();
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba);

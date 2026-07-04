@@ -21,6 +21,7 @@
 
 #include "MORB_SLAM/MapPoint.h"
 #include "MORB_SLAM/KeyFrame.h"
+#include "MORB_SLAM/Odometry.hpp"
 
 #include <set>
 #include <mutex>
@@ -61,9 +62,9 @@ class Map
         ar & mnBackupKFinitialID;
         ar & mnBackupKFlowerID;
 
-        ar & mbImuInitialized;
-        ar & mbIMU_BA1;
-        ar & mbIMU_BA2;
+        ar & mbOdomInitialized;
+        ar & mbBA1;
+        ar & mbBA2;
     }
 
 public:
@@ -104,21 +105,21 @@ public:
     int GetLastMapChange();
     void SetLastMapChange(int currentChangeId);
 
-    void SetImuInitialized();
-    bool isImuInitialized();
+    void SetOdomInitialized();
+    bool isOdomInitialized();
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
 
-    void SetInertialBA1();
-    void SetInertialBA2();
-    bool GetInertialBA1();
-    bool GetInertialBA2();
+    void SetPartialMature();
+    void SetMature();
+    bool isPartialMature();
+    bool isMature();
 
     bool CheckEssentialGraph();
     void ChangeId(long unsigned int nId);
 
-    void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap);
-    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap);
+    void PreSave(std::set<std::shared_ptr<const GeometricCamera>> &spCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource);
+    void PostLoad(std::shared_ptr<KeyFrameDatabase> pKFDB, std::shared_ptr<ORBVocabulary> pORBVoc, std::map<unsigned int, std::shared_ptr<const GeometricCamera>> &mpCams, std::shared_ptr<Map> sharedMap, const std::shared_ptr<Odometry> &odomSource);
 
     std::vector<std::shared_ptr<KeyFrame>> mvpKeyFrameOrigins;
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
@@ -152,7 +153,7 @@ protected:
 
     std::vector<std::shared_ptr<MapPoint>> mvpReferenceMapPoints;
 
-    bool mbImuInitialized;
+    bool mbOdomInitialized;
 
     int mnMapChange;
     int mnMapChangeNotified;
@@ -165,8 +166,8 @@ protected:
 
     bool mbBad = false;
 
-    bool mbIMU_BA1;
-    bool mbIMU_BA2;
+    bool mbBA1;
+    bool mbBA2;
 
     // Mutex
     std::mutex mMutexMap;

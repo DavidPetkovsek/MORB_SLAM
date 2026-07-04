@@ -7,17 +7,16 @@
 #include <condition_variable>
 #include <opencv2/opencv.hpp>
 
+#include <MORB_SLAM/Settings/CameraSettings.hpp>
+#include <MORB_SLAM/Settings/SystemSettings.hpp>
 #include <MORB_SLAM/System.h>
 #include <MORB_SLAM/Viewer.h>
-#include "MORB_SLAM/ExternalIMUProcessor.h"
+#include <MORB_SLAM/InertialOdometry/InertialOdometry.hpp>
+
+#include <Eigen/StdVector>
 
 #include <csignal>
 
-// Settings
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-    const std::string websocket_host_address = "ws://172.26.0.1:8765";
-    const double time_unit_to_seconds_conversion_factor = 0.001;
-////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool exitSLAM = false;
 
@@ -28,8 +27,20 @@ void sigHandler(int sigNum) {
 }
 
 int main(int argc, char **argv) {
-    signal(SIGINT, sigHandler);
+    // argv[0] program
+    // argv[1] path to vocab
+    // argv[2] path to slam settings
+    // argv[3] path to cam settings
+    // argv[4] path to odom settings
+    // argv[5] path to program config
+    
+    bool found;
+    std::string web_socket_config_path(argv[5]);
+    cv::FileStorage websocket_config = MORB_SLAM::Settings::loadFile(web_socket_config_path);
+    const std::string websocket_host_address = MORB_SLAM::Settings::readParameter<std::string>(websocket_config, "host_address", found, true);
+    const double time_unit_to_seconds_conversion_factor = 0.001;
 
+    signal(SIGINT, sigHandler);
     {
     ix::initNetSystem();
     ix::WebSocket webSocket;
@@ -38,25 +49,38 @@ int main(int argc, char **argv) {
 
     cv::Mat left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat right_img(cv::Size(848, 480), CV_8UC1);
-    double img_timestamp = 0;
+    double img_timestamp;
     
-    MORB_SLAM::Vector6f imu(6);
-    double imu_timestamp = 0;
-    std::vector<MORB_SLAM::Vector6f> imu_measurements;
-    std::vector<double> imu_timestamps;
+    Eigen::Vector3f accel(3);
+    Eigen::Vector3f gyro(3);
+    double accel_timestamp;
+    double gyro_timestamp;
+    
+    std::vector<Eigen::Vector3f> accel_measurements;
+    std::vector<Eigen::Vector3f> gyro_measurements;
+    std::vector<double> accel_timestamps;
+    std::vector<double> gyro_timestamps;
 
     const int image_size = left_img.total()*left_img.elemSize();
     const int timestamp_size = sizeof(double);
-    const int imu_size = sizeof(float)*6;
+    const int imu_size = sizeof(float)*3;
 
     bool connected = false;
     bool new_img = false;
 
     std::mutex img_mutex;
-    std::mutex imu_mutex;
+    std::mutex accel_mutex;
+    std::mutex gyro_mutex;
     std::condition_variable cond_image_rec;
 
-    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &imu_timestamp, &imu_timestamps, &imu, &imu_measurements, timestamp_size, image_size, imu_size, &img_mutex, &imu_mutex, &cond_image_rec, &new_img](const ix::WebSocketMessagePtr& msg) {
+    std::shared_ptr<MORB_SLAM::SystemSettings> sys_settings = std::make_shared<MORB_SLAM::SystemSettings>(argv[2]);
+    std::shared_ptr<MORB_SLAM::CameraSettings> cam_settings = std::make_shared<MORB_SLAM::CameraSettings>(argv[3], MORB_SLAM::CameraType::IMU_STEREO);
+    std::shared_ptr<MORB_SLAM::InertialOdometrySettings> imu_settings = std::make_shared<MORB_SLAM::InertialOdometrySettings>(argv[4]);
+    std::shared_ptr<MORB_SLAM::InertialOdometry> inertial_odom = std::make_shared<MORB_SLAM::InertialOdometry>(imu_settings, MORB_SLAM::CameraType::IMU_STEREO);
+    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1], sys_settings, cam_settings, inertial_odom);
+    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
+
+    webSocket.setOnMessageCallback([&webSocket, &connected, &img_timestamp, &left_img, &right_img, &accel_timestamp, &accel_timestamps, &accel, &accel_measurements, &gyro_timestamp, &gyro_timestamps, &gyro, &gyro_measurements, timestamp_size, image_size, imu_size, &img_mutex, &accel_mutex, &gyro_mutex, &cond_image_rec, &new_img, &inertial_odom, &time_unit_to_seconds_conversion_factor](const ix::WebSocketMessagePtr& msg) {
             if(msg->type == ix::WebSocketMessageType::Message) {
                 if(msg->str.data()[0] == 1) {
                     std::unique_lock<std::mutex> lock(img_mutex);
@@ -68,11 +92,21 @@ int main(int argc, char **argv) {
                     lock.unlock();
                     cond_image_rec.notify_all();
                 } else if(msg->str.data()[0] == 2) {
-                    std::unique_lock<std::mutex> lock(imu_mutex);
-                    std::memcpy(&imu_timestamp, msg->str.data()+1, timestamp_size);
-                    std::memcpy(imu.data(), msg->str.data()+1+timestamp_size, imu_size);
-                    imu_measurements.push_back(imu);
-                    imu_timestamps.push_back(imu_timestamp);
+                    std::unique_lock<std::mutex> lock(accel_mutex);
+                    std::memcpy(&accel_timestamp, msg->str.data()+1, timestamp_size);
+                    std::memcpy(accel.data(), msg->str.data()+1+timestamp_size, imu_size);
+                    accel_measurements.push_back(accel);
+                    accel_timestamps.push_back(accel_timestamp);
+                    // Add the accel measurements directly to the imu processor
+                    inertial_odom->AddAccel(accel, accel_timestamp * time_unit_to_seconds_conversion_factor);
+                } else if(msg->str.data()[0] == 3) {
+                    std::unique_lock<std::mutex> lock(gyro_mutex);
+                    std::memcpy(&gyro_timestamp, msg->str.data()+1, timestamp_size);
+                    std::memcpy(gyro.data(), msg->str.data()+1+timestamp_size, imu_size);
+                    gyro_measurements.push_back(gyro);
+                    gyro_timestamps.push_back(gyro_timestamp);
+                    // Add the gyro measurements directly to the imu processor
+                    inertial_odom->AddGyro(gyro, gyro_timestamp * time_unit_to_seconds_conversion_factor);
                 }
             } else if(msg->type == ix::WebSocketMessageType::Open) {
                 std::cout << "Connected to the Realsense websocket" << std::endl;
@@ -83,20 +117,15 @@ int main(int argc, char **argv) {
             }
         }
     );
-    
-    auto SLAM = std::make_shared<MORB_SLAM::System>(argv[1],argv[2], MORB_SLAM::CameraType::IMU_STEREO);
-    auto viewer = std::make_shared<MORB_SLAM::Viewer>(SLAM);
-
-    std::pair<double, std::vector<MORB_SLAM::IMU::Point>> slam_data;
-        
-    std::vector<MORB_SLAM::Vector6f> local_imu_measurements;
-    std::vector<double> local_imu_timestamps;
+     
+    std::vector<Eigen::Vector3f> local_accel_measurements;
+    std::vector<double> local_accel_timestamps;
+    std::vector<Eigen::Vector3f> local_gyro_measurements;
+    std::vector<double> local_gyro_timestamps;
     cv::Mat local_left_img(cv::Size(848, 480), CV_8UC1);
     cv::Mat local_right_img(cv::Size(848, 480), CV_8UC1);
     double local_img_timestamp;
     double prev_img_timestamp;
-
-    bool isFirstLoop = true;
 
     webSocket.start();
 
@@ -128,29 +157,35 @@ int main(int argc, char **argv) {
         }
 
         {
-            std::unique_lock<std::mutex> lk(imu_mutex);
-            local_imu_measurements.insert(local_imu_measurements.end(), imu_measurements.begin(), imu_measurements.end());
-            local_imu_timestamps.insert(local_imu_timestamps.end(), imu_timestamps.begin(), imu_timestamps.end());
+            // Grab the batch of accel measurements up until the current timestamp. Currently, the batch of accel measurements aren't being used
+            // because the individual accel measurements are added to Inertialodometry class directly.
+            // This code is kept here in case it is needed in the future. 
+            std::unique_lock<std::mutex> lk(accel_mutex);
+            local_accel_measurements.insert(local_accel_measurements.end(), accel_measurements.begin(), accel_measurements.end());
+            local_accel_timestamps.insert(local_accel_timestamps.end(), accel_timestamps.begin(), accel_timestamps.end());
 
-            imu_measurements.clear();
-            imu_timestamps.clear();
+            accel_measurements.clear();
+            accel_timestamps.clear();
         }
 
-        slam_data = MORB_SLAM::IMUProcessor::ProcessIMU(local_imu_measurements, local_imu_timestamps, prev_img_timestamp, local_img_timestamp, time_unit_to_seconds_conversion_factor);
+        {
+            // Grab the batch of gyro measurements up until the current timestamp. Currently, the batch of gyro measurements aren't being used
+            // because the individual gyro measurements are added to Inertialodometry class directly.
+            // This code is kept here in case it is needed in the future. 
+            std::unique_lock<std::mutex> lk(gyro_mutex);
+            local_gyro_measurements.insert(local_gyro_measurements.end(), gyro_measurements.begin(), gyro_measurements.end());
+            local_gyro_timestamps.insert(local_gyro_timestamps.end(), gyro_timestamps.begin(), gyro_timestamps.end());
+
+            gyro_measurements.clear();
+            gyro_timestamps.clear();
+        }
+        inertial_odom->GrabOdom(local_img_timestamp * time_unit_to_seconds_conversion_factor, prev_img_timestamp * time_unit_to_seconds_conversion_factor);
+
         prev_img_timestamp = local_img_timestamp;
 
-        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, slam_data.first, slam_data.second);
-
-        if(isFirstLoop && SLAM->HasInitialFramePose()) {
-            Sophus::SE3f outputPose = SLAM->GetInitialFramePose();
-            std::cout << outputPose.rotationMatrix() << std::endl;
-            std::cout << outputPose.translation() << std::endl;
-            isFirstLoop = false;
-        }
+        MORB_SLAM::StereoPacket sophusPose = SLAM->TrackStereo(local_left_img, local_right_img, local_img_timestamp * time_unit_to_seconds_conversion_factor);
 
         viewer->update(sophusPose);
-        // if(sophusPose.pose.has_value())
-        //     Sophus::Vector3f pose_translation = sophusPose.pose->translation();
     }
 
     std::cout << "Stopping WebSocket" << std::endl;
